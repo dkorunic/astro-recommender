@@ -4,8 +4,14 @@
 package weather
 
 import (
+	"context"
+	"errors"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/dkorunic/astro-recommender/internal/fetch"
 )
 
 func TestAstroKey(t *testing.T) {
@@ -36,5 +42,54 @@ func TestGustShift(t *testing.T) {
 	h.Gust[1] = nil
 	if out, _ = h.weather(); out[h.Time[0]].Gust != 10 {
 		t.Errorf("null next gust: got %v, want 10", out[h.Time[0]].Gust)
+	}
+}
+
+// A range Open-Meteo rejects (400) is retried once ending on its first day; a
+// one-day range, a second rejection or any other status is the caller's error.
+func TestGetRange(t *testing.T) {
+	var queries []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		queries = append(queries, r.URL.Query().Get("start_date")+".."+r.URL.Query().Get("end_date"))
+		if r.URL.Query().Get("start_date") == "2026-10-01" {
+			w.WriteHeader(http.StatusTooManyRequests)
+			_, _ = w.Write([]byte(`{"reason":"slow down"}`))
+
+			return
+		}
+		if r.URL.Query().Get("end_date") > "2026-10-20" {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`{"reason":"end_date out of range"}`))
+
+			return
+		}
+		_, _ = w.Write([]byte(`{"reason":""}`))
+	}))
+	defer srv.Close()
+	day := func(d int) time.Time { return time.Date(2026, 10, d, 20, 0, 0, 0, time.UTC) }
+	for _, c := range []struct {
+		start, end time.Time
+		want       []string
+		fail       bool
+	}{
+		{day(19), day(20), []string{"2026-10-19..2026-10-20"}, false},
+		{day(20), day(21), []string{"2026-10-20..2026-10-21", "2026-10-20..2026-10-20"}, false},
+		{day(21), day(22), []string{"2026-10-21..2026-10-22", "2026-10-21..2026-10-21"}, true},
+		{day(21), day(21), []string{"2026-10-21..2026-10-21"}, true},
+		{day(1), day(2), []string{"2026-10-01..2026-10-02"}, true}, // 429: no retry
+	} {
+		queries = nil
+		var body struct{ Reason string }
+		err := getRange(context.Background(), srv.URL+"?x=1", c.start, c.end, &body)
+		if (err != nil) != c.fail || c.fail && !errors.Is(err, fetch.ErrStatus) || len(queries) != len(c.want) {
+			t.Errorf("%s: err %v, queries %v, want %v", c.want[0], err, queries, c.want)
+
+			continue
+		}
+		for i := range queries {
+			if queries[i] != c.want[i] {
+				t.Errorf("%s: queries %v, want %v", c.want[0], queries, c.want)
+			}
+		}
 	}
 }

@@ -89,6 +89,10 @@ func BuildSky(ctx context.Context, cfg *config.Config, start, end time.Time) Sky
 			s.Quality[i] *= ramp(float64(a.Transparency), 1, 8, 0.5)
 		}
 	}
+	if gap := s.uncovered(); gap > 0 {
+		fmt.Fprintf(os.Stderr, "warning: no weather forecast for %s of the %s window; those hours count as clear sky\n",
+			gap, end.Sub(start).Round(time.Minute))
+	}
 
 	return s
 }
@@ -114,4 +118,21 @@ func (s *Sky) ExtinctionAt(t time.Time, fallback float64) float64 {
 	}
 
 	return atmos.ExtinctionCoeff(s.Elevation, aod)
+}
+
+// uncovered returns how much of the grid a fetched weather forecast has no
+// hour for (a -date near its range, model gaps); 0 without a forecast, which
+// BuildSky has already warned about.
+func (s *Sky) uncovered() time.Duration {
+	if s.Weather == nil {
+		return 0
+	}
+	var n int
+	for _, t := range s.Grid {
+		if _, ok := s.Weather[t.Truncate(time.Hour).Unix()]; !ok {
+			n++
+		}
+	}
+
+	return time.Duration(n) * time.Minute
 }
