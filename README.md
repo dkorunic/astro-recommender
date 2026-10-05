@@ -236,7 +236,6 @@ The astronomy uses compact published formulas rather than a full ephemeris libra
 | Moon | Astronomical Almanac low precision (geocentric) | < 0.4° |
 | Moon from the site | the same, shifted by its horizontal parallax | < 0.4° against SOFA's Moon seen from the WGS84 site |
 | Moon illumination | from Sun–Moon elongation | < 0.3 percentage points |
-| Moon from the site | the same, shifted by its horizontal parallax | < 0.4° against SOFA's Moon seen from the WGS84 site |
 | Target altitude | J2000 catalogue positions precessed to date (IAU 1976, Lieske 1977), GMST | < 0.3′ against SOFA's full precession-nutation and apparent sidereal time (precession itself within 0.1″) |
 | Earth position (for comets) | Sun formula, corrected to J2000 | < 0.0003 AU |
 

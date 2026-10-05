@@ -4,6 +4,7 @@
 package main
 
 import (
+	"cmp"
 	"fmt"
 	"runtime"
 	"runtime/debug"
@@ -37,14 +38,7 @@ func versionString() string {
 			}
 		}
 	}
-	or := func(s, def string) string {
-		if s == "" {
-			return def
-		}
-
-		return s
-	}
 
 	return fmt.Sprintf("astro-recommender %s (commit %s%s, built %s, %s %s/%s)",
-		or(tag, "dev"), or(commit, "unknown"), dirty, or(built, "unknown"), runtime.Version(), runtime.GOOS, runtime.GOARCH)
+		cmp.Or(tag, "dev"), cmp.Or(commit, "unknown"), dirty, cmp.Or(built, "unknown"), runtime.Version(), runtime.GOOS, runtime.GOARCH)
 }

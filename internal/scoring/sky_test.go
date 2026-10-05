@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/dkorunic/astro-recommender/internal/atmos"
+	"github.com/dkorunic/astro-recommender/internal/config"
 	"github.com/dkorunic/astro-recommender/internal/weather"
 )
 
@@ -40,18 +41,26 @@ func TestExtinctionAt(t *testing.T) {
 	}
 }
 
-// Grid minutes without a forecast hour are counted; no forecast at all is not.
-func TestUncovered(t *testing.T) {
-	start := time.Date(2026, 10, 5, 20, 30, 0, 0, time.UTC)
-	s := Sky{}
-	for i := range 150 { // 20:30-23:00
-		s.Grid = append(s.Grid, start.Add(time.Duration(i)*time.Minute))
+// Minutes the forecast does not cover get the covered minutes' mean quality,
+// not a clear sky; no forecast at all is clear.
+func TestBuildSkyPartialForecast(t *testing.T) {
+	cfg := &config.Config{Lat: 45.8, Lon: 16, Extinction: 0.2}
+	start := time.Date(2026, 10, 5, 20, 0, 0, 0, time.UTC)
+	end := start.Add(3 * time.Hour)
+	f := NoForecast()
+	if s := BuildSky(cfg, f, start, end); s.Quality[0] != 1 || s.Quality[len(s.Grid)-1] != 1 {
+		t.Errorf("no forecast: quality %v..%v, want 1", s.Quality[0], s.Quality[len(s.Grid)-1])
 	}
-	if got := s.uncovered(); got != 0 {
-		t.Errorf("no forecast: %v, want 0", got)
+	// 20:00 overcast, 21:00 clear (dew spread and wind harmless), 22:00 missing.
+	clear := weather.HourWeather{Temp: 10, DewPoint: 0}
+	f.Weather = map[int64]weather.HourWeather{
+		start.Unix():                {Cloud: 100, Temp: 10, DewPoint: 0},
+		start.Add(time.Hour).Unix(): clear,
 	}
-	s.Weather = map[int64]weather.HourWeather{start.Truncate(time.Hour).Unix(): {}} // 20:00 only
-	if got := s.uncovered(); got != 2*time.Hour {
-		t.Errorf("20:00 only: %v, want 2h (21:00-23:00)", got)
+	s := BuildSky(cfg, f, start, end)
+	for i, want := range map[int]float64{0: 0, 60: 1, 120: 0.5, 179: 0.5} {
+		if got := s.Quality[i]; math.Abs(got-want) > 1e-9 {
+			t.Errorf("minute %d: quality %v, want %v", i, got, want)
+		}
 	}
 }

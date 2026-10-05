@@ -50,6 +50,8 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 	switch {
 	case cfg.NoComets:
 		targetsDesc += ", comets off"
+	case s.CometsLost:
+		targetsDesc += ", comets unavailable"
 	default:
 		targetsDesc += fmt.Sprintf(", %d comets brighter than mag %.1f", s.Comets, cfg.CometMag)
 	}
@@ -87,6 +89,8 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 		extDesc += " (set)"
 	case math.IsNaN(s.Elevation):
 		extDesc += " (default)"
+	case len(s.AOD) == 0:
+		extDesc += fmt.Sprintf(" (elevation %.0f m, typical aerosols)", s.Elevation)
 	default:
 		extDesc += fmt.Sprintf(" (elevation %.0f m, aerosols)", s.Elevation)
 	}

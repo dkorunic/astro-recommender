@@ -75,6 +75,7 @@ func main() {
 		forecast  scoring.Forecast
 		place     string
 		cometEls  comets.Elements
+		cometErr  error
 		sqmVal    float64
 		sqmSource string
 	)
@@ -98,9 +99,8 @@ func main() {
 	}
 	if !cfg.NoComets {
 		wg.Go(func() {
-			var err error
-			if cometEls, err = comets.Fetch(ctx); err != nil {
-				fmt.Fprintln(os.Stderr, "warning: no comets:", err)
+			if cometEls, cometErr = comets.Fetch(ctx); cometErr != nil {
+				fmt.Fprintln(os.Stderr, "warning: no comets:", cometErr)
 			}
 		})
 	}
@@ -112,7 +112,7 @@ func main() {
 	s := scoring.BuildSky(&cfg, forecast, start, end)
 	s.Night = [2]time.Time{duskT, dawnT}
 	cometList := cometEls.Targets(s.Grid, cfg.CometMag)
-	s.Comets = len(cometList)
+	s.Comets, s.CometsLost = len(cometList), cometErr != nil
 	targets = append(targets, cometList...)
 	results := scoring.Score(&cfg, &s, targets, cfg.Plan > 0)
 

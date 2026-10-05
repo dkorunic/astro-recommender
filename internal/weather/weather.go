@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/dkorunic/astro-recommender/internal/fetch"
+	"github.com/dkorunic/astro-recommender/internal/num"
 	"github.com/dkorunic/astro-recommender/internal/sanitize"
 )
 
@@ -44,30 +45,37 @@ type hourly struct {
 	Gust     []*float64 `json:"wind_gusts_10m"`
 }
 
-// Forecast fetches hourly weather from Open-Meteo, keyed by unix hour.
-func Forecast(ctx context.Context, lat, lon float64, start, end time.Time) (map[int64]HourWeather, error) {
+// Forecast fetches hourly weather from Open-Meteo, keyed by unix hour, plus
+// the site elevation (NaN if missing), which the aerosol forecast also gives
+// but only over its shorter range.
+func Forecast(ctx context.Context, lat, lon float64, start, end time.Time) (map[int64]HourWeather, float64, error) {
 	// 2 decimals (~1 km) is finer than the weather models and avoids sending an exact address.
 	url := fmt.Sprintf("https://api.open-meteo.com/v1/forecast?latitude=%.2f&longitude=%.2f"+
 		"&hourly=cloud_cover_low,cloud_cover_mid,cloud_cover_high,temperature_2m,dew_point_2m,wind_speed_10m,wind_gusts_10m"+
 		"&timeformat=unixtime&timezone=UTC", lat, lon)
 	var body struct {
-		Reason string `json:"reason"`
-		Hourly hourly `json:"hourly"`
+		Elevation *float64 `json:"elevation"`
+		Reason    string   `json:"reason"`
+		Hourly    hourly   `json:"hourly"`
 	}
 	// One hour past the end: the last hour's gust is in the next entry, which
 	// falls on the next UTC day when the night ends after 23:00 UTC.
 	if err := getRange(ctx, url, start, end.Add(time.Hour), &body); err != nil {
-		return nil, fmt.Errorf("%w: %w %s", errOpenMeteo, err, sanitize.Text(body.Reason))
+		return nil, math.NaN(), fmt.Errorf("%w: %w %s", errOpenMeteo, err, sanitize.Text(body.Reason))
 	}
 	out, err := body.Hourly.weather()
 	if err != nil {
-		return nil, err
+		return nil, math.NaN(), err
 	}
 	if len(out) == 0 {
-		return nil, fmt.Errorf("%w: no data for %s", errOpenMeteo, start.Format(time.DateOnly))
+		return nil, math.NaN(), fmt.Errorf("%w: no data for %s", errOpenMeteo, start.Format(time.DateOnly))
+	}
+	elev := math.NaN()
+	if body.Elevation != nil && num.Finite(*body.Elevation) {
+		elev = *body.Elevation
 	}
 
-	return out, nil
+	return out, elev, nil
 }
 
 // weather turns the hourly block into HourWeather keyed by unix hour.
@@ -191,8 +199,8 @@ func AerosolForecast(ctx context.Context, lat, lon float64, start, end time.Time
 // into v. Open-Meteo rejects a range reaching past its data instead of
 // returning the part it has (HTTP 400), so a rejected multi-day range is
 // retried once ending on its first day: a night that runs past the forecast's
-// last day still gets its evening, and BuildSky warns about the uncovered
-// rest. Other failures (rate limits, server errors) are not retried.
+// last day still gets its evening, and BuildSky gives the uncovered rest the
+// covered hours' mean quality. Other failures (rate limits, server errors) are not retried.
 func getRange(ctx context.Context, url string, start, end time.Time, v any) error {
 	from, to := start.UTC().Format(time.DateOnly), end.UTC().Format(time.DateOnly)
 	err := fetch.GetJSON(ctx, url+"&start_date="+from+"&end_date="+to, v)
