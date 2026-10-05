@@ -96,6 +96,32 @@ func TestPrecess(t *testing.T) {
 // from Zagreb noon (10:00 UTC, already night in Sydney) used to start the
 // window late; from the site's solar noon it starts at real astronomical dusk,
 // about 20:26 AEDT (09:26 UTC), on a whole minute.
+// Zones across the date line from their longitude get the night of their own
+// local date, not the next one; Auckland and Honolulu are the controls.
+func TestWindowDateLine(t *testing.T) {
+	for _, c := range []struct {
+		zone     string
+		lat, lon float64
+	}{
+		{"Pacific/Apia", -13.8, -171.8},
+		{"Pacific/Tongatapu", -21.1, -175.2},
+		{"Pacific/Kiritimati", 1.9, -157.4},
+		{"Pacific/Chatham", -44, -176.5},
+		{"Asia/Anadyr", 64.7, -177.5},
+		{"Pacific/Auckland", -36.8, 174.8},
+		{"Pacific/Honolulu", 21.3, -157.9},
+	} {
+		loc, err := time.LoadLocation(c.zone)
+		if err != nil {
+			t.Fatal(err)
+		}
+		start, _, ok := Window(time.Date(2026, 10, 5, 0, 0, 0, 0, loc), c.lat, c.lon)
+		if start = start.In(loc); !ok || start.Day() != 5 || start.Hour() < 18 {
+			t.Errorf("%s: dusk %v, want the evening of 2026-10-05", c.zone, start)
+		}
+	}
+}
+
 func TestWindowForeignTimeZone(t *testing.T) {
 	zg, _ := time.LoadLocation("Europe/Zagreb")
 	start, end, ok := Window(time.Date(2026, 10, 5, 0, 0, 0, 0, zg), -33.87, 151.21)

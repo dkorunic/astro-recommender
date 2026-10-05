@@ -26,12 +26,23 @@ var (
 const deg = math.Pi / 180
 
 // Window returns [astronomical dusk, astronomical dawn) for the night starting
-// on the evening of day's date. It searches from the site's solar noon (from
-// its longitude, so a -tz that does not match the site cannot cut the night
-// short) for 24 hours; polar night is capped there.
+// on the evening of day's date in day's location. It searches from the site's
+// solar noon (from its longitude, so a -tz that does not match the site cannot
+// cut the night short) for 24 hours; polar night is capped there.
 func Window(day time.Time, lat, lon float64) (time.Time, time.Time, bool) {
 	y, m, d := day.Date()
-	noon := time.Date(y, m, d, 12, 0, 0, 0, time.UTC).Add(-time.Duration(lon / 15 * float64(time.Hour))).Truncate(time.Minute)
+	noon := time.Date(y, m, d, 12, 0, 0, 0, time.UTC).Add(-time.Duration(lon / 15 * float64(time.Hour)))
+	// Take the solar noon nearest local noon: zones across the date line from
+	// their longitude (Samoa, Tonga, Kiritimati, Chatham at +13 to +14 but
+	// west longitude) put it on the next local date, a night late.
+	local := time.Date(y, m, d, 12, 0, 0, 0, day.Location())
+	for noon.Sub(local) > 12*time.Hour {
+		noon = noon.Add(-24 * time.Hour)
+	}
+	for local.Sub(noon) > 12*time.Hour {
+		noon = noon.Add(24 * time.Hour)
+	}
+	noon = noon.Truncate(time.Minute)
 	limit := noon.Add(24 * time.Hour)
 	dark := func(t time.Time) bool {
 		ra, dec := SunRADec(t)
