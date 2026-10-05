@@ -164,6 +164,10 @@ func Results(cfg *config.Config, results []scoring.Result) {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	row(w, "01", names(resultColumns)...)
 	for i, r := range results[:min(cfg.Top, len(results))] {
+		px := "-" // without framing there is no pixel scale to measure against
+		if cfg.Framing {
+			px = sizeText(r.Target, "%.0f", r.Size*60/cfg.Scale)
+		}
 		typeColor := "39"
 		switch {
 		case catalog.EmissionLine(r.Target):
@@ -177,7 +181,7 @@ func Results(cfg *config.Config, results []scoring.Result) {
 			paint(scale(r.Score, 0.66, 0.33), fmt.Sprintf("%.2f", r.Score)),
 			paint("39", fmt.Sprintf("%.0f° @ %s", r.MaxAlt, r.MaxAt.Format("15:04"))),
 			paint(scale(r.SkyMag, 20.5, 19), fmt.Sprintf("%.1f", r.SkyMag)),
-			paint("39", sizeText(r.Target, "%.0f", r.Size*60/cfg.Scale)))
+			paint("39", px))
 	}
 	w.Flush()
 }
@@ -282,7 +286,7 @@ var resultColumns = []column{
 	{"SCORE", "0-1 imaging quality: 1 = every minute observable under a perfect, pristine dark sky"},
 	{"MAX ALT", "highest altitude in the window, and when"},
 	{"SKY", "mean sky brightness at the object, mag/arcsec² (higher is darker; no filter)"},
-	{"PX", "size in pixels at the frame's pixel scale"},
+	{"PX", "size in pixels at the frame's pixel scale (- without framing)"},
 }
 
 func names(cols []column) []string {
