@@ -55,6 +55,7 @@ var Lists = []string{"GaryImm", "GaryImmFull", "Messier", "Herschel400", "Pensac
 var (
 	errList        = errors.New("unknown target list")
 	errCoordinates = errors.New("bad coordinates")
+	errSky         = errors.New("RA must be 0 to 24h and Dec within ±90°")
 	errSize        = errors.New("bad size")
 )
 
@@ -89,8 +90,12 @@ func Load(listName, file string) ([]Target, string, error) {
 		// entries (R Aquarii "Aquila") and spellings ("Ophiucus", "Se1").
 		ra, err1 := astro.Sexagesimal(tg.RA)
 		dec, err2 := astro.Sexagesimal(tg.Dec)
-		if err1 != nil || err2 != nil || ra < 0 || ra >= 24 || math.Abs(dec) > 90 {
-			return nil, "", fmt.Errorf("%w for %s: %q %q", errCoordinates, tg.Name, sanitize.Text(tg.RA), sanitize.Text(tg.Dec))
+		err := errors.Join(err1, err2)
+		if err == nil && (ra < 0 || ra >= 24 || math.Abs(dec) > 90) {
+			err = fmt.Errorf("%w: %q %q", errSky, tg.RA, tg.Dec)
+		}
+		if err != nil {
+			return nil, "", fmt.Errorf("%w for %s: %w", errCoordinates, tg.Name, err)
 		}
 		if !num.Finite(tg.Size) {
 			return nil, "", fmt.Errorf("%w for %s: %v", errSize, tg.Name, tg.Size)

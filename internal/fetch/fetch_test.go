@@ -73,6 +73,29 @@ func TestGetTextTooLarge(t *testing.T) {
 	}
 }
 
+// A cached copy dated in the future (clock skew, a copied cache) is stale,
+// not fresh forever.
+func TestCachedFutureMtime(t *testing.T) {
+	tempCache(t)
+	body := "old"
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(body))
+	}))
+	defer srv.Close()
+	if _, err := Cached(context.Background(), srv.URL, "f.txt", time.Hour, anyData); err != nil {
+		t.Fatal(err)
+	}
+	dir, _ := os.UserCacheDir()
+	future := time.Now().Add(48 * time.Hour)
+	if err := os.Chtimes(filepath.Join(dir, "astro-recommender", "f.txt"), future, future); err != nil {
+		t.Fatal(err)
+	}
+	body = "new"
+	if data, err := Cached(context.Background(), srv.URL, "f.txt", time.Hour, anyData); err != nil || string(data) != "new" {
+		t.Errorf("Cached = %q, %v; want a fresh download", data, err)
+	}
+}
+
 // anyData accepts any body as is.
 func anyData(data []byte) ([]byte, error) { return data, nil }
 

@@ -4,6 +4,7 @@
 package plan
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -39,19 +40,20 @@ func TestImprovePlanNoZeroScore(t *testing.T) {
 	}
 }
 
-// Results without per-minute data (scored without -plan) are never picked,
-// rather than indexed out of range.
+// A result without per-minute data (scored without perMinute) is a caller
+// bug: Make says so instead of indexing out of range or planning nothing.
 func TestMakeNoPerMinute(t *testing.T) {
 	start := time.Date(2026, 10, 5, 20, 0, 0, 0, time.UTC)
 	s := scoring.Sky{}
 	for i := range 120 {
 		s.Grid = append(s.Grid, start.Add(time.Duration(i)*time.Minute))
 	}
-	for _, sl := range Make(&s, []scoring.Result{{Score: 1, Frame: 1}}, time.Hour) {
-		if sl.Result != nil {
-			t.Errorf("slot %v has a target without per-minute data", sl.Start)
+	defer func() {
+		if msg, _ := recover().(string); !strings.Contains(msg, "perMinute") {
+			t.Errorf("Make without per-minute data: recover() = %q, want a perMinute panic", msg)
 		}
-	}
+	}()
+	Make(&s, []scoring.Result{{Score: 1, Frame: 1}}, time.Hour)
 }
 
 // No observable targets must give empty blocks, not a panic.

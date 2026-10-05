@@ -67,10 +67,17 @@ func (h Horizon) At(az float64) float64 {
 	if len(h) == 0 {
 		return -90
 	}
-	i, _ := slices.BinarySearchFunc(h, az, func(p [2]float64, a float64) int { return cmp.Compare(p[0], a) })
+	i, found := slices.BinarySearchFunc(h, az, func(p [2]float64, a float64) int { return cmp.Compare(p[0], a) })
+	if found { // on a point; on a vertical step, its first (file order)
+		return h[i][1]
+	}
 	lo, hi := h[(i-1+len(h))%len(h)], h[i%len(h)]
-	span := math.Mod(hi[0]-lo[0]+360, 360)
-	if span == 0 {
+	// Not mod 360: a 0° and a 360° point are a full turn apart, not 0.
+	span := hi[0] - lo[0]
+	if span < 0 { // wrapping across north
+		span += 360
+	}
+	if span == 0 { // a single point
 		return lo[1]
 	}
 

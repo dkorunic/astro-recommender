@@ -61,10 +61,18 @@ func TestLoad360(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for az, want := range map[float64]float64{359: 20 + 10.0/270, 1: 10 + 20.0/90, 45: 20} {
+	for az, want := range map[float64]float64{359: 20 + 10.0/270, 1: 10 + 20.0/90, 45: 20, 0: 10, 90: 30} {
 		if got := h.At(az); math.Abs(got-want) > 1e-9 {
 			t.Errorf("At(%v) = %v, want %v", az, got, want)
 		}
+	}
+	// 0° and 360° alone are a full turn apart, a ramp from 10° to 20°.
+	if got := (Horizon{{0, 10}, {360, 20}}).At(180); got != 15 {
+		t.Errorf("0/360 only: At(180) = %v, want 15", got)
+	}
+	// A 360° point without a 0° one still closes the profile across north.
+	if got := (Horizon{{90, 30}, {360, 20}}).At(10); math.Abs(got-(20+10.0/9)) > 1e-9 {
+		t.Errorf("90/360: At(10) = %v, want %v", got, 20+10.0/9)
 	}
 }
 

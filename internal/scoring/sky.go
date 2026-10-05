@@ -87,20 +87,13 @@ func FetchForecast(ctx context.Context, cfg *config.Config, start, end time.Time
 	return f
 }
 
-// Grid returns the 1-minute grid from start up to end.
-func Grid(start, end time.Time) []time.Time {
-	var g []time.Time
+// BuildSky samples the night [start, end) on a 1-minute grid with forecast
+// f; it does no I/O.
+func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
+	s := Sky{Start: start, End: end, Weather: f.Weather, Astro: f.Astro, AOD: f.AOD, Elevation: f.Elevation}
 	for t := start; t.Before(end); t = t.Add(time.Minute) {
-		g = append(g, t)
+		s.Grid = append(s.Grid, t)
 	}
-
-	return g
-}
-
-// BuildSky samples the night on grid (Grid(start, end), the same one comet
-// tracks were computed on) up to end with forecast f; it does no I/O.
-func BuildSky(cfg *config.Config, f Forecast, grid []time.Time, end time.Time) Sky {
-	s := Sky{Start: grid[0], End: end, Grid: grid, Weather: f.Weather, Astro: f.Astro, AOD: f.AOD, Elevation: f.Elevation}
 	mid := s.Grid[len(s.Grid)/2]
 	s.Illum = astro.MoonIllumination(mid)
 	s.MoonSep = s.Illum * 100
@@ -132,7 +125,7 @@ func BuildSky(cfg *config.Config, f Forecast, grid []time.Time, end time.Time) S
 	}
 	if gap := s.uncovered(); gap > 0 {
 		fmt.Fprintf(os.Stderr, "warning: no weather forecast for %s of the %s window; those hours count as clear sky\n",
-			gap, end.Sub(s.Start).Round(time.Minute))
+			gap, end.Sub(start).Round(time.Minute))
 	}
 
 	return s

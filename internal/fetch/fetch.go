@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -45,8 +44,11 @@ func Cached[T any](ctx context.Context, url, file string, maxAge time.Duration, 
 	if dir, err := os.UserCacheDir(); err == nil {
 		cache = filepath.Join(dir, "astro-recommender", file)
 	}
-	if v, err := readCache(cache, maxAge, parse); err == nil {
-		return v, nil
+	// Read once: fresh, it is the answer; stale, the fallback below. A
+	// negative age (a clock or a copied file ahead of now) is stale too.
+	cached, age, cerr := readCache(cache, parse)
+	if cerr == nil && age >= 0 && age < maxAge {
+		return cached, nil
 	}
 
 	data, err := GetText(ctx, url)
@@ -63,32 +65,35 @@ func Cached[T any](ctx context.Context, url, file string, maxAge time.Duration, 
 			return v, nil
 		}
 	}
-	v, serr := readCache(cache, time.Duration(math.MaxInt64), parse)
-	if serr != nil {
-		return v, err
+	if cerr != nil {
+		var zero T
+
+		return zero, err
 	}
 	fmt.Fprintf(os.Stderr, "warning: using cached %s: %v\n", file, err)
 
-	return v, nil
+	return cached, nil
 }
 
-var errNoCache = errors.New("no usable cached copy")
+var errNoCache = errors.New("no cache directory")
 
-// readCache parses the cached copy at cache if it is younger than maxAge.
-func readCache[T any](cache string, maxAge time.Duration, parse func([]byte) (T, error)) (T, error) {
+// readCache parses the cached copy at cache and returns it with its age.
+func readCache[T any](cache string, parse func([]byte) (T, error)) (T, time.Duration, error) {
 	var zero T
 	if cache == "" {
-		return zero, errNoCache
+		return zero, 0, errNoCache
 	}
-	if fi, err := os.Stat(cache); err != nil || time.Since(fi.ModTime()) >= maxAge {
-		return zero, errNoCache
+	fi, err := os.Stat(cache)
+	if err != nil {
+		return zero, 0, err
 	}
 	data, err := os.ReadFile(cache)
 	if err != nil {
-		return zero, err
+		return zero, 0, err
 	}
+	v, err := parse(data)
 
-	return parse(data)
+	return v, time.Since(fi.ModTime()), err
 }
 
 // maxDownload caps text downloads (MPC comet elements are ~160 kB).

@@ -45,17 +45,22 @@ type comet struct {
 	h, k       float64 // total magnitude m = H + 5 log Δ + 2.5 K log r
 }
 
+// Elements are the comet orbital elements from Fetch.
+type Elements []comet
+
+// Fetch returns the MPC comet elements, cached for a day under the user
+// cache directory. It is the only network step, so it can run alongside
+// the others before the grid exists.
+func Fetch(ctx context.Context) (Elements, error) {
+	return fetch.Cached(ctx, cometURL, "CometEls.txt", cometCacheAge, parseComets)
+}
+
 // Targets returns the comets brighter than maxMag at mid-window as
-// targets with a per-minute position track. Elements come from the MPC,
-// cached for a day under the user cache directory.
-func Targets(ctx context.Context, grid []time.Time, maxMag float64) ([]catalog.Target, error) {
-	comets, err := fetch.Cached(ctx, cometURL, "CometEls.txt", cometCacheAge, parseComets)
-	if err != nil {
-		return nil, err
-	}
+// targets with a position track: Track[i] is the position at grid[i].
+func (e Elements) Targets(grid []time.Time, maxMag float64) []catalog.Target {
 	mid := grid[len(grid)/2]
 	var out []catalog.Target
-	for _, c := range comets {
+	for _, c := range e {
 		ra, dec, r, delta := c.position(mid)
 		if math.IsNaN(ra) { // position's "orbit not solved" sentinel
 			continue
@@ -75,13 +80,13 @@ func Targets(ctx context.Context, grid []time.Time, maxMag float64) ([]catalog.T
 		out = append(out, tg)
 	}
 
-	return out, nil
+	return out
 }
 
 // parseComets reads the MPC one-line comet element format (fixed columns).
 // Lines without magnitude parameters cannot be filtered by brightness and are skipped.
-func parseComets(data []byte) ([]comet, error) {
-	var out []comet
+func parseComets(data []byte) (Elements, error) {
+	var out Elements
 	sc := bufio.NewScanner(bytes.NewReader(data))
 	for sc.Scan() {
 		l := sc.Text()

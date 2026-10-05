@@ -94,6 +94,14 @@ func TestLoadRejectsBadCoordinates(t *testing.T) {
 			t.Errorf("%s: accepted", name)
 		}
 	}
+	// The reason reaches the user, with the text as written.
+	f := filepath.Join(t.TempDir(), "t.yaml")
+	if err := os.WriteFile(f, []byte(`[{name: X, ra: "00 50 00", dec: "+-10 00 00"}]`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := Load("", f); err == nil || !strings.Contains(err.Error(), `more than one sign: "+-10 00 00"`) {
+		t.Errorf("double sign: %v, want the reason and the text as written", err)
+	}
 }
 
 // A track key in a -targets file is ignored: Track comes only from comets,

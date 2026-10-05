@@ -20,12 +20,12 @@ func TestScoreSizeLimits(t *testing.T) {
 		Framing: true, FOVLong: 79.2, FOVShort: 45, SizeMin: 0, SizeMax: 45,
 	}
 	start := time.Date(2026, 1, 15, 18, 0, 0, 0, time.UTC)
-	s := BuildSky(cfg, NoForecast(), Grid(start, start.Add(time.Hour)), start.Add(time.Hour))
+	s := BuildSky(cfg, NoForecast(), start, start.Add(time.Hour))
 	tg := catalog.Target{Name: "X", RADeg: 37.95, DecDeg: 89.26} // Polaris
 	big, unknown, half := tg, tg, tg
 	big.Size, unknown.Size, half.Size = 60, -9999, 22.5
 
-	res := Score(cfg, &s, []catalog.Target{big, unknown, half})
+	res := Score(cfg, &s, []catalog.Target{big, unknown, half}, false)
 	if len(res) != 2 {
 		t.Fatalf("got %d results, want unknown and 22.5' only", len(res))
 	}
@@ -37,7 +37,7 @@ func TestScoreSizeLimits(t *testing.T) {
 	// 40' fills 89% of the short side and gets a frame penalty; -size-min 10 drops unknown sizes.
 	cfg.SizeMin = 10
 	big.Size = 40
-	res = Score(cfg, &s, []catalog.Target{big, unknown})
+	res = Score(cfg, &s, []catalog.Target{big, unknown}, false)
 	if len(res) != 1 {
 		t.Fatalf("got %d results, want the 40' object only", len(res))
 	}
@@ -46,23 +46,22 @@ func TestScoreSizeLimits(t *testing.T) {
 	}
 	// Exactly the short side cannot be framed and is not listed...
 	big.Size = 45
-	if res = Score(cfg, &s, []catalog.Target{big}); len(res) != 0 {
+	if res = Score(cfg, &s, []catalog.Target{big}, false); len(res) != 0 {
 		t.Errorf("45' in a 45' frame listed with Score %v", res[0].Score)
 	}
 	// ...but without framing -size-max is inclusive (Rho Ophiuchi is exactly 300').
 	cfg.Framing, cfg.SizeMax = false, 45
-	if res = Score(cfg, &s, []catalog.Target{big}); len(res) != 1 || res[0].Frame != 1 {
+	if res = Score(cfg, &s, []catalog.Target{big}, false); len(res) != 1 || res[0].Frame != 1 {
 		t.Errorf("45' with -size-max 45 and no framing: %d results, want 1 with Frame 1", len(res))
 	}
-	// Per-minute slices are kept only for -plan, as each result's own copy.
+	// Per-minute slices are kept only with perMinute, as each result's own copy.
 	if res[0].Alt != nil || res[0].Weight != nil {
-		t.Error("per-minute slices kept without -plan")
+		t.Error("per-minute slices kept without perMinute")
 	}
-	cfg.Plan = time.Hour
 	half.Size = 30
-	res = Score(cfg, &s, []catalog.Target{big, half})
+	res = Score(cfg, &s, []catalog.Target{big, half}, true)
 	if len(res) != 2 || len(res[0].Alt) != len(s.Grid) || &res[0].Alt[0] == &res[1].Alt[0] || res[0].Weight[0] == 0 {
-		t.Errorf("-plan: per-minute slices missing or shared: %d results", len(res))
+		t.Errorf("perMinute: per-minute slices missing or shared: %d results", len(res))
 	}
 }
 
@@ -103,7 +102,7 @@ func BenchmarkPipeline(b *testing.B) {
 	start := time.Date(2026, 10, 5, 18, 8, 0, 0, time.UTC)
 	end := start.Add(9*time.Hour + 14*time.Minute)
 	for b.Loop() {
-		s := BuildSky(cfg, NoForecast(), Grid(start, end), end)
-		Score(cfg, &s, targets)
+		s := BuildSky(cfg, NoForecast(), start, end)
+		Score(cfg, &s, targets, false)
 	}
 }

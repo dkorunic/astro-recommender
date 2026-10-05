@@ -7,6 +7,7 @@ package plan
 
 import (
 	"cmp"
+	"fmt"
 	"time"
 
 	"github.com/dkorunic/astro-recommender/internal/scoring"
@@ -23,8 +24,8 @@ type Slot struct {
 
 // Make splits the window into blocks of length block and assigns each
 // block one target: greedily first, then improved by local search. Results
-// need per-minute Alt and Weight over s.Grid (scoring.Score with
-// cfg.Plan > 0); one without them scores 0 and is never picked.
+// must carry per-minute Alt and Weight over s.Grid (scoring.Score with
+// perMinute); one without them is a caller bug and panics.
 func Make(s *scoring.Sky, results []scoring.Result, block time.Duration) []Slot {
 	n := int(block / time.Minute)
 	var bounds [][2]int
@@ -39,7 +40,7 @@ func Make(s *scoring.Sky, results []scoring.Result, block time.Duration) []Slot 
 		score[j] = make([]float64, len(bounds))
 		meanAlt[j] = make([]float64, len(bounds))
 		if len(r.Weight) != len(s.Grid) || len(r.Alt) != len(s.Grid) {
-			continue
+			panic(fmt.Sprintf("plan.Make: %s has no per-minute data for the grid; score with perMinute", r.Name))
 		}
 		for b, bd := range bounds {
 			var sum, altSum float64

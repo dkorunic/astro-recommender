@@ -263,6 +263,7 @@ func Separation(ra1, dec1, ra2, dec2 float64) float64 {
 }
 
 // Sexagesimal parses "[+-]a b c" into a + b/60 + c/3600 with the sign applied.
+// Errors quote text as given (%q, so control characters are escaped).
 func Sexagesimal(text string) (float64, error) {
 	s := strings.TrimSpace(text)
 	sign := 1.0
@@ -278,16 +279,16 @@ func Sexagesimal(text string) (float64, error) {
 	}
 	fields := strings.Fields(s)
 	if len(fields) == 0 || len(fields) > 3 {
-		return 0, fmt.Errorf("%w: %q", errFields, s)
+		return 0, fmt.Errorf("%w: %q", errFields, text)
 	}
 	var v float64
 	for i, f := range fields {
 		x, err := strconv.ParseFloat(f, 64)
 		if err != nil {
-			return 0, err
+			return 0, fmt.Errorf("%q: %w", text, err)
 		}
 		if !num.Finite(x) || x < 0 || i > 0 && x >= 60 {
-			return 0, fmt.Errorf("%w: %q", errRange, s)
+			return 0, fmt.Errorf("%w: %q", errRange, text)
 		}
 		v += x / math.Pow(60, float64(i))
 	}

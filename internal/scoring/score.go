@@ -21,8 +21,8 @@ type Result struct { // betteralign:ignore (embedded target first, per embeddeds
 	catalog.Target
 
 	MaxAt   time.Time
-	Alt     []float64 // per grid minute; only with -plan, which reads them
-	Weight  []float64 // per grid minute, 0 when not observable; only with -plan
+	Alt     []float64 // per grid minute; only from Score with perMinute, for plan.Make
+	Weight  []float64 // per grid minute, 0 when not observable; as Alt
 	Foto    float64   // fraction of time observable
 	Score   float64   // foto weighted by clouds, moonlight and framing
 	Frame   float64   // framing factor (1 without framing)
@@ -32,11 +32,12 @@ type Result struct { // betteralign:ignore (embedded target first, per embeddeds
 }
 
 // Score scores every target within the size limits and returns the
-// observable ones, best first.
-func Score(cfg *config.Config, s *Sky, targets []catalog.Target) []Result {
+// observable ones, best first. perMinute keeps each result's per-minute
+// Alt and Weight, which plan.Make needs.
+func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool) []Result {
 	var results []Result
 	// Per-minute scratch reused across targets: most are never observable,
-	// and only -plan needs a Result's own copy.
+	// and only perMinute needs a Result's own copy.
 	alt, weight := make([]float64, len(s.Grid)), make([]float64, len(s.Grid))
 	for _, tg := range targets {
 		// Comet comae have no catalog size, so size limits do not apply.
@@ -49,7 +50,7 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target) []Result {
 			continue
 		}
 		if r, ok := scoreTarget(cfg, s, tg, alt, weight); ok {
-			if cfg.Plan > 0 {
+			if perMinute {
 				r.Alt, r.Weight = slices.Clone(alt), slices.Clone(weight)
 			}
 			results = append(results, r)
