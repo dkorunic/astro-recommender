@@ -26,7 +26,21 @@ type HourWeather struct {
 	Cloud          float64 // effective cover, thin high cloud counted half
 	Low, Mid, High float64
 	Temp, DewPoint float64
-	Wind, Gust     float64
+	Wind, Gust     float64 // wind at the hour; gust maximum during the hour that starts there
+}
+
+// hourly is Open-Meteo's hourly block, values null when missing.
+//
+//nolint:tagliatelle // Open-Meteo's field names
+type hourly struct {
+	Time     []int64    `json:"time"`
+	Low      []*float64 `json:"cloud_cover_low"`
+	Mid      []*float64 `json:"cloud_cover_mid"`
+	High     []*float64 `json:"cloud_cover_high"`
+	Temp     []*float64 `json:"temperature_2m"`
+	DewPoint []*float64 `json:"dew_point_2m"`
+	Wind     []*float64 `json:"wind_speed_10m"`
+	Gust     []*float64 `json:"wind_gusts_10m"`
 }
 
 // Forecast fetches hourly weather from Open-Meteo, keyed by unix hour.
@@ -36,24 +50,26 @@ func Forecast(ctx context.Context, lat, lon float64, start, end time.Time) (map[
 		"&hourly=cloud_cover_low,cloud_cover_mid,cloud_cover_high,temperature_2m,dew_point_2m,wind_speed_10m,wind_gusts_10m"+
 		"&timeformat=unixtime&timezone=UTC"+
 		"&start_date=%s&end_date=%s", lat, lon, start.UTC().Format(time.DateOnly), end.UTC().Format(time.DateOnly))
-	//nolint:tagliatelle // Open-Meteo's field names
 	var body struct {
 		Reason string `json:"reason"`
-		Hourly struct {
-			Time     []int64    `json:"time"`
-			Low      []*float64 `json:"cloud_cover_low"`
-			Mid      []*float64 `json:"cloud_cover_mid"`
-			High     []*float64 `json:"cloud_cover_high"`
-			Temp     []*float64 `json:"temperature_2m"`
-			DewPoint []*float64 `json:"dew_point_2m"`
-			Wind     []*float64 `json:"wind_speed_10m"`
-			Gust     []*float64 `json:"wind_gusts_10m"`
-		} `json:"hourly"`
+		Hourly hourly `json:"hourly"`
 	}
 	if err := fetch.GetJSON(ctx, url, &body); err != nil {
 		return nil, fmt.Errorf("%w: %w %s", errOpenMeteo, err, sanitize.Text(body.Reason))
 	}
-	h := body.Hourly
+	out, err := body.Hourly.weather()
+	if err != nil {
+		return nil, err
+	}
+	if len(out) == 0 {
+		return nil, fmt.Errorf("%w: no data for %s", errOpenMeteo, start.Format(time.DateOnly))
+	}
+
+	return out, nil
+}
+
+// weather turns the hourly block into HourWeather keyed by unix hour.
+func (h *hourly) weather() (map[int64]HourWeather, error) {
 	series := [][]*float64{h.Low, h.Mid, h.High, h.Temp, h.DewPoint, h.Wind, h.Gust}
 	for _, s := range series {
 		if len(s) != len(h.Time) {
@@ -72,10 +88,13 @@ next:
 		low, mid, high := *h.Low[i]/100, *h.Mid[i]/100, *h.High[i]/100
 		// ponytail: layers treated as independent; thin cirrus blocks ~half the light.
 		cloud := 100 * (1 - (1-low)*(1-mid)*(1-high/2))
-		out[t] = HourWeather{cloud, *h.Low[i], *h.Mid[i], *h.High[i], *h.Temp[i], *h.DewPoint[i], *h.Wind[i], *h.Gust[i]}
-	}
-	if len(out) == 0 {
-		return nil, fmt.Errorf("%w: no data for %s", errOpenMeteo, start.Format(time.DateOnly))
+		// Gusts are the maximum over the preceding hour, so the hour starting
+		// at t has its gust in the next entry; the last hour keeps its own.
+		gust := *h.Gust[i]
+		if i+1 < len(h.Time) && h.Time[i+1] == t+3600 && h.Gust[i+1] != nil {
+			gust = *h.Gust[i+1]
+		}
+		out[t] = HourWeather{cloud, *h.Low[i], *h.Mid[i], *h.High[i], *h.Temp[i], *h.DewPoint[i], *h.Wind[i], gust}
 	}
 
 	return out, nil
