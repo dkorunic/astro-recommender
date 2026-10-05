@@ -1,0 +1,51 @@
+version: "2"
+linters:
+  default: all
+  disable:
+    - cyclop
+    - depguard
+    - dupl
+    # Same rename trap as wsl below: `default: all` re-enables this under its
+    # v5 name, and nearly every hit is a third-party struct (waE2E.Message
+    # alone has ~100 fields) that cannot meaningfully be filled exhaustively.
+    - exhaustruct
+    - exhaustruct_v5
+    - forbidigo
+    - funlen
+    - gochecknoglobals
+    - gocognit
+    # Deprecated in favour of gomodguard_v2, which `default: all` already
+    # enables; naming it here only silences the deprecation warning.
+    - gomodguard
+    - lll
+    - mnd
+    - varnamelen
+    - wrapcheck
+    - noinlineerr
+    # `default: all` re-enables the deprecated `wsl` unless it is named too.
+    - wsl
+    - wsl_v5
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+      - ".*_test\\.go$"
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

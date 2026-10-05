@@ -1,0 +1,10 @@
+github.com/hebl/gofa v1.19.1 h1:/aVMeT0MXDrq5oMdTAKn1qyfIFlsDKvzx8DDLnsEx9s=
+github.com/hebl/gofa v1.19.1/go.mod h1:UmDlahQBVbigXqA+ghdTtaXADoyQSWeiW+7nEB86HXU=
+github.com/ringsaturn/go-cities.json v0.6.13 h1:p5afPcJ/tEE6uzFCOzLSHJYXgWnGdPmwZB9KBrEASxc=
+github.com/ringsaturn/go-cities.json v0.6.13/go.mod h1:VtklT4Sod9i6kvXXNZV63sfjeCX9l11OQfaAvPu+p4M=
+github.com/ringsaturn/tzf-dist v0.0.2026-d-fix1 h1:lT6jQEwS7NRpBSG7lZ3Cwl16ADkZ6WfkDCWH/6usR58=
+github.com/ringsaturn/tzf-dist v0.0.2026-d-fix1/go.mod h1:MLn3mRLioai5ceZLV8k+uAr4cLxdVEHoTQIGKpuVS/c=
+github.com/ringsaturn/tzf/v2 v2.1.2 h1:amFL2Vv6+b4Kv710R1xAb3jJ0tW7vbCf3NPBtepq9S4=
+github.com/ringsaturn/tzf/v2 v2.1.2/go.mod h1:JsnmzJF71pXCrTdyR2UjsaUbwO1cAndQyROtGu41Li8=
+go.yaml.in/yaml/v3 v3.0.5 h1:N6y/pJk8buWs9NY5ERU2HSMfm+IuD/OtfdAnq6kESPw=
+go.yaml.in/yaml/v3 v3.0.5/go.mod h1:HVTZu1O7/Vkt2N+BFy8Zza+lnLsABggaTM2ZpNIGuKg=

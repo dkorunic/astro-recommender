@@ -1,0 +1,51 @@
+// SPDX-FileCopyrightText: 2026 Dinko Korunic <dinko.korunic@gmail.com>
+// SPDX-License-Identifier: MIT
+
+package horizon
+
+import (
+	"math"
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestHorizonAt(t *testing.T) {
+	// horizon.at interpolates and wraps across north.
+	h := Horizon{{90, 40}, {180, 20}, {350, 30}}
+	// 350° -> 90° spans 100° across north.
+	for az, want := range map[float64]float64{135: 30, 90: 40, 0: 31, 355: 30.5, 60: 37} {
+		if got := h.At(az); math.Abs(got-want) > 1e-9 {
+			t.Errorf("horizon.at(%v) = %v, want %v", az, got, want)
+		}
+	}
+	if (Horizon{}).At(10) != -90 {
+		t.Error("empty horizon should not limit")
+	}
+}
+
+func TestLoadRejects(t *testing.T) {
+	for name, text := range map[string]string{
+		"nan alt":     "0 NaN\n90 10",
+		"inf az":      "Inf 10",
+		"az > 360":    "361 10",
+		"alt > 90":    "0 91",
+		"three cols":  "0 10 20",
+		"not numbers": "north 10",
+	} {
+		f := filepath.Join(t.TempDir(), "h.txt")
+		if err := os.WriteFile(f, []byte(text), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := Load(f); err == nil {
+			t.Errorf("%s: accepted", name)
+		}
+	}
+	f := filepath.Join(t.TempDir(), "h.txt")
+	if err := os.WriteFile(f, []byte("# ok\n0 25\n180 20 # trees\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if h, err := Load(f); err != nil || len(h) != 2 {
+		t.Errorf("valid file: %v, %v", h, err)
+	}
+}
