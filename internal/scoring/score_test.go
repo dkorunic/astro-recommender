@@ -14,8 +14,8 @@ import (
 )
 
 func TestScoreSizeLimits(t *testing.T) {
-	// Circumpolar target, always observable from Zagreb. Framing with the
-	// Origin frame: 79.2' x 45'.
+	// Circumpolar target, always observable from Zagreb. Framing with an
+	// Origin-like frame: 79.2' x 45'.
 	cfg := &config.Config{
 		Lat: 45.8, Lon: 16, AltMin: 30, AltMax: 80, NoWeather: true, ExtinctionSet: true, Extinction: 0.2,
 		Framing: true, FOVLong: 79.2, FOVShort: 45, SizeMin: 0, SizeMax: 45,

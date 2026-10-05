@@ -70,18 +70,21 @@ func parse(t *testing.T, args ...string) (Config, error) {
 
 func TestParseFrame(t *testing.T) {
 	type frame struct{ long, short, scale, sizeMin, sizeMax float64 }
-	origin := frame{79.2, 45, 1.23, 200 * 1.23 / 60, 45}
+	origin := frame{originFOVLong, originFOVShort, originScale, 200 * originScale / 60, originFOVShort}
+	// APS-C 23.5x15.6 mm at 400 mm: 3.364°x2.234°.
+	side := func(mm float64) float64 { return 2 * math.Atan(mm/800) / (math.Pi / 180) * 60 }
+	scale := 206.264806 * 3.76 / 400 // 3.76 µm pixels at 400 mm: 1.94"/px
 	for name, c := range map[string]struct {
 		args []string
 		want string // substring of the error, "" to accept
 		cfg  frame  // expected when accepted and Framing
 	}{
 		"origin":           {[]string{"-origin"}, "", origin},
-		"fov alone":        {[]string{"-fov", "7x10"}, "", frame{600, 420, 1.23, 200 * 1.23 / 60, 420}},
-		"scale alone":      {[]string{"-scale", "0.2"}, "", frame{79.2, 45, 0.2, 200 * 0.2 / 60, 45}},
+		"fov alone":        {[]string{"-fov", "7x10"}, "", frame{600, 420, originScale, 200 * originScale / 60, 420}},
+		"scale alone":      {[]string{"-scale", "0.2"}, "", frame{originFOVLong, originFOVShort, 0.2, 200 * 0.2 / 60, originFOVShort}},
 		"fov and scale":    {[]string{"-fov", "2.5x1.7", "-scale", "3.8"}, "", frame{150, 102, 3.8, 200 * 3.8 / 60, 102}},
-		"min-px 0":         {[]string{"-origin", "-min-px", "0"}, "", frame{79.2, 45, 1.23, 0, 45}},
-		"explicit sizes":   {[]string{"-origin", "-size-min", "5", "-size-max", "40"}, "", frame{79.2, 45, 1.23, 5, 40}},
+		"min-px 0":         {[]string{"-origin", "-min-px", "0"}, "", frame{originFOVLong, originFOVShort, originScale, 0, originFOVShort}},
+		"explicit sizes":   {[]string{"-origin", "-size-min", "5", "-size-max", "40"}, "", frame{originFOVLong, originFOVShort, originScale, 5, 40}},
 		"size-max > frame": {[]string{"-origin", "-size-max", "300"}, "cannot be framed", frame{}},
 		"fov in arcmin":    {[]string{"-fov", "79x45", "-scale", "1.23"}, "not a sensor", frame{}},
 		"scale off frame":  {[]string{"-fov", "10x7", "-scale", "0.5"}, "not a sensor", frame{}},
@@ -103,6 +106,23 @@ func TestParseFrame(t *testing.T) {
 		"scale huge":       {[]string{"-scale", "5000"}, "-scale must be between", frame{}},
 		"fov junk":         {[]string{"-fov", "2x1abc"}, "WxH", frame{}},
 		"fov above 180":    {[]string{"-fov", "200x120"}, "180", frame{}},
+		"focal and sensor": {[]string{"-focal", "400", "-sensor", "15.6x23.5", "-scale", "1.94"}, "", frame{side(23.5), side(15.6), 1.94, 200 * 1.94 / 60, side(15.6)}},
+		"sensor off scale": {[]string{"-focal", "400", "-sensor", "23.5x15.6", "-scale", "0.1"}, "not a sensor", frame{}},
+		"focal alone":      {[]string{"-focal", "400"}, "-focal needs -sensor or -pixel", frame{}},
+		"sensor alone":     {[]string{"-sensor", "23.5x15.6"}, "need -focal", frame{}},
+		"camera":           {[]string{"-focal", "400", "-sensor", "23.5x15.6", "-pixel", "3.76"}, "", frame{side(23.5), side(15.6), scale, 200 * scale / 60, side(15.6)}},
+		"pixel and fov":    {[]string{"-fov", "2.5x1.7", "-focal", "400", "-pixel", "3.76"}, "", frame{150, 102, scale, 200 * scale / 60, 102}},
+		"pixel, no field":  {[]string{"-focal", "400", "-pixel", "3.76"}, "", frame{originFOVLong, originFOVShort, scale, 200 * scale / 60, originFOVShort}},
+		"pixel alone":      {[]string{"-pixel", "3.76"}, "need -focal", frame{}},
+		"pixel and scale":  {[]string{"-focal", "400", "-pixel", "3.76", "-scale", "2"}, "not both", frame{}},
+		"pixel 0":          {[]string{"-focal", "400", "-pixel", "0"}, "-pixel must be above 0", frame{}},
+		"pixel in mm":      {[]string{"-focal", "400", "-pixel", "0.00376"}, "outside", frame{}},
+		"pixel off sensor": {[]string{"-focal", "400", "-sensor", "23.5x15.6", "-pixel", "0.1"}, "not a sensor", frame{}},
+		"fov and focal":    {[]string{"-fov", "2x1", "-focal", "400", "-sensor", "23.5x15.6"}, "not both", frame{}},
+		"focal 0":          {[]string{"-focal", "0", "-sensor", "23.5x15.6"}, "-focal must be above 0", frame{}},
+		"focal NaN":        {[]string{"-focal", "NaN", "-sensor", "23.5x15.6"}, "-focal must be a finite", frame{}},
+		"sensor junk":      {[]string{"-focal", "400", "-sensor", "23.5"}, "-sensor must be WxH in mm", frame{}},
+		"sensor negative":  {[]string{"-focal", "400", "-sensor", "-1x15"}, "-sensor sides must be above 0", frame{}},
 	} {
 		cfg, err := parse(t, c.args...)
 		switch {
@@ -115,7 +135,7 @@ func TestParseFrame(t *testing.T) {
 		case c.want == "":
 			got := frame{cfg.FOVLong, cfg.FOVShort, cfg.Scale, cfg.SizeMin, cfg.SizeMax}
 			if !cfg.Framing || math.Abs(got.long-c.cfg.long) > 1e-9 || math.Abs(got.short-c.cfg.short) > 1e-9 ||
-				got.scale != c.cfg.scale || math.Abs(got.sizeMin-c.cfg.sizeMin) > 1e-9 || got.sizeMax != c.cfg.sizeMax {
+				math.Abs(got.scale-c.cfg.scale) > 1e-9 || math.Abs(got.sizeMin-c.cfg.sizeMin) > 1e-9 || got.sizeMax != c.cfg.sizeMax {
 				t.Errorf("%s: frame %+v, want %+v (framing %v)", name, got, c.cfg, cfg.Framing)
 			}
 		}

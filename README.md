@@ -4,7 +4,7 @@ A small Go CLI that lists the best deep sky objects to image **tonight** from a 
 
 It works like the deep sky part of [uptonight](https://github.com/mawinkler/uptonight), plus extras aimed at the **Celestron Origin** smart telescope:
 
-- a check that each object fits the Origin's frame and pixel scale (or any telescope's, with `-fov`/`-scale`)
+- a check that each object fits the Origin's frame and pixel scale (or any telescope's, with `-fov`/`-scale` or the camera's `-focal`, `-sensor` and `-pixel`)
 - moonlight and light-pollution handling, with optional narrowband filter support
 - cloud, transparency, dew and wind forecasts
 
@@ -19,7 +19,7 @@ It works like the deep sky part of [uptonight](https://github.com/mawinkler/upto
 - **Target-type sensitivity to sky glow**: clusters count half of it, and with `-filter` emission-line targets (emission and planetary nebulae, supernova remnants, Wolf-Rayet nebulae, plus known mislabelled ones) count only `-filter-k` of it, which also relaxes their Moon-distance limit.
 - **Extinction per hour** from the site's elevation and the CAMS aerosol forecast (dust, smoke, haze), or a fixed `-extinction`; shown in the forecast table.
 - **Weather**: Open-Meteo cloud cover by layer (thin high cloud counts half), dew-point spread and wind gusts, and 7Timer transparency and seeing, in an hourly table and folded into the score minute by minute. Missing data counts as perfect sky with a warning, never silently.
-- **Framing for the Celestron Origin** (`-origin`) or any telescope (`-fov`, `-scale`): keeps only objects that fit the frame's short side and are at least `-min-px` across, scores how well they fill it, and shows their size in pixels.
+- **Framing for the Celestron Origin** (`-origin`) or any telescope (`-fov`/`-scale`, or `-focal` with `-sensor`/`-pixel`): keeps only objects that fit the frame's short side and are at least `-min-px` across, scores how well they fill it, and shows their size in pixels.
 - **Comets** from the Minor Planet Center's daily elements, cached locally: two-body positions every minute (elliptic, parabolic and hyperbolic orbits), kept when brighter than `-comet-mag`, ranked like any other target.
 - **Night plan** (`-plan 2h`): one target per time block, chosen by a greedy pass followed by a local search that swaps and moves targets between blocks.
 - **Nine built-in target lists** (about 21,000 objects: Gary Imm's selection and full Compendium, Messier, Herschel 400, Pensack 500, NGC, IC, LBN, LDN) or your own uptonight-format YAML, with every object's constellation computed from the IAU boundaries.
@@ -57,7 +57,7 @@ Window:   2026-10-05 20:08 - 2026-10-06 05:22 (9h14m0s)
 Moon:     24% illuminated, min separation 24°
 Size:     4.1' - 45.0'
 Targets:  GaryImm, 2 comets brighter than mag 12.0
-Frame:    1.32° x 0.75°, 1.23"/px (3863 x 2195 px)
+Frame:    1.32° x 0.75°, 1.23"/px (3856 x 2180 px)
 Sky:      Bortle 6 (zenith 18.80 mag/arcsec²), extinction 0.23-0.25 (elevation 126 m, aerosols) mag/airmass, filter k=0.25
 
 HOUR   CLOUD  LOW/MID/HIGH  TRANSP  EXT   SEEING  DEW SPREAD  WIND/GUST
@@ -101,8 +101,9 @@ On a colour-capable terminal the output is colour-coded green/yellow/red. Colour
 | `-n` | `20` | Number of objects to list |
 | `-plan` | `0` (off) | Print a night plan with one target per block of this length, e.g. `2h` |
 | `-horizon` | none | Local horizon file (see below) |
-| `-origin` | off | Framing for the Celestron Origin (1.32° × 0.75°, 1.23″/px): keep only objects that fit the frame and are at least `-min-px` across, and score how well they fill it |
+| `-origin` | off | Framing for the Celestron Origin (IMX678, 3856 × 2180 px of 2.0 µm at 335 mm: 1.32° × 0.75°, 1.23″/px): keep only objects that fit the frame and are at least `-min-px` across, and score how well they fill it |
 | `-fov`, `-scale` | Origin | Framing for another telescope: field of view `WxH` in degrees up to 180 (e.g. `2.5x1.7`) and pixel scale in ″/px between 0.01 and 1000. Either one turns framing on; the one you leave out uses the Origin's value. When both are given, a frame of more than 20,000 px across is rejected, which catches a field typed in arcminutes or a scale from another camera; with only one of them set there is nothing to compare and a field typed in arcminutes goes unnoticed, so check the `Frame:` line in the header |
+| `-focal`, `-sensor`, `-pixel` | off | Describe the camera instead: focal length in mm, sensor size `WxH` in mm and pixel size in µm (e.g. `-focal 400 -sensor 23.5x15.6 -pixel 3.76`). `-sensor` sets the field of view (`2·atan(side / 2·focal)` per side) in place of `-fov`; `-pixel` sets the pixel scale (`206.265 · pixel / focal`) in place of `-scale`. Both need `-focal`, `-focal` needs at least one of them, and the pair they replace cannot be given with them. The 20,000 px check applies whenever both the field and the scale are given, by either route |
 | `-min-px` | `200` | With framing: minimum object size in pixels (≈4.1′ on the Origin); must be 0 or more even when framing is off |
 | `-filter` | off | A dual- or tri-band nebula filter is in use |
 | `-filter-k` | `0.25` | Fraction of sky glow the filter passes: ~0.15 for ≤4 nm bands, ~0.4 for wide ones |
@@ -218,7 +219,7 @@ To measure it, stand where the telescope sits and use a compass and an inclinome
 
    Imaging faint targets is limited by the sky, so the signal-to-noise ratio in a fixed exposure scales as `1/√sky`. The weight is `min(1, √(B_dark / (k · B)))`, where `B_dark` is a pristine 22.0 mag/arcsec² sky. A target 30° from a bright Moon therefore scores much lower than one 120° away, and with a filter, emission targets keep most of their score.
 7. **Score** = the sum over observable minutes of weather × extinction × sky weight, divided by the window length.
-8. **Framing** (`-origin`, `-fov` or `-scale`): objects filling 25–80% of the frame's short side score in full (11–36′ on the Origin). Smaller or tighter-fitting objects score less, and an object as large as the short side cannot be framed and is not listed.
+8. **Framing** (`-origin`, `-fov`, `-scale`, or `-focal` with `-sensor`/`-pixel`): objects filling 25–80% of the frame's short side score in full (11–36′ on the Origin). Smaller or tighter-fitting objects score less, and an object as large as the short side cannot be framed and is not listed.
 9. Results are sorted by score; mean altitude breaks ties.
 
 Extinction and sky brightness come from published models. The weather ramps, the cluster `k` and the framing curve are simple heuristics. Treat SCORE as a way to order tonight's options rather than an absolute measure of quality.
@@ -232,6 +233,7 @@ The astronomy uses compact published formulas rather than a full ephemeris libra
 | Sidereal time | IAU GMST polynomial | < 0.3″ |
 | Sun | Astronomical Almanac low precision | < 1′ |
 | Moon | Astronomical Almanac low precision (geocentric) | < 0.4° |
+| Moon from the site | the same, shifted by its horizontal parallax | < 0.4° against SOFA's Moon seen from the WGS84 site |
 | Moon illumination | from Sun–Moon elongation | < 0.3 percentage points |
 | Moon from the site | the same, shifted by its horizontal parallax | < 0.4° against SOFA's Moon seen from the WGS84 site |
 | Target altitude | J2000 catalogue positions precessed to date (IAU 1976, Lieske 1977), GMST | < 0.3′ against SOFA's full precession-nutation and apparent sidereal time (precession itself within 0.1″) |
