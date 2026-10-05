@@ -35,7 +35,9 @@ type Target struct {
 	RA            string `yaml:"ra"`  // "hh mm ss"
 	Dec           string `yaml:"dec"` // "[+-]dd mm ss"
 
-	Track [][2]float64 // moving targets (comets): RA/Dec in degrees per grid minute
+	// Track is set only by comets.Targets, one RA/Dec in degrees per grid
+	// minute; never from YAML, where a short track would index past its end.
+	Track [][2]float64 `yaml:"-"`
 	Size  float64      `yaml:"size"` // major axis in arc minutes; 0 or negative (-9999) means unknown
 }
 

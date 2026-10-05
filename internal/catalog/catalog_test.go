@@ -89,3 +89,17 @@ func TestLoadRejectsBadCoordinates(t *testing.T) {
 		}
 	}
 }
+
+// A track key in a -targets file is ignored: Track comes only from comets,
+// and a YAML one shorter than the grid crashed scoring.
+func TestLoadIgnoresTrack(t *testing.T) {
+	f := filepath.Join(t.TempDir(), "t.yaml")
+	yml := `[{name: X, ra: "00 42 44", dec: "+41 16 09", size: 9000, track: [[10.68, 41.27]]}]`
+	if err := os.WriteFile(f, []byte(yml), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	targets, _, err := Load("", f)
+	if err != nil || len(targets) != 1 || targets[0].Track != nil {
+		t.Errorf("Load = %+v, %v; want one target without a track", targets, err)
+	}
+}
