@@ -22,7 +22,7 @@ go test -run TestSOFA -v ./internal/astro   # prints the worst difference per qu
 go run . -lat <deg> -lon <deg> [-tz Europe/Zagreb] [-date YYYY-MM-DD] [-origin] [-filter] [-plan 2h] [-no-weather] [-n 20]
 ```
 
-`go run . -h` lists all flags. Use `-no-weather -no-geocode -no-comets` for runs that must not hit the network or be deterministic. `CLICOLOR_FORCE=1` forces colors when stdout is not a TTY (e.g. to inspect escapes); `NO_COLOR` disables them.
+`go run . -h` lists all flags. Use `-no-weather -no-geocode -no-sqm -no-comets` for runs that must not hit the network or be deterministic. `CLICOLOR_FORCE=1` forces colors when stdout is not a TTY (e.g. to inspect escapes); `NO_COLOR` disables them.
 
 ## Architecture
 
@@ -34,9 +34,10 @@ go run . -lat <deg> -lon <deg> [-tz Europe/Zagreb] [-date YYYY-MM-DD] [-origin] 
 | `atmos` | `Airmass`, `Extinction(Coeff)`, `SkyBrightness` (K&S), `BortleMag`/`BortleClass` | — |
 | `sanitize` | `Text`: strip control chars/invalid UTF-8 from untrusted text | — |
 | `num` | `Finite`: NaN/Inf check that every parser of untrusted numbers runs before its range checks | — |
-| `fetch` | `GetJSON` (size-capped; non-200 → `ErrStatus` with the body still decoded), `GetText`, `Cached` (user cache dir, unique temp file + rename) | — |
+| `fetch` | `GetJSON`/`GetJSONHeader` (size-capped; non-200 → `ErrStatus` with the body still decoded), `GetText`, `Cached` (user cache dir, unique temp file + rename) | — |
 | `geotz` | `Lookup`: offline IANA zone from coordinates (tzf, ~150 ms, ~11 MB of embedded data) | — |
 | `geocode` | `Reverse` (Nominatim) | fetch, sanitize |
+| `sqm` | `Lookup` (DarkSkySites zenith SQM; key from `DARKSKYSITES_API_KEY`) | atmos, fetch, num, sanitize |
 | `weather` | Open-Meteo `Forecast`/`AerosolForecast`, 7Timer `AstroForecast` | fetch, sanitize |
 | `constellation` | `Of`, `FullName` (IAU boundaries from astrogo) | astro |
 | `catalog` | `Target`, embedded lists in `internal/catalog/targets/`, `Load`, `EmissionLine` | astro, constellation, num, sanitize |
@@ -64,6 +65,7 @@ The flow is: `config.Parse` → `catalog.Load` → `astro.Window` (dusk to dawn)
   - `weather.Forecast` calls the Open-Meteo hourly API (no key, ~3 months back to 2 weeks ahead) and returns data keyed by Unix hour. Effective cloud combines the low, mid and high layers, with high (thin cirrus) counted half. Dew-point spread (4→1 °C) and gusts (20→40 km/h) reduce the per-minute sky factor through `ramp()`. Null values are skipped, never treated as clear.
   - `weather.AstroForecast` calls 7Timer ASTRO (3-hourly, ~3 days ahead only; forecast points sit on UTC hours divisible by 3, see `weather.AstroKey`). Its transparency (1–8) scales the sky factor from 1 down to 0.5; seeing is display-only.
   - Coordinates are deliberately rounded to 2 decimals before sending.
+- **SQM lookup**: `main` calls `sqm.Lookup` just before `BuildSky` (after the early exits, so they never hit the network) only when `DARKSKYSITES_API_KEY` is set and none of `-sqm`, `-bortle` (`Config.SkySet`, via `flag.Visit`, so an explicit 0 also wins) or `-no-sqm` was given. It sends the `x-api-key` header (`fetch.GetJSONHeader`, which canonicalizes caller header keys), rounds coordinates to 2 decimals, surfaces the response's `error` field whatever the status, rejects values outside `atmos.MinSQM`–`MaxSQM` (also the `-sqm` bounds), and fills `Config.SQM`/`SQMSource` (shown in the header). Failure is a warning; the sky stays dark (22.0). Never hardcode the key.
 - **Geocoding**: `geocode.Reverse` uses OpenStreetMap Nominatim (`zoom=14`, suburb level) with the same 2-decimal rounding. Nominatim's policy requires the identifying `User-Agent` and at most 1 request/s. Failure is a warning only.
 - **Colors**: `tabwriter` counts ANSI escape bytes as width. Alignment holds only because `paint()` codes are always 2 characters and every cell of a column is painted the same number of times on every row, the header included. Keep that invariant when adding columns: paint plain cells with `"39"`.
 - **Horizon** (`-horizon`): `horizon.at(az)` interpolates (azimuth, altitude) points, wrapping across north; an empty horizon returns −90, meaning no limit. Using it needs azimuth, so scoring calls `altAz`, not `altitude`.

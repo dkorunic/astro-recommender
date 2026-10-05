@@ -86,9 +86,17 @@ func GetText(ctx context.Context, url string) ([]byte, error) {
 // GetJSON GETs url and decodes the JSON body into v, whatever the status
 // (error bodies carry reasons). A non-200 status is returned as ErrStatus.
 func GetJSON(ctx context.Context, url string, v any) error {
+	return GetJSONHeader(ctx, url, nil, v)
+}
+
+// GetJSONHeader is GetJSON with extra request headers (e.g. an API key).
+func GetJSONHeader(ctx context.Context, url string, hdr http.Header, v any) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return err
+	}
+	for k, v := range hdr {
+		req.Header[http.CanonicalHeaderKey(k)] = v
 	}
 	req.Header.Set("User-Agent", userAgent) // required by Nominatim's usage policy
 	resp, err := httpClient.Do(req)

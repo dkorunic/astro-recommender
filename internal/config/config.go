@@ -45,6 +45,7 @@ type Config struct {
 	TargetsFile    string
 	ListName       string // uptonight target list; GaryImm is embedded
 	From, To       string // optional local "HH:MM" limits within the night
+	SQMSource      string // where SQM was looked up; empty when given with -sqm
 	Horizon        horizon.Horizon
 	Plan           time.Duration
 	Lat, Lon       float64
@@ -63,10 +64,12 @@ type Config struct {
 	DateSet        bool // -date given; otherwise Day is now
 	Version        bool // -version: print the version and exit; nothing else is set
 	ExtinctionSet  bool // -extinction given: skip the aerosol-based estimate
+	SkySet         bool // -sqm or -bortle given, even as 0: skip the DarkSkySites lookup
 	Framing        bool // -origin, -fov or -scale: fit and score objects against the frame
 	Filter         bool
 	NoWeather      bool
 	NoGeocode      bool
+	NoSQM          bool
 	NoComets       bool
 }
 
@@ -97,12 +100,13 @@ func Parse() (Config, error) {
 	flag.BoolVar(&cfg.Filter, "filter", false, "dual-band nebula filter in use: emission nebulae tolerate moonlight")
 	flag.Float64Var(&cfg.FilterK, "filter-k", 0.25, "with -filter, fraction of moonlight/light pollution passing the filter (~0.15 for <=4nm, ~0.4 for wide bands)")
 	flag.IntVar(&cfg.Bortle, "bortle", 0, "Bortle class 1-9 of the site, sets the zenith sky brightness (0 = dark sky)")
-	flag.Float64Var(&cfg.SQM, "sqm", 0, "measured zenith sky brightness in mag/arcsec² (SQM meter or light pollution map); overrides -bortle")
+	flag.Float64Var(&cfg.SQM, "sqm", 0, "measured zenith sky brightness in mag/arcsec² (SQM meter or light pollution map); overrides -bortle; default: looked up on DarkSkySites when $DARKSKYSITES_API_KEY is set and -bortle is not")
 	flag.Float64Var(&cfg.Extinction, "extinction", 0.2, "atmospheric extinction in mag per airmass; default: estimated per hour from elevation and CAMS aerosols, this value if unavailable")
 	flag.StringVar(&horizonFile, "horizon", "", "local horizon file: \"azimuth altitude\" lines in degrees, # comments")
 	flag.DurationVar(&cfg.Plan, "plan", 0, "print a night plan with one target per block of this length, e.g. 2h (0 = off)")
 	flag.BoolVar(&cfg.NoWeather, "no-weather", false, "skip the Open-Meteo and 7Timer forecasts")
 	flag.BoolVar(&cfg.NoGeocode, "no-geocode", false, "skip the OpenStreetMap reverse geocoding of the location")
+	flag.BoolVar(&cfg.NoSQM, "no-sqm", false, "skip the DarkSkySites sky brightness lookup")
 	flag.BoolVar(&cfg.NoComets, "no-comets", false, "skip comets (MPC orbital elements, cached for a day)")
 	flag.Float64Var(&cfg.CometMag, "comet-mag", 12, "include comets brighter than this total visual magnitude")
 	version := flag.Bool("version", false, "print the version and exit")
@@ -123,6 +127,7 @@ func Parse() (Config, error) {
 		cfg.Lon = math.NaN()
 	}
 	cfg.ExtinctionSet = set["extinction"]
+	cfg.SkySet = set["sqm"] || set["bortle"]
 
 	// Framing (-origin, -fov or -scale) replaces the size defaults; explicit
 	// -size-min/-size-max still win. Unset frame values default to the Origin.
@@ -258,8 +263,8 @@ func (cfg *Config) validate() error {
 		return fmt.Errorf("%w: -filter-k must be between 0 and 1", errInvalidFlag)
 	case cfg.Bortle < 0 || cfg.Bortle > 9:
 		return fmt.Errorf("%w: -bortle must be between 1 and 9 (0 = off)", errInvalidFlag)
-	case cfg.SQM != 0 && (cfg.SQM < 15 || cfg.SQM > 23):
-		return fmt.Errorf("%w: -sqm must be between 15 and 23 mag/arcsec²", errInvalidFlag)
+	case cfg.SQM != 0 && (cfg.SQM < atmos.MinSQM || cfg.SQM > atmos.MaxSQM):
+		return fmt.Errorf("%w: -sqm must be between %g and %g mag/arcsec²", errInvalidFlag, atmos.MinSQM, atmos.MaxSQM)
 	case cfg.Extinction < 0 || cfg.Extinction > 1:
 		return fmt.Errorf("%w: -extinction must be between 0 and 1", errInvalidFlag)
 	case cfg.Plan != 0 && cfg.Plan < 10*time.Minute:

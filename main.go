@@ -20,6 +20,7 @@ import (
 	"github.com/dkorunic/astro-recommender/internal/output"
 	"github.com/dkorunic/astro-recommender/internal/plan"
 	"github.com/dkorunic/astro-recommender/internal/scoring"
+	"github.com/dkorunic/astro-recommender/internal/sqm"
 )
 
 func main() {
@@ -61,6 +62,14 @@ func main() {
 			fmt.Println("The requested part of tonight has already passed.")
 
 			return
+		}
+	}
+
+	// An explicit -sqm or -bortle (even 0) wins; the lookup needs a key. After
+	// the early exits above so they never pay for the network round-trip.
+	if key := sqm.Key(); key != "" && !cfg.NoSQM && !cfg.SkySet {
+		if cfg.SQM, cfg.SQMSource, err = sqm.Lookup(ctx, key, cfg.Lat, cfg.Lon); err != nil {
+			fmt.Fprintln(os.Stderr, "warning: no sky brightness lookup, assuming a dark sky:", err)
 		}
 	}
 

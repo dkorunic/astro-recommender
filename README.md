@@ -107,7 +107,7 @@ On a colour-capable terminal the output is colour-coded green/yellow/red. Colour
 | `-filter` | off | A dual- or tri-band nebula filter is in use |
 | `-filter-k` | `0.25` | Fraction of sky glow the filter passes: ~0.15 for ≤4 nm bands, ~0.4 for wide ones |
 | `-bortle` | `0` (dark) | Bortle class (1–9) of the site, which sets its zenith sky brightness |
-| `-sqm` | unset | Measured zenith sky brightness in mag/arcsec², from an SQM meter or the *World Atlas 2015* layer on [lightpollutionmap.info](https://www.lightpollutionmap.info). More precise than `-bortle`, which it overrides; the header shows the matching Bortle class |
+| `-sqm` | unset | Measured zenith sky brightness in mag/arcsec², from an SQM meter or the *World Atlas 2015* layer on [lightpollutionmap.info](https://www.lightpollutionmap.info). More precise than `-bortle`, which it overrides; the header shows the matching Bortle class. When neither is given and `DARKSKYSITES_API_KEY` is set, it is looked up on [DarkSkySites](https://www.darkskysites.com/api-access); a free API key can be requested at [darkskysites.com](https://www.darkskysites.com/api-access#apply) |
 | `-extinction` | auto | Atmospheric extinction in magnitudes per airmass. By default it is estimated per hour from the site's elevation and the CAMS aerosol forecast. Setting it fixes the value; `0.2` is used when no estimate is available |
 | `-alt-min`, `-alt-max` | `30`, `80` | Altitude limits in degrees |
 | `-size-min`, `-size-max` | `10`, `300` | Object size limits in arcminutes, 0 or more; `-size-min 0` means no minimum. Framing replaces them with `-min-px` × scale up to the frame's short side (4.1′–45.0′ on the Origin), since the size is the major axis and its orientation in the frame is unknown, unless you set them explicitly; a `-size-max` above the short side is an error, because such objects cannot be framed |
@@ -117,6 +117,7 @@ On a colour-capable terminal the output is colour-coded green/yellow/red. Colour
 | `-no-comets` | off | Skip comets |
 | `-no-weather` | off | Skip the Open-Meteo and 7Timer forecasts |
 | `-no-geocode` | off | Skip the reverse geocoding of the location |
+| `-no-sqm` | off | Skip the DarkSkySites sky brightness lookup |
 | `-version` | | Print the version, commit and build time, then exit |
 
 ### Target lists
@@ -288,7 +289,7 @@ Everything below is implemented directly in Go from the cited source; no astrono
 
 ## Privacy
 
-The program calls three free services, none of which need an API key: Open-Meteo (weather and air quality), 7Timer and OpenStreetMap Nominatim. The comet elements download from the Minor Planet Center sends no location, and the time zone lookup runs offline. Before sending, it rounds your coordinates to two decimals (about 1 km). Reverse geocoding asks only for suburb-level detail. Use `-no-weather -no-geocode -no-comets` to run entirely offline.
+The program calls three free services, none of which need an API key: Open-Meteo (weather and air quality), 7Timer and OpenStreetMap Nominatim. With `DARKSKYSITES_API_KEY` set (and no `-sqm`/`-bortle`), it also asks DarkSkySites for the site's sky brightness (free API key on request at [darkskysites.com](https://www.darkskysites.com/api-access#apply)). The comet elements download from the Minor Planet Center sends no location, and the time zone lookup runs offline. Before sending, it rounds your coordinates to two decimals (about 1 km). Reverse geocoding asks only for suburb-level detail. Use `-no-weather -no-geocode -no-sqm -no-comets` (or leave `DARKSKYSITES_API_KEY` unset) to run entirely offline.
 
 ## Credits
 

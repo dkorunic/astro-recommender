@@ -73,7 +73,11 @@ func Header(ctx context.Context, cfg *config.Config, s *scoring.Sky) {
 	switch {
 	case cfg.SQM != 0:
 		b := atmos.BortleClass(cfg.SQM)
-		skyDesc = paint(scale(float64(b), 4, 7), fmt.Sprintf("SQM %.2f mag/arcsec²", cfg.SQM)) + fmt.Sprintf(" (≈ Bortle %d)", b)
+		src := ""
+		if cfg.SQMSource != "" {
+			src = cfg.SQMSource + ", "
+		}
+		skyDesc = paint(scale(float64(b), 4, 7), fmt.Sprintf("SQM %.2f mag/arcsec²", cfg.SQM)) + fmt.Sprintf(" (%s≈ Bortle %d)", src, b)
 	case cfg.Bortle > 0:
 		skyDesc = paint(scale(float64(cfg.Bortle), 4, 7), fmt.Sprintf("Bortle %d", cfg.Bortle)) +
 			fmt.Sprintf(" (zenith %.2f mag/arcsec²)", atmos.BortleMag[cfg.Bortle])

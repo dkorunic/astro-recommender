@@ -12,6 +12,13 @@ const deg = math.Pi / 180
 // RefZenithMag is a pristine dark sky (V mag/arcsec²): full sky-glow credit.
 const RefZenithMag = 22.0
 
+// MinSQM and MaxSQM bound a plausible zenith sky brightness; both the -sqm
+// flag and the DarkSkySites lookup reject values outside them.
+const (
+	MinSQM = 15.0
+	MaxSQM = 23.0
+)
+
 // BortleMag maps Bortle class to typical zenith sky brightness (V mag/arcsec²,
 // mid-range of the usual SQM bands); index 0 (-bortle unset) assumes a dark sky.
 var BortleMag = [...]float64{RefZenithMag, 21.9, 21.6, 21.4, 20.85, 19.75, 18.8, 18.25, 17.75, 17.3}
