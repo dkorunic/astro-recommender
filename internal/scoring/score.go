@@ -97,7 +97,7 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target) (Result, bool) {
 				continue
 			}
 		}
-		sb := atmos.SkyBrightness(s.ZenithNL, s.Ext[i], alt, s.MoonAlt[i], rho, s.MoonPhase)
+		sb := atmos.SkyBrightness(s.ZenithNL, s.Ext[i], alt, s.MoonAlt[i], rho, s.MoonPhase, s.MoonDist)
 		// Sky-limited imaging: SNR in a fixed time goes as signal/sqrt(sky). Full
 		// credit for a pristine dark sky; a filter cuts the sky the target sees to k.
 		skyW := min(1, math.Sqrt(s.RefNL/(k*sb)))

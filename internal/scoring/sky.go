@@ -32,6 +32,7 @@ type Sky struct {
 	Elevation  float64   // site elevation in m, from Open-Meteo; NaN if unknown
 	Illum      float64
 	MoonPhase  float64 // phase angle in degrees, 0 = full
+	MoonDist   float64 // geocentric distance in Earth radii
 	MoonSep    float64 // uptonight: min separation in degrees = illumination %
 	ZenithNL   float64 // site's moonless zenith sky brightness, nanoLamberts
 	RefNL      float64 // refZenithMag in nanoLamberts
@@ -47,6 +48,7 @@ func BuildSky(ctx context.Context, cfg *config.Config, start, end time.Time) Sky
 	s.Illum = astro.MoonIllumination(mid)
 	s.MoonSep = s.Illum * 100
 	s.MoonPhase = astro.MoonPhaseAngle(mid)
+	s.MoonDist = astro.MoonDistance(mid)
 	s.ZenithNL = atmos.NanoLamberts(cfg.ZenithMag())
 	s.RefNL = atmos.NanoLamberts(atmos.RefZenithMag)
 

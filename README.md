@@ -215,7 +215,7 @@ To measure it, stand where the telescope sits and use a compass and an inclinome
 6. **Sky brightness**: the sky brightness at the target is computed each minute with the Krisciunas & Schaefer (1991) model:
    - the site's moonless zenith brightness: from `-sqm`, else the typical value for `-bortle`, else 22.0 mag/arcsec²
    - brightening towards the horizon
-   - moonlight scattered towards the target, depending on Moon phase, Moon altitude, target altitude and the angle between Moon and target
+   - moonlight scattered towards the target, depending on Moon phase (with the extra brightening near full Moon), its distance, Moon altitude, target altitude and the angle between Moon and target
 
    Imaging faint targets is limited by the sky, so the signal-to-noise ratio in a fixed exposure scales as `1/√sky`. The weight is `min(1, √(B_dark / (k · B)))`, where `B_dark` is a pristine 22.0 mag/arcsec² sky. A target 30° from a bright Moon therefore scores much lower than one 120° away, and with a filter, emission targets keep most of their score.
 7. **Score** = the sum over observable minutes of weather × extinction × sky weight, divided by the window length.
@@ -282,7 +282,7 @@ Everything below is implemented directly in Go from the cited source; no astrono
 | Extinction coefficient `k` | Rayleigh `0.1066 · e^(−h / 7996 m)` (τ = 0.098 at 550 nm, 8 km scale height) + ozone Chappuis band 0.029 (300 DU) + aerosols `1.086 · AOD₅₅₀` | Rayleigh after Hayes & Latham (1975), ApJ 197, 593, consistent with Bucholtz (1995); ozone from the Chappuis cross-section; AOD from CAMS via Open-Meteo. `1.086 = 2.5 log₁₀ e` |
 | Surface brightness units | `B[nL] = 34.08 · e^(20.7233 − 0.92104 V)` and its inverse | Krisciunas & Schaefer (1991), PASP 103, 1033 |
 | Dark-sky brightness vs altitude | Zenith brightness × `10^(−0.4 k (X − 1)) · X` with the scattering airmass `X = (1 − 0.96 sin² Z)^−½` | Krisciunas & Schaefer (1991) |
-| Scattered moonlight | Scattering function `f(ρ) = 10^5.36 (1.06 + cos² ρ) + 10^(6.15 − ρ/40)`, Moon brightness `10^(−0.4 (3.84 + 0.026 α + 4·10⁻⁹ α⁴))`, attenuated by the Moon's airmass and scaled by `1 − 10^(−0.4 k X)` | Krisciunas & Schaefer (1991) |
+| Scattered moonlight | Scattering function `f(ρ) = 10^5.36 (1.06 + cos² ρ) + 10^(6.15 − ρ/40)`, Moon brightness `10^(−0.4 (3.84 + 0.026 α + 4·10⁻⁹ α⁴))`, scaled by `(60.27 / distance in Earth radii)²` and, within 7° of full, by the opposition surge `1.35 − 0.05 α`; attenuated by the Moon's airmass and scaled by `1 − 10^(−0.4 k X)` | Krisciunas & Schaefer (1991); the surge as in Thorstensen's skycalc |
 | Bortle class ↔ zenith brightness | Mid-points of the SQM ranges usually quoted per class (21.9 … 17.3 mag/arcsec²) | Bortle (2001), *Sky & Telescope*, Feb 2001, with the common SQM mapping |
 | Sky-limited SNR weight | `min(1, √(B_dark / (k · B)))`, `B_dark` = 22.0 mag/arcsec² | Sky-limited imaging: SNR ∝ 1/√B |
 

@@ -60,6 +60,10 @@ func Extinction(alt, k float64) float64 {
 	return math.Pow(10, -0.4*k*(Airmass(alt)-1))
 }
 
+// meanMoonDist is the Moon's mean distance in Earth radii, the one K&S's
+// Moon brightness assumes.
+const meanMoonDist = 60.27
+
 // NanoLamberts converts a surface brightness in V mag/arcsec² to NanoLamberts.
 func NanoLamberts(mag float64) float64 { return 34.08 * math.Exp(20.7233-0.92104*mag) }
 
@@ -69,8 +73,9 @@ func MagFromNL(b float64) float64 { return (20.7233 - math.Log(b/34.08)) / 0.921
 // SkyBrightness returns the sky surface brightness in nanoLamberts at a target
 // at altitude alt, after Krisciunas & Schaefer (1991): the site's dark zenith
 // brightness brightened towards the horizon, plus moonlight scattered from a
-// Moon at moonAlt, rho degrees away, with phase angle alpha (0 = full).
-func SkyBrightness(zenithNL, k, alt, moonAlt, rho, alpha float64) float64 {
+// Moon at moonAlt, rho degrees away, with phase angle alpha (0 = full) and
+// moonDist Earth radii away.
+func SkyBrightness(zenithNL, k, alt, moonAlt, rho, alpha, moonDist float64) float64 {
 	ks := func(alt float64) float64 { // K&S airmass for scattering paths
 		z := math.Sin((90 - alt) * deg)
 
@@ -80,6 +85,15 @@ func SkyBrightness(zenithNL, k, alt, moonAlt, rho, alpha float64) float64 {
 	b := zenithNL * math.Pow(10, -0.4*k*(x-1)) * x
 	if moonAlt > 0 {
 		moon := math.Pow(10, -0.4*(3.84+0.026*alpha+4e-9*math.Pow(alpha, 4)))
+		// K&S give I* at the mean distance (60.27 Earth radii); the Moon is
+		// up to 13% nearer or farther, its light going as distance⁻².
+		r := meanMoonDist / moonDist
+		moon *= r * r
+		// Opposition surge, which K&S's I* leaves out (their p. 1035): 35%
+		// brighter at full, tapering linearly to none at 7°, as in Thorstensen's skycalc.
+		if alpha < 7 {
+			moon *= 1.35 - 0.05*alpha
+		}
 		c := math.Cos(rho * deg)
 		scatter := math.Pow(10, 5.36)*(1.06+c*c) + math.Pow(10, 6.15-rho/40)
 		b += scatter * moon * math.Pow(10, -0.4*k*ks(moonAlt)) * (1 - math.Pow(10, -0.4*k*x))
