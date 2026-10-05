@@ -84,6 +84,8 @@ def sexagesimal(deg, hours=False):
     v = deg / 15 if hours else deg
     sign = "-" if v < 0 else ("" if hours else "+")
     s = round(abs(v) * 36000)  # tenths of a second
+    if hours:
+        s %= 24 * 36000  # 23 59 59.96 rounds to 24h, which the loader rejects: wrap to 0h
     d, rem = divmod(s, 36000)
     m, t = divmod(rem, 600)
     return f"{sign}{d:02d} {m:02d} {t / 10:04.1f}"
