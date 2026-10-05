@@ -97,22 +97,44 @@ func Load(listName, file string) ([]Target, string, error) {
 	return targets, listName, nil
 }
 
-// emissionNames lists targets the catalog types as dark nebula, nova etc.
-// although what gets imaged is mostly Ha/OIII emission.
+// emissionTypes are the lists' spellings (lower case) of emission-line types:
+// uptonight's own, LBN's "HII region", OpenNGC/OpenIC's HII and cluster+nebula
+// classes and their "EmN" abbreviation.
+var emissionTypes = map[string]bool{
+	"emission nebula": true, "planetary nebula": true, "supernova remnant": true, "wolf-rayet nebula": true,
+	"hii region": true, "hii emission nebula": true, "cl+n emission nebula": true, "emn": true,
+}
+
+// emissionNames lists targets whose type does not say emission although what
+// gets imaged is mostly Ha/OIII: dark nebulae, novae, and the types that mix
+// emission with reflection or a cluster (Messier "Diffuse Nebula", Pensack
+// "N+CL"/"BN+OC", Herschel "Cluster Nebulosity"), where only the
+// emission-dominated objects are listed (not M 78, NGC 1977, 1980 or 2362).
 var emissionNames = map[string]bool{
 	"IC 1396":       true, // Elephant's Trunk, inside the IC 1396 HII region
 	"Sh2-155":       true, // Cave Nebula
 	"NGC 2024":      true, // Flame Nebula
 	"IC 434":        true, // Horsehead, silhouetted against Ha emission
 	"Cederblad 211": true, // R Aquarii symbiotic nebula
+	"M 8":           true, // Lagoon
+	"M 17":          true, // Omega
+	"M 20":          true, // Trifid
+	"M 42":          true, // Orion
+	"M 43":          true, // De Mairan's
+	"NGC 1931":      true, // Fly
+	"NGC 281":       true, // PacMan
+	"IC1805":        true, // Heart (Pensack's spelling)
+	"NGC 2264":      true, // Cone / Christmas Tree
+	"NGC 1976":      true, // M 42
+	"NGC 2467":      true, // Skull and Crossbones
+	"IC4703(BN)":    true, // M 16 Eagle (Pensack's spelling)
+	"NGC 6514":      true, // M 20
+	"NGC 6618":      true, // M 17
+	"NGC 6820":      true, // with NGC 6823
+	"NGC 7380":      true, // Wizard
 }
 
 // EmissionLine reports whether a target shines mainly in Ha/OIII lines.
 func EmissionLine(tg Target) bool {
-	switch tg.Type {
-	case "Emission Nebula", "Planetary Nebula", "Supernova Remnant", "Wolf-Rayet Nebula":
-		return true
-	}
-
-	return emissionNames[tg.Name]
+	return emissionTypes[strings.ToLower(tg.Type)] || emissionNames[tg.Name]
 }

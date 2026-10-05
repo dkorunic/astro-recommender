@@ -74,6 +74,9 @@ func TestSkyK(t *testing.T) {
 	if skyK(pn, true, 0.2) != 0.2 || skyK(pn, false, 0.2) != 1 || skyK(gx, true, 0.2) != 1 {
 		t.Error("skyK misapplies the filter")
 	}
+	if skyK(catalog.Target{Type: "Open cluster"}, false, 0.2) != 0.5 {
+		t.Error("skyK misses LBN's \"Open cluster\" spelling")
+	}
 }
 
 // BenchmarkPipeline runs the offline hot path of a typical run (one night's

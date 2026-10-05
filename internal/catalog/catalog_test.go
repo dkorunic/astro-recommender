@@ -103,3 +103,35 @@ func TestLoadIgnoresTrack(t *testing.T) {
 		t.Errorf("Load = %+v, %v; want one target without a track", targets, err)
 	}
 }
+
+// Each list's spellings of emission nebulae reach EmissionLine: by type
+// (case-insensitive) or, for mixed types, by name; reflection-dominated
+// objects of those mixed types stay out.
+func TestEmissionLineLists(t *testing.T) {
+	for list, want := range map[string]map[string]bool{
+		"Messier":     {"M 42": true, "M 8": true, "M 20": true, "M 78": false},
+		"LBN":         {"LBN 1": true},
+		"OpenNGC":     {"NGC 1715": true, "NGC 1736": true},
+		"OpenIC":      {"IC 63": true, "IC 1310": true},
+		"Pensack500":  {"IC1805": true, "NGC 281": true, "NGC 1977(CLUSTER)": false},
+		"Herschel400": {"NGC 7380": true, "NGC 2362": false},
+		"GaryImm":     {"Sh2-155": true},
+	} {
+		targets, _, err := Load(list, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		found := 0
+		for _, tg := range targets {
+			if w, ok := want[tg.Name]; ok {
+				found++
+				if EmissionLine(tg) != w {
+					t.Errorf("%s %s (%s): EmissionLine = %v, want %v", list, tg.Name, tg.Type, !w, w)
+				}
+			}
+		}
+		if found < len(want) {
+			t.Errorf("%s: found %d of %d test targets", list, found, len(want))
+		}
+	}
+}

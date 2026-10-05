@@ -8,6 +8,7 @@ import (
 	"cmp"
 	"math"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/dkorunic/astro-recommender/internal/astro"
@@ -148,8 +149,8 @@ func skyK(tg catalog.Target, filter bool, filterK float64) float64 {
 	if filter && catalog.EmissionLine(tg) {
 		return filterK
 	}
-	switch tg.Type {
-	case "Globular Cluster", "Open Cluster":
+	switch strings.ToLower(tg.Type) { // LBN spells it "Open cluster"
+	case "globular cluster", "open cluster":
 		return 0.5 // high surface brightness
 	}
 
