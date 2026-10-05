@@ -70,6 +70,8 @@ func main() {
 	// All network sources at once, after the early exits above so those never
 	// pay for a round-trip. The goroutines only read cfg; results go to
 	// locals, applied after Wait.
+	// One grid for comet tracks and the sky: Track[i] is the position at Grid[i].
+	grid := scoring.Grid(start, end)
 	var (
 		wg        sync.WaitGroup
 		forecast  scoring.Forecast
@@ -99,7 +101,7 @@ func main() {
 	if !cfg.NoComets {
 		wg.Go(func() {
 			var err error
-			if cometList, err = comets.Targets(ctx, scoring.Grid(start, end), cfg.CometMag); err != nil {
+			if cometList, err = comets.Targets(ctx, grid, cfg.CometMag); err != nil {
 				fmt.Fprintln(os.Stderr, "warning: no comets:", err)
 			}
 		})
@@ -109,7 +111,7 @@ func main() {
 		cfg.SQM, cfg.SQMSource = sqmVal, sqmSource
 	}
 
-	s := scoring.BuildSky(&cfg, forecast, start, end)
+	s := scoring.BuildSky(&cfg, forecast, grid, end)
 	s.Night = [2]time.Time{duskT, dawnT}
 	s.Comets = len(cometList)
 	targets = append(targets, cometList...)

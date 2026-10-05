@@ -48,7 +48,9 @@ func Load(path string) (Horizon, error) {
 		if err1 != nil || err2 != nil || !num.Finite(az) || !num.Finite(alt) || az < 0 || az > 360 || alt < -90 || alt > 90 {
 			return nil, fmt.Errorf("%w: %s:%d", errHorizon, path, line)
 		}
-		h = append(h, [2]float64{math.Mod(az, 360), alt})
+		// 360 stays 360, not 0: At wraps, and as 0 it would sort onto the
+		// wrong side of a real 0° point.
+		h = append(h, [2]float64{az, alt})
 	}
 	if err := sc.Err(); err != nil {
 		return nil, err

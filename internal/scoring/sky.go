@@ -97,9 +97,10 @@ func Grid(start, end time.Time) []time.Time {
 	return g
 }
 
-// BuildSky samples the night [start, end) with forecast f; it does no I/O.
-func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
-	s := Sky{Start: start, End: end, Grid: Grid(start, end), Weather: f.Weather, Astro: f.Astro, AOD: f.AOD, Elevation: f.Elevation}
+// BuildSky samples the night on grid (Grid(start, end), the same one comet
+// tracks were computed on) up to end with forecast f; it does no I/O.
+func BuildSky(cfg *config.Config, f Forecast, grid []time.Time, end time.Time) Sky {
+	s := Sky{Start: grid[0], End: end, Grid: grid, Weather: f.Weather, Astro: f.Astro, AOD: f.AOD, Elevation: f.Elevation}
 	mid := s.Grid[len(s.Grid)/2]
 	s.Illum = astro.MoonIllumination(mid)
 	s.MoonSep = s.Illum * 100
@@ -131,7 +132,7 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 	}
 	if gap := s.uncovered(); gap > 0 {
 		fmt.Fprintf(os.Stderr, "warning: no weather forecast for %s of the %s window; those hours count as clear sky\n",
-			gap, end.Sub(start).Round(time.Minute))
+			gap, end.Sub(s.Start).Round(time.Minute))
 	}
 
 	return s
@@ -162,7 +163,7 @@ func (s *Sky) ExtinctionAt(t time.Time, fallback float64) float64 {
 
 // uncovered returns how much of the grid a fetched weather forecast has no
 // hour for (a -date near its range, model gaps); 0 without a forecast, which
-// BuildSky has already warned about.
+// FetchForecast has already warned about.
 func (s *Sky) uncovered() time.Duration {
 	if s.Weather == nil {
 		return 0

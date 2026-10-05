@@ -22,7 +22,9 @@ type Slot struct {
 }
 
 // Make splits the window into blocks of length block and assigns each
-// block one target: greedily first, then improved by local search.
+// block one target: greedily first, then improved by local search. Results
+// need per-minute Alt and Weight over s.Grid (scoring.Score with
+// cfg.Plan > 0); one without them scores 0 and is never picked.
 func Make(s *scoring.Sky, results []scoring.Result, block time.Duration) []Slot {
 	n := int(block / time.Minute)
 	var bounds [][2]int
@@ -33,21 +35,24 @@ func Make(s *scoring.Sky, results []scoring.Result, block time.Duration) []Slot 
 	// meanAlt[j][b]: its mean altitude there while observable.
 	score := make([][]float64, len(results))
 	meanAlt := make([][]float64, len(results))
-	for j := range results {
+	for j, r := range results {
 		score[j] = make([]float64, len(bounds))
 		meanAlt[j] = make([]float64, len(bounds))
+		if len(r.Weight) != len(s.Grid) || len(r.Alt) != len(s.Grid) {
+			continue
+		}
 		for b, bd := range bounds {
 			var sum, altSum float64
 			var good int
-			for i := bd[0]; i < bd[1]; i++ {
-				if w := results[j].Weight[i]; w > 0 {
+			for i, w := range r.Weight[bd[0]:bd[1]] {
+				if w > 0 {
 					sum += w
-					altSum += results[j].Alt[i]
+					altSum += r.Alt[bd[0]+i]
 					good++
 				}
 			}
 			if good > 0 {
-				score[j][b], meanAlt[j][b] = sum*results[j].Frame, altSum/float64(good)
+				score[j][b], meanAlt[j][b] = sum*r.Frame, altSum/float64(good)
 			}
 		}
 	}

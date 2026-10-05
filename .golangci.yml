@@ -25,6 +25,10 @@ linters:
     # `default: all` re-enables the deprecated `wsl` unless it is named too.
     - wsl
     - wsl_v5
+  settings:
+    ireturn:
+      # The defaults plus type parameters: fetch.Cached[T] returns a T, not an interface.
+      allow: [anon, error, empty, stdlib, generic]
   exclusions:
     generated: lax
     presets:

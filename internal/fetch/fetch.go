@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -35,44 +36,59 @@ const userAgent = "astro-recommender (+https://github.com/dkorunic/astro-recomme
 
 var httpClient = &http.Client{Timeout: 15 * time.Second}
 
-// Cached returns url's body, from the user cache directory when the
-// cached copy (file) is younger than maxAge; a failed download falls back to
-// a stale cached copy. Only data that valid accepts is cached or returned,
-// so a 200 OK error page never replaces a good copy.
-func Cached(ctx context.Context, url, file string, maxAge time.Duration, valid func([]byte) error) ([]byte, error) {
+// Cached returns url's body parsed by parse, from the user cache directory
+// when the cached copy (file) is younger than maxAge; a failed download
+// falls back to a stale cached copy. Only data that parses is cached, so a
+// 200 OK error page never replaces a good copy.
+func Cached[T any](ctx context.Context, url, file string, maxAge time.Duration, parse func([]byte) (T, error)) (T, error) {
 	var cache string
 	if dir, err := os.UserCacheDir(); err == nil {
 		cache = filepath.Join(dir, "astro-recommender", file)
-		if fi, err := os.Stat(cache); err == nil && time.Since(fi.ModTime()) < maxAge {
-			if data, err := os.ReadFile(cache); err == nil && valid(data) == nil {
-				return data, nil
-			}
-		}
+	}
+	if v, err := readCache(cache, maxAge, parse); err == nil {
+		return v, nil
 	}
 
 	data, err := GetText(ctx, url)
 	if err == nil {
-		err = valid(data)
-	}
-	if err != nil {
-		if cache != "" {
-			if stale, serr := os.ReadFile(cache); serr == nil && valid(stale) == nil {
-				fmt.Fprintf(os.Stderr, "warning: using cached %s: %v\n", file, err)
-
-				return stale, nil
+		var v T
+		if v, err = parse(data); err == nil {
+			if cache != "" {
+				// A unique temp file renamed into place: concurrent runs never
+				// read or install half a file. A cache that cannot be written
+				// only costs a download next time.
+				writeCache(cache, data)
 			}
+
+			return v, nil
 		}
-
-		return nil, err
 	}
-	if cache != "" {
-		// A unique temp file renamed into place: concurrent runs never read or
-		// install half a file. A cache that cannot be written only costs a
-		// download next time.
-		writeCache(cache, data)
+	v, serr := readCache(cache, time.Duration(math.MaxInt64), parse)
+	if serr != nil {
+		return v, err
+	}
+	fmt.Fprintf(os.Stderr, "warning: using cached %s: %v\n", file, err)
+
+	return v, nil
+}
+
+var errNoCache = errors.New("no usable cached copy")
+
+// readCache parses the cached copy at cache if it is younger than maxAge.
+func readCache[T any](cache string, maxAge time.Duration, parse func([]byte) (T, error)) (T, error) {
+	var zero T
+	if cache == "" {
+		return zero, errNoCache
+	}
+	if fi, err := os.Stat(cache); err != nil || time.Since(fi.ModTime()) >= maxAge {
+		return zero, errNoCache
+	}
+	data, err := os.ReadFile(cache)
+	if err != nil {
+		return zero, err
 	}
 
-	return data, nil
+	return parse(data)
 }
 
 // maxDownload caps text downloads (MPC comet elements are ~160 kB).

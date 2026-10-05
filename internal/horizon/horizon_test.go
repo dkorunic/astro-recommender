@@ -51,6 +51,23 @@ func TestLoadRejects(t *testing.T) {
 	}
 }
 
+// A point at 360° closes the profile from the west, not at 0°'s side.
+func TestLoad360(t *testing.T) {
+	f := filepath.Join(t.TempDir(), "h.txt")
+	if err := os.WriteFile(f, []byte("0 10\n90 30\n360 20\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	h, err := Load(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for az, want := range map[float64]float64{359: 20 + 10.0/270, 1: 10 + 20.0/90, 45: 20} {
+		if got := h.At(az); math.Abs(got-want) > 1e-9 {
+			t.Errorf("At(%v) = %v, want %v", az, got, want)
+		}
+	}
+}
+
 // Two points at one azimuth are a vertical step and keep their file order.
 func TestLoadSteps(t *testing.T) {
 	var text string

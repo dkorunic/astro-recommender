@@ -38,6 +38,12 @@ func TestGustShift(t *testing.T) {
 			t.Errorf("hour %d: gust %v, want %v", i, got, want)
 		}
 	}
+	// Gust is optional per hour but must still cover every hour.
+	short := h
+	short.Gust = h.Gust[:2]
+	if _, err := short.weather(); err == nil {
+		t.Error("short gust series accepted")
+	}
 	// A null next gust leaves the hour its own value rather than skipping it.
 	h.Gust[1] = nil
 	if out, _ = h.weather(); out[h.Time[0]].Gust != 10 {

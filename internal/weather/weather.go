@@ -72,8 +72,12 @@ func Forecast(ctx context.Context, lat, lon float64, start, end time.Time) (map[
 
 // weather turns the hourly block into HourWeather keyed by unix hour.
 func (h *hourly) weather() (map[int64]HourWeather, error) {
+	// Gust is not in series: a null gust does not drop the hour (see below).
 	series := [][]*float64{h.Low, h.Mid, h.High, h.Temp, h.DewPoint, h.Wind}
-	for _, s := range append(series, h.Gust) {
+	if len(h.Gust) != len(h.Time) {
+		return nil, fmt.Errorf("%w: malformed response", errOpenMeteo)
+	}
+	for _, s := range series {
 		if len(s) != len(h.Time) {
 			return nil, fmt.Errorf("%w: malformed response", errOpenMeteo)
 		}

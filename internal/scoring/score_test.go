@@ -20,7 +20,7 @@ func TestScoreSizeLimits(t *testing.T) {
 		Framing: true, FOVLong: 79.2, FOVShort: 45, SizeMin: 0, SizeMax: 45,
 	}
 	start := time.Date(2026, 1, 15, 18, 0, 0, 0, time.UTC)
-	s := BuildSky(cfg, NoForecast(), start, start.Add(time.Hour))
+	s := BuildSky(cfg, NoForecast(), Grid(start, start.Add(time.Hour)), start.Add(time.Hour))
 	tg := catalog.Target{Name: "X", RADeg: 37.95, DecDeg: 89.26} // Polaris
 	big, unknown, half := tg, tg, tg
 	big.Size, unknown.Size, half.Size = 60, -9999, 22.5
@@ -101,8 +101,9 @@ func BenchmarkPipeline(b *testing.B) {
 		ExtinctionSet: true, Extinction: 0.2, FilterK: 0.25, Filter: true,
 	}
 	start := time.Date(2026, 10, 5, 18, 8, 0, 0, time.UTC)
+	end := start.Add(9*time.Hour + 14*time.Minute)
 	for b.Loop() {
-		s := BuildSky(cfg, NoForecast(), start, start.Add(9*time.Hour+14*time.Minute))
+		s := BuildSky(cfg, NoForecast(), Grid(start, end), end)
 		Score(cfg, &s, targets)
 	}
 }

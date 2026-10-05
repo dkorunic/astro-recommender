@@ -39,6 +39,21 @@ func TestImprovePlanNoZeroScore(t *testing.T) {
 	}
 }
 
+// Results without per-minute data (scored without -plan) are never picked,
+// rather than indexed out of range.
+func TestMakeNoPerMinute(t *testing.T) {
+	start := time.Date(2026, 10, 5, 20, 0, 0, 0, time.UTC)
+	s := scoring.Sky{}
+	for i := range 120 {
+		s.Grid = append(s.Grid, start.Add(time.Duration(i)*time.Minute))
+	}
+	for _, sl := range Make(&s, []scoring.Result{{Score: 1, Frame: 1}}, time.Hour) {
+		if sl.Result != nil {
+			t.Errorf("slot %v has a target without per-minute data", sl.Start)
+		}
+	}
+}
+
 // No observable targets must give empty blocks, not a panic.
 func TestMakeNoResults(t *testing.T) {
 	start := time.Date(2026, 10, 5, 20, 0, 0, 0, time.UTC)

@@ -33,9 +33,7 @@ func TestGetJSONStatus(t *testing.T) {
 
 // Cached downloads once, serves the cache afterwards and leaves no temp files.
 func TestCached(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	t.Setenv("XDG_CACHE_HOME", filepath.Join(home, "cache"))
+	tempCache(t)
 	hits := 0
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		hits++
@@ -61,9 +59,7 @@ func TestCached(t *testing.T) {
 // A body over maxDownload is an error rather than a truncated copy, and
 // Cached does not store it.
 func TestGetTextTooLarge(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	t.Setenv("XDG_CACHE_HOME", filepath.Join(home, "cache"))
+	tempCache(t)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write(make([]byte, maxDownload+1))
 	}))
@@ -77,26 +73,35 @@ func TestGetTextTooLarge(t *testing.T) {
 	}
 }
 
-func anyData([]byte) error { return nil }
+// anyData accepts any body as is.
+func anyData(data []byte) ([]byte, error) { return data, nil }
+
+// tempCache points os.UserCacheDir at a temp dir on every platform:
+// XDG_CACHE_HOME (Unix), HOME (macOS), LocalAppData (Windows).
+func tempCache(t *testing.T) {
+	t.Helper()
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("XDG_CACHE_HOME", filepath.Join(home, "cache"))
+	t.Setenv("LocalAppData", filepath.Join(home, "appdata"))
+}
 
 // A 200 OK body that fails validation falls back to the stale copy and
 // does not overwrite it.
 func TestCachedInvalid(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	t.Setenv("XDG_CACHE_HOME", filepath.Join(home, "cache"))
+	tempCache(t)
 	body := "elements"
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte(body))
 	}))
 	defer srv.Close()
 	errBad := errors.New("bad")
-	valid := func(data []byte) error {
+	valid := func(data []byte) (string, error) {
 		if string(data) != "elements" {
-			return errBad
+			return "", errBad
 		}
 
-		return nil
+		return string(data), nil
 	}
 	if _, err := Cached(context.Background(), srv.URL, "v.txt", time.Hour, valid); err != nil {
 		t.Fatal(err)
@@ -104,7 +109,7 @@ func TestCachedInvalid(t *testing.T) {
 	body = "<html>maintenance</html>"
 	// maxAge 0: the cached copy is stale, so Cached downloads again.
 	data, err := Cached(context.Background(), srv.URL, "v.txt", 0, valid)
-	if err != nil || string(data) != "elements" {
+	if err != nil || data != "elements" {
 		t.Errorf("Cached = %q, %v; want the stale copy", data, err)
 	}
 	dir, _ := os.UserCacheDir()

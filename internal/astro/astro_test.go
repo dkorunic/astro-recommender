@@ -4,12 +4,17 @@
 package astro
 
 import (
+	"errors"
 	"math"
+	"strings"
 	"testing"
 	"time"
 )
 
 func TestSexagesimal(t *testing.T) {
+	if _, err := Sexagesimal("+-10 00 00"); !errors.Is(err, errSign) || !strings.Contains(err.Error(), `"+-10 00 00"`) {
+		t.Errorf("sexagesimal(+-10 00 00) = %v, want errSign quoting the input", err)
+	}
 	if v, _ := Sexagesimal("-00 30 00"); v != -0.5 {
 		t.Errorf("sexagesimal(-00 30 00) = %v", v)
 	}

@@ -20,6 +20,7 @@ import (
 var (
 	errFields = errors.New("want 1 to 3 fields")
 	errRange  = errors.New("fields must be positive, minutes and seconds below 60")
+	errSign   = errors.New("more than one sign")
 	errWindow = errors.New("requested window lies outside astronomical night")
 )
 
@@ -262,8 +263,8 @@ func Separation(ra1, dec1, ra2, dec2 float64) float64 {
 }
 
 // Sexagesimal parses "[+-]a b c" into a + b/60 + c/3600 with the sign applied.
-func Sexagesimal(s string) (float64, error) {
-	s = strings.TrimSpace(s)
+func Sexagesimal(text string) (float64, error) {
+	s := strings.TrimSpace(text)
 	sign := 1.0
 	if strings.HasPrefix(s, "-") {
 		sign = -1
@@ -273,7 +274,7 @@ func Sexagesimal(s string) (float64, error) {
 	}
 	// One sign only: "+-10" is a typo, not +10.
 	if strings.HasPrefix(s, "-") || strings.HasPrefix(s, "+") {
-		return 0, fmt.Errorf("%w: %q", errRange, s)
+		return 0, fmt.Errorf("%w: %q", errSign, text)
 	}
 	fields := strings.Fields(s)
 	if len(fields) == 0 || len(fields) > 3 {
