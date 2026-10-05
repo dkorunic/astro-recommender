@@ -30,7 +30,7 @@ go run . -lat <deg> -lon <deg> [-tz Europe/Zagreb] [-date YYYY-MM-DD] [-origin] 
 
 | Package | Contents | Imports (internal) |
 |---|---|---|
-| `astro` | Sun/Moon/sidereal time/alt-az, `Precess`, `Window` (searches from the site's solar noon), `Tonight` (the night in progress after midnight), `ClipWindow`, `EarthHelio` | num |
+| `astro` | Sun/Moon/sidereal time/alt-az, `Precess`, `Window` (searches from the site's solar noon), `Tonight` (the night in progress between dusk and dawn), `ClipWindow`, `EarthHelio` | num |
 | `atmos` | `Airmass`, `Extinction(Coeff)`, `SkyBrightness` (K&S), `BortleMag`/`BortleClass` | — |
 | `sanitize` | `Text`: strip control chars/invalid UTF-8 from untrusted text | — |
 | `num` | `Finite`: NaN/Inf check that every parser of untrusted numbers runs before its range checks | — |

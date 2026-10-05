@@ -12,7 +12,7 @@ It works like the deep sky part of [uptonight](https://github.com/mawinkler/upto
 
 ## Features
 
-- **Tonight's window**: astronomical dusk to dawn (Sun below −18°), found by searching from the site's own solar noon so time zones and polar nights can't cut it short. A run after midnight plans the rest of the night in progress; `-date` plans another evening and `-from`/`-to` narrow the window.
+- **Tonight's window**: astronomical dusk to dawn (Sun below −18°), found by searching from the site's own solar noon so time zones and polar nights can't cut it short. A run during the night (after dusk, or after midnight) plans only the rest of it; `-date` plans another evening and `-from`/`-to` narrow the window.
 - **Observability per minute**, following uptonight's rules: altitude between `-alt-min` and `-alt-max`, Moon separation of at least the illumination percentage in degrees (skipped while the Moon is below the horizon), and optionally above your measured **local horizon** profile (`-horizon`).
 - **Ranking** by an imaging score that sums, over every observable minute, the forecast sky quality × atmospheric extinction × a sky-brightness weight, with uptonight's observable fraction (FOTO) shown alongside. Mean altitude breaks ties.
 - **Sky brightness and moonlight**: the Krisciunas & Schaefer model of the moonless sky from `-bortle` or a measured `-sqm` value, brightened towards the horizon, plus scattered moonlight from the Moon's phase, altitude and distance to the target. Targets are weighted by sky-limited signal-to-noise.
@@ -96,7 +96,7 @@ On a colour-capable terminal the output is colour-coded green/yellow/red. Colour
 |------|---------|-------------|
 | `-lat`, `-lon` | required | Location in degrees, north and east positive |
 | `-tz` | from location | IANA time zone used for all displayed times. By default it's looked up offline from `-lat`/`-lon`, falling back to the system zone |
-| `-date` | tonight | Evening to plan, `YYYY-MM-DD`. Without it, a run after midnight plans the rest of the night in progress |
+| `-date` | tonight | Evening to plan, `YYYY-MM-DD`. Without it, a run during the night (after dusk, or after midnight) plans only the rest of the night in progress |
 | `-from`, `-to` | dusk, dawn | Imaging window in local `HH:MM`, e.g. `-from 22:00 -to 02:00`. Times before noon mean the next morning. Always clamped to full astronomical night |
 | `-n` | `20` | Number of objects to list |
 | `-plan` | `0` (off) | Print a night plan with one target per block of this length, e.g. `2h` |

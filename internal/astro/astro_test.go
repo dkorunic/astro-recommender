@@ -104,7 +104,7 @@ func TestWindowForeignTimeZone(t *testing.T) {
 	}
 }
 
-// Tonight is the night in progress after midnight, else the coming one.
+// Tonight is the night in progress (after dusk or after midnight), else the coming one.
 func TestTonight(t *testing.T) {
 	zg, _ := time.LoadLocation("Europe/Zagreb")
 	for _, c := range []struct {
@@ -115,7 +115,8 @@ func TestTonight(t *testing.T) {
 		{time.Date(2026, 10, 6, 1, 30, 0, 0, zg), 5, true},  // middle of the night
 		{time.Date(2026, 10, 6, 8, 0, 0, 0, zg), 6, false},  // after dawn
 		{time.Date(2026, 10, 5, 15, 0, 0, 0, zg), 5, false}, // afternoon
-		{time.Date(2026, 10, 5, 22, 0, 0, 0, zg), 5, false}, // evening, same date
+		{time.Date(2026, 10, 5, 22, 0, 0, 0, zg), 5, true},  // evening, after dusk (20:08)
+		{time.Date(2026, 10, 5, 20, 0, 0, 0, zg), 5, false}, // just before dusk
 	} {
 		day, inProgress := Tonight(c.now, 45.8, 16.0)
 		if day.Day() != c.day || inProgress != c.inProgress {

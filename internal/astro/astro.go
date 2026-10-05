@@ -53,13 +53,15 @@ func Window(day time.Time, lat, lon float64) (time.Time, time.Time, bool) {
 	return start, t, true
 }
 
-// Tonight returns the date whose night "tonight" means at now: the night
-// still in progress (started yesterday evening, before dawn), or else the
-// coming one. inProgress reports the former.
+// Tonight returns the date whose night "tonight" means at now: the night in
+// progress (after today's dusk, or after midnight before dawn of the night
+// that began yesterday), or else the coming one. inProgress reports the
+// former, so that the elapsed part is not planned.
 func Tonight(now time.Time, lat, lon float64) (time.Time, bool) {
-	yesterday := now.AddDate(0, 0, -1)
-	if dusk, dawn, ok := Window(yesterday, lat, lon); ok && !now.Before(dusk) && now.Before(dawn) {
-		return yesterday, true
+	for _, day := range []time.Time{now.AddDate(0, 0, -1), now} {
+		if dusk, dawn, ok := Window(day, lat, lon); ok && !now.Before(dusk) && now.Before(dawn) {
+			return day, true
+		}
 	}
 
 	return now, false

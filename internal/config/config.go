@@ -90,7 +90,7 @@ func Parse() (Config, error) {
 	var horizonFile string
 	flag.Float64Var(&cfg.Lat, "lat", 0, "latitude in degrees, north positive (required)")
 	flag.Float64Var(&cfg.Lon, "lon", 0, "longitude in degrees, east positive (required)")
-	flag.StringVar(&date, "date", "", "date of the evening, YYYY-MM-DD (default tonight; after midnight the rest of the night in progress)")
+	flag.StringVar(&date, "date", "", "date of the evening, YYYY-MM-DD (default tonight; during the night, the rest of the night in progress)")
 	flag.StringVar(&tz, "tz", "", "IANA time zone of the location (default: looked up from -lat/-lon)")
 	flag.StringVar(&cfg.From, "from", "", "start of the imaging window, local HH:MM (default astronomical dusk)")
 	flag.StringVar(&cfg.To, "to", "", "end of the imaging window, local HH:MM; before noon means next morning (default astronomical dawn)")

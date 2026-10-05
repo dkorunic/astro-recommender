@@ -40,7 +40,7 @@ func main() {
 	}
 	cfg.ListName = listName
 
-	// Without -date, "tonight" after midnight is the night still in progress,
+	// Without -date, "tonight" between dusk and dawn is the night in progress,
 	// and only its remaining part is planned.
 	day, inProgress := cfg.Day, false
 	if !cfg.DateSet {
