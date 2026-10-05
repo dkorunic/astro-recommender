@@ -25,7 +25,7 @@ type Sky struct {
 	Astro      map[int64]weather.AstroBlock
 	AOD        map[int64]float64 // aerosol optical depth at 550 nm per unix hour (CAMS)
 	Grid       []time.Time
-	MoonPos    [][2]float64
+	MoonPos    [][2]float64 // topocentric RA/Dec of date, degrees
 	MoonAlt    []float64
 	Ext        []float64 // extinction per grid minute, mag per airmass
 	Quality    []float64 // clear-sky fraction x transparency x dew x gust, 1 = perfect
@@ -53,8 +53,8 @@ func BuildSky(ctx context.Context, cfg *config.Config, start, end time.Time) Sky
 	s.MoonPos = make([][2]float64, len(s.Grid))
 	s.MoonAlt = make([]float64, len(s.Grid))
 	for i, t := range s.Grid {
-		s.MoonPos[i][0], s.MoonPos[i][1] = astro.MoonRADec(t)
-		s.MoonAlt[i] = astro.MoonAltitude(s.MoonPos[i][0], s.MoonPos[i][1], t, cfg.Lat, cfg.Lon)
+		s.MoonPos[i][0], s.MoonPos[i][1] = astro.MoonTopo(t, cfg.Lat, cfg.Lon)
+		s.MoonAlt[i] = astro.Altitude(s.MoonPos[i][0], s.MoonPos[i][1], t, cfg.Lat, cfg.Lon)
 	}
 
 	if !cfg.NoWeather {

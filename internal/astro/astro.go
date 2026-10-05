@@ -194,20 +194,38 @@ func Altitude(ra, dec float64, t time.Time, lat, lon float64) float64 {
 	return alt
 }
 
-// MoonAltitude is Altitude for the Moon's geocentric position, lowered to the
-// observer's horizon by the mean horizontal parallax (57', 54-61' over the
-// orbit): up to 1°, more than MoonRADec's own error.
-func MoonAltitude(ra, dec float64, t time.Time, lat, lon float64) float64 {
-	alt := Altitude(ra, dec, t, lat, lon)
+// MoonTopo returns the Moon's topocentric right ascension and declination in
+// degrees: MoonRADec seen from the observer instead of the Earth's centre, at
+// its horizontal parallax (Astronomical Almanac low precision, 54-61'). The
+// shift is up to 1°, more than MoonRADec's own error; astroplan's Moon is
+// topocentric too.
+func MoonTopo(t time.Time, lat, lon float64) (float64, float64) {
+	ra, dec := MoonRADec(t)
+	T := DaysJ2000(t) / 36525
+	c := func(a, b float64) float64 { return math.Cos((a + b*T) * deg) }
+	parallax := 0.9508 + 0.0518*c(134.9, 477198.85) + 0.0095*c(259.2, -413335.38) +
+		0.0078*c(235.7, 890534.23) + 0.0028*c(269.9, 954397.70)
+	dist := 1 / math.Sin(parallax*deg) // Earth radii
+	sinRA, cosRA := math.Sincos(ra * deg)
+	sinDec, cosDec := math.Sincos(dec * deg)
+	sinLST, cosLST := math.Sincos(lst(t, lon) * deg)
+	sinLat, cosLat := math.Sincos(lat * deg)
+	x := dist*cosDec*cosRA - cosLat*cosLST
+	y := dist*cosDec*sinRA - cosLat*sinLST
+	z := dist*sinDec - sinLat
 
-	return alt - 0.9507*math.Cos(alt*deg)
+	return math.Mod(math.Atan2(y, x)/deg+360, 360), math.Atan2(z, math.Hypot(x, y)) / deg
+}
+
+// lst returns the local mean sidereal time in degrees (GMST + east longitude).
+func lst(t time.Time, lon float64) float64 {
+	return 280.46061837 + 360.98564736629*DaysJ2000(t) + lon
 }
 
 // AltAz returns altitude and azimuth (from north through east) in degrees of
 // an object at ra/dec (degrees) for an observer.
 func AltAz(ra, dec float64, t time.Time, lat, lon float64) (float64, float64) {
-	lst := 280.46061837 + 360.98564736629*DaysJ2000(t) + lon
-	h := (lst - ra) * deg
+	h := (lst(t, lon) - ra) * deg
 	sinLat, cosLat := math.Sincos(lat * deg)
 	sinDec, cosDec := math.Sincos(dec * deg)
 	sinAlt := sinLat*sinDec + cosLat*cosDec*math.Cos(h)

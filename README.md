@@ -233,10 +233,11 @@ The astronomy uses compact published formulas rather than a full ephemeris libra
 | Sun | Astronomical Almanac low precision | < 1′ |
 | Moon | Astronomical Almanac low precision (geocentric) | < 0.4° |
 | Moon illumination | from Sun–Moon elongation | < 0.3 percentage points |
+| Moon from the site | the same, shifted by its horizontal parallax | < 0.4° against SOFA's Moon seen from the WGS84 site |
 | Target altitude | J2000 catalogue positions precessed to date (IAU 1976, Lieske 1977), GMST | < 0.3′ against SOFA's full precession-nutation and apparent sidereal time (precession itself within 0.1″) |
 | Earth position (for comets) | Sun formula, corrected to J2000 | < 0.0003 AU |
 
-The Moon's altitude is corrected for its mean horizontal parallax (57′), which otherwise lowers it by up to 1°; its position for the separation rule stays geocentric. Nutation (< 20″) and refraction (about 2′ at 30° altitude) are ignored. All of this is far tighter than the 30° altitude and tens-of-degrees Moon limits need.
+The Moon's position, for both its altitude and the separation rule, is topocentric (seen from the site, as in astroplan): its horizontal parallax (54′–61′) shifts it by up to 1° from the geocentric position. Nutation (< 20″) and refraction (about 2′ at 30° altitude) are ignored. All of this is far tighter than the 30° altitude and tens-of-degrees Moon limits need.
 
 ### Formulas and references
 
@@ -255,7 +256,7 @@ Everything below is implemented directly in Go from the cited source; no astrono
 | Altitude and azimuth | Spherical triangle from hour angle, declination and latitude | Meeus eqs. 13.5–13.6 |
 | Angular separation | Spherical law of cosines | Meeus eq. 17.1 |
 | Moon illumination | `(1 − cos ψ)/2` from the Sun–Moon elongation ψ; phase angle ≈ 180° − ψ | Meeus ch. 48 |
-| Moon altitude correction | Mean horizontal parallax 57′ (0.9507°): `alt − 0.9507° · cos alt` | *The Astronomical Almanac*; the Moon's distance variation (54′–61′) is ignored |
+| Topocentric Moon | Geocentric vector at the distance given by the horizontal parallax (4 periodic terms), minus the observer's position on a spherical Earth rotated by local sidereal time | *The Astronomical Almanac*, low-precision Moon formulas (section D); Meeus ch. 40 |
 | Astronomical twilight | Sun's geometric centre below −18° | Standard definition (USNO) |
 | Earth heliocentric position (for comets) | Negated Sun vector, with general precession (1.3970°/century) removed to return to the J2000 frame | Almanac Sun formula; Lieske et al. (1977) precession rate |
 

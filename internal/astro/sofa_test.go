@@ -38,7 +38,7 @@ func TestSOFA(t *testing.T) {
 	}
 
 	rng := rand.New(rand.NewPCG(2026, 10))
-	var worst struct{ sun, moon, illum, gmst, prec, alt, earth float64 }
+	var worst struct{ sun, moon, moonTopo, illum, gmst, prec, alt, earth float64 }
 	for range 3000 {
 		ut := time.Unix(rng.Int64N(50*365*86400)+946684800, 0).UTC()
 		mjd := float64(ut.Unix())/86400 + mjdUnix
@@ -87,6 +87,21 @@ func TestSOFA(t *testing.T) {
 		sinAlt := math.Sin(lat*deg)*math.Sin(adec*deg) + math.Cos(lat*deg)*math.Cos(adec*deg)*math.Cos((gast-ara)*deg)
 		worst.alt = max(worst.alt, math.Abs(Altitude(ra, dec, ut, lat, lon)-math.Asin(sinAlt)/deg))
 
+		// Topocentric Moon: SOFA's geocentric Moon minus the geodetic (WGS84)
+		// observer, rotated from the Earth-fixed frame by apparent sidereal time.
+		const au = 1.495978707e11 // m
+		var site [3]float64
+		gofa.Gd2gc(1, lon*deg, lat*deg, 0, &site)
+		sinG, cosG := math.Sincos(gofa.Gst06a(2400000.5, mjd, 2400000.5, tt))
+		topo := [3]float64{
+			moon[0] - (site[0]*cosG-site[1]*sinG)/au,
+			moon[1] - (site[0]*sinG+site[1]*cosG)/au,
+			moon[2] - site[2]/au,
+		}
+		tra, tdec := radec(topo)
+		ra, dec = MoonTopo(ut, lat, lon)
+		worst.moonTopo = max(worst.moonTopo, Separation(ra, dec, tra, tdec))
+
 		// EarthHelio is in the J2000 ecliptic frame; SOFA's vector is equatorial.
 		const eps = 23.4392911 * deg
 		ex, ey := EarthHelio(ut)
@@ -100,6 +115,7 @@ func TestSOFA(t *testing.T) {
 	}{
 		{"Sun (degrees)", worst.sun, 1.0 / 60},
 		{"Moon (degrees)", worst.moon, 0.4},
+		{"topocentric Moon (degrees)", worst.moonTopo, 0.4},
 		{"Moon illumination (percentage points)", worst.illum, 0.3},
 		{"GMST (degrees)", worst.gmst, 0.3 * arcsec},
 		{"precession (degrees)", worst.prec, 0.1 * arcsec},
