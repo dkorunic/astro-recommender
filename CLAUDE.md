@@ -34,7 +34,7 @@ go run . -lat <deg> -lon <deg> [-tz Europe/Zagreb] [-date YYYY-MM-DD] [-origin] 
 | `atmos` | `Airmass`, `Extinction(Coeff)`, `SkyBrightness` (K&S), `BortleMag`/`BortleClass` | — |
 | `sanitize` | `Text`: strip control chars/invalid UTF-8 from untrusted text | — |
 | `num` | `Finite`: NaN/Inf check that every parser of untrusted numbers runs before its range checks | — |
-| `fetch` | `GetJSON`/`GetJSONHeader` (size-capped; non-200 → `ErrStatus` with the body still decoded), `GetText`, `Cached` (user cache dir, unique temp file + rename) | — |
+| `fetch` | `GetJSON`/`GetJSONHeader` (size-capped; non-200 → `*StatusError` (matches `ErrStatus`, carries the code) with the body still decoded), `GetText`, `Cached` (user cache dir, unique temp file + rename) | — |
 | `geotz` | `Lookup`: offline IANA zone from coordinates (tzf, ~150 ms, ~11 MB of embedded data) | — |
 | `geocode` | `Reverse` (Nominatim) | fetch, sanitize |
 | `sqm` | `Lookup` (DarkSkySites zenith SQM; key from `DARKSKYSITES_API_KEY`) | atmos, fetch, num, sanitize |

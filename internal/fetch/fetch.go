@@ -21,6 +21,16 @@ var errDownload = errors.New("download failed")
 // ErrStatus reports a non-200 HTTP response.
 var ErrStatus = errors.New("HTTP status")
 
+// StatusError is the non-200 response GetJSON returns; it matches ErrStatus
+// with errors.Is, and errors.As gives callers the code.
+type StatusError struct{ Code int }
+
+func (e *StatusError) Error() string {
+	return fmt.Sprintf("%v %d %s", ErrStatus, e.Code, http.StatusText(e.Code))
+}
+
+func (e *StatusError) Is(target error) bool { return target == ErrStatus }
+
 const userAgent = "astro-recommender (+https://github.com/dkorunic/astro-recommender)"
 
 var httpClient = &http.Client{Timeout: 15 * time.Second}
@@ -64,7 +74,8 @@ func Cached(ctx context.Context, url, file string, maxAge time.Duration) ([]byte
 // maxDownload caps text downloads (MPC comet elements are ~160 kB).
 const maxDownload = 32 << 20
 
-// GetText GETs url and returns its body, which must be 200 OK.
+// GetText GETs url and returns its body, which must be 200 OK and at most
+// maxDownload bytes: a larger one is an error, not silently cut short.
 func GetText(ctx context.Context, url string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -80,11 +91,16 @@ func GetText(ctx context.Context, url string) ([]byte, error) {
 		return nil, fmt.Errorf("%w: %s: %s", errDownload, url, http.StatusText(resp.StatusCode))
 	}
 
-	return io.ReadAll(io.LimitReader(resp.Body, maxDownload))
+	data, err := io.ReadAll(io.LimitReader(resp.Body, maxDownload+1))
+	if err == nil && len(data) > maxDownload {
+		return nil, fmt.Errorf("%w: %s: larger than %d MB", errDownload, url, maxDownload>>20)
+	}
+
+	return data, err
 }
 
 // GetJSON GETs url and decodes the JSON body into v, whatever the status
-// (error bodies carry reasons). A non-200 status is returned as ErrStatus.
+// (error bodies carry reasons). A non-200 status is returned as a *StatusError.
 func GetJSON(ctx context.Context, url string, v any) error {
 	return GetJSONHeader(ctx, url, nil, v)
 }
@@ -107,7 +123,7 @@ func GetJSONHeader(ctx context.Context, url string, hdr http.Header, v any) erro
 	// Decode even error bodies (they carry reasons) before judging the status.
 	err = json.NewDecoder(io.LimitReader(resp.Body, maxDownload)).Decode(v)
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("%w %d %s", ErrStatus, resp.StatusCode, http.StatusText(resp.StatusCode))
+		return &StatusError{resp.StatusCode}
 	}
 
 	return err

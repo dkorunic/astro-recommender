@@ -57,3 +57,22 @@ func TestCached(t *testing.T) {
 		t.Errorf("leftover temp files: %v", tmps)
 	}
 }
+
+// A body over maxDownload is an error rather than a truncated copy, and
+// Cached does not store it.
+func TestGetTextTooLarge(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("XDG_CACHE_HOME", filepath.Join(home, "cache"))
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write(make([]byte, maxDownload+1))
+	}))
+	defer srv.Close()
+	if data, err := Cached(context.Background(), srv.URL, "big.txt", time.Hour); !errors.Is(err, errDownload) || data != nil {
+		t.Errorf("Cached = %d bytes, %v; want errDownload", len(data), err)
+	}
+	dir, _ := os.UserCacheDir()
+	if _, err := os.Stat(filepath.Join(dir, "astro-recommender", "big.txt")); !errors.Is(err, os.ErrNotExist) {
+		t.Errorf("oversized download was cached: %v", err)
+	}
+}
