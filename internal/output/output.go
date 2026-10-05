@@ -26,6 +26,7 @@ import (
 	"github.com/dkorunic/astro-recommender/internal/plan"
 	"github.com/dkorunic/astro-recommender/internal/scoring"
 	"github.com/dkorunic/astro-recommender/internal/weather"
+	"github.com/fatih/color"
 )
 
 func Header(ctx context.Context, cfg *config.Config, s *scoring.Sky) {
@@ -198,16 +199,18 @@ func sizeText(tg catalog.Target, format string, v float64) string {
 }
 
 // ColorTerminal reports whether stdout is a terminal that wants colors.
+// Importing fatih/color also enables ANSI escape processing on the Windows
+// console; its NoColor covers NO_COLOR, TERM=dumb and the TTY (and Cygwin/
+// MSYS pty) check.
 func ColorTerminal() bool {
-	if os.Getenv("NO_COLOR") != "" || os.Getenv("TERM") == "dumb" {
+	if os.Getenv("NO_COLOR") != "" {
 		return false
 	}
 	if os.Getenv("CLICOLOR_FORCE") != "" && os.Getenv("CLICOLOR_FORCE") != "0" {
 		return true
 	}
-	fi, err := os.Stdout.Stat()
 
-	return err == nil && fi.Mode()&os.ModeCharDevice != 0
+	return !color.NoColor
 }
 
 // paint wraps s in an SGR color code. code must be exactly 2 characters so

@@ -1,5 +1,11 @@
+github.com/fatih/color v1.19.0 h1:Zp3PiM21/9Ld6FzSKyL5c/BULoe/ONr9KlbYVOfG8+w=
+github.com/fatih/color v1.19.0/go.mod h1:zNk67I0ZUT1bEGsSGyCZYZNrHuTkJJB+r6Q9VuMi0LE=
 github.com/hebl/gofa v1.19.1 h1:/aVMeT0MXDrq5oMdTAKn1qyfIFlsDKvzx8DDLnsEx9s=
 github.com/hebl/gofa v1.19.1/go.mod h1:UmDlahQBVbigXqA+ghdTtaXADoyQSWeiW+7nEB86HXU=
+github.com/mattn/go-colorable v0.1.14 h1:9A9LHSqF/7dyVVX6g0U9cwm9pG3kP9gSzcuIPHPsaIE=
+github.com/mattn/go-colorable v0.1.14/go.mod h1:6LmQG8QLFO4G5z1gPvYEzlUgJ2wF+stgPZH1UqBm1s8=
+github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWEY=
+github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
 github.com/ringsaturn/go-cities.json v0.6.13 h1:p5afPcJ/tEE6uzFCOzLSHJYXgWnGdPmwZB9KBrEASxc=
 github.com/ringsaturn/go-cities.json v0.6.13/go.mod h1:VtklT4Sod9i6kvXXNZV63sfjeCX9l11OQfaAvPu+p4M=
 github.com/ringsaturn/tzf-dist v0.0.2026-d-fix1 h1:lT6jQEwS7NRpBSG7lZ3Cwl16ADkZ6WfkDCWH/6usR58=
@@ -8,3 +14,6 @@ github.com/ringsaturn/tzf/v2 v2.1.2 h1:amFL2Vv6+b4Kv710R1xAb3jJ0tW7vbCf3NPBtepq9
 github.com/ringsaturn/tzf/v2 v2.1.2/go.mod h1:JsnmzJF71pXCrTdyR2UjsaUbwO1cAndQyROtGu41Li8=
 go.yaml.in/yaml/v3 v3.0.5 h1:N6y/pJk8buWs9NY5ERU2HSMfm+IuD/OtfdAnq6kESPw=
 go.yaml.in/yaml/v3 v3.0.5/go.mod h1:HVTZu1O7/Vkt2N+BFy8Zza+lnLsABggaTM2ZpNIGuKg=
+golang.org/x/sys v0.6.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+golang.org/x/sys v0.42.0 h1:omrd2nAlyT5ESRdCLYdm3+fMfNFE/+Rf4bDIQImRJeo=
+golang.org/x/sys v0.42.0/go.mod h1:4GL1E5IUh+htKOUEOaiffhrAeqysfVGipDYzABqnCmw=
