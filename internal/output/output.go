@@ -8,7 +8,6 @@ package output
 import (
 	"bytes"
 	"cmp"
-	"context"
 	"fmt"
 	"io"
 	"math"
@@ -22,23 +21,18 @@ import (
 	"github.com/dkorunic/astro-recommender/internal/atmos"
 	"github.com/dkorunic/astro-recommender/internal/catalog"
 	"github.com/dkorunic/astro-recommender/internal/config"
-	"github.com/dkorunic/astro-recommender/internal/geocode"
 	"github.com/dkorunic/astro-recommender/internal/plan"
 	"github.com/dkorunic/astro-recommender/internal/scoring"
 	"github.com/dkorunic/astro-recommender/internal/weather"
 	"github.com/fatih/color"
 )
 
-func Header(ctx context.Context, cfg *config.Config, s *scoring.Sky) {
+// Header prints the site, window, Moon and sky; place is the reverse
+// geocoded name, empty if unknown.
+func Header(cfg *config.Config, s *scoring.Sky, place string) {
 	label := func(s string) string { return paint("01", s) }
-	place := ""
-	if !cfg.NoGeocode {
-		name, err := geocode.Reverse(ctx, cfg.Lat, cfg.Lon)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "warning: no reverse geocoding:", err)
-		} else {
-			place = " (" + name + ")"
-		}
+	if place != "" {
+		place = " (" + place + ")"
 	}
 	fmt.Printf("%s %.4f, %.4f%s, %s\n", label("Location:"), cfg.Lat, cfg.Lon, place, cfg.Loc)
 	night := ""
@@ -200,10 +194,9 @@ func sizeText(tg catalog.Target, format string, v float64) string {
 
 // ColorTerminal reports whether stdout is a terminal that wants colors.
 // Importing fatih/color also enables ANSI escape processing on the Windows
-// console; its NoColor covers NO_COLOR, TERM=dumb and the TTY (and Cygwin/
-// MSYS pty) check.
+// console; its NoColor adds the TTY (and Cygwin/MSYS pty) check.
 func ColorTerminal() bool {
-	if os.Getenv("NO_COLOR") != "" {
+	if os.Getenv("NO_COLOR") != "" || os.Getenv("TERM") == "dumb" {
 		return false
 	}
 	if os.Getenv("CLICOLOR_FORCE") != "" && os.Getenv("CLICOLOR_FORCE") != "0" {

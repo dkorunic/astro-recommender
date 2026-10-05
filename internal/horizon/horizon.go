@@ -53,7 +53,8 @@ func Load(path string) (Horizon, error) {
 	if err := sc.Err(); err != nil {
 		return nil, err
 	}
-	slices.SortFunc(h, func(a, b [2]float64) int { return cmp.Compare(a[0], b[0]) })
+	// Stable: two points at one azimuth are a vertical step, in file order.
+	slices.SortStableFunc(h, func(a, b [2]float64) int { return cmp.Compare(a[0], b[0]) })
 
 	return h, nil
 }

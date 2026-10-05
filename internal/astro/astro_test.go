@@ -19,7 +19,7 @@ func TestSexagesimal(t *testing.T) {
 	if v, err := Sexagesimal("23 59 59.9"); err != nil || v >= 24 {
 		t.Errorf("sexagesimal(23 59 59.9) = %v, %v", v, err)
 	}
-	for _, bad := range []string{"", "  ", "-", "1 2 3 4", "1 x", "10 70 00", "00 00 99", "10 -5 00", "1 60", "NaN", "Inf", "10 NaN 00"} {
+	for _, bad := range []string{"", "  ", "-", "1 2 3 4", "1 x", "10 70 00", "00 00 99", "10 -5 00", "1 60", "NaN", "Inf", "10 NaN 00", "+-10 00 00", "--5 00 00", "-+5"} {
 		if _, err := Sexagesimal(bad); err == nil {
 			t.Errorf("sexagesimal(%q) accepted", bad)
 		}
@@ -148,5 +148,11 @@ func TestTonight(t *testing.T) {
 		if day.Day() != c.day || inProgress != c.inProgress {
 			t.Errorf("Tonight(%v) = %v, %v; want day %d, %v", c.now, day, inProgress, c.day, c.inProgress)
 		}
+	}
+	// Santiago de Compostela at midsummer: the night of the 20th starts at
+	// 00:35 on the 21st, so at 00:10 it is the coming night, not the 21st's.
+	mad, _ := time.LoadLocation("Europe/Madrid")
+	if day, inProgress := Tonight(time.Date(2026, 6, 21, 0, 10, 0, 0, mad), 42.88, -8.54); day.Day() != 20 || inProgress {
+		t.Errorf("Tonight(Santiago 00:10) = %v, %v; want day 20, false", day, inProgress)
 	}
 }

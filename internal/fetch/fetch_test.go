@@ -43,7 +43,7 @@ func TestCached(t *testing.T) {
 	}))
 	defer srv.Close()
 	for range 2 {
-		data, err := Cached(context.Background(), srv.URL, "test.txt", time.Hour)
+		data, err := Cached(context.Background(), srv.URL, "test.txt", time.Hour, anyData)
 		if err != nil || string(data) != "elements" {
 			t.Fatalf("Cached = %q, %v", data, err)
 		}
@@ -68,11 +68,50 @@ func TestGetTextTooLarge(t *testing.T) {
 		_, _ = w.Write(make([]byte, maxDownload+1))
 	}))
 	defer srv.Close()
-	if data, err := Cached(context.Background(), srv.URL, "big.txt", time.Hour); !errors.Is(err, errDownload) || data != nil {
+	if data, err := Cached(context.Background(), srv.URL, "big.txt", time.Hour, anyData); !errors.Is(err, errDownload) || data != nil {
 		t.Errorf("Cached = %d bytes, %v; want errDownload", len(data), err)
 	}
 	dir, _ := os.UserCacheDir()
 	if _, err := os.Stat(filepath.Join(dir, "astro-recommender", "big.txt")); !errors.Is(err, os.ErrNotExist) {
 		t.Errorf("oversized download was cached: %v", err)
+	}
+}
+
+func anyData([]byte) error { return nil }
+
+// A 200 OK body that fails validation falls back to the stale copy and
+// does not overwrite it.
+func TestCachedInvalid(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("XDG_CACHE_HOME", filepath.Join(home, "cache"))
+	body := "elements"
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(body))
+	}))
+	defer srv.Close()
+	errBad := errors.New("bad")
+	valid := func(data []byte) error {
+		if string(data) != "elements" {
+			return errBad
+		}
+
+		return nil
+	}
+	if _, err := Cached(context.Background(), srv.URL, "v.txt", time.Hour, valid); err != nil {
+		t.Fatal(err)
+	}
+	body = "<html>maintenance</html>"
+	// maxAge 0: the cached copy is stale, so Cached downloads again.
+	data, err := Cached(context.Background(), srv.URL, "v.txt", 0, valid)
+	if err != nil || string(data) != "elements" {
+		t.Errorf("Cached = %q, %v; want the stale copy", data, err)
+	}
+	dir, _ := os.UserCacheDir()
+	if got, _ := os.ReadFile(filepath.Join(dir, "astro-recommender", "v.txt")); string(got) != "elements" {
+		t.Errorf("cache = %q, want it untouched", got)
+	}
+	if _, err := Cached(context.Background(), srv.URL, "w.txt", 0, valid); !errors.Is(err, errBad) {
+		t.Errorf("Cached without a stale copy = %v, want errBad", err)
 	}
 }

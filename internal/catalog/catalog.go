@@ -38,7 +38,11 @@ type Target struct {
 	// Track is set only by comets.Targets, one RA/Dec in degrees per grid
 	// minute; never from YAML, where a short track would index past its end.
 	Track [][2]float64 `yaml:"-"`
-	Size  float64      `yaml:"size"` // major axis in arc minutes; 0 or negative (-9999) means unknown
+	// RADeg and DecDeg are RA and Dec in J2000 degrees, parsed and checked
+	// by Load; never from YAML.
+	RADeg  float64 `yaml:"-"`
+	DecDeg float64 `yaml:"-"`
+	Size   float64 `yaml:"size"` // major axis in arc minutes; 0 or negative (-9999) means unknown
 }
 
 // HasSize reports whether the size is known: comets and entries with a zero
@@ -91,7 +95,8 @@ func Load(listName, file string) ([]Target, string, error) {
 		if !num.Finite(tg.Size) {
 			return nil, "", fmt.Errorf("%w for %s: %v", errSize, tg.Name, tg.Size)
 		}
-		tg.Constellation = constellation.Of(ra*15, dec)
+		tg.RADeg, tg.DecDeg = ra*15, dec // hours -> degrees
+		tg.Constellation = constellation.Of(tg.RADeg, tg.DecDeg)
 	}
 
 	return targets, listName, nil

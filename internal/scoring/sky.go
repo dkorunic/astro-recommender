@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/dkorunic/astro-recommender/internal/astro"
@@ -39,11 +40,66 @@ type Sky struct {
 	Comets     int     // comets added as targets
 }
 
-func BuildSky(ctx context.Context, cfg *config.Config, start, end time.Time) Sky {
-	s := Sky{Start: start, End: end}
-	for t := start; t.Before(end); t = t.Add(time.Minute) {
-		s.Grid = append(s.Grid, t)
+// Forecast is the network input of BuildSky; the zero value (with NaN
+// Elevation, see NoForecast) means none.
+type Forecast struct {
+	Weather   map[int64]weather.HourWeather
+	Astro     map[int64]weather.AstroBlock
+	AOD       map[int64]float64
+	Elevation float64 // NaN if unknown
+}
+
+// NoForecast is a Forecast with nothing fetched: perfect sky, fixed extinction.
+func NoForecast() Forecast { return Forecast{Elevation: math.NaN()} }
+
+// FetchForecast downloads the weather, transparency and aerosol forecasts
+// for [start, end) concurrently, as -no-weather and -extinction allow. A
+// failed source is a stderr warning and stays empty.
+func FetchForecast(ctx context.Context, cfg *config.Config, start, end time.Time) Forecast {
+	f := NoForecast()
+	if cfg.NoWeather {
+		return f
 	}
+	var wg sync.WaitGroup
+	wg.Go(func() {
+		var err error
+		if f.Weather, err = weather.Forecast(ctx, cfg.Lat, cfg.Lon, start, end); err != nil {
+			fmt.Fprintln(os.Stderr, "warning: no weather forecast:", err)
+		}
+	})
+	wg.Go(func() {
+		var err error
+		if f.Astro, err = weather.AstroForecast(ctx, cfg.Lat, cfg.Lon); err != nil {
+			fmt.Fprintln(os.Stderr, "warning: no transparency forecast:", err)
+		}
+	})
+	if !cfg.ExtinctionSet {
+		wg.Go(func() {
+			aod, elev, err := weather.AerosolForecast(ctx, cfg.Lat, cfg.Lon, start, end)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "warning: no aerosol forecast, fixed extinction:", err)
+			}
+			f.AOD, f.Elevation = aod, elev
+		})
+	}
+	wg.Wait()
+
+	return f
+}
+
+// Grid returns the 1-minute grid from start up to end.
+func Grid(start, end time.Time) []time.Time {
+	var g []time.Time
+	for t := start; t.Before(end); t = t.Add(time.Minute) {
+		g = append(g, t)
+	}
+
+	return g
+}
+
+// BuildSky samples the night [start, end) with forecast f; it does no I/O.
+func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
+	s := Sky{Start: start, End: end, Grid: Grid(start, end), Weather: f.Weather, Astro: f.Astro, AOD: f.AOD, Elevation: f.Elevation}
 	mid := s.Grid[len(s.Grid)/2]
 	s.Illum = astro.MoonIllumination(mid)
 	s.MoonSep = s.Illum * 100
@@ -59,22 +115,6 @@ func BuildSky(ctx context.Context, cfg *config.Config, start, end time.Time) Sky
 		s.MoonAlt[i] = astro.Altitude(s.MoonPos[i][0], s.MoonPos[i][1], t, cfg.Lat, cfg.Lon)
 	}
 
-	if !cfg.NoWeather {
-		var err error
-		if s.Weather, err = weather.Forecast(ctx, cfg.Lat, cfg.Lon, start, end); err != nil {
-			fmt.Fprintln(os.Stderr, "warning: no weather forecast:", err)
-		}
-		if s.Astro, err = weather.AstroForecast(ctx, cfg.Lat, cfg.Lon); err != nil {
-			fmt.Fprintln(os.Stderr, "warning: no transparency forecast:", err)
-		}
-	}
-	s.Elevation = math.NaN()
-	if !cfg.NoWeather && !cfg.ExtinctionSet {
-		var err error
-		if s.AOD, s.Elevation, err = weather.AerosolForecast(ctx, cfg.Lat, cfg.Lon, start, end); err != nil {
-			fmt.Fprintln(os.Stderr, "warning: no aerosol forecast, fixed extinction:", err)
-		}
-	}
 	s.Quality = make([]float64, len(s.Grid))
 	s.Ext = make([]float64, len(s.Grid))
 	for i, t := range s.Grid {

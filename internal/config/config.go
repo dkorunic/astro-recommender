@@ -356,6 +356,8 @@ func (cfg *Config) validate() error {
 		return fmt.Errorf("%w: -extinction must be between 0 and 1", errInvalidFlag)
 	case cfg.Plan != 0 && cfg.Plan < 10*time.Minute:
 		return fmt.Errorf("%w: -plan must be at least 10m", errInvalidFlag)
+	case cfg.Plan%time.Minute != 0:
+		return fmt.Errorf("%w: -plan must be a whole number of minutes", errInvalidFlag)
 	case cfg.Top < 1:
 		return fmt.Errorf("%w: -n must be at least 1", errInvalidFlag)
 	case cfg.AltMin >= cfg.AltMax:

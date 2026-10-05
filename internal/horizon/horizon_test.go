@@ -4,6 +4,7 @@
 package horizon
 
 import (
+	"fmt"
 	"math"
 	"os"
 	"path/filepath"
@@ -47,5 +48,27 @@ func TestLoadRejects(t *testing.T) {
 	}
 	if h, err := Load(f); err != nil || len(h) != 2 {
 		t.Errorf("valid file: %v, %v", h, err)
+	}
+}
+
+// Two points at one azimuth are a vertical step and keep their file order.
+func TestLoadSteps(t *testing.T) {
+	var text string
+	for i := range 36 {
+		az := (180 + 10*i) % 360
+		text += fmt.Sprintf("%d 10\n%d 40\n", az, az)
+	}
+	f := filepath.Join(t.TempDir(), "h.txt")
+	if err := os.WriteFile(f, []byte(text), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	h, err := Load(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < len(h); i += 2 {
+		if h[i][1] != 10 || h[i+1][1] != 40 {
+			t.Errorf("az %v: step %v, %v; want 10, 40", h[i][0], h[i][1], h[i+1][1])
+		}
 	}
 }

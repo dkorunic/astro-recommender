@@ -64,14 +64,14 @@ func Window(day time.Time, lat, lon float64) (time.Time, time.Time, bool) {
 	return start, t, true
 }
 
-// Tonight returns the date whose night "tonight" means at now: the night in
-// progress (after today's dusk, or after midnight before dawn of the night
-// that began yesterday), or else the coming one. inProgress reports the
-// former, so that the elapsed part is not planned.
+// Tonight returns the date whose night "tonight" means at now: the first of
+// yesterday's and today's nights that has not ended, so a night whose dusk
+// falls after midnight is still yesterday's. inProgress reports that it has
+// already begun, so that the elapsed part is not planned.
 func Tonight(now time.Time, lat, lon float64) (time.Time, bool) {
 	for _, day := range []time.Time{now.AddDate(0, 0, -1), now} {
-		if dusk, dawn, ok := Window(day, lat, lon); ok && !now.Before(dusk) && now.Before(dawn) {
-			return day, true
+		if dusk, dawn, ok := Window(day, lat, lon); ok && now.Before(dawn) {
+			return day, !now.Before(dusk)
 		}
 	}
 
@@ -268,7 +268,13 @@ func Sexagesimal(s string) (float64, error) {
 	if strings.HasPrefix(s, "-") {
 		sign = -1
 	}
-	s = strings.TrimLeft(s, "+-")
+	if strings.HasPrefix(s, "-") || strings.HasPrefix(s, "+") {
+		s = s[1:]
+	}
+	// One sign only: "+-10" is a typo, not +10.
+	if strings.HasPrefix(s, "-") || strings.HasPrefix(s, "+") {
+		return 0, fmt.Errorf("%w: %q", errRange, s)
+	}
 	fields := strings.Fields(s)
 	if len(fields) == 0 || len(fields) > 3 {
 		return 0, fmt.Errorf("%w: %q", errFields, s)

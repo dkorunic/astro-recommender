@@ -53,18 +53,24 @@ func TestConstellationLists(t *testing.T) {
 }
 
 func TestTargetLists(t *testing.T) {
-	// Every embedded list parses with valid coordinates.
+	// Every embedded list parses with valid coordinates, which Load keeps
+	// in degrees for scoring.
 	for _, name := range Lists {
 		targets, _, err := Load(name, "")
 		if err != nil {
 			t.Fatal(err)
 		}
 		for _, tg := range targets {
-			if _, err := astro.Sexagesimal(tg.RA); err != nil {
+			ra, err := astro.Sexagesimal(tg.RA)
+			if err != nil {
 				t.Fatalf("%s: %s RA %q: %v", name, tg.Name, tg.RA, err)
 			}
-			if _, err := astro.Sexagesimal(tg.Dec); err != nil {
+			dec, err := astro.Sexagesimal(tg.Dec)
+			if err != nil {
 				t.Fatalf("%s: %s Dec %q: %v", name, tg.Name, tg.Dec, err)
+			}
+			if tg.RADeg != ra*15 || tg.DecDeg != dec {
+				t.Fatalf("%s: %s RADeg, DecDeg = %v, %v; want %v, %v", name, tg.Name, tg.RADeg, tg.DecDeg, ra*15, dec)
 			}
 		}
 	}

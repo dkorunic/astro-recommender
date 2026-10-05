@@ -37,22 +37,26 @@ var httpClient = &http.Client{Timeout: 15 * time.Second}
 
 // Cached returns url's body, from the user cache directory when the
 // cached copy (file) is younger than maxAge; a failed download falls back to
-// a stale cached copy.
-func Cached(ctx context.Context, url, file string, maxAge time.Duration) ([]byte, error) {
+// a stale cached copy. Only data that valid accepts is cached or returned,
+// so a 200 OK error page never replaces a good copy.
+func Cached(ctx context.Context, url, file string, maxAge time.Duration, valid func([]byte) error) ([]byte, error) {
 	var cache string
 	if dir, err := os.UserCacheDir(); err == nil {
 		cache = filepath.Join(dir, "astro-recommender", file)
 		if fi, err := os.Stat(cache); err == nil && time.Since(fi.ModTime()) < maxAge {
-			if data, err := os.ReadFile(cache); err == nil {
+			if data, err := os.ReadFile(cache); err == nil && valid(data) == nil {
 				return data, nil
 			}
 		}
 	}
 
 	data, err := GetText(ctx, url)
+	if err == nil {
+		err = valid(data)
+	}
 	if err != nil {
 		if cache != "" {
-			if stale, serr := os.ReadFile(cache); serr == nil {
+			if stale, serr := os.ReadFile(cache); serr == nil && valid(stale) == nil {
 				fmt.Fprintf(os.Stderr, "warning: using cached %s: %v\n", file, err)
 
 				return stale, nil

@@ -72,8 +72,8 @@ func Forecast(ctx context.Context, lat, lon float64, start, end time.Time) (map[
 
 // weather turns the hourly block into HourWeather keyed by unix hour.
 func (h *hourly) weather() (map[int64]HourWeather, error) {
-	series := [][]*float64{h.Low, h.Mid, h.High, h.Temp, h.DewPoint, h.Wind, h.Gust}
-	for _, s := range series {
+	series := [][]*float64{h.Low, h.Mid, h.High, h.Temp, h.DewPoint, h.Wind}
+	for _, s := range append(series, h.Gust) {
 		if len(s) != len(h.Time) {
 			return nil, fmt.Errorf("%w: malformed response", errOpenMeteo)
 		}
@@ -81,7 +81,8 @@ func (h *hourly) weather() (map[int64]HourWeather, error) {
 	out := map[int64]HourWeather{}
 next:
 	for i, t := range h.Time {
-		// Missing values come back as null; skip rather than read them as clear sky.
+		// Missing values come back as null; skip rather than read them as clear
+		// sky. Gusts are not required: a missing one falls back below.
 		for _, s := range series {
 			if s[i] == nil {
 				continue next
@@ -91,10 +92,13 @@ next:
 		// ponytail: layers treated as independent; thin cirrus blocks ~half the light.
 		cloud := 100 * (1 - (1-low)*(1-mid)*(1-high/2))
 		// Gusts are the maximum over the preceding hour, so the hour starting
-		// at t has its gust in the next entry; the last hour keeps its own.
-		gust := *h.Gust[i]
+		// at t has its gust in the next entry; the last hour keeps its own,
+		// and with neither the mean wind is the floor gusts never go below.
+		gust := *h.Wind[i]
 		if i+1 < len(h.Time) && h.Time[i+1] == t+3600 && h.Gust[i+1] != nil {
 			gust = *h.Gust[i+1]
+		} else if h.Gust[i] != nil {
+			gust = *h.Gust[i]
 		}
 		out[t] = HourWeather{cloud, *h.Low[i], *h.Mid[i], *h.High[i], *h.Temp[i], *h.DewPoint[i], *h.Wind[i], gust}
 	}

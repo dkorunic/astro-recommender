@@ -49,11 +49,13 @@ type comet struct {
 // targets with a per-minute position track. Elements come from the MPC,
 // cached for a day under the user cache directory.
 func Targets(ctx context.Context, grid []time.Time, maxMag float64) ([]catalog.Target, error) {
-	data, err := fetch.Cached(ctx, cometURL, "CometEls.txt", cometCacheAge)
-	if err != nil {
-		return nil, err
-	}
-	comets, err := parseComets(data)
+	var comets []comet
+	_, err := fetch.Cached(ctx, cometURL, "CometEls.txt", cometCacheAge, func(data []byte) error {
+		var err error
+		comets, err = parseComets(data)
+
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}

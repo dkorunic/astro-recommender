@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sync"
 	"time"
 	_ "time/tzdata" // zone database for Windows and minimal containers, which lack one
 
@@ -17,6 +18,7 @@ import (
 	"github.com/dkorunic/astro-recommender/internal/catalog"
 	"github.com/dkorunic/astro-recommender/internal/comets"
 	"github.com/dkorunic/astro-recommender/internal/config"
+	"github.com/dkorunic/astro-recommender/internal/geocode"
 	"github.com/dkorunic/astro-recommender/internal/output"
 	"github.com/dkorunic/astro-recommender/internal/plan"
 	"github.com/dkorunic/astro-recommender/internal/scoring"
@@ -65,28 +67,56 @@ func main() {
 		}
 	}
 
-	// An explicit -sqm or -bortle (even 0) wins; the lookup needs a key. After
-	// the early exits above so they never pay for the network round-trip.
+	// All network sources at once, after the early exits above so those never
+	// pay for a round-trip. The goroutines only read cfg; results go to
+	// locals, applied after Wait.
+	var (
+		wg        sync.WaitGroup
+		forecast  scoring.Forecast
+		place     string
+		cometList []catalog.Target
+		sqmVal    float64
+		sqmSource string
+	)
+	wg.Go(func() { forecast = scoring.FetchForecast(ctx, &cfg, start, end) })
+	// An explicit -sqm or -bortle (even 0) wins; the lookup needs a key.
 	if key := sqm.Key(); key != "" && !cfg.NoSQM && !cfg.SkySet {
-		if cfg.SQM, cfg.SQMSource, err = sqm.Lookup(ctx, key, cfg.Lat, cfg.Lon); err != nil {
-			fmt.Fprintln(os.Stderr, "warning: no sky brightness lookup, assuming a dark sky:", err)
-		}
+		wg.Go(func() {
+			var err error
+			if sqmVal, sqmSource, err = sqm.Lookup(ctx, key, cfg.Lat, cfg.Lon); err != nil {
+				fmt.Fprintln(os.Stderr, "warning: no sky brightness lookup, assuming a dark sky:", err)
+			}
+		})
+	}
+	if !cfg.NoGeocode {
+		wg.Go(func() {
+			var err error
+			if place, err = geocode.Reverse(ctx, cfg.Lat, cfg.Lon); err != nil {
+				fmt.Fprintln(os.Stderr, "warning: no reverse geocoding:", err)
+			}
+		})
+	}
+	if !cfg.NoComets {
+		wg.Go(func() {
+			var err error
+			if cometList, err = comets.Targets(ctx, scoring.Grid(start, end), cfg.CometMag); err != nil {
+				fmt.Fprintln(os.Stderr, "warning: no comets:", err)
+			}
+		})
+	}
+	wg.Wait()
+	if sqmSource != "" {
+		cfg.SQM, cfg.SQMSource = sqmVal, sqmSource
 	}
 
-	s := scoring.BuildSky(ctx, &cfg, start, end)
+	s := scoring.BuildSky(&cfg, forecast, start, end)
 	s.Night = [2]time.Time{duskT, dawnT}
-	if !cfg.NoComets {
-		cometList, err := comets.Targets(ctx, s.Grid, cfg.CometMag)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "warning: no comets:", err)
-		}
-		s.Comets = len(cometList)
-		targets = append(targets, cometList...)
-	}
+	s.Comets = len(cometList)
+	targets = append(targets, cometList...)
 	results := scoring.Score(&cfg, &s, targets)
 
 	output.UseColor = output.ColorTerminal()
-	output.Header(ctx, &cfg, &s)
+	output.Header(&cfg, &s, place)
 	output.Weather(&cfg, &s)
 	if cfg.Plan > 0 {
 		output.Plan(plan.Make(&s, results, cfg.Plan))

@@ -4,7 +4,6 @@
 package scoring
 
 import (
-	"context"
 	"math"
 	"testing"
 	"time"
@@ -21,8 +20,8 @@ func TestScoreSizeLimits(t *testing.T) {
 		Framing: true, FOVLong: 79.2, FOVShort: 45, SizeMin: 0, SizeMax: 45,
 	}
 	start := time.Date(2026, 1, 15, 18, 0, 0, 0, time.UTC)
-	s := BuildSky(context.Background(), cfg, start, start.Add(time.Hour))
-	tg := catalog.Target{Name: "X", RA: "02 31 49", Dec: "+89 15 51"}
+	s := BuildSky(cfg, NoForecast(), start, start.Add(time.Hour))
+	tg := catalog.Target{Name: "X", RADeg: 37.95, DecDeg: 89.26} // Polaris
 	big, unknown, half := tg, tg, tg
 	big.Size, unknown.Size, half.Size = 60, -9999, 22.5
 
@@ -54,6 +53,16 @@ func TestScoreSizeLimits(t *testing.T) {
 	cfg.Framing, cfg.SizeMax = false, 45
 	if res = Score(cfg, &s, []catalog.Target{big}); len(res) != 1 || res[0].Frame != 1 {
 		t.Errorf("45' with -size-max 45 and no framing: %d results, want 1 with Frame 1", len(res))
+	}
+	// Per-minute slices are kept only for -plan, as each result's own copy.
+	if res[0].Alt != nil || res[0].Weight != nil {
+		t.Error("per-minute slices kept without -plan")
+	}
+	cfg.Plan = time.Hour
+	half.Size = 30
+	res = Score(cfg, &s, []catalog.Target{big, half})
+	if len(res) != 2 || len(res[0].Alt) != len(s.Grid) || &res[0].Alt[0] == &res[1].Alt[0] || res[0].Weight[0] == 0 {
+		t.Errorf("-plan: per-minute slices missing or shared: %d results", len(res))
 	}
 }
 
@@ -93,7 +102,7 @@ func BenchmarkPipeline(b *testing.B) {
 	}
 	start := time.Date(2026, 10, 5, 18, 8, 0, 0, time.UTC)
 	for b.Loop() {
-		s := BuildSky(context.Background(), cfg, start, start.Add(9*time.Hour+14*time.Minute))
+		s := BuildSky(cfg, NoForecast(), start, start.Add(9*time.Hour+14*time.Minute))
 		Score(cfg, &s, targets)
 	}
 }

@@ -43,6 +43,16 @@ func TestGustShift(t *testing.T) {
 	if out, _ = h.weather(); out[h.Time[0]].Gust != 10 {
 		t.Errorf("null next gust: got %v, want 10", out[h.Time[0]].Gust)
 	}
+	// A null gust of its own keeps the hour (scored, not clear sky): it takes
+	// the next entry's gust, or with none the mean wind.
+	h.Gust[0], h.Gust[1], h.Wind[0] = nil, p(30), p(5)
+	if out, _ = h.weather(); out[h.Time[0]].Gust != 30 {
+		t.Errorf("null own gust: got %v (present %v), want 30", out[h.Time[0]].Gust, out[h.Time[0]] != (HourWeather{}))
+	}
+	h.Gust[1] = nil
+	if out, _ = h.weather(); out[h.Time[0]].Gust != 5 {
+		t.Errorf("null gusts: got %v, want the wind, 5", out[h.Time[0]].Gust)
+	}
 }
 
 // A range Open-Meteo rejects (400) is retried once ending on its first day; a

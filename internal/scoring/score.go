@@ -21,8 +21,8 @@ type Result struct { // betteralign:ignore (embedded target first, per embeddeds
 	catalog.Target
 
 	MaxAt   time.Time
-	Alt     []float64 // per grid minute
-	Weight  []float64 // per grid minute, 0 when not observable
+	Alt     []float64 // per grid minute; only with -plan, which reads them
+	Weight  []float64 // per grid minute, 0 when not observable; only with -plan
 	Foto    float64   // fraction of time observable
 	Score   float64   // foto weighted by clouds, moonlight and framing
 	Frame   float64   // framing factor (1 without framing)
@@ -35,6 +35,9 @@ type Result struct { // betteralign:ignore (embedded target first, per embeddeds
 // observable ones, best first.
 func Score(cfg *config.Config, s *Sky, targets []catalog.Target) []Result {
 	var results []Result
+	// Per-minute scratch reused across targets: most are never observable,
+	// and only -plan needs a Result's own copy.
+	alt, weight := make([]float64, len(s.Grid)), make([]float64, len(s.Grid))
 	for _, tg := range targets {
 		// Comet comae have no catalog size, so size limits do not apply.
 		// An unknown size counts as 0, so -size-min 0 keeps it.
@@ -45,7 +48,10 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target) []Result {
 		if tg.Track == nil && (size < cfg.SizeMin || size > cfg.SizeMax) {
 			continue
 		}
-		if r, ok := scoreTarget(cfg, s, tg); ok {
+		if r, ok := scoreTarget(cfg, s, tg, alt, weight); ok {
+			if cfg.Plan > 0 {
+				r.Alt, r.Weight = slices.Clone(alt), slices.Clone(weight)
+			}
 			results = append(results, r)
 		}
 	}
@@ -58,14 +64,13 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target) []Result {
 	return results
 }
 
-func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target) (Result, bool) {
+// scoreTarget fills alt and weight (len(s.Grid), overwritten) with the
+// target's per-minute altitude and weight.
+func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, alt, weight []float64) (Result, bool) {
 	var fixedRA, fixedDec float64
 	if tg.Track == nil {
-		// Coordinates were validated by loadTargets.
-		ra, _ := astro.Sexagesimal(tg.RA)
-		dec, _ := astro.Sexagesimal(tg.Dec)
 		// Catalogs are J2000; the hour angle comes from sidereal time of date.
-		fixedRA, fixedDec = astro.Precess(ra*15, dec, s.Grid[len(s.Grid)/2]) // hours -> degrees
+		fixedRA, fixedDec = astro.Precess(tg.RADeg, tg.DecDeg, s.Grid[len(s.Grid)/2])
 	}
 	pos := func(i int) (float64, float64) {
 		if tg.Track != nil {
@@ -79,17 +84,18 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target) (Result, bool) {
 	// this target; also scales its Moon separation limit.
 	k := skyK(tg, cfg.Filter, cfg.FilterK)
 
-	r := Result{Target: tg, MaxAlt: -90, Frame: 1, Alt: make([]float64, len(s.Grid)), Weight: make([]float64, len(s.Grid))}
+	r := Result{Target: tg, MaxAlt: -90, Frame: 1}
+	clear(weight)
 	var good int
 	var altSum, weighted, skySum float64
 	for i, t := range s.Grid {
 		ra, dec := pos(i)
-		alt, az := astro.AltAz(ra, dec, t, cfg.Lat, cfg.Lon)
-		r.Alt[i] = alt
-		if alt > r.MaxAlt {
-			r.MaxAlt, r.MaxAt = alt, t
+		a, az := astro.AltAz(ra, dec, t, cfg.Lat, cfg.Lon)
+		alt[i] = a
+		if a > r.MaxAlt {
+			r.MaxAlt, r.MaxAt = a, t
 		}
-		if alt < cfg.AltMin || alt > cfg.AltMax || alt < cfg.Horizon.At(az) {
+		if a < cfg.AltMin || a > cfg.AltMax || a < cfg.Horizon.At(az) {
 			continue
 		}
 		rho := 180.0
@@ -98,15 +104,15 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target) (Result, bool) {
 				continue
 			}
 		}
-		sb := atmos.SkyBrightness(s.ZenithNL, s.Ext[i], alt, s.MoonAlt[i], rho, s.MoonPhase, s.MoonDist)
+		sb := atmos.SkyBrightness(s.ZenithNL, s.Ext[i], a, s.MoonAlt[i], rho, s.MoonPhase, s.MoonDist)
 		// Sky-limited imaging: SNR in a fixed time goes as signal/sqrt(sky). Full
 		// credit for a pristine dark sky; a filter cuts the sky the target sees to k.
 		skyW := min(1, math.Sqrt(s.RefNL/(k*sb)))
 		good++
-		altSum += alt
+		altSum += a
 		skySum += atmos.MagFromNL(sb)
-		r.Weight[i] = s.Quality[i] * atmos.Extinction(alt, s.Ext[i]) * skyW
-		weighted += r.Weight[i]
+		weight[i] = s.Quality[i] * atmos.Extinction(a, s.Ext[i]) * skyW
+		weighted += weight[i]
 	}
 	if good == 0 {
 		return r, false
