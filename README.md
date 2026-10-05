@@ -36,7 +36,8 @@ go install github.com/dkorunic/astro-recommender@latest
 Or from a checkout, using [Task](https://taskfile.dev/):
 
 ```sh
-task build   # formats, then builds a static, PGO-optimised binary
+task build   # formats, then builds a static, PGO-optimised binary (profile: default.pgo)
+task pgo     # regenerates default.pgo from the offline scoring benchmark
 task test
 task lint    # golangci-lint
 ```

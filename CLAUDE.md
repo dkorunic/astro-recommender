@@ -12,7 +12,8 @@ Single-binary Go CLI that ranks deep sky objects for a location for tonight's wi
 ## Commands
 
 ```sh
-task build                          # fmt (gci, gofumpt, go fix, betteralign) + static PGO binary
+task build                          # fmt (gci, gofumpt, go fix, betteralign) + static PGO binary (default.pgo)
+task pgo                            # regenerate default.pgo from BenchmarkPipeline (internal/scoring); redo after hot-path changes
 task lint                           # fmt + golangci-lint (.golangci.yml: default all, some disabled); keep at 0 issues
 task fmt                            # NOTE: rewrites files in place
 go build ./...

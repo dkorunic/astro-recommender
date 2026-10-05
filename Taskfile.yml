@@ -63,6 +63,11 @@ tasks:
     cmds:
       - go run golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest -fix -test ./...
 
+  pgo:
+    desc: Regenerate default.pgo (used by -pgo=auto) from the offline pipeline benchmark
+    cmds:
+      - go test -run '^$' -bench Pipeline -benchtime 10s -cpuprofile {{.ROOT_DIR}}/default.pgo -o /dev/null ./internal/scoring
+
   build:
     desc: Format then produce the static PGO release binary (CGO off)
     vars: *build-vars

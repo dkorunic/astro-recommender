@@ -75,3 +75,22 @@ func TestSkyK(t *testing.T) {
 		t.Error("skyK misapplies the filter")
 	}
 }
+
+// BenchmarkPipeline runs the offline hot path of a typical run (one night's
+// sky, then every GaryImmFull target scored minute by minute); task pgo
+// profiles it into default.pgo for the release build.
+func BenchmarkPipeline(b *testing.B) {
+	targets, _, err := catalog.Load("GaryImmFull", "")
+	if err != nil {
+		b.Fatal(err)
+	}
+	cfg := &config.Config{
+		Lat: 45.8, Lon: 16, AltMin: 30, AltMax: 80, SizeMax: 300, NoWeather: true,
+		ExtinctionSet: true, Extinction: 0.2, FilterK: 0.25, Filter: true,
+	}
+	start := time.Date(2026, 10, 5, 18, 8, 0, 0, time.UTC)
+	for b.Loop() {
+		s := BuildSky(context.Background(), cfg, start, start.Add(9*time.Hour+14*time.Minute))
+		Score(cfg, &s, targets)
+	}
+}
