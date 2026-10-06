@@ -59,7 +59,7 @@ func (t Target) HasSize() bool { return t.Size > 0 }
 // 0.4° of J2000). The -ra/-dec filter and the RA/DEC columns both use it, so
 // the table never shows a position outside the region that kept the object.
 func (t Target) Position() (float64, float64) {
-	if t.Track != nil {
+	if len(t.Track) > 0 {
 		mid := t.Track[len(t.Track)/2]
 
 		return mid[0], mid[1]

@@ -7,8 +7,12 @@
 # sips and, when installed, recompressed by jpegoptim at quality 90. Needs
 # network for the weather, aerosol and geocoding lookups.
 #
-#   scripts/demo.sh                  # the README's Markovac run
-#   scripts/demo.sh -lat 45.8 -lon 16 -origin   # any other flags
+# The default run is the Markovac site with -filter and its measured SQM, not
+# the README's Zagreb transcript. Any arguments replace that whole flag set,
+# so give -lat and -lon again:
+#
+#   scripts/demo.sh
+#   scripts/demo.sh -lat 45.8 -lon 16 -origin
 set -euo pipefail
 
 cd "$(dirname "$0")/.."

@@ -56,7 +56,7 @@ astro-recommender -lat 45.815 -lon 15.982 -origin -filter -bortle 6 -n 5
 Location: 45.8150, 15.9820 (Mjesni odbor Zrinjevac, Gradska četvrt Donji grad, Zagreb, Grad Zagreb, Hrvatska), Europe/Zagreb
 Window:   2026-10-05 20:08 - 2026-10-06 05:22 (9h14m0s)
 Moon:     24% illuminated, min separation 24°
-Size:     4.1' - 45.0'
+Size:     4.1' - 44.7'
 Targets:  GaryImm, 2 comets brighter than mag 12.0
 Frame:    1.32° x 0.75°, 1.23"/px (3856 x 2180 px)
 Sky:      Bortle 6 (zenith 18.80 mag/arcsec²), extinction 0.23-0.25 (elevation 126 m, aerosols) mag/airmass, filter k=0.25
@@ -74,11 +74,11 @@ HOUR   CLOUD  LOW/MID/HIGH  TRANSP  EXT   SEEING  DEW SPREAD  WIND/GUST
 05:00  0%     0/0/0%        2/8     0.23  1.5-2"  4.0°C       1/3 km/h
 
 #  NAME      DESCRIPTION                  TYPE               CONSTELLATION  RA       DEC     SIZE  FOTO  SCORE  MAX ALT      SKY   PX
-1  NGC 281   PacMan Nebula                Emission Nebula    Cassiopeia     00 52.9  +56 37  35'   1.00  0.24   79° @ 00:52  18.7  1707
-2  IC 63     Gamma Cassiopeia Nebula      Emission Nebula    Cassiopeia     00 59.5  +60 55  20'   1.00  0.24   75° @ 00:59  18.7  976
-3  Sh2-173   Phantom of the Opera Nebula  Emission Nebula    Cassiopeia     00 21.3  +61 44  25'   1.00  0.24   74° @ 00:20  18.7  1220
-4  IC 1795   Fishhead Nebula              Emission Nebula    Cassiopeia     02 26.5  +62 03  30'   1.00  0.24   74° @ 02:26  18.7  1463
-5  Abell 85  CTB 1 or Garlic Nebula       Supernova Remnant  Cassiopeia     23 59.9  +62 27  35'   1.00  0.23   73° @ 23:59  18.7  1707
+1  NGC 281   PacMan Nebula                Emission Nebula    Cassiopeia     00 52.9  +56 37  35'   1.00  0.24   79° @ 00:52  18.7  1705
+2  IC 63     Gamma Cassiopeia Nebula      Emission Nebula    Cassiopeia     00 59.5  +60 55  20'   1.00  0.24   75° @ 00:59  18.7  974
+3  Sh2-173   Phantom of the Opera Nebula  Emission Nebula    Cassiopeia     00 21.3  +61 44  25'   1.00  0.24   74° @ 00:20  18.7  1218
+4  IC 1795   Fishhead Nebula              Emission Nebula    Cassiopeia     02 26.5  +62 03  30'   1.00  0.24   74° @ 02:26  18.7  1461
+5  Abell 85  CTB 1 or Garlic Nebula       Supernova Remnant  Cassiopeia     23 59.9  +62 27  35'   1.00  0.23   73° @ 23:59  18.7  1705
 ```
 
 The output ends with a legend explaining every column of the tables shown and the colours. In short:
@@ -206,7 +206,7 @@ astro-recommender -lat 45.815 -lon 15.982 -no-weather -no-geocode -no-sqm -no-co
 | `-sqm` | unset | Measured zenith sky brightness in mag/arcsec², from an SQM meter or the *World Atlas 2015* layer on [lightpollutionmap.info](https://www.lightpollutionmap.info). More precise than `-bortle`, which it overrides; the header shows the matching Bortle class. When neither is given and `DARKSKYSITES_API_KEY` is set, it is looked up on [DarkSkySites](https://www.darkskysites.com/api-access); a free API key can be requested at [darkskysites.com](https://www.darkskysites.com/api-access#apply) |
 | `-extinction` | auto | Atmospheric extinction in magnitudes per airmass. By default it is estimated per hour from the site's elevation and the CAMS aerosol forecast. Setting it fixes the value; `0.2` is used when no estimate is available |
 | `-alt-min`, `-alt-max` | `30`, `80` | Altitude limits in degrees |
-| `-size-min`, `-size-max` | `10`, `300` | Object size limits in arcminutes, 0 or more; `-size-min 0` means no minimum. Framing replaces them with `-min-px` × scale up to the frame's short side (4.1′–45.0′ on the Origin), since the size is the major axis and its orientation in the frame is unknown, unless you set them explicitly; a `-size-max` above the short side is an error, because such objects cannot be framed |
+| `-size-min`, `-size-max` | `10`, `300` | Object size limits in arcminutes, 0 or more; `-size-min 0` means no minimum. Framing replaces them with `-min-px` × scale up to the frame's short side (4.1′–44.7′ on the Origin), since the size is the major axis and its orientation in the frame is unknown, unless you set them explicitly; a `-size-max` above the short side is an error, because such objects cannot be framed |
 | `-ra`, `-dec` | | Keep only objects near this J2000 right ascension (hours, `20.5` or `"20 30 00"`) and/or declination (degrees, `-12.5` or `"-12 30 00"`); comets use their mid-window position of date, within 0.4° of J2000 |
 | `-tol` | `10` | With `-ra`/`-dec`, how near in degrees on each axis, above 0 and at most 180; RA counts 15° per hour and wraps at 24h |
 | `-list` | `GaryImm` | Built-in target list (see below) |
