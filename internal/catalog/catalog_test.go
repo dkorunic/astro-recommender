@@ -36,7 +36,7 @@ func TestConstellationLists(t *testing.T) {
 			t.Fatal(err)
 		}
 		for _, tg := range raw {
-			if tg.Constellation == "" { // MWSC, Melotte, Collinder: no constellation column
+			if tg.Constellation == "" { // MWSC, Melotte, Collinder, PNnet: no constellation column
 				continue
 			}
 			ra, _ := astro.Sexagesimal(tg.RA)
@@ -135,6 +135,7 @@ func TestEmissionLineLists(t *testing.T) {
 		"GaryImm":     {"Sh2-155": true},
 		"MWSC":        {"NGC 2264": true, "NGC 6611": true, "IC 1805": true},
 		"Melotte":     {"Mel 15": true, "Mel 49": true, "Mel 198": true, "Mel 22": false},
+		"PNnet":       {"Ou 2": true, "StDr 56": true},
 		"Collinder":   {"Cr 26": true, "Cr 375": true, "Cr 429": false, "Cr 399": false},
 	} {
 		targets, _, err := Load(list, "")
