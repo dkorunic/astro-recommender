@@ -370,7 +370,7 @@ The astronomy uses compact published formulas rather than a full ephemeris libra
 
 | Quantity | Formula | Difference from SOFA |
 |---|---|---|
-| Sidereal time | IAU GMST polynomial | < 0.3″ |
+| Sidereal time | IAU 1982 GMST, linear terms | < 0.3″ |
 | Sun | Astronomical Almanac low precision | < 1′ |
 | Moon | Astronomical Almanac low precision (geocentric) | < 0.4° |
 | Moon from the site | the same, shifted by its horizontal parallax | < 0.4° against SOFA's Moon seen from the WGS84 site |
