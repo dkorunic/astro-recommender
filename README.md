@@ -73,16 +73,17 @@ HOUR   CLOUD  LOW/MID/HIGH  TRANSP  EXT   SEEING  DEW SPREAD  WIND/GUST
 04:00  2%     0/0/3%        2/8     0.23  1.5-2"  3.3°C       1/1 km/h
 05:00  0%     0/0/0%        2/8     0.23  1.5-2"  4.0°C       1/3 km/h
 
-#  NAME      DESCRIPTION                  TYPE               CONSTELLATION  SIZE  FOTO  SCORE  MAX ALT      SKY   PX
-1  NGC 281   PacMan Nebula                Emission Nebula    Cassiopeia     35'   1.00  0.24   79° @ 00:52  18.7  1707
-2  IC 63     Gamma Cassiopeia Nebula      Emission Nebula    Cassiopeia     20'   1.00  0.24   75° @ 00:59  18.7  976
-3  Sh2-173   Phantom of the Opera Nebula  Emission Nebula    Cassiopeia     25'   1.00  0.24   74° @ 00:20  18.7  1220
-4  IC 1795   Fishhead Nebula              Emission Nebula    Cassiopeia     30'   1.00  0.24   74° @ 02:26  18.7  1463
-5  Abell 85  CTB 1 or Garlic Nebula       Supernova Remnant  Cassiopeia     35'   1.00  0.23   73° @ 23:59  18.7  1707
+#  NAME      DESCRIPTION                  TYPE               CONSTELLATION  RA       DEC     SIZE  FOTO  SCORE  MAX ALT      SKY   PX
+1  NGC 281   PacMan Nebula                Emission Nebula    Cassiopeia     00 52.9  +56 37  35'   1.00  0.24   79° @ 00:52  18.7  1707
+2  IC 63     Gamma Cassiopeia Nebula      Emission Nebula    Cassiopeia     00 59.5  +60 55  20'   1.00  0.24   75° @ 00:59  18.7  976
+3  Sh2-173   Phantom of the Opera Nebula  Emission Nebula    Cassiopeia     00 21.3  +61 44  25'   1.00  0.24   74° @ 00:20  18.7  1220
+4  IC 1795   Fishhead Nebula              Emission Nebula    Cassiopeia     02 26.5  +62 03  30'   1.00  0.24   74° @ 02:26  18.7  1463
+5  Abell 85  CTB 1 or Garlic Nebula       Supernova Remnant  Cassiopeia     23 59.9  +62 27  35'   1.00  0.23   73° @ 23:59  18.7  1707
 ```
 
 The output ends with a legend explaining every column of the tables shown and the colours. In short:
 
+- **RA**, **DEC**: the J2000 position as `hh mm.m` and `±dd mm`; comets show where they are mid-window.
 - **FOTO**: the fraction of the window during which the object meets the altitude, horizon and Moon-distance limits (uptonight's metric).
 - **SCORE**: imaging quality from 0 to 1, where 1 means a perfect minute for the whole window under a pristine dark sky. It accounts for weather, extinction, sky brightness and, with framing, how well the object fits the frame. This column decides the order.
 - **MAX ALT**: the object's highest altitude in the window, and when it occurs.

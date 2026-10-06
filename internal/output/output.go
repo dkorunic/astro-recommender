@@ -175,8 +175,9 @@ func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) {
 		if cfg.Framing {
 			px = sizeText(r.Target, "%.0f", r.Size*60/cfg.Scale)
 		}
+		ra, dec := position(r.Target)
 		row(w, "", paint("39", strconv.Itoa(i+1)), paint("36", r.Name), paint("39", r.Description), paint(typeColor(r.Target), r.Type),
-			paint("39", r.Constellation), paint("39", sizeText(r.Target, "%.0f'", r.Size)),
+			paint("39", r.Constellation), paint("39", ra), paint("39", dec), paint("39", sizeText(r.Target, "%.0f'", r.Size)),
 			paint(scale(r.Foto, 0.66, 0.33), fmt.Sprintf("%.2f", r.Foto)),
 			paint(scale(r.Score, 0.66, 0.33), fmt.Sprintf("%.2f", r.Score)),
 			paint("39", fmt.Sprintf("%.0f° @ %s", r.MaxAlt, clock(s, r.MaxAt))),
@@ -214,6 +215,25 @@ func typeColor(tg catalog.Target) string {
 	}
 
 	return "39"
+}
+
+// position formats the RA and DEC cells as "hh mm.m" and "+dd mm": the
+// catalog J2000 position, or a comet's mid-window one. Rounding happens on
+// the whole value in tenths of a minute (RA) or arcminutes (Dec) so 59.96
+// carries into the next hour or degree instead of printing as 60.0.
+func position(tg catalog.Target) (string, string) {
+	ra, dec := tg.RADeg, tg.DecDeg
+	if tg.Track != nil {
+		ra, dec = tg.Track[len(tg.Track)/2][0], tg.Track[len(tg.Track)/2][1]
+	}
+	t := int(math.Round(math.Mod(ra+360, 360)/15*600)) % (24 * 600)
+	a := int(math.Round(math.Abs(dec) * 60))
+	sign := "+"
+	if dec < 0 && a > 0 {
+		sign = "-"
+	}
+
+	return fmt.Sprintf("%02d %04.1f", t/600, float64(t%600)/10), fmt.Sprintf("%s%02d %02d", sign, a/60, a%60)
 }
 
 // sizeText formats a size column, "-" for comets and unknown sizes.
@@ -310,6 +330,8 @@ var resultColumns = []column{
 	{"DESCRIPTION", "common name; comets: magnitude, Sun distance r, Earth distance Δ"},
 	{"TYPE", "object type"},
 	{"CONSTELLATION", "IAU constellation, from the official boundaries"},
+	{"RA", "J2000 right ascension, hh mm.m (comets: mid-window position)"},
+	{"DEC", "J2000 declination, ±dd mm (comets: mid-window position)"},
 	{"SIZE", "major axis in arcminutes (- unknown or comet)"},
 	{"FOTO", "fraction of the window within the altitude, horizon and Moon-distance limits"},
 	{"SCORE", "0-1 imaging quality: 1 = every minute observable under a perfect, pristine dark sky"},
