@@ -277,10 +277,10 @@ func (cfg *Config) parseRegion(set map[string]bool, ra, dec string) error {
 		if err != nil {
 			return fmt.Errorf("%w: -ra must be hours as 20.5 or \"20 30 00\": %w", errInvalidFlag, err)
 		}
-		if h < 0 || h >= 24 {
+		if h < 0 || h > 24 {
 			return fmt.Errorf("%w: -ra must be 0 to 24 hours as 20.5 or \"20 30 00\"", errInvalidFlag)
 		}
-		cfg.RA = h * 15
+		cfg.RA = math.Mod(h*15, 360) // 24h is 0h
 	}
 	if cfg.DecSet {
 		d, err := astro.Sexagesimal(dec)

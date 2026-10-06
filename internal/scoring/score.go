@@ -55,13 +55,7 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 		if tg.Track == nil && (size < cfg.SizeMin || size > cfg.SizeMax) {
 			continue
 		}
-		// A comet's mid-window position (of date, within 0.4° of J2000) stands
-		// in for the catalog coordinates it has none of.
-		ra, dec := tg.RADeg, tg.DecDeg
-		if tg.Track != nil {
-			ra, dec = tg.Track[len(tg.Track)/2][0], tg.Track[len(tg.Track)/2][1]
-		}
-		if !cfg.Near(ra, dec) {
+		if !cfg.Near(tg.Position()) {
 			continue
 		}
 		if r, ok := scoreTarget(cfg, s, tg, alt, weight); ok {

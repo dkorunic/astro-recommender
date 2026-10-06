@@ -3,11 +3,7 @@
 
 package output
 
-import (
-	"testing"
-
-	"github.com/dkorunic/astro-recommender/internal/catalog"
-)
+import "testing"
 
 // NO_COLOR and TERM=dumb win over CLICOLOR_FORCE.
 func TestColorTerminal(t *testing.T) {
@@ -29,22 +25,20 @@ func TestColorTerminal(t *testing.T) {
 	}
 }
 
-// position rounds on the whole value so minutes never print as 60, and
-// comets show their mid-track position.
+// position rounds on the whole value so minutes never print as 60.
 func TestPosition(t *testing.T) {
 	for _, c := range []struct {
-		tg     catalog.Target
-		ra, de string
+		ra, dec         float64
+		wantRA, wantDec string
 	}{
-		{catalog.Target{RADeg: 13.0 * 15, DecDeg: 40.25}, "13 00.0", "+40 15"},
-		{catalog.Target{RADeg: 23.99999 * 15, DecDeg: -0.004}, "00 00.0", "+00 00"},
-		{catalog.Target{RADeg: 12.99999 * 15, DecDeg: -12.9999}, "13 00.0", "-13 00"},
-		{catalog.Target{RADeg: 0, DecDeg: -90}, "00 00.0", "-90 00"},
-		{catalog.Target{Track: [][2]float64{{0, 0}, {7.5, -12.5}, {30, 30}}}, "00 30.0", "-12 30"},
+		{13.0 * 15, 40.25, "13 00.0", "+40 15"},
+		{23.99999 * 15, -0.004, "00 00.0", "+00 00"},
+		{12.99999 * 15, -12.9999, "13 00.0", "-13 00"},
+		{0, -90, "00 00.0", "-90 00"},
 	} {
-		ra, de := position(c.tg)
-		if ra != c.ra || de != c.de {
-			t.Errorf("position(%v, %v) = %q %q, want %q %q", c.tg.RADeg, c.tg.DecDeg, ra, de, c.ra, c.de)
+		ra, dec := position(c.ra, c.dec)
+		if ra != c.wantRA || dec != c.wantDec {
+			t.Errorf("position(%v, %v) = %q %q, want %q %q", c.ra, c.dec, ra, dec, c.wantRA, c.wantDec)
 		}
 	}
 }

@@ -54,6 +54,20 @@ type Target struct {
 // or negative size (-9999 in the lists, 0.0 in a few LDN entries) have none.
 func (t Target) HasSize() bool { return t.Size > 0 }
 
+// Position returns the RA and Dec in degrees that stand for the target: the
+// J2000 catalog position, or for a comet its mid-track one (of date, within
+// 0.4° of J2000). The -ra/-dec filter and the RA/DEC columns both use it, so
+// the table never shows a position outside the region that kept the object.
+func (t Target) Position() (float64, float64) {
+	if t.Track != nil {
+		mid := t.Track[len(t.Track)/2]
+
+		return mid[0], mid[1]
+	}
+
+	return t.RADeg, t.DecDeg
+}
+
 // Lists are the embedded uptonight target lists selectable with -list.
 var Lists = []string{"GaryImm", "GaryImmFull", "Messier", "Herschel400", "Pensack500", "OpenNGC", "OpenIC", "LBN", "LDN", "MWSC", "Melotte", "Collinder", "PNnet", "HASH"}
 

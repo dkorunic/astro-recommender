@@ -65,6 +65,28 @@ func TestScoreSizeLimits(t *testing.T) {
 	}
 }
 
+// The -ra/-dec region drops targets outside it before scoring; a comet is
+// judged by its mid-track position, not its zero RADeg/DecDeg.
+func TestScoreRegion(t *testing.T) {
+	cfg := &config.Config{
+		Lat: 45.8, Lon: 16, AltMin: 30, AltMax: 80, NoWeather: true, ExtinctionSet: true, Extinction: 0.2,
+		SizeMin: 0, SizeMax: 300, RASet: true, DecSet: true, RA: 37.95, Dec: 89.26, Tol: 5,
+	}
+	start := time.Date(2026, 1, 15, 18, 0, 0, 0, time.UTC)
+	s := BuildSky(cfg, NoForecast(), start, start.Add(time.Hour))
+	in := catalog.Target{Name: "in", RADeg: 37.95, DecDeg: 89.26} // Polaris
+	out := catalog.Target{Name: "out", RADeg: 37.95, DecDeg: 80}  // 9° south of it
+	comet := catalog.Target{Name: "comet", Track: make([][2]float64, len(s.Grid))}
+	for i := range comet.Track {
+		comet.Track[i] = [2]float64{37.95, 80} // out of the region...
+	}
+	comet.Track[len(comet.Track)/2] = [2]float64{37.95, 89.26} // ...except mid-window
+	res := Score(cfg, &s, []catalog.Target{in, out, comet}, false)
+	if len(res) != 2 || res[0].Name == "out" || res[1].Name == "out" {
+		t.Fatalf("got %v, want in and comet only", res)
+	}
+}
+
 func TestFrameFill(t *testing.T) {
 	for fill, want := range map[float64]float64{0.1: 0.4, 0.5: 1, 0.9: 0.5, 1.2: 0} {
 		if got := frameFill(fill); math.Abs(got-want) > 1e-9 {

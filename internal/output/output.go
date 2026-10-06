@@ -45,14 +45,15 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 	fmt.Printf("%s %s illuminated, min separation %.0f°\n", label("Moon:    "), paint(scale(s.Illum, 0.3, 0.7), fmt.Sprintf("%.0f%%", s.Illum*100)), s.MoonSep)
 	fmt.Printf("%s %.1f' - %.1f'\n", label("Size:    "), cfg.SizeMin, cfg.SizeMax)
 	if cfg.RASet || cfg.DecSet {
+		ra, dec := position(cfg.RA, cfg.Dec)
 		var region []string
 		if cfg.RASet {
-			region = append(region, fmt.Sprintf("RA %.2fh", cfg.RA/15))
+			region = append(region, "RA "+ra)
 		}
 		if cfg.DecSet {
-			region = append(region, fmt.Sprintf("Dec %+.1f°", cfg.Dec))
+			region = append(region, "Dec "+dec)
 		}
-		fmt.Printf("%s within %.0f° of %s\n", label("Region:  "), cfg.Tol, strings.Join(region, " "))
+		fmt.Printf("%s within %g° of %s\n", label("Region:  "), cfg.Tol, strings.Join(region, ", "))
 	}
 	targetsDesc := cfg.ListName
 	if cfg.TargetsFile != "" {
@@ -175,7 +176,7 @@ func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) {
 		if cfg.Framing {
 			px = sizeText(r.Target, "%.0f", r.Size*60/cfg.Scale)
 		}
-		ra, dec := position(r.Target)
+		ra, dec := position(r.Position())
 		row(w, "", paint("39", strconv.Itoa(i+1)), paint("36", r.Name), paint("39", r.Description), paint(typeColor(r.Target), r.Type),
 			paint("39", r.Constellation), paint("39", ra), paint("39", dec), paint("39", sizeText(r.Target, "%.0f'", r.Size)),
 			paint(scale(r.Foto, 0.66, 0.33), fmt.Sprintf("%.2f", r.Foto)),
@@ -217,15 +218,10 @@ func typeColor(tg catalog.Target) string {
 	return "39"
 }
 
-// position formats the RA and DEC cells as "hh mm.m" and "+dd mm": the
-// catalog J2000 position, or a comet's mid-window one. Rounding happens on
-// the whole value in tenths of a minute (RA) or arcminutes (Dec) so 59.96
-// carries into the next hour or degree instead of printing as 60.0.
-func position(tg catalog.Target) (string, string) {
-	ra, dec := tg.RADeg, tg.DecDeg
-	if tg.Track != nil {
-		ra, dec = tg.Track[len(tg.Track)/2][0], tg.Track[len(tg.Track)/2][1]
-	}
+// position formats RA and Dec in degrees as "hh mm.m" and "+dd mm". Rounding
+// happens on the whole value in tenths of a minute (RA) or arcminutes (Dec)
+// so 59.96 carries into the next hour or degree instead of printing as 60.0.
+func position(ra, dec float64) (string, string) {
 	t := int(math.Round(math.Mod(ra+360, 360)/15*600)) % (24 * 600)
 	a := int(math.Round(math.Abs(dec) * 60))
 	sign := "+"
