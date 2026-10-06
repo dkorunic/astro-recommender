@@ -120,9 +120,9 @@ func main() {
 	output.Header(&cfg, &s, place)
 	output.Weather(&cfg, &s)
 	if cfg.Plan > 0 {
-		output.Plan(plan.Make(&s, results, cfg.Plan))
+		output.Plan(&s, plan.Make(&s, results, cfg.Plan))
 	}
-	output.Results(&cfg, results)
+	output.Results(&cfg, &s, results)
 	output.Legend(&s, cfg.Plan > 0)
 }
 

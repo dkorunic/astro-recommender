@@ -117,10 +117,10 @@ Planning ahead. `-date` picks the evening, and `-from`/`-to` narrow the window t
 astro-recommender -lat 45.815 -lon 15.982 -origin -date 2026-10-10 -from 22:00 -to 02:00
 ```
 
-A schedule for the night. `-plan 2h` adds a table with one target per 2-hour block (plus a shorter last block), chosen so that the blocks together score highest; `-n 40` gives the planner more candidates to choose from than the default 20:
+A schedule for the night. `-plan 2h` adds a table with one target per 2-hour block (plus a shorter last block), picked greedily and then improved by swapping until no change helps. The planner considers every ranked target, not just the `-n` printed:
 
 ```sh
-astro-recommender -lat 45.815 -lon 15.982 -origin -filter -plan 2h -n 40
+astro-recommender -lat 45.815 -lon 15.982 -origin -filter -plan 2h
 ```
 
 Another telescope and camera. `-focal`, `-sensor` and `-pixel` describe the setup and replace the Origin's frame: here a 400 mm refractor with an APS-C sensor (23.5 × 15.6 mm, 3.76 µm pixels) gives a 3.37° × 2.23° field at 1.94″/px. The header's `Frame:` line shows the result; check it when the numbers look surprising:
@@ -135,7 +135,7 @@ If you already know the field and scale, give them directly. `-fov` is in degree
 astro-recommender -lat 45.815 -lon 15.982 -fov 10x7 -scale 6 -min-px 50
 ```
 
-A different catalogue. `-list` picks one of the built-in lists; 59 LDN dark nebulae have no size, so `-size-min 0` keeps them instead of dropping them under the 10′ default:
+A different catalogue. `-list` picks one of the built-in lists; two thirds of the LDN dark nebulae are under the 10′ default and 8 have no size at all, so `-size-min 0` keeps them instead of dropping them:
 
 ```sh
 astro-recommender -lat 45.815 -lon 15.982 -list LDN -size-min 0
@@ -153,7 +153,7 @@ Your own targets. `-targets` takes any uptonight-format YAML, such as the output
 astro-recommender -lat 45.815 -lon 15.982 -origin -targets my-targets.yaml
 ```
 
-A site with obstructions. `-horizon` replaces the flat 30° floor with your measured horizon (file format below), so a target behind the neighbour's house doesn't count while it is there; `-alt-min 20` lets the unobstructed directions start lower:
+A site with obstructions. `-horizon` adds your measured horizon (file format below) on top of the altitude floor, so a target behind the neighbour's house doesn't count while it is there; it can only raise the floor, so `-alt-min 20` is what lets the unobstructed directions start below the default 30°:
 
 ```sh
 astro-recommender -lat 45.815 -lon 15.982 -origin -horizon horizon.txt -alt-min 20
@@ -305,7 +305,7 @@ First, each block in time order gets the unused target with the best score withi
 
 ### Local horizon
 
-`-horizon horizon.txt` replaces the fixed altitude floor with your real horizon. A minute counts only if the target is above both `-alt-min` and the horizon in its direction. The file lists azimuth (0 = north, 90 = east) and the minimum visible altitude, in degrees. Altitudes between the listed directions are interpolated, wrapping from 360° back to 0°:
+`-horizon horizon.txt` adds your real horizon to the altitude floor. A minute counts only if the target is above both `-alt-min` and the horizon in its direction. The file lists azimuth (0 = north, 90 = east) and the minimum visible altitude, in degrees. Altitudes between the listed directions are interpolated, wrapping from 360° back to 0°:
 
 ```
 # azimuth altitude
