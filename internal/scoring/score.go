@@ -17,6 +17,8 @@ import (
 	"github.com/dkorunic/astro-recommender/internal/config"
 )
 
+const deg = math.Pi / 180
+
 type Result struct { // betteralign:ignore (embedded target first, per embeddedstructfieldcheck)
 	catalog.Target
 
@@ -37,8 +39,12 @@ type Result struct { // betteralign:ignore (embedded target first, per embeddeds
 func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool) []Result {
 	var results []Result
 	// Per-minute scratch reused across targets: most are never observable,
-	// and only perMinute needs a Result's own copy.
-	alt, weight := make([]float64, len(s.Grid)), make([]float64, len(s.Grid))
+	// and only perMinute needs a Result's own copy (and the altitudes at all).
+	weight := make([]float64, len(s.Grid))
+	var alt []float64
+	if perMinute {
+		alt = make([]float64, len(s.Grid))
+	}
 	for _, tg := range targets {
 		// Comet comae have no catalog size, so size limits do not apply.
 		// An unknown size counts as 0, so -size-min 0 keeps it.
@@ -65,38 +71,48 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 	return results
 }
 
-// scoreTarget fills alt and weight (len(s.Grid), overwritten) with the
-// target's per-minute altitude and weight.
+// scoreTarget fills weight (len(s.Grid), overwritten) with the target's
+// per-minute weight, and alt with its altitude when alt is not nil.
 func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, alt, weight []float64) (Result, bool) {
-	var fixedRA, fixedDec float64
+	var ra, dec float64
+	var hz astro.Horizontal
 	if tg.Track == nil {
 		// Catalogs are J2000; the hour angle comes from sidereal time of date.
-		fixedRA, fixedDec = astro.Precess(tg.RADeg, tg.DecDeg, s.Grid[len(s.Grid)/2])
-	}
-	pos := func(i int) (float64, float64) {
-		if tg.Track != nil {
-			return tg.Track[i][0], tg.Track[i][1]
-		}
-
-		return fixedRA, fixedDec
+		ra, dec = astro.Precess(tg.RADeg, tg.DecDeg, s.Grid[len(s.Grid)/2])
+		hz = astro.NewHorizontal(cfg.Lat, dec)
 	}
 
 	// Fraction of sky glow (moonlight, light pollution) that counts against
 	// this target; also scales its Moon separation limit.
 	k := skyK(tg, cfg.Filter, cfg.FilterK)
 
-	r := Result{Target: tg, MaxAlt: -90, Frame: 1}
+	// The limits compare as sines, so the Asin runs only for the minutes
+	// that pass them (and for alt): the bulk of the minutes do not.
+	sinMin, sinMax := math.Sin(cfg.AltMin*deg), math.Sin(cfg.AltMax*deg)
+	r := Result{Target: tg, Frame: 1}
 	clear(weight)
 	var good int
 	var altSum, weighted, skySum float64
-	for i, t := range s.Grid {
-		ra, dec := pos(i)
-		a, az := astro.AltAz(ra, dec, t, cfg.Lat, cfg.Lon)
-		alt[i] = a
-		if a > r.MaxAlt {
-			r.MaxAlt, r.MaxAt = a, t
+	maxSin, maxAt := -2.0, 0
+	for i := range s.Grid {
+		if tg.Track != nil {
+			ra, dec = tg.Track[i][0], tg.Track[i][1]
+			hz = astro.NewHorizontal(cfg.Lat, dec)
 		}
-		if a < cfg.AltMin || a > cfg.AltMax || a < cfg.Horizon.At(az) {
+		ha := s.LST[i] - ra
+		sinAlt := hz.SinAlt(ha)
+		if sinAlt > maxSin {
+			maxSin, maxAt = sinAlt, i
+		}
+		if alt != nil {
+			alt[i] = math.Asin(sinAlt) / deg
+		}
+		if sinAlt < sinMin || sinAlt > sinMax {
+			continue
+		}
+		a := math.Asin(sinAlt) / deg
+		// The azimuth is only needed against a horizon profile.
+		if len(cfg.Horizon) > 0 && a < cfg.Horizon.At(hz.Az(ha)) {
 			continue
 		}
 		rho := 180.0
@@ -115,6 +131,7 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, alt, weight []fl
 		weight[i] = s.Quality[i] * atmos.Extinction(a, s.Ext[i]) * skyW
 		weighted += weight[i]
 	}
+	r.MaxAlt, r.MaxAt = math.Asin(maxSin)/deg, s.Grid[maxAt]
 	if good == 0 {
 		return r, false
 	}

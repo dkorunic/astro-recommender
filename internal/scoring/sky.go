@@ -26,6 +26,7 @@ type Sky struct {
 	Astro      map[int64]weather.AstroBlock
 	AOD        map[int64]float64 // aerosol optical depth at 550 nm per unix hour (CAMS)
 	Grid       []time.Time
+	LST        []float64    // local sidereal time per grid minute, degrees
 	MoonPos    [][2]float64 // topocentric RA/Dec of date, degrees
 	MoonAlt    []float64
 	Ext        []float64 // extinction per grid minute, mag per airmass
@@ -112,9 +113,11 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 	s.ZenithNL = atmos.NanoLamberts(cfg.ZenithMag())
 	s.RefNL = atmos.NanoLamberts(atmos.RefZenithMag)
 
+	s.LST = make([]float64, len(s.Grid))
 	s.MoonPos = make([][2]float64, len(s.Grid))
 	s.MoonAlt = make([]float64, len(s.Grid))
 	for i, t := range s.Grid {
+		s.LST[i] = astro.LST(t, cfg.Lon)
 		s.MoonPos[i][0], s.MoonPos[i][1] = astro.MoonTopo(t, cfg.Lat, cfg.Lon)
 		s.MoonAlt[i] = astro.Altitude(s.MoonPos[i][0], s.MoonPos[i][1], t, cfg.Lat, cfg.Lon)
 	}

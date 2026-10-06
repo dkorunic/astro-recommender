@@ -9,6 +9,11 @@ import "math"
 
 const deg = math.Pi / 180
 
+// exp10 is 10^x. math.Pow's general path (Frexp, Log, Exp, Ldexp and the
+// special cases) costs about three times a bare Exp, and scoring calls this
+// several times per observable target-minute.
+func exp10(x float64) float64 { return math.Exp(x * math.Ln10) }
+
 // RefZenithMag is a pristine dark sky (V mag/arcsec²): full sky-glow credit.
 const RefZenithMag = 22.0
 
@@ -51,13 +56,13 @@ const TypicalAOD = 0.1
 func Airmass(alt float64) float64 {
 	alt = max(alt, 0)
 
-	return 1 / math.Sin((alt+244/(165+47*math.Pow(alt, 1.1)))*deg)
+	return 1 / math.Sin((alt+244/(165+47*math.Exp(1.1*math.Log(alt))))*deg) // Exp(Log) is Pow without its overhead
 }
 
 // Extinction returns the fraction of a target's light that survives the
 // atmosphere at altitude alt, relative to the zenith, for k mag per airmass.
 func Extinction(alt, k float64) float64 {
-	return math.Pow(10, -0.4*k*(Airmass(alt)-1))
+	return exp10(-0.4 * k * (Airmass(alt) - 1))
 }
 
 // meanMoonDist is the Moon's mean distance in Earth radii, the one K&S's
@@ -82,9 +87,9 @@ func SkyBrightness(zenithNL, k, alt, moonAlt, rho, alpha, moonDist float64) floa
 		return 1 / math.Sqrt(1-0.96*z*z)
 	}
 	x := ks(alt)
-	b := zenithNL * math.Pow(10, -0.4*k*(x-1)) * x
+	b := zenithNL * exp10(-0.4*k*(x-1)) * x
 	if moonAlt > 0 {
-		moon := math.Pow(10, -0.4*(3.84+0.026*alpha+4e-9*math.Pow(alpha, 4)))
+		moon := exp10(-0.4 * (3.84 + 0.026*alpha + 4e-9*alpha*alpha*alpha*alpha))
 		// K&S give I* at the mean distance (60.27 Earth radii); the Moon is
 		// up to 13% nearer or farther, its light going as distance⁻².
 		r := meanMoonDist / moonDist
@@ -95,8 +100,8 @@ func SkyBrightness(zenithNL, k, alt, moonAlt, rho, alpha, moonDist float64) floa
 			moon *= 1.35 - 0.05*alpha
 		}
 		c := math.Cos(rho * deg)
-		scatter := math.Pow(10, 5.36)*(1.06+c*c) + math.Pow(10, 6.15-rho/40)
-		b += scatter * moon * math.Pow(10, -0.4*k*ks(moonAlt)) * (1 - math.Pow(10, -0.4*k*x))
+		scatter := 2.2908677e5*(1.06+c*c) + exp10(6.15-rho/40) // 10^5.36
+		b += scatter * moon * exp10(-0.4*k*ks(moonAlt)) * (1 - exp10(-0.4*k*x))
 	}
 
 	return b

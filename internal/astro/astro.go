@@ -218,7 +218,7 @@ func MoonTopo(t time.Time, lat, lon float64) (float64, float64) {
 	dist := MoonDistance(t)
 	sinRA, cosRA := math.Sincos(ra * deg)
 	sinDec, cosDec := math.Sincos(dec * deg)
-	sinLST, cosLST := math.Sincos(lst(t, lon) * deg)
+	sinLST, cosLST := math.Sincos(LST(t, lon) * deg)
 	sinLat, cosLat := math.Sincos(lat * deg)
 	x := dist*cosDec*cosRA - cosLat*cosLST
 	y := dist*cosDec*sinRA - cosLat*sinLST
@@ -238,21 +238,47 @@ func MoonDistance(t time.Time) float64 {
 	return 1 / math.Sin(parallax*deg)
 }
 
-// lst returns the local mean sidereal time in degrees (GMST + east longitude).
-func lst(t time.Time, lon float64) float64 {
+// LST returns the local mean sidereal time in degrees (GMST + east longitude).
+func LST(t time.Time, lon float64) float64 {
 	return 280.46061837 + 360.98564736629*DaysJ2000(t) + lon
+}
+
+// Horizontal is the geometry of an object of one declination at one site, for
+// its altitude and azimuth over many hour angles. Scoring evaluates thousands
+// of targets at every minute of the night, so the latitude and declination
+// trigonometry is done once here rather than per minute as AltAz would.
+type Horizontal struct{ sinLat, cosLat, sinDec, cosDec float64 }
+
+// NewHorizontal prepares lat and dec (degrees) for SinAlt and Az.
+func NewHorizontal(lat, dec float64) Horizontal {
+	var h Horizontal
+	h.sinLat, h.cosLat = math.Sincos(lat * deg)
+	h.sinDec, h.cosDec = math.Sincos(dec * deg)
+
+	return h
+}
+
+// SinAlt returns the sine of the altitude at hour angle ha (degrees). It
+// grows with the altitude, so limits compare against it without an Asin.
+func (h Horizontal) SinAlt(ha float64) float64 {
+	return h.sinLat*h.sinDec + h.cosLat*h.cosDec*math.Cos(ha*deg)
+}
+
+// Az returns the azimuth (from north through east) in degrees at hour angle ha (degrees).
+func (h Horizontal) Az(ha float64) float64 {
+	sinH, cosH := math.Sincos(ha * deg)
+	az := math.Atan2(-sinH*h.cosDec, h.sinDec*h.cosLat-h.cosDec*h.sinLat*cosH) / deg
+
+	return math.Mod(az+360, 360)
 }
 
 // AltAz returns altitude and azimuth (from north through east) in degrees of
 // an object at ra/dec (degrees) for an observer.
 func AltAz(ra, dec float64, t time.Time, lat, lon float64) (float64, float64) {
-	h := (lst(t, lon) - ra) * deg
-	sinLat, cosLat := math.Sincos(lat * deg)
-	sinDec, cosDec := math.Sincos(dec * deg)
-	sinAlt := sinLat*sinDec + cosLat*cosDec*math.Cos(h)
-	az := math.Atan2(-math.Sin(h)*cosDec, sinDec*cosLat-cosDec*sinLat*math.Cos(h)) / deg
+	h := NewHorizontal(lat, dec)
+	ha := LST(t, lon) - ra
 
-	return math.Asin(sinAlt) / deg, math.Mod(az+360, 360)
+	return math.Asin(h.SinAlt(ha)) / deg, h.Az(ha)
 }
 
 // Separation in degrees between two equatorial positions (degrees).
