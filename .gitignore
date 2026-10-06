@@ -36,6 +36,7 @@ cmake-build-debug/
 
 ### Shell wrappers ###
 *.sh
+!scripts/*.sh
 
 ## Usual macOS cruft ###
 .DS_Store

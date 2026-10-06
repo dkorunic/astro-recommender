@@ -16,6 +16,7 @@ task build                          # fmt (gci, gofumpt, go fix, betteralign) + 
 task pgo                            # regenerate default.pgo from BenchmarkPipeline (internal/scoring); redo after hot-path changes
 task lint                           # fmt + golangci-lint (.golangci.yml: default all, some disabled); keep at 0 issues
 task fmt                            # NOTE: rewrites files in place
+task demo                           # re-render demo.jpg from a live run (scripts/demo.sh; needs freeze, jpegoptim optional, network)
 go build ./...
 go vet ./...
 go test ./...                       # unit tests beside each package; TestSOFA compares the formulas with SOFA

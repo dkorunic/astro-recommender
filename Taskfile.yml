@@ -68,6 +68,11 @@ tasks:
     cmds:
       - go test -run '^$' -bench Pipeline -benchtime 10s -cpuprofile {{.ROOT_DIR}}/default.pgo -o /dev/null ./internal/scoring
 
+  demo:
+    desc: Re-render demo.jpg from a live run (needs freeze; network)
+    cmds:
+      - scripts/demo.sh
+
   build:
     desc: Format then produce the static PGO release binary (CGO off)
     vars: *build-vars
