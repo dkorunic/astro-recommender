@@ -33,7 +33,25 @@ func (e *StatusError) Is(target error) bool { return target == ErrStatus }
 
 const userAgent = "astro-recommender (+https://github.com/dkorunic/astro-recommender)"
 
-var httpClient = &http.Client{Timeout: 15 * time.Second}
+var httpClient = &http.Client{Timeout: 15 * time.Second, CheckRedirect: checkRedirect}
+
+var errRedirect = errors.New("refused redirect")
+
+// checkRedirect follows redirects only within the original host and without
+// leaving HTTPS. Go re-sends every header but Authorization and cookies on a
+// redirect, even to another host over plain HTTP, so a caller's API key
+// (sqm's X-Api-Key) would otherwise follow it anywhere. None of the services
+// redirect today.
+func checkRedirect(req *http.Request, via []*http.Request) error {
+	if len(via) >= 10 {
+		return fmt.Errorf("%w: more than 10", errRedirect)
+	}
+	if orig := via[0].URL; req.URL.Host != orig.Host || orig.Scheme == "https" && req.URL.Scheme != "https" {
+		return fmt.Errorf("%w from %s to %s://%s", errRedirect, orig.Host, req.URL.Scheme, req.URL.Host)
+	}
+
+	return nil
+}
 
 // Cached returns url's body parsed by parse, from the user cache directory
 // when the cached copy (file) is younger than maxAge; a failed download
@@ -96,8 +114,13 @@ func readCache[T any](cache string, parse func([]byte) (T, error)) (T, time.Dura
 	return v, time.Since(fi.ModTime()), err
 }
 
-// maxDownload caps text downloads (MPC comet elements are ~160 kB).
-const maxDownload = 32 << 20
+// maxDownload caps text downloads (MPC comet elements are ~160 kB); maxJSON
+// caps API responses (~10 kB), which decode into slices of pointers and maps
+// many times their size.
+const (
+	maxDownload = 32 << 20
+	maxJSON     = 1 << 20
+)
 
 // GetText GETs url and returns its body, which must be 200 OK and at most
 // maxDownload bytes: a larger one is an error, not silently cut short.
@@ -146,7 +169,7 @@ func GetJSONHeader(ctx context.Context, url string, hdr http.Header, v any) erro
 	}
 	defer resp.Body.Close()
 	// Decode even error bodies (they carry reasons) before judging the status.
-	err = json.NewDecoder(io.LimitReader(resp.Body, maxDownload)).Decode(v)
+	err = json.NewDecoder(io.LimitReader(resp.Body, maxJSON)).Decode(v)
 	if resp.StatusCode != http.StatusOK {
 		return &StatusError{resp.StatusCode}
 	}

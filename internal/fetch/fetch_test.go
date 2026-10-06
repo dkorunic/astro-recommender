@@ -31,6 +31,37 @@ func TestGetJSONStatus(t *testing.T) {
 	}
 }
 
+// A redirect within the host is followed; one to another host is refused
+// before the caller's headers (an API key) reach it.
+func TestRedirect(t *testing.T) {
+	var leaked string
+	other := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		leaked = r.Header.Get("X-Api-Key")
+	}))
+	defer other.Close()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/moved":
+			http.Redirect(w, r, "/ok", http.StatusFound)
+		case "/away":
+			http.Redirect(w, r, other.URL, http.StatusFound)
+		default:
+			_, _ = w.Write([]byte(`{"ok":true}`))
+		}
+	}))
+	defer srv.Close()
+	hdr := http.Header{"X-Api-Key": {"secret"}}
+	var body struct {
+		OK bool `json:"ok"`
+	}
+	if err := GetJSONHeader(context.Background(), srv.URL+"/moved", hdr, &body); err != nil || !body.OK {
+		t.Errorf("same-host redirect = %v, ok %v", err, body.OK)
+	}
+	if err := GetJSONHeader(context.Background(), srv.URL+"/away", hdr, &body); !errors.Is(err, errRedirect) || leaked != "" {
+		t.Errorf("cross-host redirect = %v, other host got key %q", err, leaked)
+	}
+}
+
 // Cached downloads once, serves the cache afterwards and leaves no temp files.
 func TestCached(t *testing.T) {
 	tempCache(t)
