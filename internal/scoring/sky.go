@@ -121,41 +121,57 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 
 	s.Quality = make([]float64, len(s.Grid))
 	s.Ext = make([]float64, len(s.Grid))
-	// Minutes the forecast covers get their hour's weather; the rest get the
-	// covered minutes' mean, not a clear sky that would favour targets up
-	// only then. Without any forecast every minute is clear (1).
-	covered := make([]bool, len(s.Grid))
-	var sum float64
-	var n int
+	// Weather and transparency per minute; ok marks the minutes each forecast covers.
+	sky, skyOK := make([]float64, len(s.Grid)), make([]bool, len(s.Grid))
+	transp, transpOK := make([]float64, len(s.Grid)), make([]bool, len(s.Grid))
 	for i, t := range s.Grid {
 		s.Ext[i] = s.ExtinctionAt(t, cfg.Extinction)
-		s.Quality[i] = 1
 		if h, ok := s.Weather[t.Truncate(time.Hour).Unix()]; ok {
 			// ponytail: guessed ramps; dew (spread 4 -> 1 °C) and gusts (20 -> 40 km/h)
 			// cost up to 30% and 50% of usable frames.
-			s.Quality[i] = (1 - h.Cloud/100) * ramp(h.Temp-h.DewPoint, 4, 1, 0.7) * ramp(h.Gust, 20, 40, 0.5)
-			covered[i] = true
-			sum += s.Quality[i]
-			n++
+			sky[i] = (1 - h.Cloud/100) * ramp(h.Temp-h.DewPoint, 4, 1, 0.7) * ramp(h.Gust, 20, 40, 0.5)
+			skyOK[i] = true
 		}
-	}
-	if n > 0 && n < len(s.Grid) {
-		mean := sum / float64(n)
-		for i := range s.Quality {
-			if !covered[i] {
-				s.Quality[i] = mean
-			}
-		}
-		fmt.Fprintf(os.Stderr, "warning: no weather forecast for %s of the %s window; those hours get the rest's mean sky quality (%.0f%%)\n",
-			time.Duration(len(s.Grid)-n)*time.Minute, end.Sub(start).Round(time.Minute), 100*mean)
-	}
-	for i, t := range s.Grid {
 		if a, ok := s.Astro[weather.AstroKey(t)]; ok {
-			s.Quality[i] *= ramp(float64(a.Transparency), 1, 8, 0.5)
+			transp[i] = ramp(float64(a.Transparency), 1, 8, 0.5)
+			transpOK[i] = true
 		}
+	}
+	fillGaps("weather", sky, skyOK, end.Sub(start))
+	fillGaps("transparency", transp, transpOK, end.Sub(start))
+	for i := range s.Quality {
+		s.Quality[i] = sky[i] * transp[i]
 	}
 
 	return s
+}
+
+// fillGaps gives the minutes a forecast does not cover (ok false) the covered
+// minutes' mean, not a perfect sky that would favour targets up only then,
+// and warns about them. Without any forecast every minute is perfect (1).
+// 7Timer (~3 days) ends sooner than Open-Meteo, so their gaps differ.
+func fillGaps(what string, v []float64, ok []bool, window time.Duration) {
+	var sum float64
+	var n int
+	for i := range v {
+		if ok[i] {
+			sum += v[i]
+			n++
+		}
+	}
+	mean := 1.0
+	if n > 0 {
+		mean = sum / float64(n)
+	}
+	for i := range v {
+		if !ok[i] {
+			v[i] = mean
+		}
+	}
+	if n > 0 && n < len(v) {
+		fmt.Fprintf(os.Stderr, "warning: no %s forecast for %s of the %s window; those hours get the rest's mean (%.0f%%)\n",
+			what, time.Duration(len(v)-n)*time.Minute, window.Round(time.Minute), 100*mean)
+	}
 }
 
 // ramp returns 1 when v is at or on the good side of good, floor at or beyond

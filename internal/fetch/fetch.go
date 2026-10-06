@@ -136,8 +136,8 @@ func GetJSONHeader(ctx context.Context, url string, hdr http.Header, v any) erro
 	if err != nil {
 		return err
 	}
-	for k, v := range hdr {
-		req.Header[http.CanonicalHeaderKey(k)] = v
+	for k, vals := range hdr {
+		req.Header[http.CanonicalHeaderKey(k)] = vals
 	}
 	req.Header.Set("User-Agent", userAgent) // required by Nominatim's usage policy
 	resp, err := httpClient.Do(req)

@@ -101,6 +101,9 @@ next:
 			}
 		}
 		low, mid, high := *h.Low[i]/100, *h.Mid[i]/100, *h.High[i]/100
+		if min(low, mid, high) < 0 || max(low, mid, high) > 1 { // bad data, skipped like null
+			continue
+		}
 		// ponytail: layers treated as independent; thin cirrus blocks ~half the light.
 		cloud := 100 * (1 - (1-low)*(1-mid)*(1-high/2))
 		// Gusts are the maximum over the preceding hour, so the hour starting
@@ -187,7 +190,8 @@ func AerosolForecast(ctx context.Context, lat, lon float64, start, end time.Time
 	}
 	out := map[int64]float64{}
 	for i, t := range body.Hourly.Time {
-		if a := body.Hourly.AOD[i]; a != nil {
+		// Negative AOD is bad data: it would push extinction below 0 and scores above 1.
+		if a := body.Hourly.AOD[i]; a != nil && *a >= 0 {
 			out[t] = *a
 		}
 	}
@@ -201,11 +205,13 @@ func AerosolForecast(ctx context.Context, lat, lon float64, start, end time.Time
 // retried once ending on its first day: a night that runs past the forecast's
 // last day still gets its evening, and BuildSky gives the uncovered rest the
 // covered hours' mean quality. Other failures (rate limits, server errors) are not retried.
-func getRange(ctx context.Context, url string, start, end time.Time, v any) error {
+func getRange[T any](ctx context.Context, url string, start, end time.Time, v *T) error {
 	from, to := start.UTC().Format(time.DateOnly), end.UTC().Format(time.DateOnly)
 	err := fetch.GetJSON(ctx, url+"&start_date="+from+"&end_date="+to, v)
 	var status *fetch.StatusError
 	if errors.As(err, &status) && status.Code == http.StatusBadRequest && to != from {
+		// Cleared: a retry failing without a body must not report the 400's reason.
+		*v = *new(T)
 		err = fetch.GetJSON(ctx, url+"&start_date="+from+"&end_date="+from, v)
 	}
 
