@@ -26,7 +26,8 @@ import (
 // Kharchenko et al. (2013, CDS J/A+A/558/A53); Melotte cross-identifies Melotte
 // (1915) and Collinder (1931) with NGC/IC and take positions from MWSC,
 // OpenNGC, Dias et al. (2002, CDS B/ocl) and SIMBAD; PNnet is Le Du et al.
-// (2022, CDS J/A+A/666/A152).
+// (2022, CDS J/A+A/666/A152); HASH is the HASH PN database (Parker, Bojicic &
+// Frew 2016, hashpn.space).
 //
 //go:embed targets/*.yaml
 var targetFS embed.FS
@@ -54,7 +55,7 @@ type Target struct {
 func (t Target) HasSize() bool { return t.Size > 0 }
 
 // Lists are the embedded uptonight target lists selectable with -list.
-var Lists = []string{"GaryImm", "GaryImmFull", "Messier", "Herschel400", "Pensack500", "OpenNGC", "OpenIC", "LBN", "LDN", "MWSC", "Melotte", "Collinder", "PNnet"}
+var Lists = []string{"GaryImm", "GaryImmFull", "Messier", "Herschel400", "Pensack500", "OpenNGC", "OpenIC", "LBN", "LDN", "MWSC", "Melotte", "Collinder", "PNnet", "HASH"}
 
 var (
 	errList        = errors.New("unknown target list")
