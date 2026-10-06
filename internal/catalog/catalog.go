@@ -24,7 +24,8 @@ import (
 // Target lists from uptonight (MIT, (c) Markus Winkler); OpenNGC and OpenIC
 // derive from the OpenNGC catalog (CC BY-SA 4.0, (c) Mattia Verga); MWSC is
 // Kharchenko et al. (2013, CDS J/A+A/558/A53); Melotte cross-identifies Melotte
-// (1915) with NGC/IC and takes positions from MWSC, OpenNGC and SIMBAD.
+// (1915) and Collinder (1931) with NGC/IC and take positions from MWSC,
+// OpenNGC, Dias et al. (2002, CDS B/ocl) and SIMBAD.
 //
 //go:embed targets/*.yaml
 var targetFS embed.FS
@@ -52,7 +53,7 @@ type Target struct {
 func (t Target) HasSize() bool { return t.Size > 0 }
 
 // Lists are the embedded uptonight target lists selectable with -list.
-var Lists = []string{"GaryImm", "GaryImmFull", "Messier", "Herschel400", "Pensack500", "OpenNGC", "OpenIC", "LBN", "LDN", "MWSC", "Melotte"}
+var Lists = []string{"GaryImm", "GaryImmFull", "Messier", "Herschel400", "Pensack500", "OpenNGC", "OpenIC", "LBN", "LDN", "MWSC", "Melotte", "Collinder"}
 
 var (
 	errList        = errors.New("unknown target list")
@@ -147,6 +148,19 @@ var emissionNames = map[string]bool{
 	"NGC 6618":      true, // M 17
 	"NGC 6820":      true, // with NGC 6823
 	"NGC 7380":      true, // Wizard
+	"IC 1805":       true, // Heart (MWSC)
+	"Mel 15":        true, // IC 1805 Heart (Melotte)
+	// Collinder spellings of the above
+	"Cr 26":  true, // IC 1805 Heart
+	"Cr 68":  true, // NGC 1931 Fly
+	"Cr 112": true, // NGC 2264 Cone
+	"Cr 164": true, // NGC 2467
+	"Cr 360": true, // NGC 6514 M 20
+	"Cr 375": true, // NGC 6611 M 16
+	"Cr 377": true, // NGC 6618 M 17
+	"Cr 404": true, // NGC 6820
+	"Cr 439": true, // IC 1396
+	"Cr 452": true, // NGC 7380 Wizard
 }
 
 // EmissionLine reports whether a target shines mainly in Ha/OIII lines.
