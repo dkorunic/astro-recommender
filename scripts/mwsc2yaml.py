@@ -22,26 +22,37 @@ import sys
 
 from imm2yaml import sexagesimal
 
+# MWSC type -> (type, description note). Associations (NGC 4755, NGC 6231)
+# and moving groups are star fields: "Open Cluster" gets them the cluster sky
+# weighting in scoring.skyK.
 TYPES = {
-    "": "Open Cluster",
-    "r": "Open Cluster",
-    "g": "Globular Cluster",
-    "n": "Cluster Nebulosity",  # Herschel400's spelling
-    "a": "Association",
-    "m": "Moving Group",
-    "s": "Asterism",
+    "": ("Open Cluster", None),
+    "r": ("Open Cluster", "remnant"),
+    "a": ("Open Cluster", "association"),
+    "m": ("Open Cluster", "moving group"),
+    "g": ("Globular Cluster", None),
+    "n": ("Cluster Nebulosity", None),  # Herschel400's spelling
+    "s": ("Asterism", None),
 }
 
-MESSIER_YAML = os.path.join(os.path.dirname(__file__), "../internal/catalog/targets/Messier.yaml")
+TARGETS = os.path.join(os.path.dirname(__file__), "../internal/catalog/targets")
+
+
+def entries(name):
+    """The entries of a flat target list in TARGETS as dicts of raw strings
+    (quotes stripped), without a YAML library."""
+    for entry in open(os.path.join(TARGETS, name), encoding="utf-8").read().split("\n- "):
+        f = dict(re.findall(r"^\s*-?\s*(\w+): ?(.*)$", entry, re.M))
+        if "name" in f:
+            yield {k: v[1:-1] if v[:1] == '"' else v for k, v in f.items()}
 
 
 def messier():
     """MWSC name -> "M nn common name", for Messier.yaml's clusters only: M 24
     (star cloud) and M 73 (asterism) share an NGC number with something else."""
     out = {"Melotte 22": "M 45 Pleiades"}  # no NGC number in Messier.yaml
-    for entry in open(MESSIER_YAML, encoding="utf-8").read().split("\n- "):
-        f = dict(re.findall(r"^\s*-?\s*(\w+): ?(.*)$", entry, re.M))
-        m = re.match(r"((?:NGC|IC) \d+)\s*(.*)", f.get("description", "").strip('"'))
+    for f in entries("Messier.yaml"):
+        m = re.match(r"((?:NGC|IC) \d+)\s*(.*)", f.get("description", ""))
         if m and f.get("type") in ("Open Cluster", "Globular Cluster"):
             common = m.group(2).replace("\\xB9", "'")  # Ptolemy\xB9s: a mangled apostrophe
             out[m.group(1)] = f"{f['name']} {common}".strip()
@@ -58,14 +69,15 @@ def main():
         line = line.ljust(80)
         typ, cand = line[23].strip(), line[24] == "c"
         name = line[5:22].strip().replace("_", " ")
-        desc = " ".join(filter(None, (alias.get(name), typ == "r" and "remnant", cand and "candidate")))
+        kind, note = TYPES[typ]
+        desc = " ".join(filter(None, (alias.get(name), note, cand and "candidate")))
         print('- constellation: ""')  # the loader computes it from RA/Dec
         print(f"  dec: {q(sexagesimal(float(line[34:42])))}")
         print(f"  description: {q(desc)}")
         print(f"  name: {q(name)}")
         print(f"  ra: {q(sexagesimal(float(line[25:34]) * 15, hours=True))}")
         print(f"  size: {round(float(line[65:72]) * 120, 1)}")
-        print(f"  type: {q(TYPES[typ])}")
+        print(f"  type: {q(kind)}")
 
 
 if __name__ == "__main__":

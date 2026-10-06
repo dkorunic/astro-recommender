@@ -23,7 +23,8 @@ import (
 
 // Target lists from uptonight (MIT, (c) Markus Winkler); OpenNGC and OpenIC
 // derive from the OpenNGC catalog (CC BY-SA 4.0, (c) Mattia Verga); MWSC is
-// Kharchenko et al. (2013, CDS J/A+A/558/A53).
+// Kharchenko et al. (2013, CDS J/A+A/558/A53); Melotte cross-identifies Melotte
+// (1915) with NGC/IC and takes positions from MWSC, OpenNGC and SIMBAD.
 //
 //go:embed targets/*.yaml
 var targetFS embed.FS
@@ -51,7 +52,7 @@ type Target struct {
 func (t Target) HasSize() bool { return t.Size > 0 }
 
 // Lists are the embedded uptonight target lists selectable with -list.
-var Lists = []string{"GaryImm", "GaryImmFull", "Messier", "Herschel400", "Pensack500", "OpenNGC", "OpenIC", "LBN", "LDN", "MWSC"}
+var Lists = []string{"GaryImm", "GaryImmFull", "Messier", "Herschel400", "Pensack500", "OpenNGC", "OpenIC", "LBN", "LDN", "MWSC", "Melotte"}
 
 var (
 	errList        = errors.New("unknown target list")
@@ -136,9 +137,12 @@ var emissionNames = map[string]bool{
 	"NGC 281":       true, // PacMan
 	"IC1805":        true, // Heart (Pensack's spelling)
 	"NGC 2264":      true, // Cone / Christmas Tree
+	"Mel 49":        true, // NGC 2264 (Melotte)
 	"NGC 1976":      true, // M 42
 	"NGC 2467":      true, // Skull and Crossbones
 	"IC4703(BN)":    true, // M 16 Eagle (Pensack's spelling)
+	"NGC 6611":      true, // M 16 (MWSC)
+	"Mel 198":       true, // M 16 (Melotte)
 	"NGC 6514":      true, // M 20
 	"NGC 6618":      true, // M 17
 	"NGC 6820":      true, // with NGC 6823
