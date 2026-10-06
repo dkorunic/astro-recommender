@@ -50,7 +50,7 @@ type Config struct {
 	Day            time.Time
 	Loc            *time.Location
 	TargetsFile    string
-	ListName       string // uptonight target list; GaryImm is embedded
+	ListName       string // built-in target list (catalog.Lists)
 	From, To       string // optional local "HH:MM" limits within the night
 	SQMSource      string // where SQM was looked up; empty when given with -sqm
 	Horizon        horizon.Horizon
@@ -99,7 +99,7 @@ func Parse() (Config, error) {
 	flag.Float64Var(&cfg.SizeMin, "size-min", 10, "minimum object size in arc minutes (0 = no minimum)")
 	flag.Float64Var(&cfg.SizeMax, "size-max", 300, "maximum object size in arc minutes")
 	flag.IntVar(&cfg.Top, "n", 20, "number of objects to list")
-	flag.StringVar(&cfg.ListName, "list", "GaryImm", "uptonight target list: "+strings.Join(catalog.Lists, ", "))
+	flag.StringVar(&cfg.ListName, "list", "GaryImm", "built-in target list: "+strings.Join(catalog.Lists, ", "))
 	flag.StringVar(&cfg.TargetsFile, "targets", "", "custom uptonight-style targets YAML file (overrides -list)")
 	flag.BoolVar(&origin, "origin", false, "frame for the Celestron Origin (IMX678 at 335 mm: 1.32x0.75°, 1.23\"/px): fit the FOV, at least -min-px across")
 	flag.StringVar(&fov, "fov", "", "frame for another telescope: field of view WxH in degrees up to 180, e.g. 2.1x1.4 (default Origin; -scale optional)")
