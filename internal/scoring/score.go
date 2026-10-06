@@ -75,12 +75,11 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 // per-minute weight, and alt with its altitude when alt is not nil.
 func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, alt, weight []float64) (Result, bool) {
 	var ra, dec float64
-	var hz astro.Horizontal
 	if tg.Track == nil {
 		// Catalogs are J2000; the hour angle comes from sidereal time of date.
 		ra, dec = astro.Precess(tg.RADeg, tg.DecDeg, s.Grid[len(s.Grid)/2])
-		hz = astro.NewHorizontal(cfg.Lat, dec)
 	}
+	hz := astro.NewHorizontal(cfg.Lat, dec)
 
 	// Fraction of sky glow (moonlight, light pollution) that counts against
 	// this target; also scales its Moon separation limit.
@@ -97,20 +96,24 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, alt, weight []fl
 	for i := range s.Grid {
 		if tg.Track != nil {
 			ra, dec = tg.Track[i][0], tg.Track[i][1]
-			hz = astro.NewHorizontal(cfg.Lat, dec)
+			hz = hz.WithDec(dec)
 		}
 		ha := s.LST[i] - ra
 		sinAlt := hz.SinAlt(ha)
 		if sinAlt > maxSin {
 			maxSin, maxAt = sinAlt, i
 		}
+		var a float64
 		if alt != nil {
-			alt[i] = math.Asin(sinAlt) / deg
+			a = math.Asin(sinAlt) / deg
+			alt[i] = a
 		}
 		if sinAlt < sinMin || sinAlt > sinMax {
 			continue
 		}
-		a := math.Asin(sinAlt) / deg
+		if alt == nil {
+			a = math.Asin(sinAlt) / deg
+		}
 		// The azimuth is only needed against a horizon profile.
 		if len(cfg.Horizon) > 0 && a < cfg.Horizon.At(hz.Az(ha)) {
 			continue

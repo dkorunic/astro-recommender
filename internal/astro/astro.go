@@ -253,6 +253,13 @@ type Horizontal struct{ sinLat, cosLat, sinDec, cosDec float64 }
 func NewHorizontal(lat, dec float64) Horizontal {
 	var h Horizontal
 	h.sinLat, h.cosLat = math.Sincos(lat * deg)
+
+	return h.WithDec(dec)
+}
+
+// WithDec returns h for another declination (degrees) at the same site, so a
+// moving object redoes only the declination trig per step.
+func (h Horizontal) WithDec(dec float64) Horizontal {
 	h.sinDec, h.cosDec = math.Sincos(dec * deg)
 
 	return h
@@ -260,8 +267,10 @@ func NewHorizontal(lat, dec float64) Horizontal {
 
 // SinAlt returns the sine of the altitude at hour angle ha (degrees). It
 // grows with the altitude, so limits compare against it without an Asin.
+// Clamped to ±1: rounding can push it a hair past at the zenith, where Asin
+// would be NaN.
 func (h Horizontal) SinAlt(ha float64) float64 {
-	return h.sinLat*h.sinDec + h.cosLat*h.cosDec*math.Cos(ha*deg)
+	return max(-1, min(1, h.sinLat*h.sinDec+h.cosLat*h.cosDec*math.Cos(ha*deg)))
 }
 
 // Az returns the azimuth (from north through east) in degrees at hour angle ha (degrees).

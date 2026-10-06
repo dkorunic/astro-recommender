@@ -27,7 +27,8 @@ type Slot struct {
 // must carry per-minute Alt and Weight over s.Grid (scoring.Score with
 // perMinute); one without them is a caller bug and panics.
 func Make(s *scoring.Sky, results []scoring.Result, block time.Duration) []Slot {
-	n := int(block / time.Minute)
+	// Below a minute the step would be 0 and the bounds loop endless.
+	n := max(1, int(block/time.Minute))
 	var bounds [][2]int
 	for lo := 0; lo < len(s.Grid); lo += n {
 		bounds = append(bounds, [2]int{lo, min(lo+n, len(s.Grid))})
@@ -138,8 +139,10 @@ func improvePlan(pick []int, score [][]float64) []int {
 
 		return best
 	}
+	// Every accepted move raises the bounded total by more than eps, so the
+	// passes end.
 	const eps = 1e-9
-	for range 20 {
+	for {
 		changed := false
 		// Move block a's target to block b and b's target (if any) to a. A
 		// target is never placed where it is not observable: if b's target

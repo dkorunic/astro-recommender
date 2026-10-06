@@ -360,6 +360,9 @@ func (cfg *Config) validate() error {
 		return fmt.Errorf("%w: -plan must be a whole number of minutes", errInvalidFlag)
 	case cfg.Top < 1:
 		return fmt.Errorf("%w: -n must be at least 1", errInvalidFlag)
+	// Scoring compares the limits as sines, which only orders altitudes within ±90°.
+	case math.Abs(cfg.AltMin) > 90 || math.Abs(cfg.AltMax) > 90:
+		return fmt.Errorf("%w: -alt-min and -alt-max must be between -90 and 90", errInvalidFlag)
 	case cfg.AltMin >= cfg.AltMax:
 		return fmt.Errorf("%w: -alt-min (%g) must be below -alt-max (%g)", errInvalidFlag, cfg.AltMin, cfg.AltMax)
 	case cfg.Framing && (cfg.Scale <= 0 || cfg.FOVShort <= 0 || cfg.FOVLong < cfg.FOVShort):

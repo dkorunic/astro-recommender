@@ -87,6 +87,11 @@ func TestAltAz(t *testing.T) {
 	if alt, az := AltAz(0, 89.99, time.Now(), 45, 16); math.Abs(alt-45) > 0.1 || (az > 1 && az < 359) {
 		t.Errorf("pole altAz = %v, %v", alt, az)
 	}
+	// At the zenith the sine rounds to 1.0000000000000002 for lat = dec = 10
+	// at hour angle 0; Asin of that is NaN unless clamped.
+	if sinAlt := NewHorizontal(10, 10).SinAlt(0); sinAlt != 1 {
+		t.Errorf("zenith SinAlt = %v, want 1", sinAlt)
+	}
 }
 
 func TestPrecess(t *testing.T) {

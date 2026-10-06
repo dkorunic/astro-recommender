@@ -5,6 +5,8 @@ package scoring
 
 import (
 	"math"
+	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -73,5 +75,38 @@ func TestBuildSkyPartialForecast(t *testing.T) {
 		if got := s.Quality[i]; math.Abs(got-want) > 1e-9 {
 			t.Errorf("transparency minute %d: quality %v, want %v", i, got, want)
 		}
+	}
+}
+
+// TestFillGapsWarns: a fetched forecast that misses the whole window (7Timer
+// with a far -date) must warn, not silently assume a perfect sky; nothing
+// fetched stays silent.
+func TestFillGapsWarns(t *testing.T) {
+	stderr := func(fetched bool) string {
+		t.Helper()
+		f, err := os.CreateTemp(t.TempDir(), "stderr")
+		if err != nil {
+			t.Fatal(err)
+		}
+		old := os.Stderr
+		os.Stderr = f
+		v := make([]float64, 3)
+		fillGaps("transparency", v, make([]bool, 3), fetched, 3*time.Minute)
+		os.Stderr = old
+		out, err := os.ReadFile(f.Name())
+		if err != nil {
+			t.Fatal(err)
+		}
+		if v[0] != 1 {
+			t.Errorf("fetched %v: uncovered quality %v, want 1", fetched, v[0])
+		}
+
+		return string(out)
+	}
+	if out := stderr(true); !strings.Contains(out, "does not cover") {
+		t.Errorf("fetched but uncovered: stderr %q, want a warning", out)
+	}
+	if out := stderr(false); out != "" {
+		t.Errorf("nothing fetched: stderr %q, want none", out)
 	}
 }

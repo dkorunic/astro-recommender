@@ -41,6 +41,8 @@ func TestValidate(t *testing.T) {
 		"-n -1":             func(c *Config) { c.Top = -1 },
 		"alt-min > max":     func(c *Config) { c.AltMin, c.AltMax = 60, 40 },
 		"alt-min = max":     func(c *Config) { c.AltMin, c.AltMax = 40, 40 },
+		"alt-max > 90":      func(c *Config) { c.AltMax = 95 },
+		"alt-min < -90":     func(c *Config) { c.AltMin = -95 },
 		"size-min > max":    func(c *Config) { c.SizeMin, c.SizeMax = 300, 10 },
 		"-plan 10m45s":      func(c *Config) { c.Plan = 10*time.Minute + 45*time.Second },
 		"size-min < 0":      func(c *Config) { c.SizeMin = -5 },

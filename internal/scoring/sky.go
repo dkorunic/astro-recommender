@@ -140,8 +140,8 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 			transpOK[i] = true
 		}
 	}
-	fillGaps("weather", sky, skyOK, end.Sub(start))
-	fillGaps("transparency", transp, transpOK, end.Sub(start))
+	fillGaps("weather", sky, skyOK, len(s.Weather) > 0, end.Sub(start))
+	fillGaps("transparency", transp, transpOK, len(s.Astro) > 0, end.Sub(start))
 	for i := range s.Quality {
 		s.Quality[i] = sky[i] * transp[i]
 	}
@@ -151,9 +151,12 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 
 // fillGaps gives the minutes a forecast does not cover (ok false) the covered
 // minutes' mean, not a perfect sky that would favour targets up only then,
-// and warns about them. Without any forecast every minute is perfect (1).
-// 7Timer (~3 days) ends sooner than Open-Meteo, so their gaps differ.
-func fillGaps(what string, v []float64, ok []bool, window time.Duration) {
+// and warns about them when a forecast was fetched. Without any coverage
+// every minute is perfect (1): silently without a forecast (-no-weather,
+// failed fetch), with a warning when the fetched one misses the whole window
+// (7Timer has no date parameter, so a -date past its ~3 days gets a forecast
+// for other nights). 7Timer ends sooner than Open-Meteo, so their gaps differ.
+func fillGaps(what string, v []float64, ok []bool, fetched bool, window time.Duration) {
 	var sum float64
 	var n int
 	for i := range v {
@@ -171,7 +174,12 @@ func fillGaps(what string, v []float64, ok []bool, window time.Duration) {
 			v[i] = mean
 		}
 	}
-	if n > 0 && n < len(v) {
+	switch {
+	case !fetched || n == len(v):
+	case n == 0:
+		fmt.Fprintf(os.Stderr, "warning: the %s forecast does not cover the %s window; perfect sky assumed\n",
+			what, window.Round(time.Minute))
+	default:
 		fmt.Fprintf(os.Stderr, "warning: no %s forecast for %s of the %s window; those hours get the rest's mean (%.0f%%)\n",
 			what, time.Duration(len(v)-n)*time.Minute, window.Round(time.Minute), 100*mean)
 	}
