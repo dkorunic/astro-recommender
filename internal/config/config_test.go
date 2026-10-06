@@ -148,3 +148,62 @@ func TestParseFrame(t *testing.T) {
 		t.Errorf("no framing flags: %+v, %v", cfg, err)
 	}
 }
+
+func TestParseRegion(t *testing.T) {
+	for name, c := range map[string]struct {
+		args []string
+		want string // substring of the error, "" to accept
+	}{
+		"decimal":      {[]string{"-ra", "20.5", "-dec", "-12.5"}, ""},
+		"sexagesimal":  {[]string{"-ra", "20 30 00", "-dec", "-12 30 00"}, ""},
+		"ra alone":     {[]string{"-ra", "0"}, ""},
+		"ra 24":        {[]string{"-ra", "24"}, "-ra must be 0 to 24"},
+		"ra negative":  {[]string{"-ra", "-0.5"}, "-ra must be 0 to 24"},
+		"ra junk":      {[]string{"-ra", "20:30"}, `"20:30"`},
+		"dec above 90": {[]string{"-dec", "91"}, "-dec must be -90"},
+		"dec junk":     {[]string{"-dec", "40d"}, `"40d"`},
+		"tol 0":        {[]string{"-ra", "20", "-tol", "0"}, "-tol must be"},
+		"tol NaN":      {[]string{"-ra", "20", "-tol", "NaN"}, "-tol must be a finite"},
+		"tol 181":      {[]string{"-dec", "20", "-tol", "181"}, "-tol must be"},
+		"tol unused":   {[]string{"-tol", "0"}, ""},
+	} {
+		cfg, err := parse(t, c.args...)
+		switch {
+		case c.want == "" && err != nil:
+			t.Errorf("%s: rejected: %v", name, err)
+		case c.want != "" && err == nil:
+			t.Errorf("%s: accepted", name)
+		case c.want != "" && !strings.Contains(err.Error(), c.want):
+			t.Errorf("%s: error %q does not mention %q", name, err, c.want)
+		case c.want == "" && cfg.RASet && (math.Abs(cfg.RA-307.5) > 1e-9 && cfg.RA != 0 || cfg.DecSet && cfg.Dec != -12.5):
+			t.Errorf("%s: RA %v Dec %v, want 307.5 / -12.5", name, cfg.RA, cfg.Dec)
+		}
+	}
+	if cfg, err := parse(t); err != nil || cfg.RASet || cfg.DecSet || !cfg.Near(0, 0) || !cfg.Near(359, -89) {
+		t.Errorf("no region flags: %+v, %v", cfg, err)
+	}
+}
+
+func TestNear(t *testing.T) {
+	// 10° around RA 0h30m (7.5°), Dec +60: RA wraps across 0h.
+	cfg := Config{RASet: true, DecSet: true, RA: 7.5, Dec: 60, Tol: 10}
+	for _, c := range []struct {
+		ra, dec float64
+		want    bool
+	}{
+		{7.5, 60, true},
+		{358, 60, true},
+		{17, 70, true},
+		{18, 60, false},
+		{357, 60, false},
+		{7.5, 49, false},
+	} {
+		if got := cfg.Near(c.ra, c.dec); got != c.want {
+			t.Errorf("Near(%v, %v) = %v, want %v", c.ra, c.dec, got, c.want)
+		}
+	}
+	cfg.DecSet = false
+	if !cfg.Near(7.5, -80) || cfg.Near(30, 60) {
+		t.Error("RA alone: Dec must not limit, RA still must")
+	}
+}

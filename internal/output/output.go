@@ -44,6 +44,16 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 		s.End.Sub(s.Start).Round(time.Minute), night)
 	fmt.Printf("%s %s illuminated, min separation %.0f°\n", label("Moon:    "), paint(scale(s.Illum, 0.3, 0.7), fmt.Sprintf("%.0f%%", s.Illum*100)), s.MoonSep)
 	fmt.Printf("%s %.1f' - %.1f'\n", label("Size:    "), cfg.SizeMin, cfg.SizeMax)
+	if cfg.RASet || cfg.DecSet {
+		var region []string
+		if cfg.RASet {
+			region = append(region, fmt.Sprintf("RA %.2fh", cfg.RA/15))
+		}
+		if cfg.DecSet {
+			region = append(region, fmt.Sprintf("Dec %+.1f°", cfg.Dec))
+		}
+		fmt.Printf("%s within %.0f° of %s\n", label("Region:  "), cfg.Tol, strings.Join(region, " "))
+	}
 	targetsDesc := cfg.ListName
 	if cfg.TargetsFile != "" {
 		targetsDesc = cfg.TargetsFile

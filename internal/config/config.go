@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dkorunic/astro-recommender/internal/astro"
 	"github.com/dkorunic/astro-recommender/internal/atmos"
 	"github.com/dkorunic/astro-recommender/internal/catalog"
 	"github.com/dkorunic/astro-recommender/internal/geotz"
@@ -59,6 +60,8 @@ type Config struct {
 	AltMin, AltMax float64
 	SizeMin        float64
 	SizeMax        float64
+	RA, Dec        float64 // -ra/-dec sky region centre in J2000 degrees; see RASet/DecSet
+	Tol            float64 // -tol: half-width of the region in degrees (RA at 15°/h)
 	FilterK        float64
 	Extinction     float64 // mag per airmass; used everywhere when set explicitly
 	FOVLong        float64 // arc minutes
@@ -72,6 +75,7 @@ type Config struct {
 	Version        bool // -version: print the version and exit; nothing else is set
 	ExtinctionSet  bool // -extinction given: skip the aerosol-based estimate
 	SkySet         bool // -sqm or -bortle given, even as 0: skip the DarkSkySites lookup
+	RASet, DecSet  bool // -ra/-dec given: keep only targets within Tol of them
 	Framing        bool // -origin, -fov, -scale or -focal with -sensor/-pixel: fit and score objects against the frame
 	Filter         bool
 	NoWeather      bool
@@ -88,6 +92,7 @@ func Parse() (Config, error) {
 	var fov, sensor string
 	var focal, pixel float64
 	var horizonFile string
+	var ra, dec string
 	flag.Float64Var(&cfg.Lat, "lat", 0, "latitude in degrees, north positive (required)")
 	flag.Float64Var(&cfg.Lon, "lon", 0, "longitude in degrees, east positive (required)")
 	flag.StringVar(&date, "date", "", "date of the evening, YYYY-MM-DD (default tonight; during the night, the rest of the night in progress)")
@@ -98,6 +103,9 @@ func Parse() (Config, error) {
 	flag.Float64Var(&cfg.AltMax, "alt-max", 80, "maximum altitude in degrees")
 	flag.Float64Var(&cfg.SizeMin, "size-min", 10, "minimum object size in arc minutes (0 = no minimum)")
 	flag.Float64Var(&cfg.SizeMax, "size-max", 300, "maximum object size in arc minutes")
+	flag.StringVar(&ra, "ra", "", "keep only targets near this J2000 right ascension, hours as 20.5 or \"20 30 00\"")
+	flag.StringVar(&dec, "dec", "", "keep only targets near this J2000 declination, degrees as -12.5 or \"-12 30 00\"")
+	flag.Float64Var(&cfg.Tol, "tol", 10, "with -ra/-dec, how near in degrees, above 0 and at most 180; RA counts 15° per hour")
 	flag.IntVar(&cfg.Top, "n", 20, "number of objects to list")
 	flag.StringVar(&cfg.ListName, "list", "GaryImm", "built-in target list: "+strings.Join(catalog.Lists, ", "))
 	flag.StringVar(&cfg.TargetsFile, "targets", "", "custom uptonight-style targets YAML file (overrides -list)")
@@ -139,6 +147,9 @@ func Parse() (Config, error) {
 	}
 	cfg.ExtinctionSet = set["extinction"]
 	cfg.SkySet = set["sqm"] || set["bortle"]
+	if err := cfg.parseRegion(set, ra, dec); err != nil {
+		return Config{}, err
+	}
 
 	// Framing (-origin, -fov or -focal/-sensor, -scale or -focal/-pixel)
 	// replaces the size defaults; explicit -size-min/-size-max still win.
@@ -222,6 +233,16 @@ func (cfg *Config) ZenithMag() float64 {
 	return atmos.BortleMag[cfg.Bortle]
 }
 
+// Near reports whether a position (J2000 degrees) is within Tol of the -ra
+// and -dec given; an axis not given does not limit. RA wraps at 24h.
+func (cfg *Config) Near(ra, dec float64) bool {
+	if cfg.RASet && math.Abs(math.Mod(ra-cfg.RA+540, 360)-180) > cfg.Tol {
+		return false
+	}
+
+	return !cfg.DecSet || math.Abs(dec-cfg.Dec) <= cfg.Tol
+}
+
 // visited returns the flags given on the command line and the names of the
 // float flags among them that are NaN or infinite: ParseFloat accepts those
 // and every range check would pass them.
@@ -244,6 +265,38 @@ func visited() (map[string]bool, []string) {
 // guarantees Scale > 0; a zero-value Config returns NaN (0/0).
 func (cfg *Config) FramePx() (float64, float64) {
 	return cfg.FOVLong * 60 / cfg.Scale, cfg.FOVShort * 60 / cfg.Scale
+}
+
+// parseRegion sets RA/Dec (degrees) and RASet/DecSet from -ra (hours) and
+// -dec (degrees), each decimal or sexagesimal, and checks -tol when either
+// is given.
+func (cfg *Config) parseRegion(set map[string]bool, ra, dec string) error {
+	cfg.RASet, cfg.DecSet = set["ra"], set["dec"]
+	if cfg.RASet {
+		h, err := astro.Sexagesimal(ra)
+		if err != nil {
+			return fmt.Errorf("%w: -ra must be hours as 20.5 or \"20 30 00\": %w", errInvalidFlag, err)
+		}
+		if h < 0 || h >= 24 {
+			return fmt.Errorf("%w: -ra must be 0 to 24 hours as 20.5 or \"20 30 00\"", errInvalidFlag)
+		}
+		cfg.RA = h * 15
+	}
+	if cfg.DecSet {
+		d, err := astro.Sexagesimal(dec)
+		if err != nil {
+			return fmt.Errorf("%w: -dec must be degrees as -12.5 or \"-12 30 00\": %w", errInvalidFlag, err)
+		}
+		if math.Abs(d) > 90 {
+			return fmt.Errorf("%w: -dec must be -90 to 90 degrees as -12.5 or \"-12 30 00\"", errInvalidFlag)
+		}
+		cfg.Dec = d
+	}
+	if (cfg.RASet || cfg.DecSet) && (cfg.Tol <= 0 || cfg.Tol > 180) {
+		return fmt.Errorf("%w: -tol must be above 0 and at most 180 degrees", errInvalidFlag)
+	}
+
+	return nil
 }
 
 // frameFOV returns the frame's long and short sides in arc minutes from -fov,

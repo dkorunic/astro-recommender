@@ -141,6 +141,12 @@ A different catalogue. `-list` picks one of the built-in lists; two thirds of th
 astro-recommender -lat 45.815 -lon 15.982 -list LDN -size-min 0
 ```
 
+One region of the sky. `-ra` and/or `-dec` keep only objects within `-tol` degrees (default 10, above 0) of the given J2000 coordinates, decimal or sexagesimal; RA counts 15° per hour and wraps at 24h. Either alone also works, e.g. `-dec 60` for a band around +60°:
+
+```sh
+astro-recommender -lat 45.815 -lon 15.982 -list OpenNGC -size-min 0 -ra "20 30" -dec 40 -tol 15
+```
+
 Planetary nebulae are small, so the Origin's default 200 px floor would leave almost nothing: `-min-px 30` admits the ones at least 30 px across, and `-filter` applies the narrowband discount to them:
 
 ```sh
@@ -200,6 +206,8 @@ astro-recommender -lat 45.815 -lon 15.982 -no-weather -no-geocode -no-sqm -no-co
 | `-extinction` | auto | Atmospheric extinction in magnitudes per airmass. By default it is estimated per hour from the site's elevation and the CAMS aerosol forecast. Setting it fixes the value; `0.2` is used when no estimate is available |
 | `-alt-min`, `-alt-max` | `30`, `80` | Altitude limits in degrees |
 | `-size-min`, `-size-max` | `10`, `300` | Object size limits in arcminutes, 0 or more; `-size-min 0` means no minimum. Framing replaces them with `-min-px` × scale up to the frame's short side (4.1′–45.0′ on the Origin), since the size is the major axis and its orientation in the frame is unknown, unless you set them explicitly; a `-size-max` above the short side is an error, because such objects cannot be framed |
+| `-ra`, `-dec` | | Keep only objects near this J2000 right ascension (hours, `20.5` or `"20 30 00"`) and/or declination (degrees, `-12.5` or `"-12 30 00"`); comets use their mid-window position of date, within 0.4° of J2000 |
+| `-tol` | `10` | With `-ra`/`-dec`, how near in degrees on each axis, above 0 and at most 180; RA counts 15° per hour and wraps at 24h |
 | `-list` | `GaryImm` | Built-in target list (see below) |
 | `-targets` | none | Your own uptonight-format targets YAML file; overrides `-list` |
 | `-comet-mag` | `12` | Include comets brighter than this total visual magnitude |

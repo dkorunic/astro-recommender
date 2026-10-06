@@ -44,7 +44,7 @@ go run . -lat <deg> -lon <deg> [-tz Europe/Zagreb] [-date YYYY-MM-DD] [-origin] 
 | `catalog` | `Target`, embedded lists in `internal/catalog/targets/`, `Load`, `EmissionLine` | astro, constellation, num, sanitize |
 | `comets` | `Targets` (MPC elements, two-body orbits) | astro, catalog, constellation, fetch, num, sanitize |
 | `horizon` | `Horizon`, `Load`, `At` | num |
-| `config` | `Config`, `Parse` (flags → validated config, returns errors; `-tz` defaults to `geotz.Lookup`) | atmos, catalog, geotz, horizon, num |
+| `config` | `Config`, `Parse` (flags → validated config, returns errors; `-tz` defaults to `geotz.Lookup`), `Near` (`-ra`/`-dec`/`-tol` region, checked by `scoring.Score` beside the size limits and echoed by `output.Header`; comets use their mid-track position, which is of date, ~0.4° from J2000, deliberately not corrected) | astro, atmos, catalog, geotz, horizon, num |
 | `scoring` | `Sky`/`BuildSky` (no I/O), `Forecast`/`FetchForecast` (the three weather sources, concurrently)/`NoForecast`, `Result`, `Score`, `skyK`, `frameFill` (scoring), `ramp` | astro, atmos, catalog, config, weather |
 | `plan` | `Slot`, `Make` (greedy + local search) | scoring |
 | `output` | `Header`/`Weather`/`Plan`/`Results`, ANSI colors | atmos, catalog, config, plan, scoring, weather |
