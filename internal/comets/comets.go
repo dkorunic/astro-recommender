@@ -155,7 +155,8 @@ func parseComets(data []byte) (Elements, error) {
 // ponytail: two-body orbit, no light time or planetary perturbations;
 // arc-minute level near the element epoch, fine for picking targets.
 func (c *comet) position(t time.Time) (float64, float64, float64, float64) {
-	nu, r := c.anomaly(t.Sub(c.perihelion).Hours() / 24)
+	// Not t.Sub: a Duration saturates at ±292 years, silently freezing the orbit there.
+	nu, r := c.anomaly(float64(t.Unix()-c.perihelion.Unix()) / 86400)
 	if math.IsNaN(r) {
 		return math.NaN(), math.NaN(), math.NaN(), math.NaN()
 	}

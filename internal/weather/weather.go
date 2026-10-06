@@ -144,8 +144,9 @@ func AstroForecast(ctx context.Context, lat, lon float64) (map[int64]AstroBlock,
 	}
 	out := map[int64]AstroBlock{}
 	for _, d := range body.Dataseries {
-		// Out-of-range values (e.g. -9999) mean missing data.
-		if d.Seeing < 1 || d.Seeing > 8 || d.Transparency < 1 || d.Transparency > 8 {
+		// Out-of-range values (e.g. -9999) mean missing data. The product runs
+		// 72 h ahead; a timepoint far beyond that would overflow the Duration.
+		if d.Seeing < 1 || d.Seeing > 8 || d.Transparency < 1 || d.Transparency > 8 || d.Timepoint < 0 || d.Timepoint > 24*30 {
 			continue
 		}
 		out[init.Add(time.Duration(d.Timepoint)*time.Hour).Unix()] = AstroBlock{d.Seeing, d.Transparency}

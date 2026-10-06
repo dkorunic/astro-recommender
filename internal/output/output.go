@@ -35,11 +35,16 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 		place = " (" + place + ")"
 	}
 	fmt.Printf("%s %.4f, %.4f%s, %s\n", label("Location:"), cfg.Lat, cfg.Lon, place, cfg.Loc)
+	_, duskOff := s.Night[0].Zone()
+	_, dawnOff := s.Night[1].Zone()
+	if duskOff != dawnOff {
+		clockLayout = "15:04 MST"
+	}
 	night := ""
 	if !s.Start.Equal(s.Night[0]) || !s.End.Equal(s.Night[1]) {
-		night = fmt.Sprintf(", astronomical night %s - %s", s.Night[0].Format("15:04"), s.Night[1].Format("15:04"))
+		night = fmt.Sprintf(", astronomical night %s - %s", clock(s.Night[0]), clock(s.Night[1]))
 	}
-	fmt.Printf("%s %s - %s (%s%s)\n", label("Window:  "), s.Start.Format("2006-01-02 15:04"), s.End.Format("2006-01-02 15:04"),
+	fmt.Printf("%s %s - %s (%s%s)\n", label("Window:  "), s.Start.Format("2006-01-02 "+clockLayout), s.End.Format("2006-01-02 "+clockLayout),
 		s.End.Sub(s.Start).Round(time.Minute), night)
 	fmt.Printf("%s %s illuminated, min separation %.0f°\n", label("Moon:    "), paint(scale(s.Illum, 0.3, 0.7), fmt.Sprintf("%.0f%%", s.Illum*100)), s.MoonSep)
 	fmt.Printf("%s %.1f' - %.1f'\n", label("Size:    "), cfg.SizeMin, cfg.SizeMax)
@@ -110,7 +115,8 @@ func Weather(cfg *config.Config, s *scoring.Sky) {
 	na := paint("39", "-")
 	for t := s.Start.Truncate(time.Hour); t.Before(s.End); t = t.Add(time.Hour) {
 		cloud, layers, dew, wind, transp, ext, seeing := na, na, na, na, na, na, na
-		if _, ok := s.AOD[t.Unix()]; ok {
+		// The elevation alone gives an hourly value (typical aerosols), the one scoring uses.
+		if !math.IsNaN(s.Elevation) {
 			k := s.ExtinctionAt(t, cfg.Extinction)
 			ext = paint(scale(k, 0.25, 0.4), fmt.Sprintf("%.2f", k))
 		}
@@ -125,7 +131,7 @@ func Weather(cfg *config.Config, s *scoring.Sky) {
 			transp = paint(scale(float64(a.Transparency), 3, 6), fmt.Sprintf("%d/8", a.Transparency))
 			seeing = paint(scale(float64(a.Seeing), 6, 8), weather.SeeingLabel(a.Seeing))
 		}
-		row(w, "", paint("39", t.In(cfg.Loc).Format("15:04")), cloud, layers, transp, ext, seeing, dew, wind)
+		row(w, "", paint("39", clock(t.In(cfg.Loc))), cloud, layers, transp, ext, seeing, dew, wind)
 	}
 	w.Flush()
 	fmt.Println()
@@ -135,7 +141,7 @@ func Plan(slots []plan.Slot) {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	row(w, "01", names(planColumns)...)
 	for _, p := range slots {
-		when := paint("39", p.Start.Format("15:04")+"-"+p.End.Format("15:04"))
+		when := paint("39", clock(p.Start)+"-"+clock(p.End))
 		if p.Result == nil {
 			na := paint("39", "-")
 			row(w, "", when, paint("39", "no target"), na, na, na, na)
@@ -144,7 +150,7 @@ func Plan(slots []plan.Slot) {
 		}
 		row(w, "", when, paint("36", p.Result.Name), paint("39", p.Result.Description), paint(typeColor(p.Result.Target), p.Result.Type),
 			paint(scale(p.Score, 0.66, 0.33), fmt.Sprintf("%.2f", p.Score)),
-			paint("39", fmt.Sprintf("%.0f° @ %s", p.PeakAlt, p.PeakAt.Format("15:04"))))
+			paint("39", fmt.Sprintf("%.0f° @ %s", p.PeakAlt, clock(p.PeakAt))))
 	}
 	w.Flush()
 	fmt.Println()
@@ -167,7 +173,7 @@ func Results(cfg *config.Config, results []scoring.Result) {
 			paint("39", r.Constellation), paint("39", sizeText(r.Target, "%.0f'", r.Size)),
 			paint(scale(r.Foto, 0.66, 0.33), fmt.Sprintf("%.2f", r.Foto)),
 			paint(scale(r.Score, 0.66, 0.33), fmt.Sprintf("%.2f", r.Score)),
-			paint("39", fmt.Sprintf("%.0f° @ %s", r.MaxAlt, r.MaxAt.Format("15:04"))),
+			paint("39", fmt.Sprintf("%.0f° @ %s", r.MaxAlt, clock(r.MaxAt))),
 			paint(scale(r.SkyMag, 20.5, 19), fmt.Sprintf("%.1f", r.SkyMag)),
 			paint("39", px))
 	}
@@ -175,6 +181,13 @@ func Results(cfg *config.Config, results []scoring.Result) {
 }
 
 var UseColor bool
+
+// clockLayout formats clock times. Header adds the zone abbreviation when
+// the night crosses a UTC offset change (DST): a bare "02:35" is then
+// ambiguous, and a block printed as 01:35-02:35 lasts two hours.
+var clockLayout = "15:04"
+
+func clock(t time.Time) string { return t.Format(clockLayout) }
 
 // typeColor is the TYPE cell's color, as the legend explains it: magenta for
 // emission-line targets, yellow for comets.

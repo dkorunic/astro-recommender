@@ -34,6 +34,18 @@ func TestParseCometsBadDate(t *testing.T) {
 	}
 }
 
+func TestPositionFarFromPerihelion(t *testing.T) {
+	// A parabolic comet keeps receding: 400 years out it is farther than 300.
+	// With time.Duration the offset would saturate at ~292 years and both
+	// distances would be equal.
+	c := comet{q: 1, e: 1, perihelion: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)}
+	_, _, r300, _ := c.position(c.perihelion.AddDate(300, 0, 0))
+	_, _, r400, _ := c.position(c.perihelion.AddDate(400, 0, 0))
+	if !(r400 > r300) {
+		t.Errorf("r at +400 y = %g, at +300 y = %g; want increasing", r400, r300)
+	}
+}
+
 func TestTrackNaN(t *testing.T) {
 	// a = q/(e-1) underflows a^1.5 to 0, so the mean anomaly is infinite.
 	c := comet{q: 1e-300, e: 2}
