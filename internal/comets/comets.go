@@ -73,14 +73,27 @@ func (e Elements) Targets(grid []time.Time, maxMag float64) []catalog.Target {
 		tg.Name, tg.Description, _ = strings.Cut(c.name, " (")
 		tg.Description = strings.TrimSuffix(tg.Description, ")")
 		tg.Description = strings.TrimSpace(fmt.Sprintf("%s mag %.1f, r %.2f AU, Δ %.2f AU", tg.Description, mag, r, delta))
-		for i, t := range grid {
-			ra, dec, _, _ := c.position(t)
-			tg.Track[i][0], tg.Track[i][1] = astro.Precess(ra, dec, t) // J2000 -> of date, as for catalogs
+		if c.track(grid, tg.Track) {
+			out = append(out, tg)
 		}
-		out = append(out, tg)
 	}
 
 	return out
+}
+
+// track fills track[i] with the position of date at grid[i]. It reports false
+// if any position is NaN: scoring's altitude limits (a < lo || a > hi) would
+// pass a NaN minute as observable and turn the score into NaN.
+func (c *comet) track(grid []time.Time, track [][2]float64) bool {
+	for i, t := range grid {
+		ra, dec, _, _ := c.position(t)
+		if math.IsNaN(ra) || math.IsNaN(dec) {
+			return false
+		}
+		track[i][0], track[i][1] = astro.Precess(ra, dec, t) // J2000 -> of date, as for catalogs
+	}
+
+	return true
 }
 
 // parseComets reads the MPC one-line comet element format (fixed columns).
@@ -112,7 +125,10 @@ func parseComets(data []byte) (Elements, error) {
 		incl, err8 := f(71, 79)
 		h, err9 := f(91, 95)
 		k, err10 := f(96, 100)
-		if errors.Join(err1, err2, err3, err4, err5, err6, err7, err8, err9, err10) != nil || q <= 0 || e < 0 {
+		// A day out of range would overflow the Duration below (silently, as
+		// float-to-int conversion does), and time.Date would shift a bad month.
+		if errors.Join(err1, err2, err3, err4, err5, err6, err7, err8, err9, err10) != nil || q <= 0 || e < 0 ||
+			month < 1 || month > 12 || day < 1 || day >= 32 {
 			continue
 		}
 		t := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC).

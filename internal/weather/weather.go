@@ -163,9 +163,15 @@ func AstroKey(t time.Time) int64 {
 	return t.Round(3 * time.Hour).Unix()
 }
 
-// SeeingLabel renders 7Timer seeing classes as arc second ranges.
+// SeeingLabel renders 7Timer seeing classes (1-8) as arc second ranges, "-"
+// for any other value.
 func SeeingLabel(s int) string {
-	return [...]string{`<0.5"`, `0.5-0.75"`, `0.75-1"`, `1-1.25"`, `1.25-1.5"`, `1.5-2"`, `2-2.5"`, `>2.5"`}[s-1]
+	labels := [...]string{`<0.5"`, `0.5-0.75"`, `0.75-1"`, `1-1.25"`, `1.25-1.5"`, `1.5-2"`, `2-2.5"`, `>2.5"`}
+	if s < 1 || s > len(labels) {
+		return "-"
+	}
+
+	return labels[s-1]
 }
 
 // AerosolForecast fetches hourly aerosol optical depth at 550 nm (CAMS) from

@@ -20,6 +20,14 @@ func TestAstroKey(t *testing.T) {
 	}
 }
 
+func TestSeeingLabel(t *testing.T) {
+	for s, want := range map[int]string{1: `<0.5"`, 8: `>2.5"`, 0: "-", 9: "-", -9999: "-"} {
+		if got := SeeingLabel(s); got != want {
+			t.Errorf("SeeingLabel(%d) = %q, want %q", s, got, want)
+		}
+	}
+}
+
 func TestGustShift(t *testing.T) {
 	// Gusts at 21:00 cover 20:00-21:00, so they belong to the hour starting at 20:00.
 	p := func(v float64) *float64 { return &v }
