@@ -1,7 +1,7 @@
 - constellation: Taurus
   dec: +22 1 0
   description: NGC 1952 Crab Nebula
-  mag: -9999
+  mag: 8.4
   name: M 1
   ra: 5 34 30
   size: 6.0
@@ -25,7 +25,7 @@
 - constellation: Scorpius
   dec: -26 32 0
   description: NGC 6121
-  mag: -9999
+  mag: 5.4
   name: M 4
   ra: 16 23 36
   size: 26.3
@@ -41,7 +41,7 @@
 - constellation: Scorpius
   dec: -32 13 0
   description: NGC 6405 Butterfly Cluster
-  mag: -9999
+  mag: 4.2
   name: M 6
   ra: 17 40 6
   size: 25.0
@@ -49,7 +49,7 @@
 - constellation: Scorpius
   dec: -34 49 0
   description: "NGC 6475 Ptolemy\xB9s Cluster"
-  mag: -9999
+  mag: 3.3
   name: M 7
   ra: 17 53 54
   size: 80.0
@@ -57,7 +57,7 @@
 - constellation: Sagittarius
   dec: -24 23 0
   description: NGC 6523 Lagoon Nebula
-  mag: -9999
+  mag: 5.80
   name: M 8
   ra: 18 3 48
   size: 90.0
@@ -113,7 +113,7 @@
 - constellation: Pegasus
   dec: +12 10 0
   description: NGC 7078
-  mag: -9999
+  mag: 6.3
   name: M 15
   ra: 21 30 0
   size: 12.3
@@ -121,7 +121,7 @@
 - constellation: Serpens Claudia
   dec: -13 47 0
   description: NGC 6611 Eagle Nebula Cluster
-  mag: -9999
+  mag: 6.0
   name: M 16
   ra: 18 18 48
   size: 7.0
@@ -129,7 +129,7 @@
 - constellation: Sagittarius
   dec: -16 11 0
   description: NGC 6618 Omega or Swan or Horseshoe Nebula
-  mag: -9999
+  mag: 7.00
   name: M 17
   ra: 18 20 48
   size: 11.0
@@ -137,7 +137,7 @@
 - constellation: Sagittarius
   dec: -17 8 0
   description: NGC 6613
-  mag: -9999
+  mag: 6.9
   name: M 18
   ra: 18 19 54
   size: 9.0
@@ -153,7 +153,7 @@
 - constellation: Sagittarius
   dec: -23 2 0
   description: NGC 6514 Trifid Nebula
-  mag: -9999
+  mag: 8.50
   name: M 20
   ra: 18 2 18
   size: 28.0
@@ -161,7 +161,7 @@
 - constellation: Sagittarius
   dec: -22 30 0
   description: NGC 6531
-  mag: -9999
+  mag: 5.9
   name: M 21
   ra: 18 4 36
   size: 13.0
@@ -169,7 +169,7 @@
 - constellation: Sagittarius
   dec: -23 54 0
   description: NGC 6656
-  mag: -9999
+  mag: 5.2
   name: M 22
   ra: 18 36 24
   size: 24.0
@@ -177,7 +177,7 @@
 - constellation: Sagittarius
   dec: -19 1 0
   description: NGC 6494
-  mag: -9999
+  mag: 5.5
   name: M 23
   ra: 17 56 48
   size: 27.0
@@ -185,7 +185,7 @@
 - constellation: Sagittarius
   dec: -18 25 0
   description: NGC 6603 Milky Way Patch
-  mag: -9999
+  mag: 2.5
   name: M 24
   ra: 18 18 24
   size: 90.0
@@ -193,7 +193,7 @@
 - constellation: Sagittarius
   dec: -19 14 0
   description: IC 4725
-  mag: -9999
+  mag: 4.6
   name: M 25
   ra: 18 31 42
   size: 40.0
@@ -217,7 +217,7 @@
 - constellation: Sagittarius
   dec: -24 52 0
   description: NGC 6626
-  mag: -9999
+  mag: 6.9
   name: M 28
   ra: 18 24 30
   size: 11.2
@@ -245,6 +245,8 @@
   name: M 31
   ra: 0 42 42
   size: 178.0
+  surfbr: 22.39
+  bsurfbr: 23.63
   type: Spiral Galaxy
 - constellation: Andromeda
   dec: +40 52 0
@@ -253,6 +255,8 @@
   name: M 32
   ra: 0 42 42
   size: 8.0
+  surfbr: 21.39
+  bsurfbr: 22.17
   type: Elliptical Galaxy
 - constellation: Triangulum
   dec: +30 39 0
@@ -261,11 +265,13 @@
   name: M 33
   ra: 1 33 54
   size: 73.0
+  surfbr: 23.09
+  bsurfbr: 23.61
   type: Spiral Galaxy
 - constellation: Perseus
   dec: +42 47 0
   description: NGC 1039
-  mag: -9999
+  mag: 5.2
   name: M 34
   ra: 2 42 0
   size: 35.0
@@ -273,7 +279,7 @@
 - constellation: Gemini
   dec: +24 20 0
   description: NGC 2168
-  mag: -9999
+  mag: 5.1
   name: M 35
   ra: 6 8 54
   size: 28.0
@@ -305,7 +311,7 @@
 - constellation: Cygnus
   dec: +48 26 0
   description: NGC 7092
-  mag: -9999
+  mag: 4.6
   name: M 39
   ra: 21 32 12
   size: 32.0
@@ -329,7 +335,7 @@
 - constellation: Orion
   dec: -5 27 0
   description: NGC 1976 Great Orion Nebula
-  mag: -9999
+  mag: 4.0
   name: M 42
   ra: 5 35 24
   size: 85.0
@@ -337,7 +343,7 @@
 - constellation: Orion
   dec: -5 16 0
   description: "NGC 1982 de Mairan\xB9s Nebula"
-  mag: -9999
+  mag: 9.0
   name: M 43
   ra: 5 35 36
   size: 20.0
@@ -345,7 +351,7 @@
 - constellation: Cancer
   dec: +19 59 0
   description: NGC 2632 Beehive Cluster (Praesepe)
-  mag: -9999
+  mag: 3.7
   name: M 44
   ra: 8 40 6
   size: 95.0
@@ -353,7 +359,7 @@
 - constellation: Taurus
   dec: +24 7 12
   description: Pleiades or Subaru or Seven Sisters
-  mag: -9999
+  mag: 1.6
   name: M 45
   ra: 3 47 0
   size: 110.0
@@ -361,7 +367,7 @@
 - constellation: Puppis
   dec: -14 49 0
   description: NGC 2437
-  mag: -9999
+  mag: 6.1
   name: M 46
   ra: 7 41 48
   size: 27.0
@@ -369,7 +375,7 @@
 - constellation: Puppis
   dec: -14 30 0
   description: NGC 2422
-  mag: -9999
+  mag: 6.7
   name: M 47
   ra: 7 36 36
   size: 30.0
@@ -377,7 +383,7 @@
 - constellation: Hydra
   dec: -5 48 0
   description: NGC 2548
-  mag: -9999
+  mag: 5.8
   name: M 48
   ra: 8 13 48
   size: 54.0
@@ -389,11 +395,13 @@
   name: M 49
   ra: 12 29 48
   size: 9.0
+  surfbr: 22.09
+  bsurfbr: 23.25
   type: Elliptical Galaxy
 - constellation: Monocerus
   dec: -8 20 0
   description: NGC 2323
-  mag: -9999
+  mag: 5.9
   name: M 50
   ra: 7 3 12
   size: 16.0
@@ -405,11 +413,13 @@
   name: M 51
   ra: 13 29 54
   size: 11.0
+  surfbr: 21.79
+  bsurfbr: 22.90
   type: Spiral Galaxy
 - constellation: Cassiopeia
   dec: +61 35 0
   description: NGC 7654
-  mag: -9999
+  mag: 6.9
   name: M 52
   ra: 23 24 12
   size: 13.0
@@ -425,7 +435,7 @@
 - constellation: Sagittarius
   dec: -30 29 0
   description: NGC 6715
-  mag: -9999
+  mag: 7.7
   name: M 54
   ra: 18 55 6
   size: 9.1
@@ -441,7 +451,7 @@
 - constellation: Lyra
   dec: +30 11 0
   description: NGC 6779
-  mag: -9999
+  mag: 8.4
   name: M 56
   ra: 19 16 36
   size: 7.1
@@ -461,22 +471,28 @@
   name: M 58
   ra: 12 37 42
   size: 5.5
+  surfbr: 21.99
+  bsurfbr: 22.49
   type: Spiral Galaxy
 - constellation: Virgo
   dec: +11 39 0
   description: NGC 4621
-  mag: -9999
+  mag: 9.6
   name: M 59
   ra: 12 42 0
   size: 5.0
+  surfbr: 21.79
+  bsurfbr: 22.71
   type: Elliptical Galaxy
 - constellation: Virgo
   dec: +11 33 0
   description: NGC 4649
-  mag: -9999
+  mag: 8.8
   name: M 60
   ra: 12 43 42
   size: 7.0
+  surfbr: 21.89
+  bsurfbr: 22.81
   type: Elliptical Galaxy
 - constellation: Virgo
   dec: +4 28 0
@@ -485,11 +501,13 @@
   name: M 61
   ra: 12 21 54
   size: 6.0
+  surfbr: 22.39
+  bsurfbr: 23.05
   type: Spiral Galaxy
 - constellation: Ophiucus
   dec: -30 7 0
   description: NGC 6266
-  mag: -9999
+  mag: 6.4
   name: M 62
   ra: 17 1 12
   size: 14.1
@@ -501,6 +519,8 @@
   name: M 63
   ra: 13 15 48
   size: 10.0
+  surfbr: 22.19
+  bsurfbr: 23.04
   type: Spiral Galaxy
 - constellation: Coma Berenices
   dec: +21 41 0
@@ -509,14 +529,18 @@
   name: M 64
   ra: 12 56 42
   size: 9.3
+  surfbr: 21.59
+  bsurfbr: 22.68
   type: Spiral Galaxy
 - constellation: Leo
   dec: +13 5 0
   description: NGC 3623
-  mag: -9999
+  mag: 9.3
   name: M 65
   ra: 11 18 54
   size: 8.0
+  surfbr: 21.69
+  bsurfbr: 22.73
   type: Spiral Galaxy
 - constellation: Leo
   dec: +12 59 0
@@ -525,11 +549,13 @@
   name: M 66
   ra: 11 20 12
   size: 8.0
+  surfbr: 21.59
+  bsurfbr: 22.96
   type: Spiral Galaxy
 - constellation: Cancer
   dec: +11 49 0
   description: NGC 2682
-  mag: -9999
+  mag: 6.9
   name: M 67
   ra: 8 50 24
   size: 30.0
@@ -545,7 +571,7 @@
 - constellation: Sagittarius
   dec: -32 21 0
   description: NGC 6637
-  mag: -9999
+  mag: 8.3
   name: M 69
   ra: 18 31 24
   size: 7.1
@@ -553,7 +579,7 @@
 - constellation: Sagittarius
   dec: -32 18 0
   description: NGC 6681
-  mag: -9999
+  mag: 7.8
   name: M 70
   ra: 18 43 12
   size: 7.8
@@ -561,7 +587,7 @@
 - constellation: Sagitta
   dec: +18 47 0
   description: NGC 6838
-  mag: -9999
+  mag: 8.4
   name: M 71
   ra: 19 53 48
   size: 7.2
@@ -577,7 +603,7 @@
 - constellation: Aquarius
   dec: -12 38 0
   description: NGC 6994  Group of 4 stars
-  mag: -9999
+  mag: 8.9
   name: M 73
   ra: 20 59 0
   size: 2.8
@@ -589,6 +615,8 @@
   name: M 74
   ra: 1 36 42
   size: 10.2
+  surfbr: 23.09
+  bsurfbr: 23.37
   type: Spiral Galaxy
 - constellation: Sagittarius
   dec: -21 55 0
@@ -613,11 +641,13 @@
   name: M 77
   ra: 2 42 42
   size: 7.0
+  surfbr: 21.69
+  bsurfbr: 22.35
   type: Spiral Galaxy
 - constellation: Orion
   dec: +0 3 0
   description: NGC 2068
-  mag: -9999
+  mag: 8.00
   name: M 78
   ra: 5 46 42
   size: 8.0
@@ -633,7 +663,7 @@
 - constellation: Scorpius
   dec: -22 59 0
   description: NGC 6093
-  mag: -9999
+  mag: 7.3
   name: M 80
   ra: 16 17 0
   size: 8.9
@@ -645,6 +675,8 @@
   name: M 81
   ra: 9 55 36
   size: 21.0
+  surfbr: 22.09
+  bsurfbr: 22.78
   type: Spiral Galaxy
 - constellation: Ursa Major
   dec: +69 41 0
@@ -653,6 +685,8 @@
   name: M 82
   ra: 9 55 48
   size: 9.0
+  surfbr: 21.39
+  bsurfbr: 22.22
   type: Irregular Galaxy
 - constellation: Hydra
   dec: -29 52 0
@@ -661,6 +695,8 @@
   name: M 83
   ra: 13 37 0
   size: 11.0
+  surfbr: 21.69
+  bsurfbr: 22.20
   type: Spiral Galaxy
 - constellation: Virgo
   dec: +12 53 0
@@ -669,14 +705,18 @@
   name: M 84
   ra: 12 25 6
   size: 5.0
+  surfbr: 21.89
+  bsurfbr: 23.23
   type: Lenticular (S0) Galaxy
 - constellation: Coma Berenices
   dec: +18 11 0
   description: NGC 4382
-  mag: -9999
+  mag: 9.1
   name: M 85
   ra: 12 25 24
   size: 7.1
+  surfbr: 21.79
+  bsurfbr: 22.87
   type: Lenticular (S0) Galaxy
 - constellation: Virgo
   dec: +12 57 0
@@ -685,6 +725,8 @@
   name: M 86
   ra: 12 26 12
   size: 7.5
+  surfbr: 22.09
+  bsurfbr: 23.90
   type: Lenticular (S0) Galaxy
 - constellation: Virgo
   dec: +12 24 0
@@ -693,6 +735,8 @@
   name: M 87
   ra: 12 30 48
   size: 7.0
+  surfbr: 21.89
+  bsurfbr: 22.79
   type: Elliptical Galaxy
 - constellation: Coma Berenices
   dec: +14 25 0
@@ -701,6 +745,8 @@
   name: M 88
   ra: 12 32 0
   size: 7.0
+  surfbr: 21.89
+  bsurfbr: 23.17
   type: Spiral Galaxy
 - constellation: Virgo
   dec: +12 33 0
@@ -709,6 +755,8 @@
   name: M 89
   ra: 12 35 42
   size: 4.0
+  surfbr: 22.09
+  bsurfbr: 24.11
   type: Elliptical Galaxy
 - constellation: Virgo
   dec: +13 10 0
@@ -717,6 +765,8 @@
   name: M 90
   ra: 12 36 48
   size: 9.5
+  surfbr: 22.39
+  bsurfbr: 23.16
   type: Spiral Galaxy
 - constellation: Coma Berenices
   dec: +14 30 0
@@ -725,6 +775,8 @@
   name: M 91
   ra: 12 35 24
   size: 5.4
+  surfbr: 22.29
+  bsurfbr: 23.24
   type: Spiral Galaxy
 - constellation: Hercules
   dec: +43 8 0
@@ -737,7 +789,7 @@
 - constellation: Puppis
   dec: -23 52 0
   description: NGC 2447
-  mag: -9999
+  mag: 6.2
   name: M 93
   ra: 7 44 36
   size: 22.0
@@ -749,6 +801,8 @@
   name: M 94
   ra: 12 50 54
   size: 7.0
+  surfbr: 21.99
+  bsurfbr: 21.79
   type: Spiral Galaxy
 - constellation: Leo
   dec: +11 42 0
@@ -757,6 +811,8 @@
   name: M 95
   ra: 10 44 0
   size: 4.4
+  surfbr: 22.39
+  bsurfbr: 23.26
   type: Spiral Galaxy
 - constellation: Leo
   dec: +11 49 0
@@ -765,6 +821,8 @@
   name: M 96
   ra: 10 46 48
   size: 6.0
+  surfbr: 21.99
+  bsurfbr: 23.14
   type: Spiral Galaxy
 - constellation: Ursa Major
   dec: +55 1 0
@@ -781,6 +839,8 @@
   name: M 98
   ra: 12 13 48
   size: 9.5
+  surfbr: 22.39
+  bsurfbr: 23.89
   type: Spiral Galaxy
 - constellation: Coma Berenices
   dec: +14 25 0
@@ -789,6 +849,8 @@
   name: M 99
   ra: 12 18 48
   size: 5.4
+  surfbr: 22.19
+  bsurfbr: 22.60
   type: Spiral Galaxy
 - constellation: Coma Berenices
   dec: +15 49 0
@@ -797,6 +859,8 @@
   name: M 100
   ra: 12 22 54
   size: 7.0
+  surfbr: 22.29
+  bsurfbr: 22.61
   type: Spiral Galaxy
 - constellation: Ursa Major
   dec: +54 21 0
@@ -805,6 +869,8 @@
   name: M 101
   ra: 14 3 12
   size: 22.0
+  surfbr: 23.79
+  bsurfbr: 23.97
   type: Spiral Galaxy
 - constellation: Draco
   dec: +55 46 0
@@ -813,6 +879,8 @@
   name: M 102
   ra: 15 6 30
   size: 5.2
+  surfbr: 21.09
+  bsurfbr: 23.40
   type: Lenticular (S0) Galaxy
 - constellation: Cassiopeia
   dec: +60 42 0
@@ -829,6 +897,8 @@
   name: M 104
   ra: 12 40 0
   size: 9.0
+  surfbr: 20.49
+  bsurfbr: 22.26
   type: Spiral Galaxy
 - constellation: Leo
   dec: +12 35 0
@@ -837,6 +907,8 @@
   name: M 105
   ra: 10 47 48
   size: 2.0
+  surfbr: 21.69
+  bsurfbr: 22.54
   type: Elliptical Galaxy
 - constellation: Canes Venatici
   dec: +47 18 0
@@ -845,11 +917,13 @@
   name: M 106
   ra: 12 19 0
   size: 19.0
+  surfbr: 22.49
+  bsurfbr: 23.36
   type: Spiral Galaxy
 - constellation: Ophiucus
   dec: -13 3 0
   description: NGC 6171
-  mag: -9999
+  mag: 7.8
   name: M 107
   ra: 16 32 30
   size: 10.0
@@ -857,18 +931,22 @@
 - constellation: Ursa Major
   dec: +55 40 0
   description: NGC 3556
-  mag: -9999
+  mag: 10.7
   name: M 108
   ra: 11 11 30
   size: 8.0
+  surfbr: 21.99
+  bsurfbr: 21.70
   type: Spiral Galaxy
 - constellation: Ursa Major
   dec: +53 23 0
   description: NGC 3992
-  mag: -9999
+  mag: 10.6
   name: M 109
   ra: 11 57 36
   size: 7.0
+  surfbr: 22.49
+  bsurfbr: 23.45
   type: Spiral Galaxy
 - constellation: Andromeda
   dec: +41 41 0
@@ -877,4 +955,6 @@
   name: M 110
   ra: 0 40 24
   size: 17.0
+  surfbr: 22.89
+  bsurfbr: 23.78
   type: Elliptical Galaxy

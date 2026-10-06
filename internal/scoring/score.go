@@ -92,6 +92,13 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, alt, weight []fl
 	// that pass them (and for alt): the bulk of the minutes do not.
 	sinMin, sinMax := math.Sin(cfg.AltMin*deg), math.Sin(cfg.AltMax*deg)
 	r := Result{Target: tg, Frame: 1}
+	// The object's own surface brightness, in the sky's units; 0 when unknown,
+	// which scores it as sky-limited, as every target was before SB existed.
+	var objNL float64
+	if sb, _ := tg.SurfaceBrightness(); sb > 0 {
+		objNL = atmos.NanoLamberts(sb)
+	}
+	objRef := objNL + s.RefNL // the same object under a pristine sky
 	clear(weight)
 	var good int
 	var altSum, weighted, skySum float64
@@ -128,9 +135,12 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, alt, weight []fl
 			}
 		}
 		sb := atmos.SkyBrightness(s.ZenithNL, s.Ext[i], a, s.MoonAlt[i], rho, s.MoonPhase, s.MoonDist)
-		// Sky-limited imaging: SNR in a fixed time goes as signal/sqrt(sky). Full
-		// credit for a pristine dark sky; a filter cuts the sky the target sees to k.
-		skyW := min(1, math.Sqrt(s.RefNL/(k*sb)))
+		// SNR in a fixed time goes as signal/sqrt(signal+sky), relative to the
+		// same object under a pristine dark sky: an object much brighter than
+		// the sky loses nothing, a faint or unknown one (objNL = 0) is
+		// sky-limited, sqrt(RefNL/(k·sky)). A filter cuts the sky the target
+		// sees to k; the emission-line signal that passes it is unchanged.
+		skyW := min(1, math.Sqrt(objRef/(objNL+k*sb)))
 		good++
 		altSum += a
 		skySum += atmos.MagFromNL(sb)

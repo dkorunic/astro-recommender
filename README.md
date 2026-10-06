@@ -32,7 +32,7 @@ It started as a port of the deep sky part of [uptonight](https://github.com/mawi
 
 - **Tonight's window**: astronomical dusk to dawn (Sun below −18°), found by searching from the site's own solar noon so time zones and polar nights can't cut it short. A run during the night (after dusk, or after midnight) plans only the rest of it; `-date` plans another evening and `-from`/`-to` narrow the window.
 - **Observability per minute**, following uptonight's rules: altitude between `-alt-min` and `-alt-max`, Moon separation of at least the illumination percentage in degrees (skipped while the Moon is below the horizon), and optionally above your measured **local horizon** profile (`-horizon`).
-- **Ranking** by an imaging score that sums, over every observable minute, the forecast sky quality × atmospheric extinction × a sky-brightness weight, with uptonight's observable fraction (FOTO) shown alongside. Mean altitude breaks ties.
+- **Ranking** by an imaging score that sums, over every observable minute, the forecast sky quality × atmospheric extinction × a sky weight that sets the object's own surface brightness against the sky's, so a bright-surface object shrugs off moonlight and light pollution that a faint smudge does not, with uptonight's observable fraction (FOTO) shown alongside. Mean altitude breaks ties.
 - **Sky brightness and moonlight**: the Krisciunas & Schaefer model of the moonless sky from `-bortle` or a measured `-sqm` value, brightened towards the horizon, plus scattered moonlight from the Moon's phase, altitude and distance to the target. Targets are weighted by sky-limited signal-to-noise.
 - **Target-type sensitivity to sky glow**: clusters count half of it, and with `-filter` emission-line targets (emission and planetary nebulae, supernova remnants, Wolf-Rayet nebulae, plus known mislabelled ones) count only `-filter-k` of it, which also relaxes their Moon-distance limit.
 - **Extinction per hour** from the site's elevation and the CAMS aerosol forecast (dust, smoke, haze), or a fixed `-extinction`; shown in the forecast table.
@@ -67,36 +67,36 @@ It needs Go 1.27+. The target catalogues are built into the binary.
 ## Usage
 
 ```sh
-astro-recommender -lat 45.815 -lon 15.982 -origin -filter -bortle 6 -n 5
+astro-recommender -lat 45.815 -lon 15.982 -origin -filter -bortle 6 -n 5 -date 2026-10-07
 ```
 
 ```
 Location: 45.8150, 15.9820 (Mjesni odbor Zrinjevac, Gradska četvrt Donji grad, Zagreb, Grad Zagreb, Hrvatska), Europe/Zagreb
-Window:   2026-10-05 20:08 - 2026-10-06 05:22 (9h14m0s)
-Moon:     24% illuminated, min separation 24°
+Window:   2026-10-07 20:04 - 2026-10-08 05:25 (9h21m0s)
+Moon:     8% illuminated, min separation 8°
 Size:     4.1' - 44.7'
-Targets:  GaryImm, 2 comets brighter than mag 12.0
+Targets:  GaryImm, 1 comets brighter than mag 12.0
 Frame:    1.32° x 0.75°, 1.23"/px (3856 x 2180 px)
-Sky:      Bortle 6 (zenith 18.80 mag/arcsec²), extinction 0.23-0.25 (elevation 126 m, aerosols) mag/airmass, filter k=0.25
+Sky:      Bortle 6 (zenith 18.80 mag/arcsec²), extinction 0.29-0.33 (elevation 126 m, aerosols) mag/airmass, filter k=0.25
 
-HOUR   CLOUD  LOW/MID/HIGH  TRANSP  EXT   SEEING  DEW SPREAD  WIND/GUST
-20:00  50%    0/0/100%      2/8     0.25  1.5-2"  6.0°C       5/13 km/h
-21:00  50%    0/0/100%      2/8     0.24  1.5-2"  7.6°C       5/12 km/h
-22:00  50%    0/0/100%      2/8     0.23  1.5-2"  7.6°C       4/10 km/h
-23:00  54%    0/8/100%      2/8     0.23  1.5-2"  7.1°C       4/8 km/h
-00:00  50%    0/0/100%      2/8     0.23  1.5-2"  6.7°C       4/8 km/h
-01:00  50%    0/0/100%      2/8     0.23  1.5-2"  6.0°C       4/7 km/h
-02:00  50%    0/0/100%      2/8     0.23  1.5-2"  5.9°C       3/7 km/h
-03:00  7%     0/0/15%       2/8     0.23  1.5-2"  5.0°C       1/4 km/h
-04:00  2%     0/0/3%        2/8     0.23  1.5-2"  3.3°C       1/1 km/h
-05:00  0%     0/0/0%        2/8     0.23  1.5-2"  4.0°C       1/3 km/h
+HOUR   CLOUD  LOW/MID/HIGH  TRANSP  EXT   SEEING     DEW SPREAD  WIND/GUST
+20:00  55%    8/40/38%      3/8     0.33  1.25-1.5"  5.8°C       4/12 km/h
+21:00  26%    0/0/51%       3/8     0.33  1.25-1.5"  5.3°C       6/13 km/h
+22:00  0%     0/0/0%        3/8     0.32  1.25-1.5"  3.9°C       6/12 km/h
+23:00  43%    0/42/4%       3/8     0.31  1.25-1.5"  3.2°C       5/10 km/h
+00:00  54%    0/53/5%       3/8     0.30  1.25-1.5"  3.1°C       5/10 km/h
+01:00  62%    0/61/6%       3/8     0.29  1.25-1.5"  3.4°C       4/9 km/h
+02:00  77%    0/74/21%      3/8     0.29  1.25-1.5"  3.6°C       4/7 km/h
+03:00  79%    8/71/39%      3/8     0.30  1.25-1.5"  4.4°C       3/6 km/h
+04:00  100%   23/100/11%    4/8     0.31  1.25-1.5"  5.1°C       4/8 km/h
+05:00  94%    47/89/7%      4/8     0.31  1.25-1.5"  3.8°C       1/8 km/h
 
-#  NAME      DESCRIPTION                  TYPE               CONSTELLATION  RA       DEC     SIZE  FOTO  SCORE  MAX ALT      SKY   PX
-1  NGC 281   PacMan Nebula                Emission Nebula    Cassiopeia     00 52.9  +56 37  35'   1.00  0.24   79° @ 00:52  18.7  1705
-2  IC 63     Gamma Cassiopeia Nebula      Emission Nebula    Cassiopeia     00 59.5  +60 55  20'   1.00  0.24   75° @ 00:59  18.7  974
-3  Sh2-173   Phantom of the Opera Nebula  Emission Nebula    Cassiopeia     00 21.3  +61 44  25'   1.00  0.24   74° @ 00:20  18.7  1218
-4  IC 1795   Fishhead Nebula              Emission Nebula    Cassiopeia     02 26.5  +62 03  30'   1.00  0.24   74° @ 02:26  18.7  1461
-5  Abell 85  CTB 1 or Garlic Nebula       Supernova Remnant  Cassiopeia     23 59.9  +62 27  35'   1.00  0.23   73° @ 23:59  18.7  1705
+#  NAME      DESCRIPTION                  TYPE               CONSTELLATION  RA       DEC     SIZE  FOTO  SCORE  MAX ALT      SKY   SB     PX
+1  NGC 7380  Wizard Nebula                Emission Nebula    Cepheus        22 47.4  +58 08  25'   1.00  0.18   78° @ 22:38  18.7  ~22.8  1218
+2  NGC 7635  Bubble Nebula                Emission Nebula    Cassiopeia     23 20.8  +61 13  15'   1.00  0.16   74° @ 23:12  18.7  -      731
+3  Abell 85  CTB 1 or Garlic Nebula       Supernova Remnant  Cassiopeia     23 59.9  +62 27  35'   1.00  0.15   73° @ 23:51  18.7  -      1705
+4  Sh2-173   Phantom of the Opera Nebula  Emission Nebula    Cassiopeia     00 21.3  +61 44  25'   1.00  0.15   74° @ 00:13  18.7  -      1218
+5  NGC 281   PacMan Nebula                Emission Nebula    Cassiopeia     00 52.9  +56 37  35'   1.00  0.15   79° @ 00:44  18.7  -      1705
 ```
 
 The output ends with a legend explaining every column of the tables shown and the colours. In short:
@@ -106,6 +106,7 @@ The output ends with a legend explaining every column of the tables shown and th
 - **SCORE**: imaging quality from 0 to 1, where 1 means a perfect minute for the whole window under a pristine dark sky. It accounts for weather, extinction, sky brightness and, with framing, how well the object fits the frame. This column decides the order.
 - **MAX ALT**: the object's highest altitude in the window, and when it occurs.
 - **SKY**: the average sky brightness at the object while it is observable, in V mag/arcsec². Higher is darker: about 22 is pristine and 18–19 is a suburb or a bright Moon. The filter isn't included.
+- **SB**: the object's own surface brightness in the same units, which the score sets against the sky the object sees: SKY, cut to a quarter by `-filter` for emission-line objects or halved for clusters. `~` marks a value derived from the magnitude and size rather than measured, `-` an object with no brightness data, which is scored as if far fainter than the sky.
 - **PX**: the object's size in pixels at the frame's pixel scale; `-` without framing (`-origin`, `-fov`, `-scale`, `-focal`), since there is no frame to measure against.
 
 On a colour-capable terminal the output is colour-coded green/yellow/red. Colours are turned off when output is piped, when `NO_COLOR` is set or when `TERM=dumb`. `CLICOLOR_FORCE=1` turns them on regardless.
@@ -247,15 +248,29 @@ All eight [uptonight target lists](https://github.com/mawinkler/uptonight/tree/m
 | `Messier` | 110 | The Messier catalogue |
 | `Herschel400` | 400 | The Astronomical League's Herschel 400 |
 | `Pensack500` | 502 | Don Pensack's 500 best deep sky objects |
-| `OpenNGC` | 8373 | The NGC, from [OpenNGC](https://github.com/mattiaverga/OpenNGC) |
-| `OpenIC` | 5589 | The IC, from OpenNGC |
+| `OpenNGC` | 8373 | The NGC, from [OpenNGC](https://github.com/mattiaverga/OpenNGC): V and B magnitudes and B-band surface brightness (`bsurfbr`) where known, Messier number, NGC/IC cross-identifications and common names in the description |
+| `OpenIC` | 5590 | The IC, from OpenNGC, described like `OpenNGC` |
 | `LBN` | 1116 | Lynds' Catalogue of Bright Nebulae |
 | `LDN` | 1764 | Lynds' Catalogue of Dark Nebulae |
 | `MWSC` | 3006 | Milky Way Star Clusters (Kharchenko et al. 2013): open and globular clusters, associations and moving groups (typed `Open Cluster`, noted in the description); size is the diameter of the central part (r1); the 56 Messier clusters carry their M number and common name |
 | `Melotte` | 245 | Melotte's 1915 catalogue of star clusters, named `Mel N` with the NGC/IC number, Messier number and common name in the description |
 | `Collinder` | 471 | Collinder's 1931 catalogue of open clusters, named `Cr N`, described like `Melotte` |
 | `PNnet` | 819 | Planetary nebulae found by the [Planetary Nebulae.net](https://planetarynebulae.net/) amateur group as published by Le Dû et al. (2022): 209 true, likely and possible PNe and 610 candidates, status and PN G designation in the description |
-| `HASH` | 3994 | Galactic planetary nebulae from the [HASH PN database](https://hashpn.space/) (true, likely and possible), status, PN G designation and morphology in the description; size is the largest measured major diameter |
+| `HASH` | 3994 | Galactic planetary nebulae from the [HASH PN database](https://hashpn.space/) (true, likely and possible), status, PN G designation and morphology in the description; size is the largest measured major diameter; V magnitude from Gary Imm's Compendium for the planetaries it lists |
+
+`OpenNGC.yaml` and `OpenIC.yaml` are generated by `scripts/openngc2yaml.py` from the OpenNGC database (Python standard library only); names, types, positions and sizes follow uptonight's conversion, and `mag` (V), `bmag` (B) and `bsurfbr` (mean B-band surface brightness within the 25 mag isophote, mag/arcsec²) are added where OpenNGC has them. Where OpenNGC has no V magnitude, `GaryImmFull.yaml`'s (also V) is used, and its V-band surface brightness is added as `surfbr`, so regenerate `GaryImmFull.yaml` first:
+
+```sh
+curl -O https://raw.githubusercontent.com/mattiaverga/OpenNGC/master/database_files/NGC.csv
+scripts/openngc2yaml.py NGC.csv NGC > internal/catalog/targets/OpenNGC.yaml
+scripts/openngc2yaml.py NGC.csv IC > internal/catalog/targets/OpenIC.yaml
+```
+
+`GaryImm.yaml`, `Messier.yaml`, `Herschel400.yaml` and `Pensack500.yaml` are uptonight's lists with the unknown magnitudes filled, and the `surfbr` (V band, from `GaryImmFull.yaml`) and `bsurfbr` (B band, from `OpenNGC.yaml`/`OpenIC.yaml`) surface brightness keys added, by `scripts/fillmag.py` (Messier.yaml itself is a source for the others, so it goes first), matching by name or by the NGC/IC number in the description; the rest is unchanged. Rerun it after regenerating those:
+
+```sh
+scripts/fillmag.py internal/catalog/targets/Messier.yaml > m.yaml && mv m.yaml internal/catalog/targets/Messier.yaml
+```
 
 `GaryImmFull.yaml` is generated from the compendium spreadsheet by `scripts/imm2yaml.py` (Python standard library only):
 
@@ -263,16 +278,16 @@ All eight [uptonight target lists](https://github.com/mawinkler/uptonight/tree/m
 scripts/imm2yaml.py IMM_Compendium_2026.xlsx > internal/catalog/targets/GaryImmFull.yaml
 ```
 
-The script checks each decimal RA/Dec against the raw h/m/s and d/m/s cells, and uses the raw value when they disagree. In the 2026 edition this fixed NGC 4526, NGC 5985 and NGC 7094. It also fixes three Dec values typed without seconds (NGC 3813, NGC 3998, NGC 5473), which would otherwise put those Ursa Major galaxies on the celestial equator.
+The script checks each decimal RA/Dec against the raw h/m/s and d/m/s cells, and uses the raw value when they disagree. It also carries the integrated magnitude (`mag`, 1961 of the 3145 objects), the V-band surface brightness of 1178 galaxies (`surfbr`, mag/arcsec²) and Gary Imm's imaging rating (`rating`). In the 2026 edition this fixed NGC 4526, NGC 5985 and NGC 7094. It also fixes three Dec values typed without seconds (NGC 3813, NGC 3998, NGC 5473), which would otherwise put those Ursa Major galaxies on the celestial equator.
 
-`MWSC.yaml` is generated by `scripts/mwsc2yaml.py` from the CDS catalogue; it takes Messier numbers and names from `Messier.yaml`:
+`MWSC.yaml` is generated by `scripts/mwsc2yaml.py` from the CDS catalogue; it takes Messier numbers and names from `Messier.yaml` and magnitudes from `OpenNGC.yaml`, `OpenIC.yaml` and `GaryImmFull.yaml` (MWSC has none):
 
 ```sh
 curl -O https://cdsarc.cds.unistra.fr/ftp/J/A+A/558/A53/catalog.dat
 scripts/mwsc2yaml.py catalog.dat > internal/catalog/targets/MWSC.yaml
 ```
 
-`Melotte.yaml` and `Collinder.yaml` are generated by `scripts/wiki2yaml.py` from the cross-identification tables in Wikipedia's [Melotte catalogue](https://en.wikipedia.org/wiki/Melotte_catalogue) and [Collinder catalogue](https://en.wikipedia.org/wiki/Collinder_catalogue) articles. Positions, sizes and types come from `MWSC.yaml`, then `OpenNGC.yaml`/`OpenIC.yaml`, then `GaryImmFull.yaml` (the Hyades); the 18 clusters in none of them are hard-coded in the script from Dias et al. (2002) or SIMBAD. Where the matched entry isn't a cluster (OpenNGC calls NGC 7023 a nebula), the Wikipedia table's object type is used, and a cluster in a nebula becomes `Cluster Nebulosity`. Regenerate them after `MWSC.yaml`:
+`Melotte.yaml` and `Collinder.yaml` are generated by `scripts/wiki2yaml.py` from the cross-identification tables in Wikipedia's [Melotte catalogue](https://en.wikipedia.org/wiki/Melotte_catalogue) and [Collinder catalogue](https://en.wikipedia.org/wiki/Collinder_catalogue) articles. Positions, sizes and types come from `MWSC.yaml`, then `OpenNGC.yaml`/`OpenIC.yaml`, then `GaryImmFull.yaml` (the Hyades); magnitudes from whichever of those three has one, since MWSC has none; the 18 clusters in none of them are hard-coded in the script from Dias et al. (2002) or SIMBAD. Where the matched entry isn't a cluster (OpenNGC calls NGC 7023 a nebula), the Wikipedia table's object type is used, and a cluster in a nebula becomes `Cluster Nebulosity`. Regenerate them after `MWSC.yaml`:
 
 ```sh
 curl -o mel.wiki 'https://en.wikipedia.org/w/index.php?title=Melotte_catalogue&action=raw'
@@ -289,10 +304,10 @@ curl -O https://cdsarc.cds.unistra.fr/ftp/J/A+A/666/A152/table2.dat
 scripts/ledu2yaml.py table1.dat table2.dat > internal/catalog/targets/PNnet.yaml
 ```
 
-`HASH.yaml` is generated by `scripts/hash2yaml.py` from a CSV export of the HASH database (registration required; the export needs `idPNMain`, `PNG`, `Name`, `PNstat`, `DRAJ2000`, `DDECJ2000`, `MajDiam` and `mainClass`):
+`HASH.yaml` is generated by `scripts/hash2yaml.py` from a CSV export of the HASH database (registration required; the export needs `idPNMain`, `PNG`, `Name`, `PNstat`, `DRAJ2000`, `DDECJ2000`, `MajDiam` and `mainClass`). HASH has no optical magnitudes; with the Compendium spreadsheet as the second argument, the V magnitudes of the planetary nebulae it lists are added, matched by name, Abell/NGC/IC number or Kohoutek/Minkowski designation:
 
 ```sh
-scripts/hash2yaml.py hash.csv > internal/catalog/targets/HASH.yaml
+scripts/hash2yaml.py hash.csv IMM_Compendium_2026.xlsx > internal/catalog/targets/HASH.yaml
 ```
 
 The live [Planetary Nebulae.net](https://planetarynebulae.net/) database has grown since (about 1000 PNe and candidates); it is "all rights reserved", so it is not built in. `scripts/pnnet2yaml.py` (Python standard library only) fetches it with two requests into a file for `-targets`, for your own use, in the same form as `PNnet`:
@@ -374,7 +389,9 @@ To measure it, stand where the telescope sits and use a compass and an inclinome
    - brightening towards the horizon
    - moonlight scattered towards the target, depending on Moon phase (with the extra brightening near full Moon), its distance, Moon altitude, target altitude and the angle between Moon and target
 
-   Imaging faint targets is limited by the sky, so the signal-to-noise ratio in a fixed exposure scales as `1/√sky`. The weight is `min(1, √(B_dark / (k · B)))`, where `B_dark` is a pristine 22.0 mag/arcsec² sky. A target 30° from a bright Moon therefore scores much lower than one 120° away, and with a filter, emission targets keep most of their score.
+   The signal-to-noise ratio in a fixed exposure scales as `signal / √(signal + sky)`. The weight compares the object under tonight's sky with the same object under a pristine one: `min(1, √((S + B_dark) / (S + k · B)))`, where `S` is the object's own surface brightness (the `SB` column) and `B_dark` a pristine 22.0 mag/arcsec² sky, all in linear units. An object much brighter than the sky loses nothing; a faint one is sky-limited, `√(B_dark / (k · B))`, and so is any object whose brightness is unknown. A faint galaxy 30° from a bright Moon therefore scores much lower than one 120° away, and with a filter, emission targets keep most of their score.
+
+   The object's surface brightness is the measured V value where a list has one (the Compendium's galaxies), else the measured B value moved to V by the object's own B−V colour when plausible, or a typical one for its type (galaxies 0.8, emission-line objects 0, others 0.5) (OpenNGC), else, marked `~`, for galaxies and nebulae the integrated V (or colour-corrected B) magnitude spread over a disc of the object's major axis, which leans faint for elongated objects. Galaxy groups and clusters get none, since their magnitude is one member's and their size the group's; star clusters, stars and asterisms get none either, since their light sits in points that sky glow hardly hurts, which the cluster factor already allows for. The SkEye [visibility measures](https://skeye.rocks/apps/skeye/book/explanations/visibilitymeasures) page explains why surface brightness, not magnitude, is the measure that matters for extended objects.
 7. **Score** = the sum over observable minutes of weather × extinction × sky weight, divided by the window length.
 8. **Framing** (`-origin`, `-fov`, `-scale`, or `-focal` with `-sensor`/`-pixel`): objects filling 25–80% of the frame's short side score in full (11–36′ on the Origin). Smaller or tighter-fitting objects score less, and an object as large as the short side cannot be framed and is not listed.
 9. Results are sorted by score; mean altitude breaks ties.

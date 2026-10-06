@@ -128,3 +128,44 @@ func BenchmarkPipeline(b *testing.B) {
 		Score(cfg, &s, targets, false)
 	}
 }
+
+func TestScoreSurfaceBrightness(t *testing.T) {
+	// Under a Bortle 8 sky the sky-glow weight depends on the object's own
+	// surface brightness: a bright-surface object loses little, a faint one a
+	// lot, and one without data counts as no object signal at all, the same
+	// as an object far fainter than any sky.
+	cfg := &config.Config{Lat: 45.8, Lon: 16, AltMin: 30, AltMax: 80, NoWeather: true, ExtinctionSet: true, Extinction: 0.2, SizeMax: 300, Bortle: 8}
+	start := time.Date(2026, 1, 15, 18, 0, 0, 0, time.UTC)
+	polaris := catalog.Target{RADeg: 37.95, DecDeg: 89.26}
+	score := func(cfg *config.Config) map[string]Result {
+		s := BuildSky(cfg, NoForecast(), start, start.Add(time.Hour))
+		out := map[string]Result{}
+		for _, sb := range []struct {
+			name string
+			sb   float64
+		}{{"bright", 18}, {"faint", 24}, {"none", 0}, {"dim", 40}} {
+			tg := polaris
+			tg.Name, tg.SurfBr = sb.name, sb.sb
+			for _, r := range Score(cfg, &s, []catalog.Target{tg}, false) {
+				out[r.Name] = r
+			}
+		}
+
+		return out
+	}
+	r := score(cfg)
+	if !(r["bright"].Score > r["faint"].Score && r["faint"].Score > r["none"].Score) {
+		t.Errorf("Bortle 8: bright %.4f, faint %.4f, none %.4f; want descending", r["bright"].Score, r["faint"].Score, r["none"].Score)
+	}
+	if math.Abs(r["none"].Score-r["dim"].Score) > 1e-6 { // 40 mag/arcsec² is ~1e-9 of the sky, not exactly 0
+		t.Errorf("no data scores %.6f, a 40 mag/arcsec² object %.6f; want equal", r["none"].Score, r["dim"].Score)
+	}
+	// Under a pristine sky the object's brightness matters much less (the sky
+	// at 46° altitude is still brighter than the zenith reference, so not nothing).
+	dark := *cfg
+	dark.Bortle = 1
+	d := score(&dark)
+	if gap, darkGap := r["bright"].Score-r["none"].Score, d["bright"].Score-d["none"].Score; darkGap >= gap/2 {
+		t.Errorf("bright-none gap %.4f at Bortle 8, %.4f at Bortle 1; want the dark-sky gap much smaller", gap, darkGap)
+	}
+}

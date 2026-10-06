@@ -5,6 +5,7 @@
   name: NGC 205
   ra: 00 40.4
   size: 19.5
+  bsurfbr: 23.78
   type: Galaxy
 - constellation: Andromeda
   dec: +40 44
@@ -21,6 +22,7 @@
   name: NGC 221
   ra: 00 42.7
   size: 8.5
+  bsurfbr: 22.17
   type: Galaxy
 - constellation: Andromeda
   dec: +41 16
@@ -29,6 +31,7 @@
   name: NGC 224
   ra: 00 42.7
   size: 210.0
+  bsurfbr: 23.63
   type: Galaxy
 - constellation: Andromeda
   dec: +35 43
@@ -37,6 +40,8 @@
   name: NGC 404
   ra: 01 09.4
   size: 4.3
+  surfbr: 21.69
+  bsurfbr: 22.61
   type: Galaxy
 - constellation: Andromeda
   dec: +42 21
@@ -45,6 +50,8 @@
   name: NGC 891
   ra: 02 22.6
   size: 13.1
+  surfbr: 22.49
+  bsurfbr: 24.17
   type: Galaxy
 - constellation: Andromeda
   dec: +42 32
@@ -133,6 +140,8 @@
   name: NGC 7606
   ra: 23 19.1
   size: 4.2
+  surfbr: 22.09
+  bsurfbr: 23.81
   type: Galaxy
 - constellation: Aries
   dec: +19 00
@@ -141,6 +150,8 @@
   name: NGC 772
   ra: 01 59.3
   size: 7.5
+  surfbr: 22.79
+  bsurfbr: 22.32
   type: Galaxy
 - constellation: Aries
   dec: +14 33
@@ -149,6 +160,8 @@
   name: NGC 877
   ra: 02 18.0
   size: 2.4
+  surfbr: 22.29
+  bsurfbr: 22.47
   type: Galaxy
 - constellation: Aries
   dec: +29 19
@@ -157,6 +170,8 @@
   name: NGC 972
   ra: 02 34.2
   size: 3.3
+  surfbr: 21.99
+  bsurfbr: 23.06
   type: Galaxy
 - constellation: Auriga
   dec: +43 41
@@ -293,6 +308,8 @@
   name: NGC 5248
   ra: 13 37.5
   size: 5.9
+  surfbr: 22.69
+  bsurfbr: 22.25
   type: Galaxy
 - constellation: Boötes
   dec: +28 32
@@ -309,6 +326,8 @@
   name: NGC 5676
   ra: 14 32.8
   size: 3.9
+  surfbr: 22.09
+  bsurfbr: 22.74
   type: Galaxy
 - constellation: Boötes
   dec: +48 44
@@ -317,6 +336,7 @@
   name: NGC 5689
   ra: 14 35.5
   size: 3.3
+  bsurfbr: 23.88
   type: Galaxy
 - constellation: Camelopardalis
   dec: +60 55
@@ -341,6 +361,8 @@
   name: NGC 2146
   ra: 06 18.6
   size: 5.7
+  surfbr: 22.99
+  bsurfbr: 22.76
   type: Galaxy
 - constellation: Camelopardalis
   dec: +84 23
@@ -349,6 +371,8 @@
   name: NGC 2268
   ra: 07 14.3
   size: 3.3
+  surfbr: 22.29
+  bsurfbr: 22.02
   type: Galaxy
 - constellation: Camelopardalis
   dec: +80 11
@@ -357,6 +381,8 @@
   name: NGC 2336
   ra: 07 27.1
   size: 6.8
+  surfbr: 22.79
+  bsurfbr: 22.98
   type: Galaxy
 - constellation: Camelopardalis
   dec: +65 36
@@ -365,6 +391,8 @@
   name: NGC 2403
   ra: 07 36.8
   size: 23.4
+  surfbr: 23.29
+  bsurfbr: 23.48
   type: Galaxy
 - constellation: Camelopardalis
   dec: +78 13
@@ -373,6 +401,7 @@
   name: NGC 2655
   ra: 08 55.6
   size: 4.9
+  bsurfbr: 22.51
   type: Galaxy
 - constellation: Camelopardalis
   dec: +82 34
@@ -405,6 +434,8 @@
   name: NGC 147
   ra: 00 33.2
   size: 13.5
+  surfbr: 23.39
+  bsurfbr: 24.29
   type: Galaxy
 - constellation: Cassiopeia
   dec: +48 20
@@ -413,6 +444,8 @@
   name: NGC 185
   ra: 00 39.0
   size: 12.5
+  surfbr: 23.29
+  bsurfbr: 24.58
   type: Galaxy
 - constellation: Cassiopeia
   dec: +61 06
@@ -437,6 +470,8 @@
   name: NGC 278
   ra: 00 52.1
   size: 2.4
+  surfbr: 21.09
+  bsurfbr: 22.08
   type: Galaxy
 - constellation: Cassiopeia
   dec: +56 37
@@ -565,6 +600,8 @@
   name: NGC 5102
   ra: 13 22.0
   size: 8.3
+  surfbr: 21.89
+  bsurfbr: 23.87
   type: Galaxy
 - constellation: Cepheus
   dec: +72 31
@@ -597,6 +634,8 @@
   name: NGC 6946
   ra: 20 34.9
   size: 11.2
+  surfbr: 22.69
+  bsurfbr: 23.73
   type: Galaxy
 - constellation: Cepheus
   dec: +62 36
@@ -661,6 +700,8 @@
   name: NGC 157
   ra: 00 34.8
   size: 4.1
+  surfbr: 21.79
+  bsurfbr: 22.13
   type: Galaxy
 - constellation: Cetus
   dec: -11 52
@@ -677,6 +718,8 @@
   name: NGC 247
   ra: 00 47.1
   size: 21.0
+  surfbr: 23.29
+  bsurfbr: 23.79
   type: Galaxy
 - constellation: Cetus
   dec: -22 40
@@ -685,6 +728,8 @@
   name: NGC 578
   ra: 01 30.5
   size: 4.8
+  surfbr: 22.69
+  bsurfbr: 23.28
   type: Galaxy
 - constellation: Cetus
   dec: -06 52
@@ -693,6 +738,8 @@
   name: NGC 584
   ra: 01 31.3
   size: 3.8
+  surfbr: 21.79
+  bsurfbr: 23.06
   type: Galaxy
 - constellation: Cetus
   dec: +06 00
@@ -701,6 +748,8 @@
   name: NGC 864
   ra: 02 15.5
   size: 4.7
+  surfbr: 22.59
+  bsurfbr: 22.91
   type: Galaxy
 - constellation: Cetus
   dec: -21 14
@@ -709,6 +758,8 @@
   name: NGC 908
   ra: 02 23.1
   size: 6.1
+  surfbr: 21.89
+  bsurfbr: 22.86
   type: Galaxy
 - constellation: Cetus
   dec: -01 07
@@ -717,6 +768,7 @@
   name: NGC 955
   ra: 02 30.6
   size: 2.9
+  bsurfbr: 23.18
   type: Galaxy
 - constellation: Cetus
   dec: -00 01
@@ -725,6 +777,7 @@
   name: NGC 1068
   ra: 02 42.7
   size: 7.3
+  bsurfbr: 22.35
   type: Galaxy
 - constellation: Cetus
   dec: -00 30
@@ -733,6 +786,8 @@
   name: NGC 1087
   ra: 02 46.4
   size: 3.9
+  surfbr: 21.99
+  bsurfbr: 22.20
   type: Galaxy
 - constellation: Canis Major
   dec: -18 40
@@ -749,6 +804,7 @@
   name: NGC 2207
   ra: 06 16.4
   size: 4.2
+  bsurfbr: 23.84
   type: Galaxy
 - constellation: Canis Major
   dec: -21 23
@@ -765,6 +821,8 @@
   name: NGC 2217
   ra: 06 21.7
   size: 4.7
+  surfbr: 22.69
+  bsurfbr: 23.69
   type: Galaxy
 - constellation: Canis Major
   dec: -20 46
@@ -845,6 +903,7 @@
   name: NGC 4192
   ra: 12 13.8
   size: 9.4
+  bsurfbr: 23.89
   type: Galaxy
 - constellation: Coma Berenices
   dec: +14 25
@@ -853,6 +912,7 @@
   name: NGC 4254
   ra: 12 18.8
   size: 5.3
+  bsurfbr: 22.60
   type: Galaxy
 - constellation: Coma Berenices
   dec: +29 37
@@ -861,6 +921,8 @@
   name: NGC 4274
   ra: 12 19.8
   size: 6.8
+  surfbr: 22.19
+  bsurfbr: 22.44
   type: Galaxy
 - constellation: Coma Berenices
   dec: +29 17
@@ -869,6 +931,8 @@
   name: NGC 4278
   ra: 12 20.1
   size: 4.0
+  surfbr: 21.99
+  bsurfbr: 22.22
   type: Galaxy
 - constellation: Coma Berenices
   dec: +29 54
@@ -877,6 +941,8 @@
   name: NGC 4314
   ra: 12 22.5
   size: 3.9
+  surfbr: 22.29
+  bsurfbr: 22.98
   type: Galaxy
 - constellation: Coma Berenices
   dec: +15 49
@@ -885,6 +951,7 @@
   name: NGC 4321
   ra: 12 22.9
   size: 7.5
+  bsurfbr: 22.61
   type: Galaxy
 - constellation: Coma Berenices
   dec: +18 11
@@ -893,6 +960,7 @@
   name: NGC 4382
   ra: 12 25.4
   size: 7.4
+  bsurfbr: 22.87
   type: Galaxy
 - constellation: Coma Berenices
   dec: +31 13
@@ -901,6 +969,8 @@
   name: NGC 4414
   ra: 12 26.5
   size: 3.6
+  surfbr: 20.99
+  bsurfbr: 20.72
   type: Galaxy
 - constellation: Coma Berenices
   dec: +17 05
@@ -909,6 +979,8 @@
   name: NGC 4450
   ra: 12 28.5
   size: 5.4
+  surfbr: 22.09
+  bsurfbr: 22.99
   type: Galaxy
 - constellation: Coma Berenices
   dec: +25 46
@@ -917,6 +989,8 @@
   name: NGC 4494
   ra: 12 31.4
   size: 4.5
+  surfbr: 21.79
+  bsurfbr: 22.75
   type: Galaxy
 - constellation: Coma Berenices
   dec: +14 25
@@ -925,6 +999,7 @@
   name: NGC 4501
   ra: 12 32.0
   size: 6.8
+  bsurfbr: 23.17
   type: Galaxy
 - constellation: Coma Berenices
   dec: +14 30
@@ -933,6 +1008,7 @@
   name: NGC 4548
   ra: 12 35.4
   size: 5.2
+  bsurfbr: 23.24
   type: Galaxy
 - constellation: Coma Berenices
   dec: +27 58
@@ -941,6 +1017,8 @@
   name: NGC 4559
   ra: 12 36.0
   size: 11.0
+  surfbr: 22.99
+  bsurfbr: 23.48
   type: Galaxy
 - constellation: Coma Berenices
   dec: +25 59
@@ -949,6 +1027,8 @@
   name: NGC 4565
   ra: 12 36.3
   size: 14.9
+  surfbr: 22.19
+  bsurfbr: 23.75
   type: Galaxy
 - constellation: Coma Berenices
   dec: +15 10
@@ -957,6 +1037,8 @@
   name: NGC 4710
   ra: 12 49.6
   size: 4.9
+  surfbr: 21.69
+  bsurfbr: 23.43
   type: Galaxy
 - constellation: Coma Berenices
   dec: +25 30
@@ -965,6 +1047,8 @@
   name: NGC 4725
   ra: 12 50.4
   size: 10.4
+  surfbr: 22.89
+  bsurfbr: 23.39
   type: Galaxy
 - constellation: Coma Berenices
   dec: +21 41
@@ -973,6 +1057,7 @@
   name: NGC 4826
   ra: 12 56.7
   size: 10.3
+  bsurfbr: 22.68
   type: Galaxy
 - constellation: Coma Berenices
   dec: +18 10
@@ -1005,6 +1090,8 @@
   name: NGC 3511
   ra: 11 03.4
   size: 6.0
+  surfbr: 22.39
+  bsurfbr: 23.29
   type: Galaxy
 - constellation: Crater
   dec: -09 48
@@ -1013,6 +1100,8 @@
   name: NGC 3672
   ra: 11 25.0
   size: 4.0
+  surfbr: 22.39
+  bsurfbr: 22.68
   type: Galaxy
 - constellation: Crater
   dec: -16 51
@@ -1021,6 +1110,8 @@
   name: NGC 3887
   ra: 11 47.1
   size: 3.5
+  surfbr: 21.69
+  bsurfbr: 22.54
   type: Galaxy
 - constellation: Crater
   dec: -23 10
@@ -1029,6 +1120,8 @@
   name: NGC 3955
   ra: 11 54.0
   size: 3.1
+  surfbr: 21.79
+  bsurfbr: 24.07
   type: Galaxy
 - constellation: Crater
   dec: -13 59
@@ -1037,6 +1130,7 @@
   name: NGC 3962
   ra: 11 54.7
   size: 3.4
+  bsurfbr: 23.56
   type: Galaxy
 - constellation: Corvus
   dec: -19 16
@@ -1045,6 +1139,7 @@
   name: NGC 4027
   ra: 11 59.5
   size: 3.3
+  bsurfbr: 22.86
   type: Galaxy
 - constellation: Corvus
   dec: -18 52
@@ -1053,6 +1148,7 @@
   name: NGC 4038
   ra: 12 01.9
   size: 3.4
+  bsurfbr: 22.94
   type: Galaxy
 - constellation: Corvus
   dec: -18 53
@@ -1061,6 +1157,8 @@
   name: NGC 4039
   ra: 12 01.9
   size: 3.3
+  surfbr: 20.99
+  bsurfbr: 22.82
   type: Galaxy
 - constellation: Corvus
   dec: -18 47
@@ -1077,6 +1175,7 @@
   name: NGC 4782
   ra: 12 54.6
   size: 2.3
+  bsurfbr: 21.93
   type: Galaxy
 - constellation: Corvus
   dec: -12 34
@@ -1085,6 +1184,7 @@
   name: NGC 4783
   ra: 12 54.6
   size: 2.3
+  bsurfbr: 22.39
   type: Galaxy
 - constellation: Canes Venatici
   dec: +43 04
@@ -1093,6 +1193,8 @@
   name: NGC 4111
   ra: 12 07.0
   size: 4.6
+  surfbr: 21.09
+  bsurfbr: 21.57
   type: Galaxy
 - constellation: Canes Venatici
   dec: +36 20
@@ -1101,6 +1203,8 @@
   name: NGC 4214
   ra: 12 15.6
   size: 9.6
+  surfbr: 22.89
+  bsurfbr: 22.88
   type: Galaxy
 - constellation: Canes Venatici
   dec: +37 48
@@ -1109,6 +1213,8 @@
   name: NGC 4244
   ra: 12 17.5
   size: 15.9
+  surfbr: 22.89
+  bsurfbr: 24.57
   type: Galaxy
 - constellation: Canes Venatici
   dec: +47 18
@@ -1117,6 +1223,7 @@
   name: NGC 4258
   ra: 12 19.0
   size: 17.4
+  bsurfbr: 23.36
   type: Galaxy
 - constellation: Canes Venatici
   dec: +47 00
@@ -1125,6 +1232,8 @@
   name: NGC 4346
   ra: 12 23.5
   size: 3.2
+  surfbr: 21.59
+  bsurfbr: 23.29
   type: Galaxy
 - constellation: Canes Venatici
   dec: +44 06
@@ -1133,6 +1242,8 @@
   name: NGC 4449
   ra: 12 28.2
   size: 6.2
+  surfbr: 21.89
+  bsurfbr: 21.10
   type: Galaxy
 - constellation: Canes Venatici
   dec: +41 42
@@ -1141,6 +1252,7 @@
   name: NGC 4485
   ra: 12 30.5
   size: 2.4
+  bsurfbr: 22.22
   type: Galaxy
 - constellation: Canes Venatici
   dec: +41 39
@@ -1149,6 +1261,7 @@
   name: NGC 4490
   ra: 12 30.6
   size: 6.4
+  bsurfbr: 21.43
   type: Galaxy
 - constellation: Canes Venatici
   dec: +41 09
@@ -1157,6 +1270,7 @@
   name: NGC 4618
   ra: 12 41.6
   size: 4.2
+  bsurfbr: 22.41
   type: Galaxy
 - constellation: Canes Venatici
   dec: +41 16
@@ -1165,6 +1279,7 @@
   name: NGC 4625
   ra: 12 41.9
   size: 2.3
+  bsurfbr: 22.26
   type: Galaxy
 - constellation: Canes Venatici
   dec: +32 34
@@ -1173,6 +1288,7 @@
   name: NGC 4627
   ra: 12 42.0
   size: 2.2
+  bsurfbr: 23.73
   type: Galaxy
 - constellation: Canes Venatici
   dec: +32 32
@@ -1181,6 +1297,8 @@
   name: NGC 4631
   ra: 12 42.1
   size: 15.2
+  surfbr: 21.99
+  bsurfbr: 22.44
   type: Galaxy
 - constellation: Canes Venatici
   dec: +32 10
@@ -1197,6 +1315,7 @@
   name: NGC 4736
   ra: 12 50.9
   size: 12.3
+  bsurfbr: 21.79
   type: Galaxy
 - constellation: Canes Venatici
   dec: +37 03
@@ -1205,6 +1324,8 @@
   name: NGC 5005
   ra: 13 10.9
   size: 5.8
+  surfbr: 21.49
+  bsurfbr: 21.82
   type: Galaxy
 - constellation: Canes Venatici
   dec: +42 02
@@ -1213,6 +1334,7 @@
   name: NGC 5055
   ra: 13 15.8
   size: 12.6
+  bsurfbr: 23.04
   type: Galaxy
 - constellation: Canes Venatici
   dec: +47 12
@@ -1221,6 +1343,7 @@
   name: NGC 5194
   ra: 13 29.9
   size: 10.8
+  bsurfbr: 22.90
   type: Galaxy
 - constellation: Canes Venatici
   dec: +47 16
@@ -1229,6 +1352,8 @@
   name: NGC 5195
   ra: 13 30.0
   size: 5.9
+  surfbr: 21.89
+  bsurfbr: 22.84
   type: Galaxy
 - constellation: Canes Venatici
   dec: +28 23
@@ -1413,6 +1538,7 @@
   name: NGC 5866
   ra: 15 06.5
   size: 5.2
+  bsurfbr: 23.40
   type: Galaxy
 - constellation: Draco
   dec: +56 20
@@ -1421,6 +1547,8 @@
   name: NGC 5907
   ra: 15 15.9
   size: 11.8
+  surfbr: 22.19
+  bsurfbr: 23.60
   type: Galaxy
 - constellation: Draco
   dec: +62 18
@@ -1429,6 +1557,8 @@
   name: NGC 6015
   ra: 15 51.4
   size: 5.4
+  surfbr: 22.49
+  bsurfbr: 23.48
   type: Galaxy
 - constellation: Draco
   dec: +65 23
@@ -1437,6 +1567,8 @@
   name: NGC 6140
   ra: 16 21.0
   size: 6.3
+  surfbr: 23.69
+  bsurfbr: 22.46
   type: Galaxy
 - constellation: Draco
   dec: +70 09
@@ -1445,6 +1577,8 @@
   name: NGC 6503
   ra: 17 49.5
   size: 7.0
+  surfbr: 21.99
+  bsurfbr: 22.55
   type: Galaxy
 - constellation: Draco
   dec: +66 38
@@ -1461,6 +1595,8 @@
   name: NGC 6643
   ra: 18 19.8
   size: 3.7
+  surfbr: 21.99
+  bsurfbr: 22.51
   type: Galaxy
 - constellation: Equuleus
   dec: +11 25
@@ -1469,6 +1605,7 @@
   name: NGC 7015
   ra: 21 05.6
   size: 1.8
+  bsurfbr: 23.05
   type: Galaxy
 - constellation: Eridanus
   dec: -22 52
@@ -1477,6 +1614,8 @@
   name: NGC 1187
   ra: 03 02.6
   size: 5.6
+  surfbr: 22.89
+  bsurfbr: 22.93
   type: Galaxy
 - constellation: Eridanus
   dec: -20 35
@@ -1485,6 +1624,8 @@
   name: NGC 1232
   ra: 03 09.8
   size: 7.1
+  surfbr: 22.79
+  bsurfbr: 23.33
   type: Galaxy
 - constellation: Eridanus
   dec: -19 25
@@ -1493,6 +1634,8 @@
   name: NGC 1300
   ra: 03 19.7
   size: 5.9
+  surfbr: 22.69
+  bsurfbr: 23.30
   type: Galaxy
 - constellation: Eridanus
   dec: -21 20
@@ -1501,6 +1644,7 @@
   name: NGC 1332
   ra: 03 26.3
   size: 4.0
+  bsurfbr: 23.55
   type: Galaxy
 - constellation: Eridanus
   dec: -21 21
@@ -1509,6 +1653,7 @@
   name: NGC 1331
   ra: 03 26.5
   size: 0.9
+  bsurfbr: 22.97
   type: Galaxy
 - constellation: Eridanus
   dec: -23 02
@@ -1517,6 +1662,7 @@
   name: NGC 1395
   ra: 03 38.5
   size: 5.6
+  bsurfbr: 22.83
   type: Galaxy
 - constellation: Eridanus
   dec: -18 41
@@ -1525,6 +1671,8 @@
   name: NGC 1400
   ra: 03 39.5
   size: 2.5
+  surfbr: 21.39
+  bsurfbr: 23.05
   type: Galaxy
 - constellation: Eridanus
   dec: -18 35
@@ -1533,6 +1681,8 @@
   name: NGC 1407
   ra: 03 40.2
   size: 4.9
+  surfbr: 21.69
+  bsurfbr: 23.36
   type: Galaxy
 - constellation: Eridanus
   dec: -13 29
@@ -1541,6 +1691,8 @@
   name: NGC 1421
   ra: 03 42.5
   size: 3.4
+  surfbr: 21.39
+  bsurfbr: 22.32
   type: Galaxy
 - constellation: Eridanus
   dec: -02 11
@@ -1549,6 +1701,8 @@
   name: NGC 1507
   ra: 04 04.5
   size: 3.6
+  surfbr: 22.29
+  bsurfbr: 23.08
   type: Galaxy
 - constellation: Eridanus
   dec: -32 51
@@ -1557,6 +1711,7 @@
   name: NGC 1531
   ra: 04 12.0
   size: 1.2
+  bsurfbr: 22.46
   type: Galaxy
 - constellation: Eridanus
   dec: -32 52
@@ -1565,6 +1720,8 @@
   name: NGC 1532
   ra: 04 12.1
   size: 11.6
+  surfbr: 22.69
+  bsurfbr: 23.78
   type: Galaxy
 - constellation: Eridanus
   dec: -12 44
@@ -1581,6 +1738,8 @@
   name: NGC 1316
   ra: 03 22.7
   size: 13.5
+  surfbr: 22.29
+  bsurfbr: 23.77
   type: Galaxy
 - constellation: Fornax
   dec: -25 52
@@ -1597,6 +1756,8 @@
   name: NGC 1365
   ra: 03 33.6
   size: 11.0
+  surfbr: 22.99
+  bsurfbr: 24.01
   type: Galaxy
 - constellation: Eridanus
   dec: -36 15
@@ -1605,6 +1766,7 @@
   name: NGC 1369
   ra: 03 36.8
   size: 1.5
+  bsurfbr: 24.02
   type: Galaxy
 - constellation: Fornax
   dec: -35 27
@@ -1613,6 +1775,8 @@
   name: NGC 1399
   ra: 03 38.5
   size: 6.6
+  surfbr: 22.59
+  bsurfbr: 23.95
   type: Galaxy
 - constellation: Fornax
   dec: -26 20
@@ -1621,6 +1785,8 @@
   name: NGC 1398
   ra: 03 38.9
   size: 7.6
+  surfbr: 22.39
+  bsurfbr: 23.28
   type: Galaxy
 - constellation: Eridanus
   dec: -35 36
@@ -1629,6 +1795,8 @@
   name: NGC 1404
   ra: 03 38.9
   size: 3.9
+  surfbr: 21.39
+  bsurfbr: 23.26
   type: Galaxy
 - constellation: Gemini
   dec: +23 19
@@ -1717,6 +1885,8 @@
   name: NGC 6207
   ra: 16 43.1
   size: 3.0
+  surfbr: 21.89
+  bsurfbr: 22.66
   type: Galaxy
 - constellation: Hercules
   dec: +23 48
@@ -1757,6 +1927,7 @@
   name: NGC 2815
   ra: 09 16.3
   size: 3.5
+  bsurfbr: 23.60
   type: Galaxy
 - constellation: Hydra
   dec: -19 38
@@ -1765,6 +1936,7 @@
   name: NGC 3091
   ra: 10 00.2
   size: 3.0
+  bsurfbr: 23.80
   type: Galaxy
 - constellation: Hydra
   dec: -26 10
@@ -1773,6 +1945,8 @@
   name: NGC 3109
   ra: 10 03.1
   size: 19.7
+  surfbr: 23.19
+  bsurfbr: 23.59
   type: Galaxy
 - constellation: Hydra
   dec: -18 39
@@ -1789,6 +1963,8 @@
   name: NGC 3621
   ra: 11 18.3
   size: 9.8
+  surfbr: 23.19
+  bsurfbr: 23.03
   type: Galaxy
 - constellation: Hydra
   dec: -26 45
@@ -1805,6 +1981,7 @@
   name: NGC 5236
   ra: 13 37.0
   size: 13.1
+  bsurfbr: 22.20
   type: Galaxy
 - constellation: Lacerta
   dec: +46 29
@@ -1845,6 +2022,8 @@
   name: NGC 2903
   ra: 09 32.2
   size: 12.0
+  surfbr: 22.39
+  bsurfbr: 23.02
   type: Galaxy
 - constellation: Leo
   dec: +19 54
@@ -1853,6 +2032,7 @@
   name: NGC 3226
   ra: 10 23.4
   size: 2.5
+  bsurfbr: 23.69
   type: Galaxy
 - constellation: Leo
   dec: +19 52
@@ -1861,6 +2041,7 @@
   name: NGC 3227
   ra: 10 23.5
   size: 6.6
+  bsurfbr: 22.88
   type: Galaxy
 - constellation: Leo
   dec: +11 42
@@ -1869,6 +2050,7 @@
   name: NGC 3351
   ra: 10 44.0
   size: 7.3
+  bsurfbr: 23.26
   type: Galaxy
 - constellation: Leo
   dec: +11 49
@@ -1877,6 +2059,7 @@
   name: NGC 3368
   ra: 10 46.8
   size: 7.8
+  bsurfbr: 23.14
   type: Galaxy
 - constellation: Leo
   dec: +12 35
@@ -1885,6 +2068,7 @@
   name: NGC 3379
   ra: 10 47.8
   size: 5.3
+  bsurfbr: 22.54
   type: Galaxy
 - constellation: Leo
   dec: +12 38
@@ -1893,6 +2077,8 @@
   name: NGC 3384
   ra: 10 48.3
   size: 5.4
+  surfbr: 21.59
+  bsurfbr: 23.17
   type: Galaxy
 - constellation: Leo
   dec: +12 32
@@ -1909,6 +2095,8 @@
   name: NGC 3507
   ra: 11 03.4
   size: 3.4
+  surfbr: 23.09
+  bsurfbr: 23.02
   type: Galaxy
 - constellation: Leo
   dec: -00 02
@@ -1917,6 +2105,8 @@
   name: NGC 3521
   ra: 11 05.8
   size: 11.2
+  surfbr: 22.09
+  bsurfbr: 22.75
   type: Galaxy
 - constellation: Leo
   dec: +13 05
@@ -1925,6 +2115,7 @@
   name: NGC 3623
   ra: 11 18.9
   size: 9.0
+  bsurfbr: 22.73
   type: Galaxy
 - constellation: Leo
   dec: +13 00
@@ -1933,6 +2124,7 @@
   name: NGC 3627
   ra: 11 20.2
   size: 9.1
+  bsurfbr: 22.96
   type: Galaxy
 - constellation: Leo
   dec: +13 35
@@ -1941,6 +2133,8 @@
   name: NGC 3628
   ra: 11 20.3
   size: 13.1
+  surfbr: 22.29
+  bsurfbr: 23.13
   type: Galaxy
 - constellation: Lepus
   dec: -24 31
@@ -1965,6 +2159,8 @@
   name: NGC 1964
   ra: 05 33.4
   size: 5.5
+  surfbr: 22.29
+  bsurfbr: 23.25
   type: Galaxy
 - constellation: Libra
   dec: -21 01
@@ -1981,6 +2177,7 @@
   name: NGC 3003
   ra: 09 48.6
   size: 5.7
+  bsurfbr: 23.22
   type: Galaxy
 - constellation: Leo Minor
   dec: +24 55
@@ -1989,6 +2186,8 @@
   name: NGC 3344
   ra: 10 43.5
   size: 7.1
+  surfbr: 22.79
+  bsurfbr: 23.33
   type: Galaxy
 - constellation: Leo Minor
   dec: +36 37
@@ -1997,6 +2196,7 @@
   name: NGC 3432
   ra: 10 52.5
   size: 6.6
+  bsurfbr: 23.63
   type: Galaxy
 - constellation: Lupus
   dec: -37 47
@@ -2021,6 +2221,7 @@
   name: NGC 2537
   ra: 08 13.2
   size: 3.1
+  bsurfbr: 22.54
   type: Galaxy
 - constellation: Lynx
   dec: +33 25
@@ -2029,6 +2230,8 @@
   name: NGC 2683
   ra: 08 52.7
   size: 8.8
+  surfbr: 21.79
+  bsurfbr: 22.76
   type: Galaxy
 - constellation: Lyra
   dec: +33 02
@@ -2113,7 +2316,7 @@
 - constellation: Monoceros
   dec: +08 45
   description: Hubble's Variable Nebula
-  mag: -9999
+  mag: 9.0
   name: NGC 2261
   ra: 06 39.2
   size: 2.0
@@ -2421,6 +2624,8 @@
   name: NGC 7814
   ra: 00 03.2
   size: 5.5
+  surfbr: 22.09
+  bsurfbr: 23.03
   type: Galaxy
 - constellation: Pegasus
   dec: +12 10
@@ -2437,6 +2642,8 @@
   name: NGC 7331
   ra: 22 37.1
   size: 10.2
+  surfbr: 22.19
+  bsurfbr: 23.08
   type: Galaxy
 - constellation: Pegasus
   dec: +12 19
@@ -2445,6 +2652,8 @@
   name: NGC 7479
   ra: 23 04.9
   size: 4.0
+  surfbr: 22.39
+  bsurfbr: 23.04
   type: Galaxy
 - constellation: Perseus
   dec: +51 35
@@ -2477,6 +2686,8 @@
   name: NGC 1003
   ra: 02 39.3
   size: 5.7
+  surfbr: 22.69
+  bsurfbr: 22.34
   type: Galaxy
 - constellation: Perseus
   dec: +39 04
@@ -2485,6 +2696,7 @@
   name: NGC 1023
   ra: 02 40.4
   size: 8.1
+  bsurfbr: 22.59
   type: Galaxy
 - constellation: Perseus
   dec: +42 45
@@ -2501,6 +2713,8 @@
   name: NGC 1160
   ra: 03 01.2
   size: 1.9
+  surfbr: 22.19
+  bsurfbr: 23.47
   type: Galaxy
 - constellation: Perseus
   dec: +47 14
@@ -2581,6 +2795,7 @@
   name: NGC 7174
   ra: 22 02.1
   size: 2.6
+  bsurfbr: 24.59
   type: Galaxy
 - constellation: Pisces Austrinus
   dec: -31 59
@@ -2589,6 +2804,7 @@
   name: NGC 7176
   ra: 22 02.1
   size: 2.1
+  bsurfbr: 21.59
   type: Galaxy
 - constellation: Pisces Austrinus
   dec: -26 03
@@ -2597,6 +2813,7 @@
   name: NGC 7314
   ra: 22 35.8
   size: 4.6
+  bsurfbr: 22.77
   type: Galaxy
 - constellation: Pisces Austrinus
   dec: -33 45
@@ -2613,6 +2830,8 @@
   name: NGC 128
   ra: 00 29.2
   size: 2.8
+  surfbr: 21.59
+  bsurfbr: 23.79
   type: Galaxy
 - constellation: Pisces
   dec: +05 15
@@ -2621,6 +2840,8 @@
   name: NGC 488
   ra: 01 21.8
   size: 5.4
+  surfbr: 22.29
+  bsurfbr: 23.15
   type: Galaxy
 - constellation: Pisces
   dec: +15 47
@@ -2629,6 +2850,7 @@
   name: NGC 628
   ra: 01 36.7
   size: 10.0
+  bsurfbr: 23.37
   type: Galaxy
 - constellation: Pisces
   dec: +04 32
@@ -2637,6 +2859,7 @@
   name: NGC 7541
   ra: 23 14.7
   size: 3.5
+  bsurfbr: 22.75
   type: Galaxy
 - constellation: Puppis
   dec: -13 58
@@ -2829,6 +3052,8 @@
   name: NGC 55
   ra: 00 15.1
   size: 31.2
+  surfbr: 22.29
+  bsurfbr: 22.52
   type: Galaxy
 - constellation: Sculptor
   dec: -33 15
@@ -2837,6 +3062,8 @@
   name: NGC 134
   ra: 00 30.4
   size: 8.5
+  surfbr: 22.19
+  bsurfbr: 23.40
   type: Galaxy
 - constellation: Sculptor
   dec: -25 18
@@ -2845,6 +3072,8 @@
   name: NGC 253
   ra: 00 47.6
   size: 26.4
+  surfbr: 21.59
+  bsurfbr: 22.42
   type: Galaxy
 - constellation: Sculptor
   dec: -26 35
@@ -2861,6 +3090,8 @@
   name: NGC 300
   ra: 00 54.9
   size: 19.3
+  surfbr: 23.19
+  bsurfbr: 23.59
   type: Galaxy
 - constellation: Sculptor
   dec: -32 36
@@ -2869,6 +3100,8 @@
   name: NGC 7793
   ra: 23 57.8
   size: 9.6
+  surfbr: 22.29
+  bsurfbr: 23.05
   type: Galaxy
 - constellation: Scorpius
   dec: -22 59
@@ -3069,6 +3302,8 @@
   name: NGC 3115
   ra: 10 05.2
   size: 7.3
+  surfbr: 20.79
+  bsurfbr: 23.02
   type: Galaxy
 - constellation: Sagitta
   dec: +18 21
@@ -3397,6 +3632,8 @@
   name: NGC 6822
   ra: 19 44.9
   size: 15.4
+  surfbr: 23.29
+  bsurfbr: 24.25
   type: Galaxy
 - constellation: Sagittarius
   dec: -21 55
@@ -3477,6 +3714,7 @@
   name: NGC 598
   ra: 01 33.9
   size: 68.7
+  bsurfbr: 23.61
   type: Galaxy
 - constellation: Triangulum
   dec: +35 34
@@ -3485,6 +3723,8 @@
   name: NGC 669
   ra: 01 47.3
   size: 3.1
+  surfbr: 21.79
+  bsurfbr: 23.14
   type: Galaxy
 - constellation: Triangulum
   dec: +27 53
@@ -3493,6 +3733,7 @@
   name: NGC 670
   ra: 01 47.4
   size: 2.1
+  bsurfbr: 23.85
   type: Galaxy
 - constellation: Triangulum
   dec: +27 26
@@ -3501,6 +3742,8 @@
   name: NGC 672
   ra: 01 47.9
   size: 7.5
+  surfbr: 22.79
+  bsurfbr: 23.58
   type: Galaxy
 - constellation: Triangulum
   dec: +27 39
@@ -3509,6 +3752,7 @@
   name: NGC 684
   ra: 01 50.2
   size: 3.4
+  bsurfbr: 23.55
   type: Galaxy
 - constellation: Triangulum
   dec: +33 12
@@ -3517,6 +3761,7 @@
   name: NGC 751
   ra: 01 57.6
   size: 1.8
+  bsurfbr: 23.39
   type: Galaxy
 - constellation: Triangulum
   dec: +28 50
@@ -3525,6 +3770,8 @@
   name: NGC 784
   ra: 02 01.3
   size: 6.6
+  surfbr: 22.99
+  bsurfbr: 22.87
   type: Galaxy
 - constellation: Triangulum
   dec: +33 35
@@ -3533,6 +3780,8 @@
   name: NGC 925
   ra: 02 27.3
   size: 10.9
+  surfbr: 23.29
+  bsurfbr: 23.94
   type: Galaxy
 - constellation: Triangulum
   dec: +37 08
@@ -3541,6 +3790,7 @@
   name: NGC 949
   ra: 02 30.8
   size: 2.7
+  bsurfbr: 23.07
   type: Galaxy
 - constellation: Ursa Major
   dec: +51 19
@@ -3549,6 +3799,8 @@
   name: NGC 2681
   ra: 08 53.5
   size: 3.7
+  surfbr: 21.79
+  bsurfbr: 22.88
   type: Galaxy
 - constellation: Ursa Major
   dec: +60 02
@@ -3557,6 +3809,8 @@
   name: NGC 2768
   ra: 09 11.6
   size: 8.2
+  surfbr: 22.59
+  bsurfbr: 23.38
   type: Galaxy
 - constellation: Ursa Major
   dec: +50 59
@@ -3565,6 +3819,8 @@
   name: NGC 2841
   ra: 09 22.0
   size: 7.7
+  surfbr: 21.59
+  bsurfbr: 22.48
   type: Galaxy
 - constellation: Ursa Major
   dec: +69 04
@@ -3573,6 +3829,7 @@
   name: NGC 3031
   ra: 09 55.6
   size: 24.9
+  bsurfbr: 22.78
   type: Galaxy
 - constellation: Ursa Major
   dec: +69 41
@@ -3581,6 +3838,7 @@
   name: NGC 3034
   ra: 09 55.9
   size: 10.5
+  bsurfbr: 22.22
   type: Galaxy
 - constellation: Ursa Major
   dec: +55 41
@@ -3589,6 +3847,8 @@
   name: NGC 3079
   ra: 10 02.0
   size: 8.1
+  surfbr: 22.29
+  bsurfbr: 23.17
   type: Galaxy
 - constellation: Ursa Major
   dec: +68 44
@@ -3597,6 +3857,8 @@
   name: NGC 3077
   ra: 10 03.3
   size: 5.2
+  surfbr: 22.09
+  bsurfbr: 22.80
   type: Galaxy
 - constellation: Ursa Major
   dec: +41 25
@@ -3605,6 +3867,8 @@
   name: NGC 3184
   ra: 10 18.3
   size: 7.6
+  surfbr: 22.79
+  bsurfbr: 23.47
   type: Galaxy
 - constellation: Ursa Major
   dec: +55 40
@@ -3613,6 +3877,7 @@
   name: NGC 3556
   ra: 11 11.5
   size: 8.6
+  bsurfbr: 21.70
   type: Galaxy
 - constellation: Ursa Major
   dec: +55 01
@@ -3629,6 +3894,7 @@
   name: NGC 3631
   ra: 11 21.0
   size: 5.0
+  bsurfbr: 22.15
   type: Galaxy
 - constellation: Ursa Major
   dec: +43 35
@@ -3637,6 +3903,8 @@
   name: NGC 3675
   ra: 11 26.1
   size: 6.2
+  surfbr: 22.09
+  bsurfbr: 23.13
   type: Galaxy
 - constellation: Ursa Major
   dec: +53 04
@@ -3645,6 +3913,7 @@
   name: NGC 3718
   ra: 11 32.6
   size: 8.2
+  bsurfbr: 23.29
   type: Galaxy
 - constellation: Ursa Major
   dec: +47 02
@@ -3653,6 +3922,8 @@
   name: NGC 3726
   ra: 11 33.3
   size: 6.0
+  surfbr: 22.69
+  bsurfbr: 22.70
   type: Galaxy
 - constellation: Ursa Major
   dec: +47 30
@@ -3661,6 +3932,8 @@
   name: NGC 3877
   ra: 11 46.1
   size: 5.3
+  surfbr: 21.89
+  bsurfbr: 23.01
   type: Galaxy
 - constellation: Ursa Major
   dec: +48 43
@@ -3669,6 +3942,8 @@
   name: NGC 3893
   ra: 11 48.6
   size: 4.5
+  surfbr: 21.99
+  bsurfbr: 21.19
   type: Galaxy
 - constellation: Ursa Major
   dec: +48 40
@@ -3677,6 +3952,7 @@
   name: NGC 3896
   ra: 11 48.9
   size: 1.5
+  bsurfbr: 22.45
   type: Galaxy
 - constellation: Ursa Major
   dec: +51 49
@@ -3685,6 +3961,8 @@
   name: NGC 3917
   ra: 11 50.8
   size: 5.0
+  surfbr: 22.49
+  bsurfbr: 23.35
   type: Galaxy
 - constellation: Ursa Major
   dec: +44 07
@@ -3693,6 +3971,8 @@
   name: NGC 3938
   ra: 11 52.8
   size: 5.1
+  surfbr: 22.69
+  bsurfbr: 22.39
   type: Galaxy
 - constellation: Ursa Major
   dec: +60 40
@@ -3701,6 +3981,8 @@
   name: NGC 3945
   ra: 11 53.2
   size: 6.4
+  surfbr: 22.69
+  bsurfbr: 24.12
   type: Galaxy
 - constellation: Ursa Major
   dec: +52 19
@@ -3709,6 +3991,8 @@
   name: NGC 3953
   ra: 11 53.8
   size: 6.9
+  surfbr: 22.29
+  bsurfbr: 22.64
   type: Galaxy
 - constellation: Ursa Major
   dec: +53 22
@@ -3717,6 +4001,7 @@
   name: NGC 3992
   ra: 11 57.6
   size: 7.5
+  bsurfbr: 23.45
   type: Galaxy
 - constellation: Ursa Major
   dec: +61 36
@@ -3725,6 +4010,8 @@
   name: NGC 4605
   ra: 12 40.0
   size: 5.8
+  surfbr: 21.79
+  bsurfbr: 22.63
   type: Galaxy
 - constellation: Ursa Major
   dec: +54 21
@@ -3733,6 +4020,7 @@
   name: NGC 5457
   ra: 14 03.2
   size: 28.5
+  bsurfbr: 23.97
   type: Galaxy
 - constellation: Virgo
   dec: +13 09
@@ -3741,6 +4029,7 @@
   name: NGC 4216
   ra: 12 15.9
   size: 7.8
+  bsurfbr: 23.12
   type: Galaxy
 - constellation: Virgo
   dec: +04 28
@@ -3749,6 +4038,7 @@
   name: NGC 4303
   ra: 12 21.9
   size: 6.5
+  bsurfbr: 23.05
   type: Galaxy
 - constellation: Virgo
   dec: +12 53
@@ -3757,6 +4047,7 @@
   name: NGC 4374
   ra: 12 25.1
   size: 6.7
+  bsurfbr: 23.23
   type: Galaxy
 - constellation: Virgo
   dec: +12 57
@@ -3765,6 +4056,7 @@
   name: NGC 4406
   ra: 12 26.2
   size: 9.8
+  bsurfbr: 23.90
   type: Galaxy
 - constellation: Virgo
   dec: +13 05
@@ -3773,6 +4065,7 @@
   name: NGC 4435
   ra: 12 27.7
   size: 3.0
+  bsurfbr: 22.66
   type: Galaxy
 - constellation: Virgo
   dec: +13 00
@@ -3781,6 +4074,7 @@
   name: NGC 4438
   ra: 12 27.8
   size: 8.5
+  bsurfbr: 24.21
   type: Galaxy
 - constellation: Virgo
   dec: +08 00
@@ -3789,6 +4083,7 @@
   name: NGC 4472
   ra: 12 29.8
   size: 9.8
+  bsurfbr: 23.25
   type: Galaxy
 - constellation: Virgo
   dec: +12 23
@@ -3797,6 +4092,7 @@
   name: NGC 4486
   ra: 12 30.8
   size: 8.7
+  bsurfbr: 22.79
   type: Galaxy
 - constellation: Virgo
   dec: +00 07
@@ -3805,6 +4101,8 @@
   name: NGC 4517
   ra: 12 32.8
   size: 10.2
+  surfbr: 22.09
+  bsurfbr: 23.18
   type: Galaxy
 - constellation: Virgo
   dec: +07 42
@@ -3813,6 +4111,8 @@
   name: NGC 4526
   ra: 12 34.0
   size: 7.0
+  surfbr: 21.59
+  bsurfbr: 23.43
   type: Galaxy
 - constellation: Virgo
   dec: +08 12
@@ -3821,6 +4121,8 @@
   name: NGC 4535
   ra: 12 34.3
   size: 6.9
+  surfbr: 22.59
+  bsurfbr: 23.79
   type: Galaxy
 - constellation: Virgo
   dec: +02 11
@@ -3829,6 +4131,8 @@
   name: NGC 4536
   ra: 12 34.4
   size: 7.1
+  surfbr: 22.79
+  bsurfbr: 23.26
   type: Galaxy
 - constellation: Virgo
   dec: +12 33
@@ -3837,6 +4141,7 @@
   name: NGC 4552
   ra: 12 35.7
   size: 5.3
+  bsurfbr: 24.11
   type: Galaxy
 - constellation: Virgo
   dec: +11 15
@@ -3845,6 +4150,7 @@
   name: NGC 4567
   ra: 12 36.5
   size: 3.1
+  bsurfbr: 22.67
   type: Galaxy
 - constellation: Virgo
   dec: +11 14
@@ -3853,6 +4159,7 @@
   name: NGC 4568
   ra: 12 36.6
   size: 4.6
+  bsurfbr: 22.89
   type: Galaxy
 - constellation: Virgo
   dec: +13 10
@@ -3861,6 +4168,7 @@
   name: NGC 4569
   ra: 12 36.8
   size: 9.9
+  bsurfbr: 23.16
   type: Galaxy
 - constellation: Virgo
   dec: +11 49
@@ -3869,6 +4177,7 @@
   name: NGC 4579
   ra: 12 37.7
   size: 6.0
+  bsurfbr: 22.49
   type: Galaxy
 - constellation: Virgo
   dec: -11 37
@@ -3877,6 +4186,7 @@
   name: NGC 4594
   ra: 12 40.0
   size: 8.6
+  bsurfbr: 22.26
   type: Galaxy
 - constellation: Virgo
   dec: +11 39
@@ -3885,6 +4195,7 @@
   name: NGC 4621
   ra: 12 42.0
   size: 5.3
+  bsurfbr: 22.71
   type: Galaxy
 - constellation: Virgo
   dec: +11 33
@@ -3893,6 +4204,7 @@
   name: NGC 4649
   ra: 12 43.7
   size: 7.6
+  bsurfbr: 22.81
   type: Galaxy
 - constellation: Virgo
   dec: -00 28
@@ -3901,6 +4213,8 @@
   name: NGC 4666
   ra: 12 45.1
   size: 4.5
+  surfbr: 21.39
+  bsurfbr: 22.92
   type: Galaxy
 - constellation: Virgo
   dec: -08 40
@@ -3909,6 +4223,8 @@
   name: NGC 4699
   ra: 12 49.0
   size: 3.8
+  surfbr: 20.79
+  bsurfbr: 21.92
   type: Galaxy
 - constellation: Virgo
   dec: -16 38
@@ -3917,6 +4233,8 @@
   name: NGC 5054
   ra: 13 17.0
   size: 5.1
+  surfbr: 22.59
+  bsurfbr: 23.45
   type: Galaxy
 - constellation: Virgo
   dec: +05 15
@@ -3925,6 +4243,8 @@
   name: NGC 5363
   ra: 13 56.1
   size: 4.0
+  surfbr: 21.39
+  bsurfbr: 22.82
   type: Galaxy
 - constellation: Virgo
   dec: +05 01
@@ -3933,6 +4253,8 @@
   name: NGC 5364
   ra: 13 56.2
   size: 6.7
+  surfbr: 22.99
+  bsurfbr: 22.19
   type: Galaxy
 - constellation: Virgo
   dec: -05 59
@@ -3949,6 +4271,8 @@
   name: NGC 5746
   ra: 14 44.9
   size: 6.9
+  surfbr: 21.59
+  bsurfbr: 23.19
   type: Galaxy
 - constellation: Virgo
   dec: +01 36
@@ -3957,6 +4281,8 @@
   name: NGC 5846
   ra: 15 06.5
   size: 4.9
+  surfbr: 21.79
+  bsurfbr: 23.12
   type: Galaxy
 - constellation: Vulpecula
   dec: +20 16

@@ -4,12 +4,15 @@
 """Convert a HASH PN database CSV export (https://hashpn.space/, Parker,
 Bojicic & Frew 2016) to an uptonight target list.
 
-    scripts/hash2yaml.py hash.csv > internal/catalog/targets/HASH.yaml
+    scripts/hash2yaml.py hash.csv [IMM_Compendium_2026.xlsx] > internal/catalog/targets/HASH.yaml
 
 The export (registered users only) needs at least idPNMain, PNG, Name,
 PNstat, DRAJ2000, DDECJ2000, MajDiam and mainClass. Rows repeat for objects
 with several diameter measurements; the largest is kept, since the faint
-outer extent is what has to fit the frame. MajDiam is in arcseconds.
+outer extent is what has to fit the frame. MajDiam is in arcseconds. HASH has no
+optical magnitudes; with the Compendium spreadsheet given, the V magnitude of
+every PN it lists (by name, Abell/NGC/IC number, or Kohoutek/Minkowski
+designation) is added as mag.
 Standard library only.
 """
 
@@ -17,7 +20,7 @@ import csv
 import json
 import sys
 
-from imm2yaml import sexagesimal
+from imm2yaml import aliases, designation, num, sexagesimal
 
 STATUS = {"T": "True PN", "L": "Likely PN", "P": "Possible PN", "c": "New candidate"}
 # HASH morphology (mainClass): Corradi & Schwarz 1995 classes plus stellar.
@@ -32,6 +35,14 @@ def diam(r):
 
 
 def main():
+    mags = {}
+    if len(sys.argv) > 2:
+        for alias, rows in aliases(sys.argv[2]).items():
+            vals = {num(r.get("T")) for r in rows if r.get("E", "").strip() == "PN"} - {None}
+            if len(vals) > 1:  # one designation, several Compendium rows: no safe pick
+                print(f"warning: {alias}: magnitudes {sorted(vals)} in the Compendium, skipped", file=sys.stderr)
+            elif vals:
+                mags[alias] = vals.pop()
     best = {}
     for r in csv.DictReader(open(sys.argv[1], encoding="utf-8-sig")):
         if r["PNstat"] not in STATUS:
@@ -47,8 +58,10 @@ def main():
         desc = ", ".join(filter(None, (STATUS[r["PNstat"]], png, SHAPE.get(r["mainClass"]))))
         print('- constellation: ""')  # the loader computes it from RA/Dec
         print(f"  dec: {q(sexagesimal(float(r['DDECJ2000'])))}")
+        hname = " ".join(r["Name"].split()) or png
         print(f"  description: {q(desc)}")
-        print(f"  name: {q(' '.join(r['Name'].split()) or png)}")
+        print(f"  mag: {mags.get(designation(hname), -9999)}")
+        print(f"  name: {q(hname)}")
         print(f"  ra: {q(sexagesimal(float(r['DRAJ2000']), hours=True))}")
         print(f"  size: {round(size / 60, 2) if size > 0 else -9999}")
         print('  type: "Planetary Nebula"')

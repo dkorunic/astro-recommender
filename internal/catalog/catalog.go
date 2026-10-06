@@ -45,14 +45,68 @@ type Target struct {
 	Track [][2]float64 `yaml:"-"`
 	// RADeg and DecDeg are RA and Dec in J2000 degrees, parsed and checked
 	// by Load; never from YAML.
-	RADeg  float64 `yaml:"-"`
-	DecDeg float64 `yaml:"-"`
-	Size   float64 `yaml:"size"` // major axis in arc minutes; 0 or negative (-9999) means unknown
+	RADeg   float64 `yaml:"-"`
+	DecDeg  float64 `yaml:"-"`
+	Size    float64 `yaml:"size"`    // major axis in arc minutes; 0 or negative (-9999) means unknown
+	Mag     float64 `yaml:"mag"`     // integrated V magnitude; 0 or negative (-9999) means unknown
+	BMag    float64 `yaml:"bmag"`    // integrated B magnitude (OpenNGC/OpenIC); 0 or negative means unknown
+	SurfBr  float64 `yaml:"surfbr"`  // V surface brightness in mag/arcsec² (GaryImmFull galaxies); 0 or negative means unknown
+	BSurfBr float64 `yaml:"bsurfbr"` // mean B surface brightness within the 25 mag isophote (OpenNGC/OpenIC), ~0.8 fainter than V; 0 or negative means unknown
 }
 
 // HasSize reports whether the size is known: comets and entries with a zero
 // or negative size (-9999 in the lists, 0.0 in a few LDN entries) have none.
 func (t Target) HasSize() bool { return t.Size > 0 }
+
+// HasMag reports whether the magnitude is known. No deep sky object is
+// brighter than 0, so like Size the sentinel is 0 or negative (-9999 in the
+// lists; LBN.yaml's upstream value was Lynds' brightness class, blanked).
+func (t Target) HasMag() bool { return t.Mag > 0 }
+
+// minBV..maxBV bound a plausible deep sky B−V; OpenNGC/OpenIC pair
+// inconsistent magnitudes for ~100 objects (IC 127: V 9.2, B 15.4).
+const minBV, maxBV = -0.3, 1.5
+
+// Bounds on a known (positive) magnitude or surface brightness in a list:
+// nothing is fainter than maxNumber, and no extended object is brighter than
+// minSB mag/arcsec², so a `surfbr: 2.3` typo for 22.3, which would make an
+// object immune to sky glow, is rejected rather than ranked first.
+const maxNumber, minSB = 35, 10
+
+// groupTypes (lower case) are the lists' spellings of galaxy groups, whose
+// magnitude is the brightest member's but whose size is the whole group's,
+// so no surface brightness can be derived from them.
+var groupTypes = map[string]bool{
+	"galaxy cluster": true, "galaxy group": true, "galaxy pair": true, "galaxy duo": true, "gtrpl": true, "ggroup": true,
+}
+
+// SurfaceBrightness returns the object's V surface brightness in mag/arcsec²,
+// the visibility measure for extended objects (it compares directly with the
+// sky's), or 0 when none is known, and whether it was derived. It is the
+// measured V one, else the B one moved to V by colour(), else, for diffuse
+// objects only (galaxies and nebulae, not groupTypes), one derived by
+// spreading the V magnitude (or B − typicalBV) over a uniform disc of the
+// major axis (derived; the disc overstates the area of an elongated object,
+// so it leans faint). Clusters, stars and asterisms get none: their light is
+// in points that sky glow hardly hurts, which skyK (scoring) already models,
+// and MWSC's sizes are the core only. Comets have none either.
+func (t Target) SurfaceBrightness() (float64, bool) {
+	switch {
+	case t.SurfBr > 0:
+		return t.SurfBr, false
+	case t.BSurfBr > 0:
+		return t.BSurfBr - t.colour(), false
+	}
+	mag := t.Mag
+	if !t.HasMag() && t.BMag > 0 {
+		mag = t.BMag - t.typicalBV()
+	}
+	if t.Track != nil || mag <= 0 || !t.HasSize() || !t.diffuse() {
+		return 0, false
+	}
+
+	return mag + 2.5*math.Log10(math.Pi/4*(60*t.Size)*(60*t.Size)), true
+}
 
 // Position returns the RA and Dec in degrees that stand for the target: the
 // J2000 catalog position, or for a comet its mid-track one (of date, within
@@ -68,6 +122,33 @@ func (t Target) Position() (float64, float64) {
 	return t.RADeg, t.DecDeg
 }
 
+// colour is the object's B−V: its own when both magnitudes are known and
+// plausible, else typicalBV.
+func (t Target) colour() float64 {
+	if bv := t.BMag - t.Mag; t.BMag > 0 && t.HasMag() && bv >= minBV && bv <= maxBV {
+		return bv
+	}
+
+	return t.typicalBV()
+}
+
+// typicalBV is the B−V assumed for the object's type when its own is not
+// usable: 0.8 for galaxies (the median of the Compendium's V surface
+// brightness against OpenNGC's B one over 723 shared galaxies), 0 for
+// emission-line objects (Hα/OIII dominated, often bluer than that), 0.5 for
+// the rest (clusters, reflection nebulae). Rough values; they move a B figure
+// to V to within a few tenths.
+func (t Target) typicalBV() float64 {
+	switch {
+	case strings.Contains(strings.ToLower(t.Type), "galax"):
+		return 0.8
+	case EmissionLine(t):
+		return 0
+	}
+
+	return 0.5
+}
+
 // Lists are the embedded uptonight target lists selectable with -list.
 var Lists = []string{"GaryImm", "GaryImmFull", "Messier", "Herschel400", "Pensack500", "OpenNGC", "OpenIC", "LBN", "LDN", "MWSC", "Melotte", "Collinder", "PNnet", "HASH"}
 
@@ -75,7 +156,7 @@ var (
 	errList        = errors.New("unknown target list")
 	errCoordinates = errors.New("bad coordinates")
 	errSky         = errors.New("RA must be 0 to 24h and Dec within ±90°")
-	errSize        = errors.New("bad size")
+	errNumber      = errors.New("bad number")
 )
 
 // Load reads -targets, or the embedded -list target list.
@@ -116,8 +197,21 @@ func Load(listName, file string) ([]Target, string, error) {
 		if err != nil {
 			return nil, "", fmt.Errorf("%w for %s: %w", errCoordinates, tg.Name, err)
 		}
-		if !num.Finite(tg.Size) {
-			return nil, "", fmt.Errorf("%w for %s: %v", errSize, tg.Name, tg.Size)
+		// 0 or negative is the unknown sentinel; a known value must be plausible.
+		for _, f := range []struct {
+			name   string
+			v      float64
+			lo, hi float64
+		}{
+			{"size", tg.Size, 0, math.Inf(1)},
+			{"mag", tg.Mag, 0, maxNumber},
+			{"bmag", tg.BMag, 0, maxNumber},
+			{"surfbr", tg.SurfBr, minSB, maxNumber},
+			{"bsurfbr", tg.BSurfBr, minSB, maxNumber},
+		} {
+			if !num.Finite(f.v) || (f.v > 0 && (f.v < f.lo || f.v > f.hi)) {
+				return nil, "", fmt.Errorf("%w for %s: %s %v", errNumber, tg.Name, f.name, f.v)
+			}
 		}
 		tg.RADeg, tg.DecDeg = ra*15, dec // hours -> degrees
 		tg.Constellation = constellation.Of(tg.RADeg, tg.DecDeg)
@@ -182,4 +276,16 @@ var emissionNames = map[string]bool{
 // EmissionLine reports whether a target shines mainly in Ha/OIII lines.
 func EmissionLine(tg Target) bool {
 	return emissionTypes[strings.ToLower(tg.Type)] || emissionNames[tg.Name]
+}
+
+// diffuse reports whether the object is an extended glow a surface brightness
+// describes: a galaxy or a nebula (every spelling: "nebula", "nebulosity",
+// "cloud", the emission-line types), but not a group of galaxies.
+func (t Target) diffuse() bool {
+	typ := strings.ToLower(t.Type)
+	if groupTypes[typ] {
+		return false
+	}
+
+	return EmissionLine(t) || strings.Contains(typ, "galax") || strings.Contains(typ, "nebul") || strings.Contains(typ, "cloud")
 }

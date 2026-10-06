@@ -4,6 +4,7 @@
 package catalog
 
 import (
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -81,13 +82,19 @@ func TestTargetLists(t *testing.T) {
 
 func TestLoadRejectsBadCoordinates(t *testing.T) {
 	for name, yml := range map[string]string{
-		"empty dec": `[{name: X, ra: "00 50 00", dec: ""}]`,
-		"dec > 90":  `[{name: X, ra: "00 50 00", dec: "95 00 00"}]`,
-		"ra >= 24":  `[{name: X, ra: "24 00 00", dec: "10 00 00"}]`,
-		"ra < 0":    `[{name: X, ra: "-01 00 00", dec: "10 00 00"}]`,
-		"nan":       `[{name: X, ra: "NaN", dec: "NaN"}]`,
-		"size nan":  `[{name: X, ra: "00 50 00", dec: "10 00 00", size: .nan}]`,
-		"size inf":  `[{name: X, ra: "00 50 00", dec: "10 00 00", size: .inf}]`,
+		"empty dec":   `[{name: X, ra: "00 50 00", dec: ""}]`,
+		"dec > 90":    `[{name: X, ra: "00 50 00", dec: "95 00 00"}]`,
+		"ra >= 24":    `[{name: X, ra: "24 00 00", dec: "10 00 00"}]`,
+		"ra < 0":      `[{name: X, ra: "-01 00 00", dec: "10 00 00"}]`,
+		"nan":         `[{name: X, ra: "NaN", dec: "NaN"}]`,
+		"size nan":    `[{name: X, ra: "00 50 00", dec: "10 00 00", size: .nan}]`,
+		"size inf":    `[{name: X, ra: "00 50 00", dec: "10 00 00", size: .inf}]`,
+		"mag nan":     `[{name: X, ra: "00 50 00", dec: "10 00 00", mag: .nan}]`,
+		"bmag inf":    `[{name: X, ra: "00 50 00", dec: "10 00 00", bmag: .inf}]`,
+		"surfbr nan":  `[{name: X, ra: "00 50 00", dec: "10 00 00", surfbr: .nan}]`,
+		"bsurfbr nan": `[{name: X, ra: "00 50 00", dec: "10 00 00", bsurfbr: .nan}]`,
+		"mag 40":      `[{name: X, ra: "00 50 00", dec: "10 00 00", mag: 40}]`, // nothing in a target list is that faint
+		"surfbr 99":   `[{name: X, ra: "00 50 00", dec: "10 00 00", surfbr: 99}]`,
 	} {
 		f := filepath.Join(t.TempDir(), "t.yaml")
 		if err := os.WriteFile(f, []byte(yml), 0o600); err != nil {
@@ -104,6 +111,18 @@ func TestLoadRejectsBadCoordinates(t *testing.T) {
 	}
 	if _, _, err := Load("", f); err == nil || !strings.Contains(err.Error(), `more than one sign: "+-10 00 00"`) {
 		t.Errorf("double sign: %v, want the reason and the text as written", err)
+	}
+}
+
+// Unknown (-9999) and ordinary values pass the range check.
+func TestLoadAcceptsKnownAndUnknownNumbers(t *testing.T) {
+	f := filepath.Join(t.TempDir(), "t.yaml")
+	yml := `[{name: X, ra: "00 50 00", dec: "10 00 00", size: -9999, mag: -9999, bmag: 3.4, surfbr: 22.0, bsurfbr: 34.9}]`
+	if err := os.WriteFile(f, []byte(yml), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := Load("", f); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -154,6 +173,45 @@ func TestEmissionLineLists(t *testing.T) {
 		}
 		if found < len(want) {
 			t.Errorf("%s: found %d of %d test targets", list, found, len(want))
+		}
+	}
+}
+
+func TestSurfaceBrightness(t *testing.T) {
+	// A 10' uniform disc: 2.5 log10(pi/4 * 600"^2) = 13.63 mag fainter than the integrated magnitude.
+	disc := 2.5 * math.Log10(math.Pi/4*600*600)
+	for name, c := range map[string]struct {
+		tg      Target
+		want    float64 // 0: none
+		derived bool
+	}{
+		"measured V wins":      {Target{SurfBr: 22.5, BSurfBr: 23.3, BMag: 10, Mag: 9, Size: 10}, 22.5, false},
+		"B minus own colour":   {Target{BSurfBr: 23.3, BMag: 10, Mag: 9.1}, 22.4, false},
+		"B minus galaxy 0.8":   {Target{Type: "Galaxy", BSurfBr: 23.3, Mag: 9.1}, 22.5, false},
+		"B minus emission 0":   {Target{Type: "Planetary Nebula", BSurfBr: 23.3}, 23.3, false},
+		"B minus other 0.5":    {Target{Type: "Open Cluster", BSurfBr: 23.3}, 22.8, false},
+		"implausible colour":   {Target{Type: "Galaxy", BSurfBr: 23.3, BMag: 15.35, Mag: 9.2}, 22.5, false}, // IC 127: typical instead
+		"derived galaxy":       {Target{Type: "Galaxy", Mag: 10, Size: 10}, 10 + disc, true},
+		"derived from B":       {Target{Type: "Galaxy", BMag: 10.8, Size: 10}, 10 + disc, true},
+		"derived HII from B":   {Target{Type: "HII Emission Nebula", BMag: 10, Size: 10}, 10 + disc, true},
+		"derived reflection":   {Target{Type: "Reflection Nebula", Mag: 10, Size: 10}, 10 + disc, true},
+		"derived cloud":        {Target{Type: "Molecular Cloud", Mag: 10, Size: 10}, 10 + disc, true},
+		"cluster not derived":  {Target{Type: "Open Cluster", Mag: 6, Size: 13}, 0, false}, // stars, and MWSC sizes are the core only
+		"globular not derived": {Target{Type: "Globular Cluster", Mag: 6, Size: 13}, 0, false},
+		"star not derived":     {Target{Type: "**", Mag: 9, Size: 0.5}, 0, false},
+		"asterism not derived": {Target{Type: "Asterism", Mag: 5, Size: 60}, 0, false},
+		"untyped not derived":  {Target{Mag: 10, Size: 10}, 0, false},
+		"group not derived":    {Target{Type: "Galaxy Cluster", Mag: 11.6, Size: 150}, 0, false}, // one member's mag over the group's area
+		"pair not derived":     {Target{Type: "Galaxy Pair", Mag: 12, Size: 3}, 0, false},
+		"group measured ok":    {Target{Type: "Galaxy Group", SurfBr: 22.1}, 22.1, false},
+		"mag only":             {Target{Type: "Galaxy", Mag: 10}, 0, false},
+		"size only":            {Target{Type: "Galaxy", Size: 10}, 0, false},
+		"comet":                {Target{Type: "Comet", Mag: 8, Size: 10, Track: [][2]float64{{0, 0}}}, 0, false},
+		"nothing":              {Target{}, 0, false},
+	} {
+		got, derived := c.tg.SurfaceBrightness()
+		if math.Abs(got-c.want) > 1e-9 || derived != c.derived {
+			t.Errorf("%s: SurfaceBrightness() = %v, %v; want %v, %v", name, got, derived, c.want, c.derived)
 		}
 	}
 }

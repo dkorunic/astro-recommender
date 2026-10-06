@@ -7,7 +7,7 @@
 
 Standard library only: the XLSX is read as zipped XML (sheet "Main",
 data from row 10; columns A name, D type, E subtype, F class, G size in
-arcmin, J rating, L raw RA h/m/s, M RA deg, N raw Dec d/m/s, O Dec deg,
+arcmin, J rating, T integrated magnitude, U surface brightness, L raw RA h/m/s, M RA deg, N raw Dec d/m/s, O Dec deg,
 P constellation, Q nickname, R alternative IDs). L and N are used to
 cross-check and correct M and O.
 """
@@ -117,6 +117,39 @@ def position(r):
     return ra, dec
 
 
+# Cross-identification columns -> designation as the other lists spell it.
+# AU/AV hold Kohoutek/Minkowski "1-07" as 107; AP (Abell galaxy clusters)
+# would collide with AS (Abell PNe) and is left out.
+ALIASES = {"AI": "NGC {}", "AJ": "IC {}", "AL": "M {}", "AM": "Caldwell {}", "AN": "Arp {}", "AO": "HCG {}",
+           "AQ": "UGC {}", "AR": "PGC {}", "AS": "Abell {}", "AW": "Barnard {}", "AX": "Gum {}", "AY": "LBN {}",
+           "AZ": "LDN {}", "BA": "RCW {}", "BB": "Sh 2-{}", "BD": "vdB {}"}  # Sh 2-N as HASH spells it
+
+
+def designation(s):
+    """Normalize a designation as the names are written: single spaces,
+    leading zeros stripped ("Abell 01" -> "Abell 1", "Minkowski 1-07" -> "Minkowski 1-7")."""
+    return re.sub(r"(?<=[ \-])0+(?=\d)", "", " ".join(s.split()))
+
+
+def aliases(path):
+    """Every designation of every Compendium row (its name, the alternative
+    IDs column and the cross-identification columns) -> the rows carrying it,
+    normalized with designation(). Non-numeric cross-ID cells are skipped.
+    For a row's magnitude read column T (num() it), for the type columns D/E."""
+    out = {}
+    for r in rows(path):
+        ids = [r["A"]] + (r.get("R") or "").split(",")
+        ids += [fmt.format(int(num(r.get(c)))) for c, fmt in ALIASES.items() if num(r.get(c)) is not None]
+        for c, fmt in (("AU", "K {}-{}"), ("AV", "M {}-{}")):  # 107 means 1-07
+            if num(r.get(c)) is not None:
+                v = str(int(num(r[c])))
+                ids.append(fmt.format(v[:-2], int(v[-2:])))
+        for i in ids:
+            if i.strip():
+                out.setdefault(designation(i), []).append(r)
+    return out
+
+
 def num(v):
     try:
         return float(v)
@@ -134,17 +167,20 @@ def main():
         kind = TYPES.get((typ, sub), {"Gal": "Galaxy", "Stars": "Star"}.get(typ, "Nebula"))
         if kind == "Emission Nebula" and cls.startswith("WR"):
             kind = "Wolf-Rayet Nebula"
-        name = re.sub(r"(?<=[ \-])0+(?=\d)", "", " ".join(r["A"].split()))
+        name = designation(r["A"])
         desc = " ".join((r.get("Q") or "").split()) or " ".join((r.get("R") or "").split())
-        size, rating = num(r.get("G")), num(r.get("J"))
+        size, rating, mag, surfbr = num(r.get("G")), num(r.get("J")), num(r.get("T")), num(r.get("U"))
         ra, dec = position(r)
         print(f"- constellation: {q((r.get('P') or '').strip())}")
         print(f"  dec: {q(sexagesimal(dec))}")
         print(f"  description: {q(desc)}")
+        print(f"  mag: {mag if mag is not None else -9999}")
         print(f"  name: {q(name)}")
         print(f"  ra: {q(sexagesimal(ra, hours=True))}")
         print(f"  rating: {int(rating) if rating is not None else 0}")
         print(f"  size: {size if size is not None else -9999}")
+        if surfbr is not None:
+            print(f"  surfbr: {round(surfbr, 2)}")
         print(f"  type: {q(kind)}")
 
 

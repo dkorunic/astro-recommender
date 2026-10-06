@@ -3,6 +3,7 @@
 - constellation: ""
   dec: "-72 04 51.6"
   description: "NGC 104 47 Tucanae"
+  mag: 4.0
   name: "Mel 1"
   ra: "00 24 01.1"
   size: 63.6
@@ -10,6 +11,7 @@
 - constellation: ""
   dec: "+85 15 18.0"
   description: "NGC 188"
+  mag: 8.1
   name: "Mel 2"
   ra: "00 47 24.0"
   size: 35.4
@@ -17,6 +19,7 @@
 - constellation: ""
   dec: "-26 35 06.0"
   description: "NGC 288"
+  mag: 8.1
   name: "Mel 3"
   ra: "00 52 46.2"
   size: 19.2
@@ -24,6 +27,7 @@
 - constellation: ""
   dec: "-70 50 49.2"
   description: "NGC 362"
+  mag: 6.8
   name: "Mel 4"
   ra: "01 03 18.0"
   size: 17.4
@@ -31,6 +35,7 @@
 - constellation: ""
   dec: "-72 03 24.6"
   description: "NGC 371"
+  mag: -9999
   name: "Mel 5"
   ra: "01 03 29.53"
   size: 4.20
@@ -38,6 +43,7 @@
 - constellation: ""
   dec: "+58 48 39.6"
   description: "NGC 436"
+  mag: 8.8
   name: "Mel 6"
   ra: "01 15 59.0"
   size: 11.4
@@ -45,6 +51,7 @@
 - constellation: ""
   dec: "+58 16 48.0"
   description: "NGC 457 ET Cluster, Owl Cluster"
+  mag: 6.4
   name: "Mel 7"
   ra: "01 19 37.2"
   size: 15.6
@@ -52,6 +59,7 @@
 - constellation: ""
   dec: "+60 39 07.2"
   description: "M 103 NGC 581"
+  mag: 7.40
   name: "Mel 8"
   ra: "01 33 15.8"
   size: 9.0
@@ -59,6 +67,7 @@
 - constellation: ""
   dec: "+61 54 00.0"
   description: "NGC 654"
+  mag: 6.5
   name: "Mel 9"
   ra: "01 43 58.8"
   size: 12.6
@@ -66,6 +75,7 @@
 - constellation: ""
   dec: "+60 40 12.0"
   description: "NGC 659"
+  mag: 7.9
   name: "Mel 10"
   ra: "01 44 22.2"
   size: 8.4
@@ -73,6 +83,7 @@
 - constellation: ""
   dec: "+61 13 30.0"
   description: "NGC 663"
+  mag: 7.1
   name: "Mel 11"
   ra: "01 46 12.0"
   size: 12.0
@@ -80,6 +91,7 @@
 - constellation: ""
   dec: "+37 47 24.0"
   description: "NGC 752"
+  mag: 5.7
   name: "Mel 12"
   ra: "01 57 05.4"
   size: 78.0
@@ -87,6 +99,7 @@
 - constellation: ""
   dec: "+57 08 42.0"
   description: "NGC 869 h Persei of Double Cluster"
+  mag: 5.3
   name: "Mel 13"
   ra: "02 18 57.6"
   size: 28.8
@@ -94,6 +107,7 @@
 - constellation: ""
   dec: "+57 08 42.0"
   description: "NGC 884 χ Persei of Double Cluster"
+  mag: 6.1
   name: "Mel 14"
   ra: "02 22 03.0"
   size: 21.0
@@ -101,6 +115,7 @@
 - constellation: ""
   dec: "+61 27 18.0"
   description: "IC 1805 Heart Nebula"
+  mag: 6.5
   name: "Mel 15"
   ra: "02 32 43.8"
   size: 18.0
@@ -108,6 +123,7 @@
 - constellation: ""
   dec: "+61 37 12.0"
   description: "NGC 1027"
+  mag: 6.7
   name: "Mel 16"
   ra: "02 42 39.6"
   size: 15.6
@@ -115,6 +131,7 @@
 - constellation: ""
   dec: "+42 47 24.0"
   description: "M 34 NGC 1039"
+  mag: 5.20
   name: "Mel 17"
   ra: "02 42 11.9"
   size: 45.0
@@ -122,6 +139,7 @@
 - constellation: ""
   dec: "+47 15 10.8"
   description: "NGC 1245"
+  mag: 8.4
   name: "Mel 18"
   ra: "03 14 48.1"
   size: 22.8
@@ -129,6 +147,7 @@
 - constellation: ""
   dec: "-55 12 57.6"
   description: "NGC 1261"
+  mag: 8.3
   name: "Mel 19"
   ra: "03 12 16.2"
   size: 10.2
@@ -136,6 +155,7 @@
 - constellation: ""
   dec: "+48 48 00.0"
   description: "Alpha Persei Cluster"
+  mag: 1.2
   name: "Mel 20"
   ra: "03 26 42.0"
   size: 240.0
@@ -143,6 +163,7 @@
 - constellation: ""
   dec: "+37 21 25.2"
   description: "NGC 1342"
+  mag: 6.7
   name: "Mel 21"
   ra: "03 32 01.0"
   size: 12.6
@@ -150,6 +171,7 @@
 - constellation: ""
   dec: "+24 22 12.0"
   description: "M 45 Pleiades"
+  mag: -9999
   name: "Mel 22"
   ra: "03 46 01.2"
   size: 300.0
@@ -157,6 +179,7 @@
 - constellation: ""
   dec: "+51 11 24.0"
   description: "NGC 1528"
+  mag: 6.4
   name: "Mel 23"
   ra: "04 15 23.4"
   size: 19.2
@@ -164,6 +187,7 @@
 - constellation: ""
   dec: "+58 15 00.0"
   description: "IC 361"
+  mag: 11.70
   name: "Mel 24"
   ra: "04 18 57.6"
   size: 14.4
@@ -171,6 +195,7 @@
 - constellation: ""
   dec: "+16 00 00.0"
   description: "Hyades"
+  mag: 0.5
   name: "Mel 25"
   ra: "04 27 00.0"
   size: 330.0
@@ -178,6 +203,7 @@
 - constellation: ""
   dec: "+19 10 12.0"
   description: "NGC 1647"
+  mag: 6.4
   name: "Mel 26"
   ra: "04 45 59.4"
   size: 54.0
@@ -185,6 +211,7 @@
 - constellation: ""
   dec: "+43 39 36.0"
   description: "NGC 1664"
+  mag: 7.6
   name: "Mel 27"
   ra: "04 51 14.0"
   size: 22.8
@@ -192,6 +219,7 @@
 - constellation: ""
   dec: "+23 49 48.0"
   description: "NGC 1746"
+  mag: 6.10
   name: "Mel 28"
   ra: "05 04 33.6"
   size: 36.0
@@ -199,6 +227,7 @@
 - constellation: ""
   dec: "+16 31 19.2"
   description: "NGC 1807"
+  mag: 7.0
   name: "Mel 29"
   ra: "05 10 48.7"
   size: 10.8
@@ -206,6 +235,7 @@
 - constellation: ""
   dec: "-40 02 34.8"
   description: "NGC 1851"
+  mag: 7.1
   name: "Mel 30"
   ra: "05 14 07.8"
   size: 18.0
@@ -213,6 +243,7 @@
 - constellation: ""
   dec: "+33 22 25.0"
   description: ""
+  mag: -9999
   name: "Mel 31"
   ra: "05 18 10.0"
   size: -9999
@@ -220,6 +251,7 @@
 - constellation: ""
   dec: "+39 17 24.0"
   description: "NGC 1857"
+  mag: 7.0
   name: "Mel 32"
   ra: "05 20 03.5"
   size: 9.0
@@ -227,6 +259,7 @@
 - constellation: ""
   dec: "+33 25 48.0"
   description: "NGC 1893"
+  mag: 7.50
   name: "Mel 33"
   ra: "05 22 49.8"
   size: 12.0
@@ -234,6 +267,7 @@
 - constellation: ""
   dec: "-24 31 12.0"
   description: "M 79 NGC 1904"
+  mag: 8.16
   name: "Mel 34"
   ra: "05 24 11.2"
   size: 14.4
@@ -241,6 +275,7 @@
 - constellation: ""
   dec: "+35 19 30.0"
   description: "NGC 1907"
+  mag: 8.2
   name: "Mel 35"
   ra: "05 28 04.8"
   size: 10.8
@@ -248,6 +283,7 @@
 - constellation: ""
   dec: "+35 48 00.0"
   description: "M 38 NGC 1912"
+  mag: 6.40
   name: "Mel 36"
   ra: "05 28 51.6"
   size: 19.2
@@ -255,6 +291,7 @@
 - constellation: ""
   dec: "+34 09 28.8"
   description: "M 36 NGC 1960"
+  mag: 6.00
   name: "Mel 37"
   ra: "05 36 19.8"
   size: 14.4
@@ -262,6 +299,7 @@
 - constellation: ""
   dec: "+32 34 12.0"
   description: "M 37 NGC 2099"
+  mag: 5.60
   name: "Mel 38"
   ra: "05 52 21.0"
   size: 22.8
@@ -269,6 +307,7 @@
 - constellation: ""
   dec: "+49 52 19.2"
   description: "NGC 2126"
+  mag: 10.2
   name: "Mel 39"
   ra: "06 02 35.5"
   size: 10.8
@@ -276,6 +315,7 @@
 - constellation: ""
   dec: "+24 05 31.2"
   description: "NGC 2158"
+  mag: 8.6
   name: "Mel 40"
   ra: "06 07 25.7"
   size: 16.8
@@ -283,6 +323,7 @@
 - constellation: ""
   dec: "+24 21 36.0"
   description: "M 35 NGC 2168"
+  mag: 5.10
   name: "Mel 41"
   ra: "06 09 12.6"
   size: 48.0
@@ -290,6 +331,7 @@
 - constellation: ""
   dec: "+39 52 04.8"
   description: "NGC 2192"
+  mag: 10.90
   name: "Mel 42"
   ra: "06 15 16.9"
   size: 10.8
@@ -297,6 +339,7 @@
 - constellation: ""
   dec: "+12 49 04.8"
   description: "NGC 2194"
+  mag: 8.5
   name: "Mel 43"
   ra: "06 13 46.2"
   size: 17.4
@@ -304,6 +347,7 @@
 - constellation: ""
   dec: "-18 39 36.0"
   description: "NGC 2204"
+  mag: 8.6
   name: "Mel 44"
   ra: "06 15 33.1"
   size: 12.6
@@ -311,6 +355,7 @@
 - constellation: ""
   dec: "-07 17 42.0"
   description: "NGC 2215"
+  mag: 8.4
   name: "Mel 45"
   ra: "06 20 52.8"
   size: 16.8
@@ -318,6 +363,7 @@
 - constellation: ""
   dec: "-31 17 06.0"
   description: "NGC 2243"
+  mag: 9.40
   name: "Mel 46"
   ra: "06 29 34.1"
   size: 10.2
@@ -325,6 +371,7 @@
 - constellation: ""
   dec: "+04 56 24.0"
   description: "NGC 2244 Satellite Cluster"
+  mag: 4.8
   name: "Mel 47"
   ra: "06 31 55.2"
   size: 18.6
@@ -332,6 +379,7 @@
 - constellation: ""
   dec: "+10 52 30.0"
   description: "NGC 2259"
+  mag: 10.80
   name: "Mel 48"
   ra: "06 38 31.9"
   size: 12.0
@@ -339,6 +387,7 @@
 - constellation: ""
   dec: "+09 52 48.0"
   description: "NGC 2264 Christmas Tree Cluster"
+  mag: 4.1
   name: "Mel 49"
   ra: "06 40 58.8"
   size: 22.8
@@ -346,6 +395,7 @@
 - constellation: ""
   dec: "+26 59 06.0"
   description: "NGC 2266"
+  mag: 9.5
   name: "Mel 50"
   ra: "06 43 20.3"
   size: 8.4
@@ -353,6 +403,7 @@
 - constellation: ""
   dec: "+41 04 48.0"
   description: "NGC 2281"
+  mag: 5.4
   name: "Mel 51"
   ra: "06 48 18.0"
   size: 21.6
@@ -360,6 +411,7 @@
 - constellation: ""
   dec: "-20 44 42.0"
   description: "M 41 NGC 2287"
+  mag: 4.50
   name: "Mel 52"
   ra: "06 46 03.0"
   size: 24.0
@@ -367,6 +419,7 @@
 - constellation: ""
   dec: "-36 00 18.0"
   description: "NGC 2298"
+  mag: 9.3
   name: "Mel 53"
   ra: "06 48 59.4"
   size: 9.6
@@ -374,6 +427,7 @@
 - constellation: ""
   dec: "+00 27 54.0"
   description: "NGC 2301"
+  mag: 6.0
   name: "Mel 54"
   ra: "06 51 46.8"
   size: 20.4
@@ -381,6 +435,7 @@
 - constellation: ""
   dec: "+17 58 48.0"
   description: "NGC 2304"
+  mag: 10.0
   name: "Mel 55"
   ra: "06 55 12.0"
   size: 9.6
@@ -388,6 +443,7 @@
 - constellation: ""
   dec: "-07 10 30.0"
   description: "NGC 2309"
+  mag: 10.50
   name: "Mel 56"
   ra: "06 56 04.9"
   size: 10.8
@@ -395,6 +451,7 @@
 - constellation: ""
   dec: "+75 19 36.0"
   description: "NGC 2314"
+  mag: 12.13
   name: "Mel 57"
   ra: "07 10 32.55"
   size: 1.32
@@ -402,6 +459,7 @@
 - constellation: ""
   dec: "-08 22 12.0"
   description: "M 50 NGC 2323"
+  mag: 5.90
   name: "Mel 58"
   ra: "07 02 43.1"
   size: 28.2
@@ -409,6 +467,7 @@
 - constellation: ""
   dec: "+01 02 16.8"
   description: "NGC 2324"
+  mag: 8.4
   name: "Mel 59"
   ra: "07 04 10.2"
   size: 17.4
@@ -416,6 +475,7 @@
 - constellation: ""
   dec: "-10 01 48.0"
   description: "NGC 2335"
+  mag: 7.2
   name: "Mel 60"
   ra: "07 06 50.4"
   size: 17.4
@@ -423,6 +483,7 @@
 - constellation: ""
   dec: "-13 12 00.0"
   description: "NGC 2345"
+  mag: 7.70
   name: "Mel 61"
   ra: "07 08 15.0"
   size: 13.8
@@ -430,6 +491,7 @@
 - constellation: ""
   dec: "-10 15 00.0"
   description: "NGC 2353"
+  mag: 7.1
   name: "Mel 62"
   ra: "07 14 30.5"
   size: 13.2
@@ -437,6 +499,7 @@
 - constellation: ""
   dec: "+13 45 00.0"
   description: "NGC 2355"
+  mag: 9.7
   name: "Mel 63"
   ra: "07 16 59.2"
   size: 12.0
@@ -444,6 +507,7 @@
 - constellation: ""
   dec: "-15 38 24.0"
   description: "NGC 2360 Caroline's Cluster"
+  mag: 7.2
   name: "Mel 64"
   ra: "07 17 42.0"
   size: 18.0
@@ -451,6 +515,7 @@
 - constellation: ""
   dec: "-24 57 36.0"
   description: "NGC 2362 Tau Canis Majoris Cluster"
+  mag: 3.8
   name: "Mel 65"
   ra: "07 18 43.2"
   size: 14.4
@@ -458,6 +523,7 @@
 - constellation: ""
   dec: "-47 40 04.8"
   description: ""
+  mag: -9999
   name: "Mel 66"
   ra: "07 26 12.1"
   size: 13.8
@@ -465,6 +531,7 @@
 - constellation: ""
   dec: "-20 36 36.0"
   description: "NGC 2421"
+  mag: 8.3
   name: "Mel 67"
   ra: "07 36 14.4"
   size: 10.2
@@ -472,6 +539,7 @@
 - constellation: ""
   dec: "-14 29 24.0"
   description: "M 47 NGC 2422"
+  mag: 4.40
   name: "Mel 68"
   ra: "07 36 39.6"
   size: 39.6
@@ -479,6 +547,7 @@
 - constellation: ""
   dec: "+21 34 01.2"
   description: "NGC 2420"
+  mag: 8.3
   name: "Mel 69"
   ra: "07 38 22.9"
   size: 15.0
@@ -486,6 +555,7 @@
 - constellation: ""
   dec: "-13 51 00.0"
   description: "NGC 2423"
+  mag: 5.8
   name: "Mel 70"
   ra: "07 37 06.6"
   size: 23.4
@@ -493,6 +563,7 @@
 - constellation: ""
   dec: "-12 03 18.0"
   description: ""
+  mag: -9999
   name: "Mel 71"
   ra: "07 37 33.6"
   size: 28.8
@@ -500,6 +571,7 @@
 - constellation: ""
   dec: "-10 42 00.0"
   description: ""
+  mag: -9999
   name: "Mel 72"
   ra: "07 38 28.7"
   size: 15.0
@@ -507,6 +579,7 @@
 - constellation: ""
   dec: "-19 05 06.0"
   description: "NGC 2432"
+  mag: 10.20
   name: "Mel 73"
   ra: "07 40 54.1"
   size: 10.8
@@ -514,6 +587,7 @@
 - constellation: ""
   dec: "-31 42 18.0"
   description: "NGC 2439"
+  mag: 6.9
   name: "Mel 74"
   ra: "07 40 48.0"
   size: 17.4
@@ -521,6 +595,7 @@
 - constellation: ""
   dec: "-14 48 18.0"
   description: "M 46 NGC 2437"
+  mag: 6.10
   name: "Mel 75"
   ra: "07 41 49.2"
   size: 42.0
@@ -528,6 +603,7 @@
 - constellation: ""
   dec: "-23 51 36.0"
   description: "M 93 NGC 2447"
+  mag: 6.20
   name: "Mel 76"
   ra: "07 44 34.8"
   size: 30.0
@@ -535,6 +611,7 @@
 - constellation: ""
   dec: "-21 17 31.2"
   description: "NGC 2455"
+  mag: 10.20
   name: "Mel 77"
   ra: "07 49 01.9"
   size: 9.0
@@ -542,6 +619,7 @@
 - constellation: ""
   dec: "-38 31 48.0"
   description: "NGC 2477"
+  mag: 5.8
   name: "Mel 78"
   ra: "07 52 08.4"
   size: 37.2
@@ -549,6 +627,7 @@
 - constellation: ""
   dec: "-30 03 57.6"
   description: "NGC 2489"
+  mag: 7.9
   name: "Mel 79"
   ra: "07 56 18.6"
   size: 8.4
@@ -556,6 +635,7 @@
 - constellation: ""
   dec: "-10 45 36.0"
   description: "NGC 2506"
+  mag: 7.6
   name: "Mel 80"
   ra: "08 00 00.0"
   size: 21.6
@@ -563,6 +643,7 @@
 - constellation: ""
   dec: "-19 03 00.0"
   description: "NGC 2509"
+  mag: 9.3
   name: "Mel 81"
   ra: "08 00 46.8"
   size: 9.6
@@ -570,6 +651,7 @@
 - constellation: ""
   dec: "-60 45 00.0"
   description: "NGC 2516 Southern Beehive Cluster"
+  mag: 3.8
   name: "Mel 82"
   ra: "07 57 57.6"
   size: 48.6
@@ -577,6 +659,7 @@
 - constellation: ""
   dec: "-12 50 24.0"
   description: "NGC 2539"
+  mag: 6.5
   name: "Mel 83"
   ra: "08 10 40.8"
   size: 24.6
@@ -584,6 +667,7 @@
 - constellation: ""
   dec: "-49 12 18.0"
   description: "NGC 2547"
+  mag: 4.7
   name: "Mel 84"
   ra: "08 09 54.7"
   size: 15.6
@@ -591,6 +675,7 @@
 - constellation: ""
   dec: "-05 46 12.0"
   description: "M 48 NGC 2548"
+  mag: 5.80
   name: "Mel 85"
   ra: "08 13 44.4"
   size: 56.4
@@ -598,6 +683,7 @@
 - constellation: ""
   dec: "-30 39 00.0"
   description: "NGC 2567"
+  mag: 7.4
   name: "Mel 86"
   ra: "08 18 34.2"
   size: 12.0
@@ -605,6 +691,7 @@
 - constellation: ""
   dec: "-29 56 42.0"
   description: "NGC 2627"
+  mag: 8.4
   name: "Mel 87"
   ra: "08 37 19.2"
   size: 10.8
@@ -612,6 +699,7 @@
 - constellation: ""
   dec: "+19 41 24.0"
   description: "M 44 NGC 2632 Beehive Cluster"
+  mag: 3.10
   name: "Mel 88"
   ra: "08 40 22.8"
   size: 217.2
@@ -619,6 +707,7 @@
 - constellation: ""
   dec: "-34 46 30.0"
   description: "NGC 2635"
+  mag: 11.20
   name: "Mel 89"
   ra: "08 38 26.2"
   size: 10.2
@@ -626,6 +715,7 @@
 - constellation: ""
   dec: "-32 39 54.0"
   description: "NGC 2658"
+  mag: 9.20
   name: "Mel 90"
   ra: "08 43 30.0"
   size: 14.4
@@ -633,6 +723,7 @@
 - constellation: ""
   dec: "-44 59 06.0"
   description: "NGC 2659"
+  mag: 8.60
   name: "Mel 91"
   ra: "08 42 34.2"
   size: 10.2
@@ -640,6 +731,7 @@
 - constellation: ""
   dec: "-47 11 49.2"
   description: "NGC 2660"
+  mag: 8.80
   name: "Mel 92"
   ra: "08 42 39.6"
   size: 7.2
@@ -647,6 +739,7 @@
 - constellation: ""
   dec: "-48 49 12.0"
   description: "NGC 2670"
+  mag: 7.80
   name: "Mel 93"
   ra: "08 45 34.2"
   size: 8.4
@@ -654,6 +747,7 @@
 - constellation: ""
   dec: "+11 48 54.0"
   description: "M 67 NGC 2682"
+  mag: 6.90
   name: "Mel 94"
   ra: "08 51 23.4"
   size: 66.0
@@ -661,6 +755,7 @@
 - constellation: ""
   dec: "-64 51 46.8"
   description: "NGC 2808"
+  mag: 6.2
   name: "Mel 95"
   ra: "09 12 03.2"
   size: 18.0
@@ -668,6 +763,7 @@
 - constellation: ""
   dec: "-36 36 54.0"
   description: "NGC 2818"
+  mag: 11.2
   name: "Mel 96"
   ra: "09 16 12.0"
   size: 13.8
@@ -675,6 +771,7 @@
 - constellation: ""
   dec: "-57 00 00.0"
   description: "IC 2488"
+  mag: 7.4
   name: "Mel 97"
   ra: "09 27 39.6"
   size: 14.4
@@ -682,6 +779,7 @@
 - constellation: ""
   dec: "-60 06 36.0"
   description: "NGC 3114"
+  mag: 4.2
   name: "Mel 98"
   ra: "10 01 55.2"
   size: 24.6
@@ -689,6 +787,7 @@
 - constellation: ""
   dec: "-46 24 43.2"
   description: "NGC 3201"
+  mag: 6.9
   name: "Mel 99"
   ra: "10 17 37.0"
   size: 19.2
@@ -696,6 +795,7 @@
 - constellation: ""
   dec: "-58 13 48.0"
   description: "NGC 3293"
+  mag: 4.7
   name: "Mel 100"
   ra: "10 35 49.2"
   size: 10.2
@@ -703,6 +803,7 @@
 - constellation: ""
   dec: "-65 05 42.0"
   description: ""
+  mag: -9999
   name: "Mel 101"
   ra: "10 42 16.2"
   size: 16.8
@@ -710,6 +811,7 @@
 - constellation: ""
   dec: "-64 24 00.0"
   description: "IC 2602 Theta Carinae Cluster"
+  mag: 1.6
   name: "Mel 102"
   ra: "10 41 45.6"
   size: 96.0
@@ -717,6 +819,7 @@
 - constellation: ""
   dec: "-58 43 48.0"
   description: "NGC 3532 Wishing Well Cluster"
+  mag: 3.0
   name: "Mel 103"
   ra: "11 05 49.2"
   size: 24.0
@@ -724,6 +827,7 @@
 - constellation: ""
   dec: "-62 44 24.0"
   description: "IC 2714"
+  mag: 8.20
   name: "Mel 104"
   ra: "11 17 27.6"
   size: 14.4
@@ -731,6 +835,7 @@
 - constellation: ""
   dec: "-63 28 30.0"
   description: ""
+  mag: -9999
   name: "Mel 105"
   ra: "11 19 40.8"
   size: 10.8
@@ -738,6 +843,7 @@
 - constellation: ""
   dec: "-43 14 06.0"
   description: "NGC 3680"
+  mag: 7.60
   name: "Mel 106"
   ra: "11 25 37.2"
   size: 11.4
@@ -745,6 +851,7 @@
 - constellation: ""
   dec: "-61 36 54.0"
   description: "NGC 3766"
+  mag: 5.3
   name: "Mel 107"
   ra: "11 36 18.0"
   size: 13.8
@@ -752,6 +859,7 @@
 - constellation: ""
   dec: "-55 40 12.0"
   description: "NGC 3960"
+  mag: 8.30
   name: "Mel 108"
   ra: "11 50 38.4"
   size: 12.0
@@ -759,6 +867,7 @@
 - constellation: ""
   dec: "-61 15 00.0"
   description: "NGC 4103"
+  mag: 7.4
   name: "Mel 109"
   ra: "12 06 39.6"
   size: 15.6
@@ -766,6 +875,7 @@
 - constellation: ""
   dec: "-61 52 12.0"
   description: "NGC 4349"
+  mag: 7.40
   name: "Mel 110"
   ra: "12 24 14.4"
   size: 12.6
@@ -773,6 +883,7 @@
 - constellation: ""
   dec: "+26 18 00.0"
   description: "Coma Star Cluster"
+  mag: 1.8
   name: "Mel 111"
   ra: "12 23 56.4"
   size: 301.2
@@ -780,6 +891,7 @@
 - constellation: ""
   dec: "-72 39 32.4"
   description: "NGC 4372"
+  mag: 7.2
   name: "Mel 112"
   ra: "12 25 45.5"
   size: 24.0
@@ -787,6 +899,7 @@
 - constellation: ""
   dec: "-26 44 38.4"
   description: "M 68 NGC 4590"
+  mag: 7.96
   name: "Mel 113"
   ra: "12 39 28.1"
   size: 13.2
@@ -794,6 +907,7 @@
 - constellation: ""
   dec: "-60 22 30.0"
   description: "NGC 4755 Jewel Box"
+  mag: 4.2
   name: "Mel 114"
   ra: "12 53 38.4"
   size: 15.6
@@ -801,6 +915,7 @@
 - constellation: ""
   dec: "-70 52 37.2"
   description: "NGC 4833"
+  mag: 8.4
   name: "Mel 115"
   ra: "12 59 34.1"
   size: 16.8
@@ -808,6 +923,7 @@
 - constellation: ""
   dec: "-59 35 24.0"
   description: "NGC 4852"
+  mag: 8.90
   name: "Mel 116"
   ra: "13 00 10.8"
   size: 10.8
@@ -815,6 +931,7 @@
 - constellation: ""
   dec: "+18 10 04.8"
   description: "M 53 NGC 5024"
+  mag: 7.79
   name: "Mel 117"
   ra: "13 12 55.1"
   size: 18.0
@@ -822,6 +939,7 @@
 - constellation: ""
   dec: "-47 28 48.0"
   description: "NGC 5139 Omega Centauri"
+  mag: 3.9
   name: "Mel 118"
   ra: "13 26 47.4"
   size: 54.0
@@ -829,6 +947,7 @@
 - constellation: ""
   dec: "+28 22 37.2"
   description: "M 3 NGC 5272"
+  mag: 6.39
   name: "Mel 119"
   ra: "13 42 11.5"
   size: 32.4
@@ -836,6 +955,7 @@
 - constellation: ""
   dec: "-62 55 30.0"
   description: "NGC 5281"
+  mag: 5.9
   name: "Mel 120"
   ra: "13 46 33.6"
   size: 13.8
@@ -843,6 +963,7 @@
 - constellation: ""
   dec: "-51 22 26.4"
   description: "NGC 5286"
+  mag: 7.4
   name: "Mel 121"
   ra: "13 46 26.8"
   size: 13.2
@@ -850,6 +971,7 @@
 - constellation: ""
   dec: "-61 52 12.0"
   description: "NGC 5316"
+  mag: 6.00
   name: "Mel 122"
   ra: "13 53 56.4"
   size: 19.8
@@ -857,6 +979,7 @@
 - constellation: ""
   dec: "-48 19 48.0"
   description: "NGC 5460"
+  mag: 5.6
   name: "Mel 123"
   ra: "14 07 33.6"
   size: 26.4
@@ -864,6 +987,7 @@
 - constellation: ""
   dec: "+28 32 02.4"
   description: "NGC 5466"
+  mag: 9.2
   name: "Mel 124"
   ra: "14 05 31.2"
   size: 13.2
@@ -871,6 +995,7 @@
 - constellation: ""
   dec: "-60 42 54.0"
   description: "NGC 5617"
+  mag: 6.30
   name: "Mel 125"
   ra: "14 29 47.4"
   size: 10.2
@@ -878,6 +1003,7 @@
 - constellation: ""
   dec: "-05 58 33.6"
   description: "NGC 5634"
+  mag: 10.0
   name: "Mel 126"
   ra: "14 29 37.3"
   size: 9.0
@@ -885,6 +1011,7 @@
 - constellation: ""
   dec: "-56 36 54.0"
   description: "NGC 5662"
+  mag: 5.5
   name: "Mel 127"
   ra: "14 35 34.8"
   size: 16.2
@@ -892,6 +1019,7 @@
 - constellation: ""
   dec: "-57 34 01.2"
   description: "NGC 5715"
+  mag: 9.80
   name: "Mel 128"
   ra: "14 43 30.0"
   size: 7.2
@@ -899,6 +1027,7 @@
 - constellation: ""
   dec: "-82 12 50.4"
   description: "IC 4499"
+  mag: 8.56
   name: "Mel 129"
   ra: "15 00 18.4"
   size: 10.2
@@ -906,6 +1035,7 @@
 - constellation: ""
   dec: "-54 23 24.0"
   description: "NGC 5822"
+  mag: 6.5
   name: "Mel 130"
   ra: "15 04 28.2"
   size: 36.0
@@ -913,6 +1043,7 @@
 - constellation: ""
   dec: "-55 35 42.0"
   description: "NGC 5823"
+  mag: 7.9
   name: "Mel 131"
   ra: "15 05 31.2"
   size: 7.8
@@ -920,6 +1051,7 @@
 - constellation: ""
   dec: "-21 00 36.0"
   description: "NGC 5897"
+  mag: 8.4
   name: "Mel 132"
   ra: "15 17 24.4"
   size: 19.8
@@ -927,6 +1059,7 @@
 - constellation: ""
   dec: "+02 04 51.6"
   description: "M 5 NGC 5904"
+  mag: 5.95
   name: "Mel 133"
   ra: "15 18 33.1"
   size: 30.0
@@ -934,6 +1067,7 @@
 - constellation: ""
   dec: "-50 40 22.8"
   description: "NGC 5927"
+  mag: 8.86
   name: "Mel 134"
   ra: "15 28 00.8"
   size: 13.2
@@ -941,6 +1075,7 @@
 - constellation: ""
   dec: "-50 39 36.0"
   description: "NGC 5946"
+  mag: 10.72
   name: "Mel 135"
   ra: "15 35 28.7"
   size: 7.2
@@ -948,6 +1083,7 @@
 - constellation: ""
   dec: "-37 47 09.6"
   description: "NGC 5986"
+  mag: 7.6
   name: "Mel 136"
   ra: "15 46 03.0"
   size: 10.8
@@ -955,6 +1091,7 @@
 - constellation: ""
   dec: "-56 28 01.2"
   description: "NGC 5999"
+  mag: 9.00
   name: "Mel 137"
   ra: "15 52 10.2"
   size: 6.6
@@ -962,6 +1099,7 @@
 - constellation: ""
   dec: "-57 26 24.0"
   description: "NGC 6005"
+  mag: 10.70
   name: "Mel 138"
   ra: "15 55 58.8"
   size: 8.4
@@ -969,6 +1107,7 @@
 - constellation: ""
   dec: "-60 24 00.0"
   description: "NGC 6025"
+  mag: 5.1
   name: "Mel 139"
   ra: "16 03 16.2"
   size: 22.8
@@ -976,6 +1115,7 @@
 - constellation: ""
   dec: "-54 13 12.0"
   description: "NGC 6067"
+  mag: 5.6
   name: "Mel 140"
   ra: "16 13 12.0"
   size: 16.2
@@ -983,6 +1123,7 @@
 - constellation: ""
   dec: "-57 56 24.0"
   description: "NGC 6087 S Normae Cluster"
+  mag: 5.4
   name: "Mel 141"
   ra: "16 18 50.4"
   size: 20.4
@@ -990,6 +1131,7 @@
 - constellation: ""
   dec: "-22 58 33.6"
   description: "M 80 NGC 6093"
+  mag: 7.30
   name: "Mel 142"
   ra: "16 17 02.4"
   size: 11.4
@@ -997,6 +1139,7 @@
 - constellation: ""
   dec: "-72 12 07.2"
   description: "NGC 6101"
+  mag: 9.2
   name: "Mel 143"
   ra: "16 25 48.0"
   size: 9.0
@@ -1004,6 +1147,7 @@
 - constellation: ""
   dec: "-26 31 33.6"
   description: "M 4 NGC 6121"
+  mag: 5.40
   name: "Mel 144"
   ra: "16 23 35.2"
   size: 56.4
@@ -1011,6 +1155,7 @@
 - constellation: ""
   dec: "-40 39 00.0"
   description: "NGC 6124"
+  mag: 5.8
   name: "Mel 145"
   ra: "16 25 15.6"
   size: 27.0
@@ -1018,6 +1163,7 @@
 - constellation: ""
   dec: "-49 09 18.0"
   description: "NGC 6134"
+  mag: 7.20
   name: "Mel 146"
   ra: "16 27 48.6"
   size: 13.8
@@ -1025,6 +1171,7 @@
 - constellation: ""
   dec: "-26 01 26.4"
   description: "NGC 6144"
+  mag: 9.0
   name: "Mel 147"
   ra: "16 27 13.7"
   size: 10.8
@@ -1032,6 +1179,7 @@
 - constellation: ""
   dec: "-13 03 14.4"
   description: "M 107 NGC 6171"
+  mag: 8.85
   name: "Mel 148"
   ra: "16 32 31.9"
   size: 15.6
@@ -1039,6 +1187,7 @@
 - constellation: ""
   dec: "-43 21 36.0"
   description: "NGC 6192"
+  mag: 8.50
   name: "Mel 149"
   ra: "16 40 21.0"
   size: 15.0
@@ -1046,6 +1195,7 @@
 - constellation: ""
   dec: "+36 27 36.0"
   description: "M 13 NGC 6205 Hercules Globular Cluster"
+  mag: 5.80
   name: "Mel 150"
   ra: "16 41 41.3"
   size: 33.0
@@ -1053,6 +1203,7 @@
 - constellation: ""
   dec: "-01 56 56.4"
   description: "M 12 NGC 6218"
+  mag: 6.07
   name: "Mel 151"
   ra: "16 47 14.3"
   size: 22.2
@@ -1060,6 +1211,7 @@
 - constellation: ""
   dec: "-44 43 48.0"
   description: "NGC 6222"
+  mag: -9999
   name: "Mel 152"
   ra: "16 50 27.6"
   size: 7.2
@@ -1067,6 +1219,7 @@
 - constellation: ""
   dec: "-41 49 48.0"
   description: "NGC 6231"
+  mag: 2.6
   name: "Mel 153"
   ra: "16 54 14.4"
   size: 27.6
@@ -1074,6 +1227,7 @@
 - constellation: ""
   dec: "-22 10 37.2"
   description: "NGC 6235"
+  mag: 8.9
   name: "Mel 154"
   ra: "16 53 25.4"
   size: 8.4
@@ -1081,6 +1235,7 @@
 - constellation: ""
   dec: "-39 27 36.0"
   description: "NGC 6242"
+  mag: 6.4
   name: "Mel 155"
   ra: "16 55 33.6"
   size: 13.2
@@ -1088,6 +1243,7 @@
 - constellation: ""
   dec: "-52 42 00.0"
   description: "NGC 6253"
+  mag: 10.20
   name: "Mel 156"
   ra: "16 59 04.9"
   size: 12.0
@@ -1095,6 +1251,7 @@
 - constellation: ""
   dec: "-04 06 00.0"
   description: "M 10 NGC 6254"
+  mag: 4.98
   name: "Mel 157"
   ra: "16 57 09.0"
   size: 18.6
@@ -1102,6 +1259,7 @@
 - constellation: ""
   dec: "-44 41 24.0"
   description: "NGC 6259"
+  mag: 8.00
   name: "Mel 158"
   ra: "17 00 54.0"
   size: 12.0
@@ -1109,6 +1267,7 @@
 - constellation: ""
   dec: "-30 06 50.4"
   description: "M 62 NGC 6266"
+  mag: 7.39
   name: "Mel 159"
   ra: "17 01 12.7"
   size: 15.6
@@ -1116,6 +1275,7 @@
 - constellation: ""
   dec: "-26 16 04.8"
   description: "M 19 NGC 6273"
+  mag: 5.57
   name: "Mel 160"
   ra: "17 02 37.7"
   size: 15.0
@@ -1123,6 +1283,7 @@
 - constellation: ""
   dec: "-37 58 48.0"
   description: "NGC 6281"
+  mag: 5.4
   name: "Mel 161"
   ra: "17 04 40.8"
   size: 20.4
@@ -1130,6 +1291,7 @@
 - constellation: ""
   dec: "-24 45 54.0"
   description: "NGC 6284"
+  mag: 7.4
   name: "Mel 162"
   ra: "17 04 26.4"
   size: 13.2
@@ -1137,6 +1299,7 @@
 - constellation: ""
   dec: "-22 42 28.8"
   description: "NGC 6287"
+  mag: 10.3
   name: "Mel 163"
   ra: "17 05 09.2"
   size: 10.8
@@ -1144,6 +1307,7 @@
 - constellation: ""
   dec: "-26 34 55.2"
   description: "NGC 6293"
+  mag: 8.3
   name: "Mel 164"
   ra: "17 10 10.2"
   size: 9.0
@@ -1151,6 +1315,7 @@
 - constellation: ""
   dec: "-29 27 43.2"
   description: "NGC 6304"
+  mag: 8.3
   name: "Mel 165"
   ra: "17 14 32.3"
   size: 7.2
@@ -1158,6 +1323,7 @@
 - constellation: ""
   dec: "-39 25 01.2"
   description: "NGC 6318"
+  mag: 11.80
   name: "Mel 166"
   ra: "17 16 10.9"
   size: 6.6
@@ -1165,6 +1331,7 @@
 - constellation: ""
   dec: "-18 30 57.6"
   description: "M 9 NGC 6333"
+  mag: 8.42
   name: "Mel 167"
   ra: "17 19 11.3"
   size: 13.8
@@ -1172,6 +1339,7 @@
 - constellation: ""
   dec: "+43 08 09.6"
   description: "M 92 NGC 6341"
+  mag: 6.52
   name: "Mel 168"
   ra: "17 17 07.4"
   size: 28.8
@@ -1179,6 +1347,7 @@
 - constellation: ""
   dec: "-49 56 06.0"
   description: "IC 4651"
+  mag: 6.90
   name: "Mel 169"
   ra: "17 24 54.0"
   size: 19.2
@@ -1186,6 +1355,7 @@
 - constellation: ""
   dec: "-48 25 19.2"
   description: "NGC 6352"
+  mag: 7.8
   name: "Mel 170"
   ra: "17 25 29.3"
   size: 14.4
@@ -1193,6 +1363,7 @@
 - constellation: ""
   dec: "-17 48 46.8"
   description: "NGC 6356"
+  mag: 7.4
   name: "Mel 171"
   ra: "17 23 34.8"
   size: 10.8
@@ -1200,6 +1371,7 @@
 - constellation: ""
   dec: "-67 02 52.8"
   description: "NGC 6362"
+  mag: 8.86
   name: "Mel 172"
   ra: "17 31 54.8"
   size: 16.8
@@ -1207,6 +1379,7 @@
 - constellation: ""
   dec: "-05 04 48.0"
   description: "NGC 6366"
+  mag: -9999
   name: "Mel 173"
   ra: "17 27 44.3"
   size: 27.6
@@ -1214,6 +1387,7 @@
 - constellation: ""
   dec: "-44 44 09.6"
   description: "NGC 6388"
+  mag: -9999
   name: "Mel 174"
   ra: "17 36 17.3"
   size: 16.8
@@ -1221,6 +1395,7 @@
 - constellation: ""
   dec: "-03 14 45.6"
   description: "M 14 NGC 6402"
+  mag: 5.73
   name: "Mel 175"
   ra: "17 37 36.1"
   size: 19.8
@@ -1228,6 +1403,7 @@
 - constellation: ""
   dec: "-53 40 26.4"
   description: "NGC 6397"
+  mag: 5.3
   name: "Mel 176"
   ra: "17 40 42.2"
   size: 30.6
@@ -1235,6 +1411,7 @@
 - constellation: ""
   dec: "-36 56 42.0"
   description: "NGC 6400"
+  mag: 8.8
   name: "Mel 177"
   ra: "17 40 12.0"
   size: 12.0
@@ -1242,6 +1419,7 @@
 - constellation: ""
   dec: "-32 12 54.0"
   description: "M 6 NGC 6405 Butterfly Cluster"
+  mag: 4.20
   name: "Mel 178"
   ra: "17 40 19.2"
   size: 31.2
@@ -1249,6 +1427,7 @@
 - constellation: ""
   dec: "+05 41 42.0"
   description: "IC 4665"
+  mag: 4.2
   name: "Mel 179"
   ra: "17 46 15.6"
   size: 49.2
@@ -1256,6 +1435,7 @@
 - constellation: ""
   dec: "-37 03 03.6"
   description: "NGC 6441"
+  mag: 7.2
   name: "Mel 180"
   ra: "17 50 13.2"
   size: 9.6
@@ -1263,6 +1443,7 @@
 - constellation: ""
   dec: "-30 12 00.0"
   description: "NGC 6451"
+  mag: 8.2
   name: "Mel 181"
   ra: "17 50 40.9"
   size: 14.4
@@ -1270,6 +1451,7 @@
 - constellation: ""
   dec: "-22 18 54.0"
   description: "NGC 6469"
+  mag: 8.20
   name: "Mel 182"
   ra: "17 53 13.2"
   size: 18.0
@@ -1277,6 +1459,7 @@
 - constellation: ""
   dec: "-34 46 48.0"
   description: "M 7 NGC 6475 Ptolemy Cluster"
+  mag: 3.30
   name: "Mel 183"
   ra: "17 53 45.6"
   size: 44.4
@@ -1284,6 +1467,7 @@
 - constellation: ""
   dec: "-19 00 00.0"
   description: "M 23 NGC 6494"
+  mag: 5.50
   name: "Mel 184"
   ra: "17 56 54.6"
   size: 33.6
@@ -1291,6 +1475,7 @@
 - constellation: ""
   dec: "-44 15 57.6"
   description: "NGC 6496"
+  mag: -9999
   name: "Mel 185"
   ra: "17 59 03.8"
   size: 9.2
@@ -1298,6 +1483,7 @@
 - constellation: ""
   dec: "+03 15 36.0"
   description: ""
+  mag: -9999
   name: "Mel 186"
   ra: "18 02 23.5"
   size: 187.4
@@ -1305,6 +1491,7 @@
 - constellation: ""
   dec: "-27 53 42.0"
   description: "NGC 6520"
+  mag: 7.6
   name: "Mel 187"
   ra: "18 03 27.0"
   size: 10.8
@@ -1312,6 +1499,7 @@
 - constellation: ""
   dec: "-22 29 24.0"
   description: "M 21 NGC 6531"
+  mag: 5.90
   name: "Mel 188"
   ra: "18 04 12.0"
   size: 12.0
@@ -1319,6 +1507,7 @@
 - constellation: ""
   dec: "-00 17 52.8"
   description: "NGC 6535"
+  mag: 9.85
   name: "Mel 189"
   ra: "18 03 50.4"
   size: 7.2
@@ -1326,6 +1515,7 @@
 - constellation: ""
   dec: "-07 35 09.6"
   description: "NGC 6539"
+  mag: -9999
   name: "Mel 190"
   ra: "18 04 49.8"
   size: 12.0
@@ -1333,6 +1523,7 @@
 - constellation: ""
   dec: "-43 42 54.0"
   description: "NGC 6541"
+  mag: 6.3
   name: "Mel 191"
   ra: "18 08 02.4"
   size: 15.0
@@ -1340,6 +1531,7 @@
 - constellation: ""
   dec: "-24 59 49.2"
   description: "NGC 6544"
+  mag: 7.5
   name: "Mel 192"
   ra: "18 07 20.6"
   size: 12.0
@@ -1347,6 +1539,7 @@
 - constellation: ""
   dec: "-25 54 32.4"
   description: "NGC 6553"
+  mag: 8.3
   name: "Mel 193"
   ra: "18 09 17.6"
   size: 10.8
@@ -1354,6 +1547,7 @@
 - constellation: ""
   dec: "-31 45 50.4"
   description: "NGC 6558"
+  mag: 11.29
   name: "Mel 194"
   ra: "18 10 17.8"
   size: 10.8
@@ -1361,6 +1555,7 @@
 - constellation: ""
   dec: "-31 49 37.2"
   description: "NGC 6569"
+  mag: 9.5
   name: "Mel 195"
   ra: "18 13 38.6"
   size: 9.0
@@ -1368,6 +1563,7 @@
 - constellation: ""
   dec: "-52 12 57.6"
   description: "NGC 6584"
+  mag: 8.2
   name: "Mel 196"
   ra: "18 18 37.4"
   size: 10.2
@@ -1375,6 +1571,7 @@
 - constellation: ""
   dec: "-18 25 48.0"
   description: "NGC 6603"
+  mag: 11.1
   name: "Mel 197"
   ra: "18 18 25.2"
   size: 8.4
@@ -1382,6 +1579,7 @@
 - constellation: ""
   dec: "-13 46 48.0"
   description: "M 16 NGC 6611"
+  mag: 6.0
   name: "Mel 198"
   ra: "18 18 41.4"
   size: 16.8
@@ -1389,6 +1587,7 @@
 - constellation: ""
   dec: "-30 21 39.6"
   description: "NGC 6624"
+  mag: 7.6
   name: "Mel 199"
   ra: "18 23 40.6"
   size: 6.6
@@ -1396,6 +1595,7 @@
 - constellation: ""
   dec: "-24 52 12.0"
   description: "M 28 NGC 6626"
+  mag: 6.90
   name: "Mel 200"
   ra: "18 24 32.8"
   size: 10.2
@@ -1403,6 +1603,7 @@
 - constellation: ""
   dec: "+06 30 00.0"
   description: "NGC 6633"
+  mag: 4.6
   name: "Mel 201"
   ra: "18 27 20.5"
   size: 24.0
@@ -1410,6 +1611,7 @@
 - constellation: ""
   dec: "-32 20 52.8"
   description: "M 69 NGC 6637"
+  mag: 8.31
   name: "Mel 202"
   ra: "18 31 23.2"
   size: 11.4
@@ -1417,6 +1619,7 @@
 - constellation: ""
   dec: "-23 28 30.0"
   description: "NGC 6642"
+  mag: 10.2
   name: "Mel 203"
   ra: "18 31 54.1"
   size: 7.8
@@ -1424,6 +1627,7 @@
 - constellation: ""
   dec: "-19 06 36.0"
   description: "M 25 IC 4725"
+  mag: 4.60
   name: "Mel 204"
   ra: "18 31 42.6"
   size: 28.2
@@ -1431,6 +1635,7 @@
 - constellation: ""
   dec: "-16 54 36.0"
   description: "NGC 6645"
+  mag: 8.5
   name: "Mel 205"
   ra: "18 32 31.2"
   size: 10.8
@@ -1438,6 +1643,7 @@
 - constellation: ""
   dec: "-10 24 00.0"
   description: "NGC 6649"
+  mag: 8.90
   name: "Mel 206"
   ra: "18 33 21.6"
   size: 11.2
@@ -1445,6 +1651,7 @@
 - constellation: ""
   dec: "-32 59 27.6"
   description: "NGC 6652"
+  mag: 9.75
   name: "Mel 207"
   ra: "18 35 45.6"
   size: 10.2
@@ -1452,6 +1659,7 @@
 - constellation: ""
   dec: "-23 54 18.0"
   description: "M 22 NGC 6656"
+  mag: 6.17
   name: "Mel 208"
   ra: "18 36 24.1"
   size: 25.2
@@ -1459,6 +1667,7 @@
 - constellation: ""
   dec: "-08 12 36.0"
   description: "NGC 6664"
+  mag: 7.8
   name: "Mel 209"
   ra: "18 36 31.7"
   size: 12.0
@@ -1466,6 +1675,7 @@
 - constellation: ""
   dec: "+05 27 00.0"
   description: "IC 4756"
+  mag: 4.6
   name: "Mel 210"
   ra: "18 38 56.4"
   size: 48.0
@@ -1473,6 +1683,7 @@
 - constellation: ""
   dec: "-32 17 31.2"
   description: "M 70 NGC 6681"
+  mag: 9.06
   name: "Mel 211"
   ra: "18 43 12.7"
   size: 13.2
@@ -1480,6 +1691,7 @@
 - constellation: ""
   dec: "-09 22 48.0"
   description: "M 26 NGC 6694"
+  mag: 8.87
   name: "Mel 212"
   ra: "18 45 16.2"
   size: 12.0
@@ -1487,6 +1699,7 @@
 - constellation: ""
   dec: "-06 16 48.0"
   description: "M 11 NGC 6705 Wild Duck Cluster"
+  mag: 5.80
   name: "Mel 213"
   ra: "18 50 59.3"
   size: 18.0
@@ -1494,6 +1707,7 @@
 - constellation: ""
   dec: "+10 19 48.0"
   description: "NGC 6709"
+  mag: 6.7
   name: "Mel 214"
   ra: "18 51 23.0"
   size: 17.4
@@ -1501,6 +1715,7 @@
 - constellation: ""
   dec: "-08 42 21.6"
   description: "NGC 6712"
+  mag: 8.1
   name: "Mel 215"
   ra: "18 53 04.2"
   size: 11.4
@@ -1508,6 +1723,7 @@
 - constellation: ""
   dec: "-30 28 48.0"
   description: "M 54 NGC 6715"
+  mag: 7.70
   name: "Mel 216"
   ra: "18 55 03.4"
   size: 10.2
@@ -1515,6 +1731,7 @@
 - constellation: ""
   dec: "-36 37 55.2"
   description: "NGC 6723"
+  mag: 6.8
   name: "Mel 217"
   ra: "18 59 33.0"
   size: 18.6
@@ -1522,6 +1739,7 @@
 - constellation: ""
   dec: "-59 59 06.0"
   description: "NGC 6752 Great Peacock Globular"
+  mag: 5.3
   name: "Mel 218"
   ra: "19 10 52.0"
   size: 26.4
@@ -1529,6 +1747,7 @@
 - constellation: ""
   dec: "+01 01 48.0"
   description: "NGC 6760"
+  mag: 10.0
   name: "Mel 219"
   ra: "19 11 12.1"
   size: 10.8
@@ -1536,6 +1755,7 @@
 - constellation: ""
   dec: "+30 10 58.8"
   description: "M 56 NGC 6779"
+  mag: 8.40
   name: "Mel 220"
   ra: "19 16 35.4"
   size: 10.2
@@ -1543,6 +1763,7 @@
 - constellation: ""
   dec: "-30 57 54.0"
   description: "M 55 NGC 6809"
+  mag: 6.49
   name: "Mel 221"
   ra: "19 39 59.8"
   size: 24.0
@@ -1550,6 +1771,7 @@
 - constellation: ""
   dec: "+46 23 42.0"
   description: "NGC 6811"
+  mag: 6.8
   name: "Mel 222"
   ra: "19 37 22.1"
   size: 14.4
@@ -1557,6 +1779,7 @@
 - constellation: ""
   dec: "+40 11 42.0"
   description: "NGC 6819"
+  mag: 7.3
   name: "Mel 223"
   ra: "19 41 16.8"
   size: 13.8
@@ -1564,6 +1787,7 @@
 - constellation: ""
   dec: "+23 06 00.0"
   description: "NGC 6830"
+  mag: 7.9
   name: "Mel 224"
   ra: "19 51 00.0"
   size: 8.4
@@ -1571,6 +1795,7 @@
 - constellation: ""
   dec: "+29 24 36.0"
   description: "NGC 6834"
+  mag: 7.8
   name: "Mel 225"
   ra: "19 52 12.0"
   size: 9.0
@@ -1578,6 +1803,7 @@
 - constellation: ""
   dec: "+18 46 44.4"
   description: "M 71 NGC 6838"
+  mag: 6.10
   name: "Mel 226"
   ra: "19 53 46.3"
   size: 13.8
@@ -1585,6 +1811,7 @@
 - constellation: ""
   dec: "-79 02 24.0"
   description: ""
+  mag: 5.3
   name: "Mel 227"
   ra: "20 16 48.0"
   size: 21.6
@@ -1592,6 +1819,7 @@
 - constellation: ""
   dec: "-21 55 15.6"
   description: "M 75 NGC 6864"
+  mag: 8.26
   name: "Mel 228"
   ra: "20 06 03.6"
   size: 7.2
@@ -1599,6 +1827,7 @@
 - constellation: ""
   dec: "+44 09 36.0"
   description: "NGC 6866"
+  mag: 7.6
   name: "Mel 229"
   ra: "20 03 56.9"
   size: 10.2
@@ -1606,6 +1835,7 @@
 - constellation: ""
   dec: "+07 24 14.4"
   description: "NGC 6934"
+  mag: 8.9
   name: "Mel 230"
   ra: "20 34 11.3"
   size: 10.8
@@ -1613,6 +1843,7 @@
 - constellation: ""
   dec: "+60 39 36.0"
   description: "NGC 6939"
+  mag: 7.8
   name: "Mel 231"
   ra: "20 31 31.8"
   size: 24.0
@@ -1620,6 +1851,7 @@
 - constellation: ""
   dec: "+28 16 48.0"
   description: "NGC 6940"
+  mag: 6.3
   name: "Mel 232"
   ra: "20 34 26.4"
   size: 21.6
@@ -1627,6 +1859,7 @@
 - constellation: ""
   dec: "-12 32 13.2"
   description: "M 72 NGC 6981"
+  mag: 8.96
   name: "Mel 233"
   ra: "20 53 27.6"
   size: 9.0
@@ -1634,6 +1867,7 @@
 - constellation: ""
   dec: "+12 10 01.2"
   description: "M 15 NGC 7078"
+  mag: 6.30
   name: "Mel 234"
   ra: "21 29 58.2"
   size: 22.2
@@ -1641,6 +1875,7 @@
 - constellation: ""
   dec: "-00 49 22.8"
   description: "M 2 NGC 7089"
+  mag: 6.25
   name: "Mel 235"
   ra: "21 33 27.0"
   size: 16.8
@@ -1648,6 +1883,7 @@
 - constellation: ""
   dec: "+48 27 00.0"
   description: "M 39 NGC 7092"
+  mag: 4.60
   name: "Mel 236"
   ra: "21 31 48.0"
   size: 39.0
@@ -1655,6 +1891,7 @@
 - constellation: ""
   dec: "-23 10 48.0"
   description: "M 30 NGC 7099"
+  mag: 7.10
   name: "Mel 237"
   ra: "21 40 23.9"
   size: 18.0
@@ -1662,6 +1899,7 @@
 - constellation: ""
   dec: "+46 33 07.2"
   description: "NGC 7209"
+  mag: 7.7
   name: "Mel 238"
   ra: "22 04 54.1"
   size: 12.0
@@ -1669,6 +1907,7 @@
 - constellation: ""
   dec: "+52 51 36.0"
   description: "IC 1434"
+  mag: -9999
   name: "Mel 239"
   ra: "22 10 24.6"
   size: 9.6
@@ -1676,6 +1915,7 @@
 - constellation: ""
   dec: "+49 52 30.0"
   description: "NGC 7243"
+  mag: 6.4
   name: "Mel 240"
   ra: "22 15 10.8"
   size: 30.0
@@ -1683,6 +1923,7 @@
 - constellation: ""
   dec: "+54 19 58.8"
   description: "NGC 7245"
+  mag: 9.20
   name: "Mel 241"
   ra: "22 15 14.4"
   size: 7.8
@@ -1690,6 +1931,7 @@
 - constellation: ""
   dec: "-15 36 43.2"
   description: "NGC 7492"
+  mag: 11.2
   name: "Mel 242"
   ra: "23 08 26.5"
   size: 6.0
@@ -1697,6 +1939,7 @@
 - constellation: ""
   dec: "+61 38 13.2"
   description: "M 52 NGC 7654"
+  mag: 6.90
   name: "Mel 243"
   ra: "23 24 42.5"
   size: 19.8
@@ -1704,6 +1947,7 @@
 - constellation: ""
   dec: "+68 01 30.0"
   description: "NGC 7762"
+  mag: -9999
   name: "Mel 244"
   ra: "23 49 51.6"
   size: 15.0
@@ -1711,6 +1955,7 @@
 - constellation: ""
   dec: "+56 43 48.0"
   description: "NGC 7789 Caroline's Rose, White Rose Cluster"
+  mag: 6.7
   name: "Mel 245"
   ra: "23 57 25.2"
   size: 28.8

@@ -1,7 +1,7 @@
 - constellation: Gemini
   dec: +13 14 48
   description: Medusa Nebula
-  mag: -9999
+  mag: 11.0
   name: Abell 21
   ra: 07 29 03
   size: 10.0
@@ -9,7 +9,7 @@
 - constellation: Hydra
   dec: -02 48 33
   description: Diamond Ring Nebula
-  mag: -9999
+  mag: 13.0
   name: Abell 33
   ra: 09 39 09
   size: 4.0
@@ -17,7 +17,7 @@
 - constellation: Perseus
   dec: +41 30 54
   description: Perseus Galaxy Cluster
-  mag: -9999
+  mag: 11.6
   name: Abell 426
   ra: 03 18 36
   size: 150.0
@@ -33,15 +33,16 @@
 - constellation: Hydra
   dec: 02 44 00
   description: Penguin and Egg Galaxy
-  mag: -9999
+  mag: 13.7
   name: Arp 142
   ra: 09 37 45
   size: 2.0
+  surfbr: 22.99
   type: Galaxy Duo
 - constellation: Draco
   dec: 55 25 32
   description: Tadpole Galaxy
-  mag: -9999
+  mag: 14.4
   name: Arp 188
   ra: 16 06 04
   size: 3.6
@@ -53,22 +54,25 @@
   name: Arp 226
   ra: 22 20 44
   size: 2.0
+  surfbr: 22.09
   type: Galaxy
 - constellation: Coma Berenices
   dec: 30 43 00
   description: Mice Galaxies
-  mag: -9999
+  mag: 13.5
   name: Arp 242
   ra: 12 46 10
   size: 2.3
+  surfbr: 22.09
   type: Galaxy
 - constellation: Corvus
   dec: -18 52 07
   description: Antennae Galaxy Duo
-  mag: -9999
+  mag: 10.3
   name: Arp 244
   ra: 12 01 53
   size: 2.6
+  surfbr: 20.99
   type: Galaxy
 - constellation: Canes Venatici
   dec: 41 38 32
@@ -77,6 +81,7 @@
   name: Arp 269
   ra: 12 30 36
   size: 6.0
+  surfbr: 21.79
   type: Galaxy
 - constellation: Andromeda
   dec: +39 21 00
@@ -93,11 +98,12 @@
   name: Arp 316
   ra: 10 18 06
   size: 30.0
+  surfbr: 24.0
   type: Galaxy
 - constellation: Leo
   dec: 13 05 00
   description: Leo Triplet
-  mag: -9999
+  mag: 9.7
   name: Arp 317
   ra: 11 18 55
   size: 50.0
@@ -109,14 +115,16 @@
   name: Arp 319
   ra: 22 36 04
   size: 5.0
+  surfbr: 22.3
   type: Galaxy Group
 - constellation: Hydra
   dec: -04 51 00
   description: Arp 321
-  mag: -9999
+  mag: 11.4
   name: Arp 321
   ra: 09 38 53
   size: 4.0
+  surfbr: 21.2
   type: Galaxy Group
 - constellation: Ursa Major
   dec: 58 44 02
@@ -125,14 +133,16 @@
   name: Arp 336
   ra: 08 55 35
   size: 5.2
+  surfbr: 22.59
   type: Galaxy
 - constellation: Canes Venatici
   dec: +37 25 30
   description: Heron Galaxies
-  mag: -9999
+  mag: 13.0
   name: Arp 84
   ra: 13 58 38
   size: 3.0
+  surfbr: 22.29
   type: Galaxy
 - constellation: Scutum
   dec: -04 33 00
@@ -209,10 +219,11 @@
 - constellation: Coma Berenices
   dec: 29 10 40
   description: The Box
-  mag: -9999
+  mag: 9.9
   name: Hickson 61
   ra: 12 12 24
   size: 3.8
+  surfbr: 21.4
   type: Galaxy Group
 - constellation: Taurus
   dec: 22 54 14
@@ -225,7 +236,7 @@
 - constellation: Cygnus
   dec: 40 15 24
   description: Gamma Cygni Nebula
-  mag: -9999
+  mag: 2.23
   name: IC 1318
   ra: 20 23 14
   size: 240.0
@@ -249,7 +260,7 @@
 - constellation: Cassiopeia
   dec: 61 28 30
   description: Heart Nebula
-  mag: -9999
+  mag: 6.5
   name: IC 1805
   ra: 02 32 47
   size: 120.0
@@ -345,7 +356,7 @@
 - constellation: Cygnus
   dec: +47 16 01
   description: Cocoon Nebula
-  mag: -9999
+  mag: 7.20
   name: IC 5146
   ra: 21 53 29
   size: 12.0
@@ -369,7 +380,7 @@
 - constellation: Lynx
   dec: +53 25 00
   description: Headphone Nebula
-  mag: -9999
+  mag: 17.0
   name: Jones-Emberson 1
   ra: 07 57 54
   size: 6.0
@@ -385,10 +396,11 @@
 - constellation: Lacerta
   dec: 37 45 36
   description: Reaching Hand Nebula
-  mag: -9999
+  mag: 16.0
   name: LBN 438
   ra: 22 41 17
   size: 30.0
+  surfbr: 23.0
   type: Molecular Cloud
 - constellation: Cepheus
   dec: 67 51 00
@@ -441,7 +453,7 @@
 - constellation: Taurus
   dec: +22 00 52
   description: Crab Nebula
-  mag: -9999
+  mag: 8.4
   name: M 1
   ra: 05 34 32
   size: 6.0
@@ -453,6 +465,8 @@
   name: M 101
   ra: 14 03 13
   size: 29.0
+  surfbr: 23.79
+  bsurfbr: 23.97
   type: Galaxy
 - constellation: Virgo
   dec: -11 37 23
@@ -461,6 +475,8 @@
   name: M 104
   ra: 12 39 59
   size: 9.0
+  surfbr: 20.49
+  bsurfbr: 22.26
   type: Galaxy
 - constellation: Canes Venatici
   dec: +47 18 16
@@ -469,14 +485,18 @@
   name: M 106
   ra: 12 18 58
   size: 17.0
+  surfbr: 22.49
+  bsurfbr: 23.36
   type: Galaxy
 - constellation: Ursa Major
   dec: 55 40 26
   description: Surfboard Galaxy
-  mag: -9999
+  mag: 10.7
   name: M 108
   ra: 11 11 31
   size: 9.0
+  surfbr: 21.99
+  bsurfbr: 21.70
   type: Galaxy
 - constellation: Scutum
   dec: -06 16 12
@@ -497,7 +517,7 @@
 - constellation: Serpens
   dec: -13 48 24
   description: Eagle Nebula
-  mag: -9999
+  mag: 6.0
   name: M 16
   ra: 18 18 48
   size: 35.0
@@ -505,7 +525,7 @@
 - constellation: Sagittarius
   dec: -16 10 18
   description: Omega Swan Horseshoe Checkmark Nebula
-  mag: -9999
+  mag: 7.00
   name: M 17
   ra: 18 20 47
   size: 46.0
@@ -513,7 +533,7 @@
 - constellation: Sagittarius
   dec: -22 58 18
   description: Trifid Nebula
-  mag: -9999
+  mag: 8.50
   name: M 20
   ra: 18 02 42
   size: 29.0
@@ -521,7 +541,7 @@
 - constellation: Sagittarius
   dec: -23 54 17
   description: Great Sagittarius Cluster
-  mag: -9999
+  mag: 5.2
   name: M 22
   ra: 18 36 24
   size: 24.0
@@ -549,6 +569,8 @@
   name: M 31
   ra: 00 42 44
   size: 189.0
+  surfbr: 22.39
+  bsurfbr: 23.63
   type: Galaxy
 - constellation: Tri
   dec: 30 39 37
@@ -557,11 +579,13 @@
   name: M 33
   ra: 01 33 51
   size: 70.0
+  surfbr: 23.09
+  bsurfbr: 23.61
   type: Galaxy
 - constellation: Orion
   dec: -05 23 25
   description: Orion Nebula
-  mag: -9999
+  mag: 4.0
   name: M 42
   ra: 05 35 16
   size: 66.0
@@ -569,7 +593,7 @@
 - constellation: Taurus
   dec: 24 07 00
   description: Pleiades or Seven Sisters or Subaru
-  mag: -9999
+  mag: 1.6
   name: M 45
   ra: 03 47 30
   size: 120.0
@@ -589,6 +613,8 @@
   name: M 51
   ra: 13 29 52
   size: 11.0
+  surfbr: 21.79
+  bsurfbr: 22.90
   type: Galaxy
 - constellation: Sagittarius
   dec: -30 57 44
@@ -613,6 +639,8 @@
   name: M 63
   ra: 13 15 49
   size: 13.0
+  surfbr: 22.19
+  bsurfbr: 23.04
   type: Galaxy
 - constellation: Coma Berenices
   dec: 21 40 58
@@ -621,14 +649,18 @@
   name: M 64
   ra: 12 56 44
   size: 10.0
+  surfbr: 21.59
+  bsurfbr: 22.68
   type: Galaxy
 - constellation: Leo
   dec: +13 05 31
   description: Leo Galaxy Duo
-  mag: -9999
+  mag: 9.3
   name: M 65
   ra: 11 18 56
   size: 35.0
+  surfbr: 21.69
+  bsurfbr: 22.73
   type: Galaxy
 - constellation: Perseus
   dec: +51 34 15
@@ -641,7 +673,7 @@
 - constellation: Orion
   dec: 00 04 48
   description: Casper Nebula
-  mag: -9999
+  mag: 8.00
   name: M 78
   ra: 05 46 45
   size: 8.0
@@ -649,7 +681,7 @@
 - constellation: Sagittarius
   dec: -24 22 48
   description: Lagoon Nebula
-  mag: -9999
+  mag: 5.80
   name: M 8
   ra: 18 03 41
   size: 100.0
@@ -661,6 +693,8 @@
   name: M 81
   ra: 09 55 33
   size: 27.0
+  surfbr: 22.09
+  bsurfbr: 22.78
   type: Galaxy
 - constellation: Ursa Major
   dec: 69 40 50
@@ -669,6 +703,8 @@
   name: M 82
   ra: 09 55 53
   size: 10.0
+  surfbr: 21.39
+  bsurfbr: 22.22
   type: Galaxy
 - constellation: Hydra
   dec: -29 51 51
@@ -677,6 +713,8 @@
   name: M 83
   ra: 13 37 00
   size: 13.0
+  surfbr: 21.69
+  bsurfbr: 22.20
   type: Galaxy
 - constellation: Virgo
   dec: +12 56 46
@@ -685,6 +723,8 @@
   name: M 86
   ra: 12 26 12
   size: 60.0
+  surfbr: 22.09
+  bsurfbr: 23.90
   type: Galaxy
 - constellation: Canes Venatici
   dec: 41 07 12
@@ -693,6 +733,8 @@
   name: M 94
   ra: 12 50 53
   size: 11.0
+  surfbr: 21.99
+  bsurfbr: 21.79
   type: Galaxy
 - constellation: Ursa Major
   dec: +55 01 08
@@ -709,6 +751,8 @@
   name: M 99
   ra: 12 18 50
   size: 5.0
+  surfbr: 22.19
+  bsurfbr: 22.60
   type: Galaxy
 - constellation: Virgo
   dec: 12 56 46
@@ -725,6 +769,8 @@
   name: NGC 1097
   ra: 02 46 19
   size: 9.3
+  surfbr: 22.69
+  bsurfbr: 23.63
   type: Galaxy
 - constellation: Perseus
   dec: 31 24 56
@@ -777,10 +823,12 @@
 - constellation: Eridanus
   dec: -32 51 02
   description: Eridanus Interacting Galaxy Duo
-  mag: -9999
+  mag: 9.9
   name: NGC 1532
   ra: 04 11 59
   size: 13.0
+  surfbr: 22.69
+  bsurfbr: 23.78
   type: Galaxy
 - constellation: Taurus
   dec: 19 32 03
@@ -797,6 +845,7 @@
   name: NGC 1721
   ra: 04 59 17
   size: 30.0
+  bsurfbr: 23.52
   type: Galaxy Group
 - constellation: Orion
   dec: -03 20 27
@@ -833,10 +882,12 @@
 - constellation: Cetus
   dec: -13 52 24
   description: NGC 210
-  mag: -9999
+  mag: 10.9
   name: NGC 210
   ra: 00 40 35
   size: 5.4
+  surfbr: 22.69
+  bsurfbr: 23.58
   type: Galaxy
 - constellation: Camelopardalis
   dec: 78 21 22
@@ -845,6 +896,8 @@
   name: NGC 2146
   ra: 06 18 38
   size: 6.0
+  surfbr: 22.99
+  bsurfbr: 22.76
   type: Galaxy
 - constellation: Orion
   dec: 13 57 54
@@ -897,7 +950,7 @@
 - constellation: Monoceros
   dec: 09 53 42
   description: Christmas Tree Cluster or Cone Nebula
-  mag: -9999
+  mag: 4.1
   name: NGC 2264
   ra: 06 40 58
   size: 120.0
@@ -913,7 +966,7 @@
 - constellation: Canis Major
   dec: -13 13 36
   description: "Thor's Helmet or Duck Nebula"
-  mag: -9999
+  mag: 11.5
   name: NGC 2359
   ra: 07 18 30
   size: 40.0
@@ -945,7 +998,7 @@
 - constellation: Puppis
   dec: -26 26 12
   description: Skull and Crossbones Nebula
-  mag: -9999
+  mag: 7.1
   name: NGC 2467
   ra: 07 52 26
   size: 50.0
@@ -953,10 +1006,12 @@
 - constellation: Sculptor
   dec: -25 17 18
   description: Sculptor Galaxy
-  mag: -9999
+  mag: 7.2
   name: NGC 253
   ra: 00 47 33
   size: 25.0
+  surfbr: 21.59
+  bsurfbr: 22.42
   type: Galaxy
 - constellation: Vela
   dec: -45 56 54
@@ -997,6 +1052,8 @@
   name: NGC 3521
   ra: 11 05 49
   size: 11.0
+  surfbr: 22.09
+  bsurfbr: 22.75
   type: Galaxy
 - constellation: Leo
   dec: +13 35 19
@@ -1005,6 +1062,8 @@
   name: NGC 3628
   ra: 11 20 17
   size: 15.0
+  surfbr: 22.29
+  bsurfbr: 23.13
   type: Galaxy
 - constellation: Ursa Major
   dec: 53 04 04
@@ -1013,6 +1072,7 @@
   name: NGC 3718
   ra: 11 32 35
   size: 8.7
+  bsurfbr: 23.29
   type: Galaxy
 - constellation: Cepheus
   dec: 72 31 19
@@ -1037,6 +1097,8 @@
   name: NGC 4631
   ra: 12 41 59
   size: 40.0
+  surfbr: 21.99
+  bsurfbr: 22.44
   type: Galaxy
 - constellation: Coma Berenices
   dec: +25 30 03
@@ -1045,6 +1107,8 @@
   name: NGC 4725
   ra: 12 50 27
   size: 11.0
+  surfbr: 22.89
+  bsurfbr: 23.39
   type: Galaxy
 - constellation: Canes Venatici
   dec: 36 35 38
@@ -1053,6 +1117,8 @@
   name: NGC 5033
   ra: 13 13 28
   size: 11.0
+  surfbr: 23.29
+  bsurfbr: 23.78
   type: Galaxy
 - constellation: Centaurus
   dec: -43 01 08
@@ -1061,11 +1127,13 @@
   name: NGC 5128
   ra: 13 25 28
   size: 18.0
+  surfbr: 22.39
+  bsurfbr: 23.59
   type: Galaxy
 - constellation: Centaurus
   dec: -47 28 53
   description: Omega Centauri Cluster
-  mag: -9999
+  mag: 3.9
   name: NGC 5139
   ra: 13 26 47
   size: 36.0
@@ -1081,18 +1149,21 @@
 - constellation: Draco
   dec: 56 19 45
   description: Splinter Galaxy
-  mag: -9999
+  mag: 11.0
   name: NGC 5907
   ra: 15 15 54
   size: 12.0
+  surfbr: 22.19
+  bsurfbr: 23.60
   type: Galaxy
 - constellation: Draco
   dec: 59 21 21
   description: Draco Galaxy Trio
-  mag: -9999
+  mag: 11.07
   name: NGC 5982
   ra: 15 38 40
   size: 2.9
+  bsurfbr: 23.26
   type: Galaxy
 - constellation: Ara
   dec: -48 39 42
@@ -1105,7 +1176,7 @@
 - constellation: Scorpius
   dec: -37 06 12
   description: Butterfly Nebula
-  mag: -9999
+  mag: 9.6
   name: NGC 6302
   ra: 17 13 44
   size: 3.0
@@ -1157,6 +1228,8 @@
   name: NGC 660
   ra: 01 43 02
   size: 9.1
+  surfbr: 23.39
+  bsurfbr: 23.50
   type: Galaxy
 - constellation: Corona Australis
   dec: -36 53 30
@@ -1213,6 +1286,8 @@
   name: NGC 6946
   ra: 20 34 52
   size: 11.0
+  surfbr: 22.69
+  bsurfbr: 23.73
   type: Galaxy
 - constellation: Cygnus
   dec: 30 35 42
@@ -1241,7 +1316,7 @@
 - constellation: Cygnus
   dec: 44 31 00
   description: North America Nebula
-  mag: -9999
+  mag: 5.0
   name: NGC 7000
   ra: 20 59 17
   size: 120.0
@@ -1249,7 +1324,7 @@
 - constellation: Cygnus
   dec: +54 32 35
   description: Fetus Nebula
-  mag: -9999
+  mag: 12.0
   name: NGC 7008
   ra: 21 00 33
   size: 1.4
@@ -1285,11 +1360,13 @@
   name: NGC 7331
   ra: 22 37 04
   size: 25.0
+  surfbr: 22.19
+  bsurfbr: 23.08
   type: Galaxy
 - constellation: Cepheus
   dec: 58 07 54
   description: Wizard Nebula
-  mag: -9999
+  mag: 7.20
   name: NGC 7380
   ra: 22 47 21
   size: 25.0
@@ -1297,10 +1374,12 @@
 - constellation: Aquila
   dec: -08 29 09
   description: Cyclops Galaxy
-  mag: -9999
+  mag: 10.8
   name: NGC 7606
   ra: 23 19 05
   size: 5.8
+  surfbr: 22.09
+  bsurfbr: 23.81
   type: Galaxy
 - constellation: Cassiopeia
   dec: 61 12 42
@@ -1317,6 +1396,8 @@
   name: NGC 772
   ra: 01 59 20
   size: 7.0
+  surfbr: 22.79
+  bsurfbr: 22.32
   type: Galaxy
 - constellation: Cassiopeia
   dec: 56 42 30
@@ -1337,7 +1418,7 @@
 - constellation: Perseus
   dec: +57 07 42
   description: Double Cluster Duo
-  mag: -9999
+  mag: 5.3
   name: NGC 869
   ra: 02 19 00
   size: 60.0
@@ -1349,6 +1430,8 @@
   name: NGC 891
   ra: 02 22 33
   size: 14.0
+  surfbr: 22.49
+  bsurfbr: 24.17
   type: Galaxy
 - constellation: Cepheus
   dec: 59 57 01

@@ -183,12 +183,27 @@ func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) {
 			paint(scale(r.Score, 0.66, 0.33), fmt.Sprintf("%.2f", r.Score)),
 			paint("39", fmt.Sprintf("%.0f° @ %s", r.MaxAlt, clock(s, r.MaxAt))),
 			paint(scale(r.SkyMag, 20.5, 19), fmt.Sprintf("%.1f", r.SkyMag)),
+			paint("39", sbText(r)),
 			paint("39", px))
 	}
 	w.Flush()
 }
 
 var UseColor bool
+
+// sbText is the SB column: the object's surface brightness, ~ when derived
+// from its magnitude and size, - when unknown.
+func sbText(r scoring.Result) string {
+	sb, derived := r.SurfaceBrightness()
+	switch {
+	case sb <= 0:
+		return "-"
+	case derived:
+		return fmt.Sprintf("~%.1f", sb)
+	}
+
+	return fmt.Sprintf("%.1f", sb)
+}
 
 // clockLayout formats clock times, with the zone abbreviation when the night
 // crosses a UTC offset change (DST): a bare "02:35" is then ambiguous, and a
@@ -333,6 +348,7 @@ var resultColumns = []column{
 	{"SCORE", "0-1 imaging quality: 1 = every minute observable under a perfect, pristine dark sky"},
 	{"MAX ALT", "highest altitude in the window, and when"},
 	{"SKY", "mean sky brightness at the object, mag/arcsec² (higher is darker; no filter)"},
+	{"SB", "the object's own surface brightness, mag/arcsec², set against the sky it sees: SKY, cut to k by -filter for emission-line objects or halved for clusters (~ derived from magnitude and size; - unknown, scored as sky-limited)"},
 	{"PX", "size in pixels at the frame's pixel scale (- without framing)"},
 }
 
