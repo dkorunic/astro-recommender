@@ -11,6 +11,23 @@ It started as a port of the deep sky part of [uptonight](https://github.com/mawi
 
 ![astro-recommender CLI demo: forecast table, top 20 targets and legend](demo.jpg)
 
+## Contents
+
+- [Features](#features)
+- [Install](#install)
+- [Usage](#usage)
+  - [Examples](#examples)
+  - [Flags](#flags)
+  - [Target lists](#target-lists)
+  - [Comets](#comets)
+  - [Night plan](#night-plan)
+  - [Local horizon](#local-horizon)
+- [How objects are ranked](#how-objects-are-ranked)
+  - [Accuracy](#accuracy)
+  - [Formulas and references](#formulas-and-references)
+- [Privacy](#privacy)
+- [Credits](#credits)
+
 ## Features
 
 - **Tonight's window**: astronomical dusk to dawn (Sun below −18°), found by searching from the site's own solar noon so time zones and polar nights can't cut it short. A run during the night (after dusk, or after midnight) plans only the rest of it; `-date` plans another evening and `-from`/`-to` narrow the window.
