@@ -1,12 +1,13 @@
 # astro-recommender
 
-A small Go CLI that lists the best deep sky objects to image **tonight** from a given location. It looks at the whole of full astronomical night, from dusk to dawn (Sun below −18°).
+A single-binary Go CLI that tells you what to image **tonight** from a given location. It ranks deep sky objects and bright comets over the whole astronomical night, from dusk to dawn (Sun below −18°), by how long each one stands high enough, far enough from the Moon and above your local horizon, and by how good the sky is while it does: the hourly cloud, transparency, dew and wind forecast, scattered moonlight, light pollution and atmospheric extinction all weigh in, minute by minute. The catalogues (about 30,000 objects in 14 lists) and the time-zone data are built in, no API keys are needed, and the astronomy is hand-rolled and checked against IAU SOFA.
 
-It works like the deep sky part of [uptonight](https://github.com/mawinkler/uptonight), plus extras aimed at the **Celestron Origin** smart telescope:
+It started as a port of the deep sky part of [uptonight](https://github.com/mawinkler/uptonight) and adds, among other things:
 
-- a check that each object fits the Origin's frame and pixel scale (or any telescope's, with `-fov`/`-scale` or the camera's `-focal`, `-sensor` and `-pixel`)
-- moonlight and light-pollution handling, with optional narrowband filter support
-- cloud, transparency, dew and wind forecasts
+- **framing** for the **Celestron Origin** smart telescope (`-origin`) or any telescope and camera (`-fov`/`-scale`, or `-focal` with `-sensor`/`-pixel`): only objects that fit the frame and are large enough in pixels, scored by how well they fill it
+- a sky-brightness model that weights every target by moonlight and light pollution, with optional narrowband `-filter` support that favours emission nebulae
+- weather folded into the score, not just shown
+- comets from the Minor Planet Center, a **night plan** (`-plan`) with one target per time block, a measured local horizon (`-horizon`) and many more catalogues
 
 ![astro-recommender CLI demo: forecast table, top 20 targets and legend](demo.jpg)
 
@@ -22,7 +23,7 @@ It works like the deep sky part of [uptonight](https://github.com/mawinkler/upto
 - **Framing for the Celestron Origin** (`-origin`) or any telescope (`-fov`/`-scale`, or `-focal` with `-sensor`/`-pixel`): keeps only objects that fit the frame's short side and are at least `-min-px` across, scores how well they fill it, and shows their size in pixels.
 - **Comets** from the Minor Planet Center's daily elements, cached locally: two-body positions every minute (elliptic, parabolic and hyperbolic orbits), kept when brighter than `-comet-mag`, ranked like any other target.
 - **Night plan** (`-plan 2h`): one target per time block, chosen by a greedy pass followed by a local search that swaps and moves targets between blocks.
-- **Nine built-in target lists** (about 21,000 objects: Gary Imm's selection and full Compendium, Messier, Herschel 400, Pensack 500, NGC, IC, LBN, LDN) or your own uptonight-format YAML, with every object's constellation computed from the IAU boundaries.
+- **Fourteen built-in target lists** (about 30,000 objects: Gary Imm's selection and full Compendium, Messier, Herschel 400, Pensack 500, NGC, IC, LBN, LDN, MWSC, Melotte, Collinder and two planetary nebula databases) or your own uptonight-format YAML, with every object's constellation computed from the IAU boundaries.
 - **Location handling**: offline IANA time-zone lookup from the coordinates, reverse geocoding of the site name, coordinates rounded to about 1 km before any request, and a fully offline mode.
 - **Terminal output**: aligned, colour-coded tables with a legend; honours `NO_COLOR`, `CLICOLOR_FORCE` and `TERM=dumb`. Text from the network or from target files is stripped of control characters so it cannot inject terminal escape sequences.
 - **Verified astronomy**: the hand-rolled Sun, Moon, sidereal-time, precession and altitude formulas are checked against IAU SOFA in the test suite (see [Accuracy](#accuracy)); a single static binary with no API keys.
@@ -94,92 +95,92 @@ On a colour-capable terminal the output is colour-coded green/yellow/red. Colour
 
 ### Examples
 
-Only the location is required. This ranks Gary Imm's top targets for tonight under a dark sky, with tonight's weather, the comets brighter than magnitude 12 and no framing, so SIZE is the catalogue size and PX stays `-`:
+**Only the location is required.** This ranks Gary Imm's top targets for tonight under a dark sky, with tonight's weather, the comets brighter than magnitude 12 and **no framing, so SIZE is the catalogue size and PX stays `-`**:
 
 ```sh
 astro-recommender -lat 45.815 -lon 15.982
 ```
 
-The same from a suburban garden with the Celestron Origin and a dual-band filter. `-origin` keeps only objects that fit the 1.32° × 0.75° frame and are at least 200 px across, and scores how well they fill it; `-bortle 6` brightens the sky model, which `-filter` then discounts for emission nebulae and supernova remnants, so they climb above galaxies and reflection nebulae:
+The same from a suburban garden with the Celestron Origin and a dual-band filter. **`-origin` keeps only objects that fit the 1.32° × 0.75° frame and are at least 200 px across, and scores how well they fill it**; `-bortle 6` brightens the sky model, which **`-filter` then discounts for emission nebulae and supernova remnants**, so they climb above galaxies and reflection nebulae:
 
 ```sh
 astro-recommender -lat 45.815 -lon 15.982 -origin -filter -bortle 6
 ```
 
-A measured sky instead of a Bortle guess. `-sqm` takes the zenith reading of an SQM meter or the *World Atlas 2015* value from lightpollutionmap.info and is more precise than the class; the header shows the Bortle class it corresponds to:
+**A measured sky instead of a Bortle guess.** `-sqm` takes the zenith reading of an SQM meter or the *World Atlas 2015* value from lightpollutionmap.info and is more precise than the class; the header shows the Bortle class it corresponds to:
 
 ```sh
 astro-recommender -lat 45.815 -lon 15.982 -origin -sqm 20.4
 ```
 
-Planning ahead. `-date` picks the evening, and `-from`/`-to` narrow the window to the hours you will actually be out; the window is still clamped to astronomical night, so `-to 06:00` never extends into twilight. Open-Meteo covers about two weeks ahead and 7Timer only three days, so a run for next weekend warns that the transparency forecast does not cover the window and scores on weather alone:
+Planning ahead. **`-date` picks the evening, and `-from`/`-to` narrow the window to the hours you will actually be out**; the window is still clamped to astronomical night, so `-to 06:00` never extends into twilight. Open-Meteo covers about two weeks ahead and 7Timer only three days, so **a run for next weekend warns that the transparency forecast does not cover the window** and scores on weather alone:
 
 ```sh
 astro-recommender -lat 45.815 -lon 15.982 -origin -date 2026-10-10 -from 22:00 -to 02:00
 ```
 
-A schedule for the night. `-plan 2h` adds a table with one target per 2-hour block (plus a shorter last block), picked greedily and then improved by swapping until no change helps. The planner considers every ranked target, not just the `-n` printed:
+A schedule for the night. **`-plan 2h` adds a table with one target per 2-hour block** (plus a shorter last block), picked greedily and then improved by swapping until no change helps. **The planner considers every ranked target, not just the `-n` printed**:
 
 ```sh
 astro-recommender -lat 45.815 -lon 15.982 -origin -filter -plan 2h
 ```
 
-Another telescope and camera. `-focal`, `-sensor` and `-pixel` describe the setup and replace the Origin's frame: here a 400 mm refractor with an APS-C sensor (23.5 × 15.6 mm, 3.76 µm pixels) gives a 3.37° × 2.23° field at 1.94″/px. The header's `Frame:` line shows the result; check it when the numbers look surprising:
+Another telescope and camera. **`-focal`, `-sensor` and `-pixel` describe the setup and replace the Origin's frame**: here a 400 mm refractor with an APS-C sensor (23.5 × 15.6 mm, 3.76 µm pixels) gives a 3.37° × 2.23° field at 1.94″/px. **The header's `Frame:` line shows the result**; check it when the numbers look surprising:
 
 ```sh
 astro-recommender -lat 45.815 -lon 15.982 -focal 400 -sensor 23.5x15.6 -pixel 3.76 -filter
 ```
 
-If you already know the field and scale, give them directly. `-fov` is in degrees, so a wide 10° × 7° lens field is `-fov 10x7`; `-min-px 50` lowers the size floor so that objects of a few arcminutes still count at the coarser scale:
+**If you already know the field and scale, give them directly.** `-fov` is in degrees, so a wide 10° × 7° lens field is `-fov 10x7`; **`-min-px 50` lowers the size floor** so that objects of a few arcminutes still count at the coarser scale:
 
 ```sh
 astro-recommender -lat 45.815 -lon 15.982 -fov 10x7 -scale 6 -min-px 50
 ```
 
-A different catalogue. `-list` picks one of the built-in lists; two thirds of the LDN dark nebulae are under the 10′ default and 8 have no size at all, so `-size-min 0` keeps them instead of dropping them:
+A different catalogue. **`-list` picks one of the built-in lists**; two thirds of the LDN dark nebulae are under the 10′ default and 8 have no size at all, so **`-size-min 0` keeps them instead of dropping them**:
 
 ```sh
 astro-recommender -lat 45.815 -lon 15.982 -list LDN -size-min 0
 ```
 
-One region of the sky. `-ra` and/or `-dec` keep only objects within `-tol` degrees (default 10, above 0) of the given J2000 coordinates, decimal or sexagesimal; RA counts 15° per hour and wraps at 24h. Either alone also works, e.g. `-dec 60` for a band around +60°:
+One region of the sky. **`-ra` and/or `-dec` keep only objects within `-tol` degrees** (default 10, above 0) of the given J2000 coordinates, decimal or sexagesimal; RA counts 15° per hour and wraps at 24h. **Either alone also works**, e.g. `-dec 60` for a band around +60°:
 
 ```sh
 astro-recommender -lat 45.815 -lon 15.982 -list OpenNGC -size-min 0 -ra "20 30" -dec 40 -tol 15
 ```
 
-Planetary nebulae are small, so the Origin's default 200 px floor would leave almost nothing: `-min-px 30` admits the ones at least 30 px across, and `-filter` applies the narrowband discount to them:
+**Planetary nebulae are small, so the Origin's default 200 px floor would leave almost nothing**: `-min-px 30` admits the ones at least 30 px across, and `-filter` applies the narrowband discount to them:
 
 ```sh
 astro-recommender -lat 45.815 -lon 15.982 -origin -filter -list HASH -min-px 30 -n 30
 ```
 
-Your own targets. `-targets` takes any uptonight-format YAML, such as the output of `scripts/pnnet2yaml.py` or a hand-written shortlist, and overrides `-list`:
+Your own targets. **`-targets` takes any uptonight-format YAML**, such as the output of `scripts/pnnet2yaml.py` or a hand-written shortlist, **and overrides `-list`**:
 
 ```sh
 astro-recommender -lat 45.815 -lon 15.982 -origin -targets my-targets.yaml
 ```
 
-A site with obstructions. `-horizon` adds your measured horizon (file format below) on top of the altitude floor, so a target behind the neighbour's house doesn't count while it is there; it can only raise the floor, so `-alt-min 20` is what lets the unobstructed directions start below the default 30°:
+A site with obstructions. **`-horizon` adds your measured horizon** (file format below) on top of the altitude floor, so a target behind the neighbour's house doesn't count while it is there; **it can only raise the floor, so `-alt-min 20` is what lets the unobstructed directions start below the default 30°**:
 
 ```sh
 astro-recommender -lat 45.815 -lon 15.982 -origin -horizon horizon.txt -alt-min 20
 ```
 
-Comets only when they are worth it. `-comet-mag 8` adds just the naked-eye and binocular comets, and `-no-comets` skips the MPC download entirely:
+Comets only when they are worth it. **`-comet-mag 8` adds just the naked-eye and binocular comets, and `-no-comets` skips the MPC download entirely**:
 
 ```sh
 astro-recommender -lat 45.815 -lon 15.982 -comet-mag 8
 astro-recommender -lat 45.815 -lon 15.982 -no-comets
 ```
 
-A remote or future site. The time zone is looked up from the coordinates, so planning a trip needs no `-tz`; give one only to see the times in another zone. Here Namibia's winter sky from Zagreb, in local Namibian time, under a pristine sky, with the fixed extinction of a high dry site:
+A remote or future site. **The time zone is looked up from the coordinates, so planning a trip needs no `-tz`**; give one only to see the times in another zone. Here Namibia's winter sky from Zagreb, in local Namibian time, under a pristine sky, **with the fixed extinction of a high dry site**:
 
 ```sh
 astro-recommender -lat -23.3 -lon 16.3 -date 2026-06-15 -bortle 1 -extinction 0.15
 ```
 
-Fully offline. The four `-no-*` flags skip every network source; the sky is then perfect, extinction is the `-extinction` value (0.2 by default) and the run is deterministic, which suits scripts and tests:
+Fully offline. **The four `-no-*` flags skip every network source**; the sky is then perfect, extinction is the `-extinction` value (0.2 by default) and **the run is deterministic**, which suits scripts and tests:
 
 ```sh
 astro-recommender -lat 45.815 -lon 15.982 -no-weather -no-geocode -no-sqm -no-comets
