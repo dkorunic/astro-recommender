@@ -36,6 +36,9 @@ func TestConstellationLists(t *testing.T) {
 			t.Fatal(err)
 		}
 		for _, tg := range raw {
+			if tg.Constellation == "" { // MWSC has no constellation column
+				continue
+			}
 			ra, _ := astro.Sexagesimal(tg.RA)
 			dec, _ := astro.Sexagesimal(tg.Dec)
 			want := norm.Replace(strings.ToLower(strings.TrimSpace(tg.Constellation)))

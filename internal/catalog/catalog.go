@@ -22,7 +22,8 @@ import (
 )
 
 // Target lists from uptonight (MIT, (c) Markus Winkler); OpenNGC and OpenIC
-// derive from the OpenNGC catalog (CC BY-SA 4.0, (c) Mattia Verga).
+// derive from the OpenNGC catalog (CC BY-SA 4.0, (c) Mattia Verga); MWSC is
+// Kharchenko et al. (2013, CDS J/A+A/558/A53).
 //
 //go:embed targets/*.yaml
 var targetFS embed.FS
@@ -50,7 +51,7 @@ type Target struct {
 func (t Target) HasSize() bool { return t.Size > 0 }
 
 // Lists are the embedded uptonight target lists selectable with -list.
-var Lists = []string{"GaryImm", "GaryImmFull", "Messier", "Herschel400", "Pensack500", "OpenNGC", "OpenIC", "LBN", "LDN"}
+var Lists = []string{"GaryImm", "GaryImmFull", "Messier", "Herschel400", "Pensack500", "OpenNGC", "OpenIC", "LBN", "LDN", "MWSC"}
 
 var (
 	errList        = errors.New("unknown target list")
