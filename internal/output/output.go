@@ -142,11 +142,7 @@ func Plan(slots []plan.Slot) {
 
 			continue
 		}
-		typeColor := "39"
-		if catalog.EmissionLine(p.Result.Target) {
-			typeColor = "35"
-		}
-		row(w, "", when, paint("36", p.Result.Name), paint("39", p.Result.Description), paint(typeColor, p.Result.Type),
+		row(w, "", when, paint("36", p.Result.Name), paint("39", p.Result.Description), paint(typeColor(p.Result.Target), p.Result.Type),
 			paint(scale(p.Score, 0.66, 0.33), fmt.Sprintf("%.2f", p.Score)),
 			paint("39", fmt.Sprintf("%.0f° @ %s", p.PeakAlt, p.PeakAt.Format("15:04"))))
 	}
@@ -167,14 +163,7 @@ func Results(cfg *config.Config, results []scoring.Result) {
 		if cfg.Framing {
 			px = sizeText(r.Target, "%.0f", r.Size*60/cfg.Scale)
 		}
-		typeColor := "39"
-		switch {
-		case catalog.EmissionLine(r.Target):
-			typeColor = "35"
-		case r.Track != nil:
-			typeColor = "33"
-		}
-		row(w, "", paint("39", strconv.Itoa(i+1)), paint("36", r.Name), paint("39", r.Description), paint(typeColor, r.Type),
+		row(w, "", paint("39", strconv.Itoa(i+1)), paint("36", r.Name), paint("39", r.Description), paint(typeColor(r.Target), r.Type),
 			paint("39", r.Constellation), paint("39", sizeText(r.Target, "%.0f'", r.Size)),
 			paint(scale(r.Foto, 0.66, 0.33), fmt.Sprintf("%.2f", r.Foto)),
 			paint(scale(r.Score, 0.66, 0.33), fmt.Sprintf("%.2f", r.Score)),
@@ -186,6 +175,19 @@ func Results(cfg *config.Config, results []scoring.Result) {
 }
 
 var UseColor bool
+
+// typeColor is the TYPE cell's color, as the legend explains it: magenta for
+// emission-line targets, yellow for comets.
+func typeColor(tg catalog.Target) string {
+	switch {
+	case catalog.EmissionLine(tg):
+		return "35"
+	case tg.Track != nil:
+		return "33"
+	}
+
+	return "39"
+}
 
 // sizeText formats a size column, "-" for comets and unknown sizes.
 func sizeText(tg catalog.Target, format string, v float64) string {
