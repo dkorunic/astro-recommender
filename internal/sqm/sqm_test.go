@@ -9,6 +9,9 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/dkorunic/astro-recommender/internal/fetch"
 )
 
 func TestLookup(t *testing.T) {
@@ -23,6 +26,8 @@ func TestLookup(t *testing.T) {
 	old := baseURL
 	baseURL = srv.URL
 	t.Cleanup(func() { baseURL = old })
+	fetch.RetryDelay = 0 // the 502 case is retried once
+	t.Cleanup(func() { fetch.RetryDelay = time.Second })
 	ctx := context.Background()
 
 	reply = `{"sqm":17.81,"bortleClass":9,"dataset":{"id":"08_2026"},"attribution":"darkskysites.com"}`

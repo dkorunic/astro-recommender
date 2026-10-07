@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"time"
 )
 
@@ -167,6 +168,29 @@ func GetJSON(ctx context.Context, url string, v any) error {
 // Open-Meteo answers 503 "overloaded" for moments at a time.
 var RetryDelay = time.Second
 
+// maxRetryWait caps a Retry-After: a server asking for longer gets no retry,
+// so a run is not held up, and its error is returned at once.
+const maxRetryWait = 5 * time.Second
+
+// retryWait is the pause before the retry: RetryDelay, or longer when
+// Retry-After (seconds or an HTTP date) asks for it; false past maxRetryWait.
+func retryWait(after string) (time.Duration, bool) {
+	var wait time.Duration
+	if s, err := strconv.Atoi(after); err == nil {
+		if time.Duration(s) > maxRetryWait/time.Second { // before multiplying, which could overflow
+			return 0, false
+		}
+		wait = time.Duration(s) * time.Second
+	} else if t, err := http.ParseTime(after); err == nil {
+		wait = time.Until(t)
+	}
+	if wait > maxRetryWait {
+		return 0, false
+	}
+
+	return max(wait, RetryDelay), true
+}
+
 // GetJSONHeader is GetJSON with extra request headers (e.g. an API key).
 func GetJSONHeader(ctx context.Context, url string, hdr http.Header, v any) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
@@ -179,13 +203,15 @@ func GetJSONHeader(ctx context.Context, url string, hdr http.Header, v any) erro
 	identify(req)
 	resp, err := httpClient.Do(req)
 	if err == nil && (resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= http.StatusInternalServerError) {
-		resp.Body.Close()
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(RetryDelay):
+		if wait, ok := retryWait(resp.Header.Get("Retry-After")); ok {
+			resp.Body.Close()
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(wait):
+			}
+			resp, err = httpClient.Do(req.Clone(ctx))
 		}
-		resp, err = httpClient.Do(req.Clone(ctx))
 	}
 	if err != nil {
 		return err

@@ -31,15 +31,20 @@ func TestGetJSONStatus(t *testing.T) {
 	}
 }
 
-// A 503 is retried once; a 400 is not.
+// A 503 or 429 is retried once, unless Retry-After asks for more than
+// maxRetryWait; a 400 is not.
 func TestGetJSONRetry(t *testing.T) {
 	RetryDelay = 0
 	t.Cleanup(func() { RetryDelay = time.Second })
 	var calls int
 	var code int
+	var after string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		calls++
 		if calls == 1 {
+			if after != "" {
+				w.Header().Set("Retry-After", after)
+			}
 			w.WriteHeader(code)
 			_, _ = w.Write([]byte(`{}`))
 
@@ -49,16 +54,48 @@ func TestGetJSONRetry(t *testing.T) {
 	}))
 	defer srv.Close()
 	for _, tc := range []struct {
-		code, calls int
-		ok          bool
-	}{{http.StatusServiceUnavailable, 2, true}, {http.StatusTooManyRequests, 2, true}, {http.StatusBadRequest, 1, false}} {
-		calls, code = 0, tc.code
+		code  int
+		after string
+		calls int
+		ok    bool
+	}{
+		{http.StatusServiceUnavailable, "", 2, true},
+		{http.StatusTooManyRequests, "", 2, true},
+		{http.StatusTooManyRequests, "0", 2, true},
+		{http.StatusTooManyRequests, "120", 1, false},
+		{http.StatusServiceUnavailable, time.Now().Add(time.Hour).UTC().Format(http.TimeFormat), 1, false},
+		{http.StatusBadRequest, "", 1, false},
+	} {
+		calls, code, after = 0, tc.code, tc.after
 		var body struct {
 			OK bool `json:"ok"`
 		}
 		err := GetJSON(context.Background(), srv.URL, &body)
 		if calls != tc.calls || (err == nil) != tc.ok || body.OK != tc.ok {
-			t.Errorf("%d: %d calls, err %v, ok %v; want %d calls, ok %v", tc.code, calls, err, body.OK, tc.calls, tc.ok)
+			t.Errorf("%d %q: %d calls, err %v, ok %v; want %d calls, ok %v", tc.code, tc.after, calls, err, body.OK, tc.calls, tc.ok)
+		}
+	}
+}
+
+func TestRetryWait(t *testing.T) {
+	old := RetryDelay
+	RetryDelay = time.Second
+	t.Cleanup(func() { RetryDelay = old })
+	for _, tc := range []struct {
+		after string
+		want  time.Duration
+		ok    bool
+	}{
+		{"", time.Second, true},
+		{"junk", time.Second, true},
+		{"0", time.Second, true},
+		{"3", 3 * time.Second, true},
+		{"5", 5 * time.Second, true},
+		{"6", 0, false},
+		{"9223372036854775807", 0, false}, // would overflow time.Duration
+	} {
+		if got, ok := retryWait(tc.after); got != tc.want || ok != tc.ok {
+			t.Errorf("retryWait(%q) = %v, %v; want %v, %v", tc.after, got, ok, tc.want, tc.ok)
 		}
 	}
 }

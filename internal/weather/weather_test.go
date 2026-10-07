@@ -109,6 +109,8 @@ func TestGetRange(t *testing.T) {
 		_, _ = w.Write([]byte(`{"reason":""}`))
 	}))
 	defer srv.Close()
+	fetch.RetryDelay = 0
+	t.Cleanup(func() { fetch.RetryDelay = time.Second })
 	day := func(d int) time.Time { return time.Date(2026, 10, d, 20, 0, 0, 0, time.UTC) }
 	for _, c := range []struct {
 		start, end time.Time
@@ -121,7 +123,6 @@ func TestGetRange(t *testing.T) {
 		{day(21), day(21), []string{"2026-10-21..2026-10-21"}, true},
 		{day(1), day(2), []string{"2026-10-01..2026-10-02", "2026-10-01..2026-10-02"}, true}, // 429: fetch retries as is, never narrowed
 	} {
-		fetch.RetryDelay = 0
 		queries = nil
 		var body struct{ Reason string }
 		err := getRange(context.Background(), srv.URL+"?x=1", c.start, c.end, &body)

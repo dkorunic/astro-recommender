@@ -37,7 +37,7 @@ go run . -lat <deg> -lon <deg> [-tz Europe/Zagreb] [-date YYYY-MM-DD] [-origin] 
 | `atmos` | `Airmass`, `Extinction(Coeff)`, `SkyBrightness` (K&S), `BortleMag`/`BortleClass` | — |
 | `sanitize` | `Text`: strip control chars/invalid UTF-8 from untrusted text | — |
 | `num` | `Finite`: NaN/Inf check that every parser of untrusted numbers runs before its range checks | — |
-| `fetch` | `GetJSON`/`GetJSONHeader` (size-capped; a 429 or 5xx is retried once after `RetryDelay`, which tests zero; non-200 → `*StatusError` (matches `ErrStatus`, carries the code) with the body still decoded), `GetText`, `Cached[T]` (user cache dir, unique temp file + rename; returns the caller's `parse` result, and only data that parses is cached or served, so a bad 200 never replaces a good copy; the cache is read once, and a negative age (mtime in the future) counts as stale) | — |
+| `fetch` | `GetJSON`/`GetJSONHeader` (size-capped; a 429 or 5xx is retried once after `RetryDelay` (which tests zero) or a longer `Retry-After`, not at all past `maxRetryWait` (5 s); non-200 → `*StatusError` (matches `ErrStatus`, carries the code) with the body still decoded), `GetText`, `Cached[T]` (user cache dir, unique temp file + rename; returns the caller's `parse` result, and only data that parses is cached or served, so a bad 200 never replaces a good copy; the cache is read once, and a negative age (mtime in the future) counts as stale) | — |
 | `geotz` | `Lookup`: offline IANA zone from coordinates (tzf `NewEmbeddedFinder`: the lite data queried in place, ~4 MB embedded) | — |
 | `geocode` | `Reverse` (Nominatim) | fetch, sanitize |
 | `sqm` | `Lookup` (DarkSkySites zenith SQM; key from `DARKSKYSITES_API_KEY`) | atmos, fetch, num, sanitize |

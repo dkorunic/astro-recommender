@@ -112,7 +112,7 @@ pre#out:empty { display: none; }
 <main>
   <header>
     <h1><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 1.5c.6 5.3 3.8 9.3 10.5 10.5C15.8 13.2 12.6 17.2 12 22.5 11.4 17.2 8.2 13.2 1.5 12 8.2 10.8 11.4 6.8 12 1.5z"/></svg><span class="word">Astro Recommender</span></h1>
-    <p>Ranks deep sky objects for tonight at your location. Runs entirely in your browser; the only network requests go to the forecast, geocoding and comet services. Leave a field empty for its default.</p>
+    <p>Ranks deep sky objects for tonight at your location. Runs entirely in your browser; the only network requests go to the forecast, sky brightness, geocoding and comet services. Leave a field empty for its default.</p>
   </header>
   <form id="form">
     <div class="grid" id="main"></div>
@@ -264,7 +264,8 @@ function field(f) {
 function save() {
   const v = {};
   for (const el of $("form").elements) {
-    if (!el.name || el.type === "file") continue;
+    // A remembered -date would silently replace tonight on the next visit.
+    if (!el.name || el.type === "file" || el.name === "date") continue;
     v[el.name] = el.type === "checkbox" ? el.checked : el.value;
   }
   try { localStorage.setItem(KEY, JSON.stringify(v)); } catch {}
@@ -273,7 +274,7 @@ function restore() {
   let v = {};
   try { v = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch {}
   for (const el of $("form").elements) {
-    if (!(el.name in v)) continue;
+    if (!(el.name in v) || el.name === "date") continue; // older saves kept it
     if (el.type === "checkbox") el.checked = v[el.name]; else el.value = v[el.name];
   }
 }
