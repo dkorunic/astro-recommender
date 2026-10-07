@@ -107,6 +107,9 @@ func TestSkyK(t *testing.T) {
 	if skyK(catalog.Target{Type: "Open cluster"}, false, 0.2) != 0.5 {
 		t.Error("skyK misses LBN's \"Open cluster\" spelling")
 	}
+	if skyK(catalog.Target{Type: "Cluster Nebulosity"}, false, 0.2) != 1 || skyK(catalog.Target{Name: "M 16", Type: "Open Cluster"}, false, 0.2) != 1 {
+		t.Error("skyK halves the sky for a cluster with nebulosity, which is imaged for the glow")
+	}
 }
 
 // BenchmarkPipeline runs the offline hot path of a typical run (one night's

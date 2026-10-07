@@ -191,14 +191,15 @@ func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) {
 
 var UseColor bool
 
-// sbText is the SB column: the object's surface brightness, ~ when derived
-// from its magnitude and size, - when unknown.
+// sbText is the SB column: the object's surface brightness, ~ when estimated
+// (from its magnitude and size, or a B value moved to V by a typical colour),
+// - when unknown.
 func sbText(r scoring.Result) string {
-	sb, derived := r.SurfaceBrightness()
+	sb, estimated := r.SurfaceBrightness()
 	switch {
 	case sb <= 0:
 		return "-"
-	case derived:
+	case estimated:
 		return fmt.Sprintf("~%.1f", sb)
 	}
 
@@ -348,7 +349,7 @@ var resultColumns = []column{
 	{"SCORE", "0-1 imaging quality: 1 = every minute observable under a perfect, pristine dark sky"},
 	{"MAX ALT", "highest altitude in the window, and when"},
 	{"SKY", "mean sky brightness at the object, mag/arcsec² (higher is darker; no filter)"},
-	{"SB", "the object's own surface brightness, mag/arcsec², set against the sky it sees: SKY, cut to k by -filter for emission-line objects or halved for clusters (~ derived from magnitude and size; - unknown, scored as sky-limited)"},
+	{"SB", "the object's own surface brightness, mag/arcsec², set against the sky it sees: SKY, cut to k by -filter for emission-line objects or halved for star clusters without nebulosity, whose own brightness is then not used (~ estimated from the magnitude and size or from a B value and a typical colour; - unknown, scored as sky-limited)"},
 	{"PX", "size in pixels at the frame's pixel scale (- without framing)"},
 }
 

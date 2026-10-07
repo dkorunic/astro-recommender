@@ -73,35 +73,44 @@ const minBV, maxBV = -0.3, 1.5
 // object immune to sky glow, is rejected rather than ranked first.
 const maxNumber, minSB = 35, 10
 
-// groupTypes (lower case) are the lists' spellings of galaxy groups, whose
-// magnitude is the brightest member's but whose size is the whole group's,
-// so no surface brightness can be derived from them.
-var groupTypes = map[string]bool{
-	"galaxy cluster": true, "galaxy group": true, "galaxy pair": true, "galaxy duo": true, "gtrpl": true, "ggroup": true,
-}
+// Cluster reports whether the object is an open or globular cluster without
+// nebulosity: light in point sources that sky glow hardly hurts.
+func (t Target) Cluster() bool { return t.kind() == kindCluster }
 
 // SurfaceBrightness returns the object's V surface brightness in mag/arcsec²,
 // the visibility measure for extended objects (it compares directly with the
-// sky's), or 0 when none is known, and whether it was derived. It is the
-// measured V one, else the B one moved to V by colour(), else, for diffuse
-// objects only (galaxies and nebulae, not groupTypes), one derived by
-// spreading the V magnitude (or B − typicalBV) over a uniform disc of the
-// major axis (derived; the disc overstates the area of an elongated object,
-// so it leans faint). Clusters, stars and asterisms get none: their light is
-// in points that sky glow hardly hurts, which skyK (scoring) already models,
-// and MWSC's sizes are the core only. Comets have none either.
+// sky's), or 0 when none is known, and whether it is an estimate. It is the
+// measured V one, else the B one moved to V by colour() (an estimate when the
+// colour is the type's typical one), else, for galaxies and nebulae only
+// (not groups), one derived by spreading the V magnitude (or B − typicalBV)
+// over a uniform disc of the major axis (an estimate; the disc overstates the
+// area of an elongated object, so it leans faint). Clusters get none, measured
+// or not: skyK (scoring) halves the sky for their point sources instead, and
+// MWSC's sizes are the core only. Clusters with nebulosity derive none, since
+// their integrated magnitude is the stars', not the glow's, so without a
+// measurement they are scored sky-limited, like a nebula without data. Stars,
+// asterisms and comets derive none either.
 func (t Target) SurfaceBrightness() (float64, bool) {
+	k := t.kind()
+	if k == kindCluster {
+		return 0, false
+	}
 	switch {
 	case t.SurfBr > 0:
 		return t.SurfBr, false
 	case t.BSurfBr > 0:
-		return t.BSurfBr - t.colour(), false
+		bv, own := t.colour(k)
+
+		return t.BSurfBr - bv, !own
+	}
+	if t.Track != nil || !t.HasSize() || (k != kindGalaxy && k != kindNebula) {
+		return 0, false
 	}
 	mag := t.Mag
 	if !t.HasMag() && t.BMag > 0 {
-		mag = t.BMag - t.typicalBV()
+		mag = t.BMag - t.typicalBV(k)
 	}
-	if t.Track != nil || mag <= 0 || !t.HasSize() || !t.diffuse() {
+	if mag <= 0 {
 		return 0, false
 	}
 
@@ -122,25 +131,82 @@ func (t Target) Position() (float64, float64) {
 	return t.RADeg, t.DecDeg
 }
 
-// colour is the object's B−V: its own when both magnitudes are known and
-// plausible, else typicalBV.
-func (t Target) colour() float64 {
-	if bv := t.BMag - t.Mag; t.BMag > 0 && t.HasMag() && bv >= minBV && bv <= maxBV {
-		return bv
+// kind is the class of object the scoring rules act on. The lists spell
+// types many ways, so every rule asks kind() rather than the type text;
+// TestKindLists fails on a spelling none of the rules know.
+type kind int
+
+const (
+	kindOther         kind = iota // stars, asterisms, novae, duplicates
+	kindGalaxy                    // a single galaxy
+	kindGroup                     // galaxy group or pair: the magnitude is the brightest member's, the size the whole group's
+	kindCluster                   // open or globular cluster: point sources that sky glow hardly hurts, which skyK (scoring) halves the sky for
+	kindClusterNebula             // cluster with nebulosity: imaged for the glow (skyK keeps 1), but the magnitude is the stars'
+	kindNebula                    // every other nebula, emission-line or not
+)
+
+// kindTypes are the lists' spellings (lower case) that the substring tests
+// in kind() would misread: OpenNGC's galaxy group abbreviations, the
+// clusters, the cluster+nebula abbreviations (OpenNGC, Pensack) and Pensack's
+// "DN" (OpenNGC's "EmN" is in emissionTypes). A "Star Cloud" stays a nebula:
+// M 24 is a bright patch, NGC 206 in M31 a faint one, and a derived surface
+// brightness tells them apart.
+var kindTypes = map[string]kind{
+	"gtrpl": kindGroup, "ggroup": kindGroup,
+	"open cluster": kindCluster, "globular cluster": kindCluster,
+	"cl+n emission nebula": kindClusterNebula, "n+cl": kindClusterNebula, "bn+oc": kindClusterNebula, "cl+n": kindClusterNebula,
+	"dn": kindNebula,
+}
+
+// kind classifies by the type text, except that a cluster in emissionNames is
+// one with nebulosity (Messier types M 16 "Open Cluster"). For every other
+// type the names say what is imaged, not what the magnitude measures (R
+// Aquarii is a star), so they do not promote it.
+func (t Target) kind() kind {
+	typ := strings.ToLower(t.Type)
+	k, ok := kindTypes[typ]
+	if !ok {
+		switch {
+		case strings.Contains(typ, "galax") && slices.ContainsFunc(groupWords, func(w string) bool { return strings.Contains(typ, w) }):
+			k = kindGroup
+		case strings.Contains(typ, "galax"):
+			k = kindGalaxy
+		case emissionTypes[typ], strings.Contains(typ, "nebul"), strings.Contains(typ, "cloud"):
+			k = kindNebula
+			if strings.Contains(typ, "cluster") { // Herschel/MWSC "Cluster Nebulosity"
+				k = kindClusterNebula
+			}
+		}
+	}
+	if k == kindCluster && emissionNames[t.Name] {
+		return kindClusterNebula
 	}
 
-	return t.typicalBV()
+	return k
+}
+
+// groupWords mark a galaxy type as a group of galaxies.
+var groupWords = []string{"group", "cluster", "pair", "duo", "trio", "triplet"}
+
+// colour is the object's B−V and whether it is the object's own (both
+// magnitudes known and plausible) rather than typicalBV.
+func (t Target) colour(k kind) (float64, bool) {
+	if bv := t.BMag - t.Mag; t.BMag > 0 && t.HasMag() && bv >= minBV && bv <= maxBV {
+		return bv, true
+	}
+
+	return t.typicalBV(k), false
 }
 
 // typicalBV is the B−V assumed for the object's type when its own is not
-// usable: 0.8 for galaxies (the median of the Compendium's V surface
-// brightness against OpenNGC's B one over 723 shared galaxies), 0 for
-// emission-line objects (Hα/OIII dominated, often bluer than that), 0.5 for
-// the rest (clusters, reflection nebulae). Rough values; they move a B figure
-// to V to within a few tenths.
-func (t Target) typicalBV() float64 {
+// usable: 0.8 for galaxies and their groups (the median of the Compendium's
+// V surface brightness against OpenNGC's B one over 723 shared galaxies), 0
+// for emission-line objects (Hα/OIII dominated, often bluer than that), 0.5
+// for the rest (reflection nebulae, clusters with nebulosity). Rough values;
+// they move a B figure to V to within a few tenths.
+func (t Target) typicalBV(k kind) float64 {
 	switch {
-	case strings.Contains(strings.ToLower(t.Type), "galax"):
+	case k == kindGalaxy, k == kindGroup:
 		return 0.8
 	case EmissionLine(t):
 		return 0
@@ -184,8 +250,8 @@ func Load(listName, file string) ([]Target, string, error) {
 	// -targets may come from anywhere; its text ends up on the terminal.
 	for i := range targets {
 		tg := &targets[i]
-		tg.Name, tg.Description = sanitize.Text(tg.Name), sanitize.Text(tg.Description)
-		tg.Type = sanitize.Text(tg.Type)
+		tg.Name, tg.Description = strings.TrimSpace(sanitize.Text(tg.Name)), sanitize.Text(tg.Description)
+		tg.Type = strings.TrimSpace(sanitize.Text(tg.Type)) // emissionNames and kindTypes match exactly
 		// The IAU boundaries beat the lists' own field, which has wrong
 		// entries (R Aquarii "Aquila") and spellings ("Ophiucus", "Se1").
 		ra, err1 := astro.Sexagesimal(tg.RA)
@@ -203,7 +269,7 @@ func Load(listName, file string) ([]Target, string, error) {
 			v      float64
 			lo, hi float64
 		}{
-			{"size", tg.Size, 0, math.Inf(1)},
+			{"size", tg.Size, 0, 180 * 60}, // arcminutes; nothing spans more than the sky
 			{"mag", tg.Mag, 0, maxNumber},
 			{"bmag", tg.BMag, 0, maxNumber},
 			{"surfbr", tg.SurfBr, minSB, maxNumber},
@@ -240,6 +306,7 @@ var emissionNames = map[string]bool{
 	"IC 434":        true, // Horsehead, silhouetted against Ha emission
 	"Cederblad 211": true, // R Aquarii symbiotic nebula
 	"M 8":           true, // Lagoon
+	"M 16":          true, // Eagle (an Open Cluster in Messier.yaml)
 	"M 17":          true, // Omega
 	"M 20":          true, // Trifid
 	"M 42":          true, // Orion
@@ -276,16 +343,4 @@ var emissionNames = map[string]bool{
 // EmissionLine reports whether a target shines mainly in Ha/OIII lines.
 func EmissionLine(tg Target) bool {
 	return emissionTypes[strings.ToLower(tg.Type)] || emissionNames[tg.Name]
-}
-
-// diffuse reports whether the object is an extended glow a surface brightness
-// describes: a galaxy or a nebula (every spelling: "nebula", "nebulosity",
-// "cloud", the emission-line types), but not a group of galaxies.
-func (t Target) diffuse() bool {
-	typ := strings.ToLower(t.Type)
-	if groupTypes[typ] {
-		return false
-	}
-
-	return EmissionLine(t) || strings.Contains(typ, "galax") || strings.Contains(typ, "nebul") || strings.Contains(typ, "cloud")
 }

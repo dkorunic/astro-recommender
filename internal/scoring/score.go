@@ -8,7 +8,6 @@ import (
 	"cmp"
 	"math"
 	"slices"
-	"strings"
 	"time"
 
 	"github.com/dkorunic/astro-recommender/internal/astro"
@@ -183,15 +182,15 @@ func frameFill(fill float64) float64 {
 }
 
 // skyK returns the fraction of sky glow (moonlight, light pollution) that
-// counts against a target: 1 for faint broadband targets, less for bright
-// clusters, and filterK for emission-line targets shot through a narrowband filter.
+// counts against a target: 1 for faint broadband targets, 0.5 for clusters
+// (point sources; a cluster with nebulosity is imaged for the glow and is not
+// a catalog.Target.Cluster), and filterK for emission-line targets shot through a narrowband filter.
 func skyK(tg catalog.Target, filter bool, filterK float64) float64 {
 	if filter && catalog.EmissionLine(tg) {
 		return filterK
 	}
-	switch strings.ToLower(tg.Type) { // LBN spells it "Open cluster"
-	case "globular cluster", "open cluster":
-		return 0.5 // high surface brightness
+	if tg.Cluster() {
+		return 0.5
 	}
 
 	return 1

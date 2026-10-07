@@ -4,7 +4,8 @@
 """Fill the unknown (-9999) magnitudes of an uptonight list from the lists
 that have them (Messier, OpenNGC, OpenIC, GaryImmFull), matched by name
 (a galaxy cluster "Abell N" also as the Compendium's "AbellG N") or by the
-NGC/IC number in the description, and add the surfbr (V, GaryImmFull) and
+first NGC/IC number in the description (the object's own cross-ID; a later
+one is a neighbour mentioned in passing), and add the surfbr (V, GaryImmFull) and
 bsurfbr (B, OpenNGC/OpenIC) surface brightness keys where those have one;
 everything else is left byte for byte.
 
@@ -25,7 +26,7 @@ def main():
     chunks = open(sys.argv[1], encoding="utf-8").read().split("\n- ")
     for i, chunk in enumerate(chunks):
         f = dict(re.findall(r"^\s*-?\s*(\w+): ?(.*)$", chunk, re.M))
-        keys = [f.get("name", "")] + re.findall(r"(?:NGC|IC) \d+", f.get("description", ""))
+        keys = [f.get("name", "")] + re.findall(r"(?:NGC|IC) \d+", f.get("description", ""))[:1]
         if f.get("type") == "Galaxy Cluster":  # not the "Abell N" planetaries and remnants
             keys.append(keys[0].replace("Abell ", "AbellG "))
         for field, table in tables.items():

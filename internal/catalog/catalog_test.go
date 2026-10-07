@@ -145,7 +145,7 @@ func TestLoadIgnoresTrack(t *testing.T) {
 // objects of those mixed types stay out.
 func TestEmissionLineLists(t *testing.T) {
 	for list, want := range map[string]map[string]bool{
-		"Messier":     {"M 42": true, "M 8": true, "M 20": true, "M 78": false},
+		"Messier":     {"M 42": true, "M 8": true, "M 16": true, "M 20": true, "M 78": false},
 		"LBN":         {"LBN 1": true},
 		"OpenNGC":     {"NGC 1715": true, "NGC 1736": true},
 		"OpenIC":      {"IC 63": true, "IC 1310": true},
@@ -187,17 +187,29 @@ func TestSurfaceBrightness(t *testing.T) {
 	}{
 		"measured V wins":      {Target{SurfBr: 22.5, BSurfBr: 23.3, BMag: 10, Mag: 9, Size: 10}, 22.5, false},
 		"B minus own colour":   {Target{BSurfBr: 23.3, BMag: 10, Mag: 9.1}, 22.4, false},
-		"B minus galaxy 0.8":   {Target{Type: "Galaxy", BSurfBr: 23.3, Mag: 9.1}, 22.5, false},
-		"B minus emission 0":   {Target{Type: "Planetary Nebula", BSurfBr: 23.3}, 23.3, false},
-		"B minus other 0.5":    {Target{Type: "Open Cluster", BSurfBr: 23.3}, 22.8, false},
-		"implausible colour":   {Target{Type: "Galaxy", BSurfBr: 23.3, BMag: 15.35, Mag: 9.2}, 22.5, false}, // IC 127: typical instead
+		"B minus galaxy 0.8":   {Target{Type: "Galaxy", BSurfBr: 23.3, Mag: 9.1}, 22.5, true},
+		"B minus group 0.8":    {Target{Type: "GTrpl", BSurfBr: 23.3}, 22.5, true},
+		"B minus emission 0":   {Target{Type: "Planetary Nebula", BSurfBr: 23.3}, 23.3, true},
+		"B minus other 0.5":    {Target{Type: "Reflection Nebula", BSurfBr: 23.3}, 22.8, true},
+		"implausible colour":   {Target{Type: "Galaxy", BSurfBr: 23.3, BMag: 15.35, Mag: 9.2}, 22.5, true}, // IC 127: typical instead
 		"derived galaxy":       {Target{Type: "Galaxy", Mag: 10, Size: 10}, 10 + disc, true},
 		"derived from B":       {Target{Type: "Galaxy", BMag: 10.8, Size: 10}, 10 + disc, true},
 		"derived HII from B":   {Target{Type: "HII Emission Nebula", BMag: 10, Size: 10}, 10 + disc, true},
 		"derived reflection":   {Target{Type: "Reflection Nebula", Mag: 10, Size: 10}, 10 + disc, true},
 		"derived cloud":        {Target{Type: "Molecular Cloud", Mag: 10, Size: 10}, 10 + disc, true},
+		"derived DN":           {Target{Type: "DN", Mag: 10, Size: 10}, 10 + disc, true},   // Pensack's dark nebula
 		"cluster not derived":  {Target{Type: "Open Cluster", Mag: 6, Size: 13}, 0, false}, // stars, and MWSC sizes are the core only
 		"globular not derived": {Target{Type: "Globular Cluster", Mag: 6, Size: 13}, 0, false},
+		"cluster measured":     {Target{Type: "Open Cluster", SurfBr: 22.49}, 0, false},                                      // Toadstool: skyK's 0.5 already counts
+		"cluster nebulosity":   {Target{Type: "Cluster Nebulosity", Mag: 3.8, Size: 8}, 0, false},                            // NGC 2362: the stars' magnitude
+		"Cl+N not derived":     {Target{Type: "Cl+N Emission Nebula", Mag: 4.8, Size: 24}, 0, false},                         // NGC 2244
+		"N+CL not derived":     {Target{Type: "N+CL", Mag: 4.8, Size: 24}, 0, false},                                         // Pensack's spelling
+		"Cl+N measured":        {Target{Type: "Cluster Nebulosity", SurfBr: 21}, 21, false},                                  // a measurement of the glow wins
+		"star cloud":           {Target{Type: "Star Cloud", Mag: 14, Size: 5}, 14 + 2.5*math.Log10(math.Pi/4*300*300), true}, // NGC 206 in M31: a faint patch
+		"triplet not derived":  {Target{Type: "Galaxy Triplet", Mag: 12, Size: 3}, 0, false},                                 // a -targets spelling
+		"M 16 measured":        {Target{Name: "M 16", Type: "Open Cluster", SurfBr: 21}, 21, false},                          // emission-named cluster: nebulosity, measurement wins
+		"M 16 not derived":     {Target{Name: "M 16", Type: "Open Cluster", Mag: 6, Size: 7}, 0, false},
+		"cluster with nebula":  {Target{Type: "Open Cluster with Nebulosity", Mag: 4, Size: 20}, 0, false}, // a -targets spelling
 		"star not derived":     {Target{Type: "**", Mag: 9, Size: 0.5}, 0, false},
 		"asterism not derived": {Target{Type: "Asterism", Mag: 5, Size: 60}, 0, false},
 		"untyped not derived":  {Target{Mag: 10, Size: 10}, 0, false},
@@ -212,6 +224,46 @@ func TestSurfaceBrightness(t *testing.T) {
 		got, derived := c.tg.SurfaceBrightness()
 		if math.Abs(got-c.want) > 1e-9 || derived != c.derived {
 			t.Errorf("%s: SurfaceBrightness() = %v, %v; want %v, %v", name, got, derived, c.want, c.derived)
+		}
+	}
+}
+
+// TestKindLists pins the kind of every type spelling in the embedded lists,
+// so a regenerated list cannot smuggle in a spelling that lands in the wrong
+// kind (a group derived as one galaxy, a cluster+nebula as a nebula) or in
+// none.
+func TestKindLists(t *testing.T) {
+	kinds := map[string]kind{
+		"galaxy": kindGalaxy, "spiral galaxy": kindGalaxy, "elliptical galaxy": kindGalaxy, "lenticular (s0) galaxy": kindGalaxy, "irregular galaxy": kindGalaxy,
+		"galaxy group": kindGroup, "galaxy duo": kindGroup, "galaxy cluster": kindGroup, "galaxy pair": kindGroup, "gtrpl": kindGroup, "ggroup": kindGroup,
+		"open cluster": kindCluster, "globular cluster": kindCluster,
+		"cluster nebulosity": kindClusterNebula, "cl+n emission nebula": kindClusterNebula, "n+cl": kindClusterNebula, "bn+oc": kindClusterNebula, "cl+n": kindClusterNebula,
+		"emission nebula": kindNebula, "planetary nebula": kindNebula, "reflection nebula": kindNebula, "supernova remnant": kindNebula,
+		"dark nebula": kindNebula, "wolf-rayet nebula": kindNebula, "molecular cloud": kindNebula, "preplanetary nebula": kindNebula,
+		"nebula": kindNebula, "hii region": kindNebula, "hii emission nebula": kindNebula, "emn": kindNebula, "dn": kindNebula,
+		"diffuse nebula": kindNebula, "variable nebula": kindNebula, "star cloud": kindNebula,
+		"*": kindOther, "**": kindOther, "*ass": kindOther, "*'s": kindOther, "star": kindOther, "double star": kindOther, "variable star": kindOther,
+		"asterism": kindOther, "group/asterism": kindOther, "nova": kindOther, "young stellar object": kindOther, "herbig-haro object": kindOther,
+		"other": kindOther, "duplicate": kindOther, "nonex": kindOther,
+	}
+	for _, list := range Lists {
+		targets, _, err := Load(list, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		seen := map[string]bool{}
+		for _, tg := range targets {
+			typ := strings.ToLower(tg.Type)
+			if seen[typ] {
+				continue
+			}
+			seen[typ] = true
+			want, ok := kinds[typ]
+			if !ok {
+				t.Errorf("%s: type %q is new; add it to kindTypes if the substring tests misread it, and here", list, tg.Type)
+			} else if got := (Target{Type: tg.Type}).kind(); got != want { // by type alone: a name in emissionNames may promote a cluster
+				t.Errorf("%s: type %q: kind = %v, want %v", list, tg.Type, got, want)
+			}
 		}
 	}
 }
