@@ -3,7 +3,10 @@
 
 package output
 
-import "testing"
+import (
+	"slices"
+	"testing"
+)
 
 // NO_COLOR and TERM=dumb win over CLICOLOR_FORCE.
 func TestColorTerminal(t *testing.T) {
@@ -39,6 +42,22 @@ func TestPosition(t *testing.T) {
 		ra, dec := position(c.ra, c.dec)
 		if ra != c.wantRA || dec != c.wantDec {
 			t.Errorf("position(%v, %v) = %q %q, want %q %q", c.ra, c.dec, ra, dec, c.wantRA, c.wantDec)
+		}
+	}
+}
+
+func TestWrap(t *testing.T) {
+	for _, tc := range []struct {
+		text  string
+		width int
+		want  []string
+	}{
+		{"mag/arcsec² sky; - unknown, scored", 17, []string{"mag/arcsec² sky;", "- unknown, scored"}},
+		{"size in arcminutes (- unknown)", 21, []string{"size in arcminutes", "(- unknown)"}},
+		{"used (~ estimated)", 7, []string{"used", "(~ estimated)"}},
+	} {
+		if got := wrap(tc.text, tc.width); !slices.Equal(got, tc.want) {
+			t.Errorf("wrap(%q, %d) = %q, want %q", tc.text, tc.width, got, tc.want)
 		}
 	}
 }

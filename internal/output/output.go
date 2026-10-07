@@ -17,6 +17,8 @@ import (
 	"strings"
 	"text/tabwriter"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/dkorunic/astro-recommender/internal/atmos"
 	"github.com/dkorunic/astro-recommender/internal/catalog"
@@ -372,25 +374,81 @@ func Legend(s *scoring.Sky, withPlan bool) {
 	fmt.Println(paint("01", "Legend"))
 	// One tabwriter for all sections keeps them aligned; the buffer lets the
 	// padding after section titles be trimmed.
-	var buf bytes.Buffer
-	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', 0)
-	section := func(title string, cols []column) {
-		fmt.Fprintln(w, "  "+title+"\t")
-		for _, c := range cols {
-			fmt.Fprintf(w, "    %s\t%s\n", c.name, c.desc)
-		}
+	type section struct {
+		title string
+		cols  []column
 	}
+	var sections []section
 	if s.Weather != nil || s.Astro != nil || s.AOD != nil {
-		section("Forecast table:", weatherColumns)
+		sections = append(sections, section{"Forecast table:", weatherColumns})
 	}
 	if withPlan {
-		section("Night plan:", planColumns)
+		sections = append(sections, section{"Night plan:", planColumns})
 	}
-	section("Targets:", resultColumns)
+	sections = append(sections, section{"Targets:", resultColumns})
+	// Descriptions start where tabwriter puts the second column: after the
+	// widest first cell (titles included) and the padding.
+	indent := 0
+	for _, sec := range sections {
+		indent = max(indent, len("  "+sec.title))
+		for _, c := range sec.cols {
+			indent = max(indent, len("    "+c.name))
+		}
+	}
+	width := legendWidth - indent - legendPad
+	var buf bytes.Buffer
+	w := tabwriter.NewWriter(&buf, 0, 0, legendPad, ' ', 0)
+	for _, sec := range sections {
+		fmt.Fprintln(w, "  "+sec.title+"\t")
+		for _, c := range sec.cols {
+			// Continuation lines go under the first, in the same column.
+			name := c.name
+			for _, line := range wrap(c.desc, width) {
+				fmt.Fprintf(w, "    %s\t%s\n", name, line)
+				name = ""
+			}
+		}
+	}
 	w.Flush()
 	for line := range strings.Lines(buf.String()) {
 		fmt.Println(strings.TrimRight(line, " \n"))
 	}
-	fmt.Printf("  Colors: %s good, %s fair, %s poor; TYPE in %s is emission-line (helped by -filter), in %s a comet.\n",
+	fmt.Printf("  Colors: %s good, %s fair, %s poor;\n    TYPE in %s is emission-line (helped by -filter), in %s a comet.\n",
 		paint("32", "green"), paint("33", "yellow"), paint("31", "red"), paint("35", "magenta"), paint("33", "yellow"))
 }
+
+// legendWidth is the terminal width the legend wraps to; legendPad is the
+// gap between a column name and its description.
+const (
+	legendWidth = 80
+	legendPad   = 2
+)
+
+// wrap splits text into lines of at most width runes, breaking between words.
+// A word without letters or digits, such as the legend's "-" for unknown or
+// "(~", stays with the word after it.
+func wrap(text string, width int) []string {
+	var lines []string
+	line := ""
+	words := strings.Fields(text)
+	for i := 0; i < len(words); i++ {
+		word := words[i]
+		if !strings.ContainsFunc(word, isAlnum) && i+1 < len(words) {
+			i++
+			word += " " + words[i]
+		}
+		switch {
+		case line == "":
+			line = word
+		case utf8.RuneCountInString(line)+1+utf8.RuneCountInString(word) <= width:
+			line += " " + word
+		default:
+			lines = append(lines, line)
+			line = word
+		}
+	}
+
+	return append(lines, line)
+}
+
+func isAlnum(r rune) bool { return unicode.IsLetter(r) || unicode.IsDigit(r) }
