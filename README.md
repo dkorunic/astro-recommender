@@ -48,6 +48,10 @@ It started as a port of the deep sky part of [uptonight](https://github.com/mawi
 
 ## Install
 
+Download a prebuilt binary for Linux, macOS or Windows from the [Releases](https://github.com/dkorunic/astro-recommender/releases) page.
+
+Or with Go:
+
 ```sh
 go install github.com/dkorunic/astro-recommender@latest
 ```
