@@ -52,6 +52,13 @@ It started as a port of the deep sky part of [uptonight](https://github.com/mawi
 go install github.com/dkorunic/astro-recommender@latest
 ```
 
+On macOS, Homebrew users can install it from the tap:
+
+```sh
+brew tap dkorunic/tap
+brew install astro-recommender
+```
+
 Or from a checkout, using [Task](https://taskfile.dev/):
 
 ```sh
