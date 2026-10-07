@@ -25,8 +25,8 @@ import (
 // derive from the OpenNGC catalog (CC BY-SA 4.0, (c) Mattia Verga); MWSC is
 // Kharchenko et al. (2013, CDS J/A+A/558/A53); Melotte cross-identifies Melotte
 // (1915) and Collinder (1931) with NGC/IC and take positions from MWSC,
-// OpenNGC, Dias et al. (2002, CDS B/ocl) and SIMBAD; PNnet is Le Du et al.
-// (2022, CDS J/A+A/666/A152); HASH is the HASH PN database (Parker, Bojicic &
+// OpenNGC, Dias et al. (2002, CDS B/ocl) and SIMBAD; PNnet is the
+// Planetary Nebulae.net catalogue (planetarynebulae.net, with permission); HASH is the HASH PN database (Parker, Bojicic &
 // Frew 2016, hashpn.space).
 //
 //go:embed targets/*.yaml
