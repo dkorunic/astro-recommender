@@ -135,7 +135,7 @@ pre#out:empty { display: none; }
 // the -targets/-horizon files go through the fs shim that wasm_exec.js calls.
 const MAIN = ["lat", "lon", "date", "tz", "list", "n", "plan", "origin", "filter", "bortle", "sqm"];
 const FILES = ["targets", "horizon"];
-const HIDDEN = ["version", "no-sqm"]; // nothing to show; DarkSkySites blocks browser requests anyway
+const HIDDEN = ["version"]; // nothing to show
 const KEY = "astro-recommender-form";
 const $ = (id) => document.getElementById(id);
 

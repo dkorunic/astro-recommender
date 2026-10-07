@@ -67,7 +67,7 @@ It needs Go 1.27+. The target catalogues are built into the binary.
 
 ## In the browser
 
-The same program runs at **https://dkorunic.github.io/astro-recommender/**, compiled to WebAssembly, with every flag as a form field. Nothing to install: the ranking runs in your browser, and your coordinates go only to the same forecast, geocoding and comet services the command line calls.
+The same program runs at **https://dkorunic.github.io/astro-recommender/**, compiled to WebAssembly, with every flag as a form field. Nothing to install: the ranking runs in your browser, and your coordinates go only to the same forecast, geocoding and comet services the command line calls (7Timer and DarkSkySites through a small Cloudflare Worker, since they do not allow browser requests; it caches the answers per rounded coordinate and holds the DarkSkySites key).
 
 What works there:
 
@@ -75,11 +75,11 @@ What works there:
 - `-targets` and `-horizon` take an uploaded file
 - "Use my location" asks the browser for your position, and the location's time zone shows in the empty `-tz` field
 - weather, transparency and seeing, aerosols, geocoding and comets, as on the command line
+- the DarkSkySites sky-brightness lookup, without a key of your own (the page's key is shared; `-no-sqm` skips it)
 - light or dark theme following the browser, with a Theme button to override it (remembered by the browser)
 
 What does not:
 
-- the DarkSkySites sky-brightness lookup; set `-sqm` or `-bortle` instead
 - caching: the comet elements are downloaded on every run instead of being kept for a day
 
 ## Usage
@@ -474,7 +474,7 @@ Everything below is implemented directly in Go from the cited source; no astrono
 
 ## Privacy
 
-The program calls three free services, none of which need an API key: Open-Meteo (weather and air quality), 7Timer and OpenStreetMap Nominatim. With `DARKSKYSITES_API_KEY` set (and no `-sqm`/`-bortle`), it also asks DarkSkySites for the site's sky brightness (free API key on request at [darkskysites.com](https://www.darkskysites.com/api-access#apply)). The comet elements download from the Minor Planet Center sends no location, and the time zone lookup runs offline. Before sending, it rounds your coordinates to two decimals (about 1 km). Reverse geocoding asks only for suburb-level detail. Use `-no-weather -no-geocode -no-sqm -no-comets` (or leave `DARKSKYSITES_API_KEY` unset) to run entirely offline. The browser version makes the same requests from your browser, which also sends its own User-Agent and the page's address.
+The program calls three free services, none of which need an API key: Open-Meteo (weather and air quality), 7Timer and OpenStreetMap Nominatim. With `DARKSKYSITES_API_KEY` set (and no `-sqm`/`-bortle`), it also asks DarkSkySites for the site's sky brightness (free API key on request at [darkskysites.com](https://www.darkskysites.com/api-access#apply)). The comet elements download from the Minor Planet Center sends no location, and the time zone lookup runs offline. Before sending, it rounds your coordinates to two decimals (about 1 km). Reverse geocoding asks only for suburb-level detail. Use `-no-weather -no-geocode -no-sqm -no-comets` (or leave `DARKSKYSITES_API_KEY` unset) to run entirely offline. The browser version makes the same requests from your browser, which also sends its own User-Agent and the page's address; 7Timer and DarkSkySites are reached through the page's Cloudflare Worker, and the DarkSkySites lookup runs there without a key of your own.
 
 ## Credits
 

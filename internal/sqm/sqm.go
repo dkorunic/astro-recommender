@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"runtime"
 
 	"github.com/dkorunic/astro-recommender/internal/atmos"
 	"github.com/dkorunic/astro-recommender/internal/fetch"
@@ -27,14 +28,30 @@ var errDarkSky = errors.New("darkskysites")
 // baseURL is a variable so that tests can point it at a local server.
 var baseURL = "https://www.darkskysites.com/api/sqm"
 
-// Key returns the API key from KeyEnv; empty means no lookup.
-func Key() string { return os.Getenv(KeyEnv) }
+// proxyURL is the Cloudflare Worker the browser build goes through:
+// DarkSkySites sends no CORS headers, and the Worker holds the API key.
+const proxyURL = "https://7timer-proxy.dkorunic.workers.dev/sqm"
+
+// Key returns the API key from KeyEnv; empty means no lookup, except in the
+// browser, where Lookup sends none and the proxy adds its own.
+func Key() string {
+	if runtime.GOOS == "js" {
+		return "proxy"
+	}
+
+	return os.Getenv(KeyEnv)
+}
 
 // Lookup returns the modelled zenith sky brightness in mag/arcsec² at the
 // location and a source label (attribution and monthly dataset) for display.
 func Lookup(ctx context.Context, key string, lat, lon float64) (float64, string, error) {
 	// Same ~1 km rounding as the other services: approximate on purpose.
 	url := fmt.Sprintf("%s?lat=%.2f&lng=%.2f", baseURL, lat, lon)
+	hdr := http.Header{"X-Api-Key": {key}}
+	if runtime.GOOS == "js" {
+		// No key header: it would only force a CORS preflight.
+		url, hdr = fmt.Sprintf("%s?lat=%.2f&lng=%.2f", proxyURL, lat, lon), nil
+	}
 	var body struct {
 		Attribution string `json:"attribution"`
 		Error       string `json:"error"`
@@ -43,7 +60,7 @@ func Lookup(ctx context.Context, key string, lat, lon float64) (float64, string,
 		} `json:"dataset"`
 		SQM float64 `json:"sqm"`
 	}
-	err := fetch.GetJSONHeader(ctx, url, http.Header{"X-Api-Key": {key}}, &body)
+	err := fetch.GetJSONHeader(ctx, url, hdr, &body)
 	// The error field carries the reason whatever the status (quota, no data).
 	if body.Error != "" {
 		if err != nil {
