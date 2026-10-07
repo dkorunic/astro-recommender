@@ -120,7 +120,7 @@ pre#out:empty { display: none; }
     <div class="bar">
       <button type="submit" id="run" disabled>Loading…</button>
       <button type="button" class="ghost" id="here">Use my location</button>
-      <button type="button" class="ghost" id="reset">Reset</button>
+      <button type="button" class="ghost" id="clear">Reset</button>
       <button type="button" class="ghost" id="theme" title="Switch between the browser's theme, light and dark"></button>
       <span id="status"></span>
     </div>
@@ -383,7 +383,7 @@ $("theme").addEventListener("click", () => {
 matchMedia("(prefers-color-scheme: light)").addEventListener("change", themeLabel);
 themeLabel();
 
-$("reset").addEventListener("click", () => {
+$("clear").addEventListener("click", () => {
   $("form").reset();
   try { localStorage.removeItem(KEY); } catch {}
   zone();
