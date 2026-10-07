@@ -163,6 +163,10 @@ func GetJSON(ctx context.Context, url string, v any) error {
 	return GetJSONHeader(ctx, url, nil, v)
 }
 
+// RetryDelay is the pause before the one retry of a 429 or 5xx response:
+// Open-Meteo answers 503 "overloaded" for moments at a time.
+var RetryDelay = time.Second
+
 // GetJSONHeader is GetJSON with extra request headers (e.g. an API key).
 func GetJSONHeader(ctx context.Context, url string, hdr http.Header, v any) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
@@ -174,6 +178,15 @@ func GetJSONHeader(ctx context.Context, url string, hdr http.Header, v any) erro
 	}
 	identify(req)
 	resp, err := httpClient.Do(req)
+	if err == nil && (resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= http.StatusInternalServerError) {
+		resp.Body.Close()
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(RetryDelay):
+		}
+		resp, err = httpClient.Do(req.Clone(ctx))
+	}
 	if err != nil {
 		return err
 	}

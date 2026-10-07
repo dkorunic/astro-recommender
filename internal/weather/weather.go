@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 // Package weather fetches Open-Meteo weather and aerosol forecasts and 7Timer
-// transparency and seeing.
+// transparency and seeing, with a jet stream seeing class as the fallback.
 package weather
 
 import (
@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"runtime"
 	"time"
 
 	"github.com/dkorunic/astro-recommender/internal/fetch"
@@ -29,6 +30,7 @@ type HourWeather struct {
 	Low, Mid, High float64
 	Temp, DewPoint float64
 	Wind, Gust     float64 // wind at the hour; gust maximum during the hour that starts there
+	Jet            float64 // wind at 200 hPa (the jet stream level), km/h; NaN when unknown
 }
 
 // hourly is Open-Meteo's hourly block, values null when missing.
@@ -43,6 +45,7 @@ type hourly struct {
 	DewPoint []*float64 `json:"dew_point_2m"`
 	Wind     []*float64 `json:"wind_speed_10m"`
 	Gust     []*float64 `json:"wind_gusts_10m"`
+	Jet      []*float64 `json:"wind_speed_200hPa"`
 }
 
 // Forecast fetches hourly weather from Open-Meteo, keyed by unix hour, plus
@@ -51,7 +54,7 @@ type hourly struct {
 func Forecast(ctx context.Context, lat, lon float64, start, end time.Time) (map[int64]HourWeather, float64, error) {
 	// 2 decimals (~1 km) is finer than the weather models and avoids sending an exact address.
 	url := fmt.Sprintf("https://api.open-meteo.com/v1/forecast?latitude=%.2f&longitude=%.2f"+
-		"&hourly=cloud_cover_low,cloud_cover_mid,cloud_cover_high,temperature_2m,dew_point_2m,wind_speed_10m,wind_gusts_10m"+
+		"&hourly=cloud_cover_low,cloud_cover_mid,cloud_cover_high,temperature_2m,dew_point_2m,wind_speed_10m,wind_gusts_10m,wind_speed_200hPa"+
 		"&timeformat=unixtime&timezone=UTC", lat, lon)
 	var body struct {
 		Elevation *float64 `json:"elevation"`
@@ -81,6 +84,7 @@ func Forecast(ctx context.Context, lat, lon float64, start, end time.Time) (map[
 // weather turns the hourly block into HourWeather keyed by unix hour.
 func (h *hourly) weather() (map[int64]HourWeather, error) {
 	// Gust is not in series: a null gust does not drop the hour (see below).
+	// Jet is display-only, so a missing or short series costs only that column.
 	series := [][]*float64{h.Low, h.Mid, h.High, h.Temp, h.DewPoint, h.Wind}
 	if len(h.Gust) != len(h.Time) {
 		return nil, fmt.Errorf("%w: malformed response", errOpenMeteo)
@@ -115,10 +119,31 @@ next:
 		} else if h.Gust[i] != nil {
 			gust = *h.Gust[i]
 		}
-		out[t] = HourWeather{cloud, *h.Low[i], *h.Mid[i], *h.High[i], *h.Temp[i], *h.DewPoint[i], *h.Wind[i], gust}
+		jet := math.NaN()
+		if i < len(h.Jet) && h.Jet[i] != nil && *h.Jet[i] >= 0 {
+			jet = *h.Jet[i]
+		}
+		out[t] = HourWeather{cloud, *h.Low[i], *h.Mid[i], *h.High[i], *h.Temp[i], *h.DewPoint[i], *h.Wind[i], gust, jet}
 	}
 
 	return out, nil
+}
+
+// Seeing classes the hour's seeing 1 (steady) to 5 (turbulent) from the jet
+// stream and the gusts, 0 when the jet is unknown: the display-only fallback
+// for hours 7Timer's seeing does not cover.
+// ponytail: amateur rules of thumb, not a turbulence model: a jet near
+// 100 km/h hurts and 150 ruins, and gusts stir the boundary layer.
+func Seeing(h HourWeather) int {
+	if !(h.Jet >= 0) { // NaN too
+		return 0
+	}
+	class := 1 + int(h.Jet/50) // 1 below 50 km/h, 3 from 100, 5 from 200
+	if h.Gust > 30 {
+		class++
+	}
+
+	return min(class, 5)
 }
 
 type AstroBlock struct{ Seeing, Transparency int } // 7Timer scales, 1 = best, 8 = worst
@@ -127,6 +152,13 @@ type AstroBlock struct{ Seeing, Transparency int } // 7Timer scales, 1 = best, 8
 // keyed by the unix time of each forecast point.
 func AstroForecast(ctx context.Context, lat, lon float64) (map[int64]AstroBlock, error) {
 	url := fmt.Sprintf("https://www.7timer.info/bin/astro.php?lon=%.2f&lat=%.2f&ac=0&unit=metric&output=json", lon, lat)
+	// 7Timer sends no CORS headers, so the browser build goes through a
+	// Cloudflare Worker (github.com/dkorunic/astro-recommender-cloudflare)
+	// that adds them for the GitHub Pages origin only, caches for an hour, and
+	// appends output=json itself (it rejects parameters it does not know).
+	if runtime.GOOS == "js" {
+		url = fmt.Sprintf("https://7timer-proxy.dkorunic.workers.dev/api?lon=%.2f&lat=%.2f&product=astro&unit=metric&ac=0", lon, lat)
+	}
 	var body struct {
 		Init       string `json:"init"` // YYYYMMDDHH UTC
 		Dataseries []struct {
@@ -211,7 +243,8 @@ func AerosolForecast(ctx context.Context, lat, lon float64, start, end time.Time
 // returning the part it has (HTTP 400), so a rejected multi-day range is
 // retried once ending on its first day: a night that runs past the forecast's
 // last day still gets its evening, and BuildSky gives the uncovered rest the
-// covered hours' mean quality. Other failures (rate limits, server errors) are not retried.
+// covered hours' mean quality. Other failures are not narrowed (fetch retries
+// a rate limit or server error once as is).
 func getRange[T any](ctx context.Context, url string, start, end time.Time, v *T) error {
 	from, to := start.UTC().Format(time.DateOnly), end.UTC().Format(time.DateOnly)
 	err := fetch.GetJSON(ctx, url+"&start_date="+from+"&end_date="+to, v)

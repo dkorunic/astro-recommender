@@ -6,6 +6,7 @@ package weather
 import (
 	"context"
 	"errors"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -28,6 +29,17 @@ func TestSeeingLabel(t *testing.T) {
 	}
 }
 
+func TestSeeing(t *testing.T) {
+	for _, tc := range []struct {
+		jet, gust float64
+		want      int
+	}{{math.NaN(), 0, 0}, {-1, 0, 0}, {0, 0, 1}, {49, 0, 1}, {50, 0, 2}, {100, 0, 3}, {149, 31, 4}, {150, 0, 4}, {150, 31, 5}, {400, 50, 5}} {
+		if got := Seeing(HourWeather{Jet: tc.jet, Gust: tc.gust}); got != tc.want {
+			t.Errorf("Seeing(jet %v, gust %v) = %d, want %d", tc.jet, tc.gust, got, tc.want)
+		}
+	}
+}
+
 func TestGustShift(t *testing.T) {
 	// Gusts at 21:00 cover 20:00-21:00, so they belong to the hour starting at 20:00.
 	p := func(v float64) *float64 { return &v }
@@ -36,6 +48,7 @@ func TestGustShift(t *testing.T) {
 		Time: []int64{72000, 75600, 79200},
 		Low:  zero, Mid: zero, High: zero, Temp: zero, DewPoint: zero, Wind: zero,
 		Gust: []*float64{p(10), p(30), p(50)},
+		Jet:  make([]*float64, 3),
 	}
 	out, err := h.weather()
 	if err != nil {
@@ -61,7 +74,13 @@ func TestGustShift(t *testing.T) {
 	// the next entry's gust, or with none the mean wind.
 	h.Gust[0], h.Gust[1], h.Wind[0] = nil, p(30), p(5)
 	if out, _ = h.weather(); out[h.Time[0]].Gust != 30 {
-		t.Errorf("null own gust: got %v (present %v), want 30", out[h.Time[0]].Gust, out[h.Time[0]] != (HourWeather{}))
+		_, present := out[h.Time[0]]
+		t.Errorf("null own gust: got %v (present %v), want 30", out[h.Time[0]].Gust, present)
+	}
+	// A jet series that is missing or short keeps every hour, without a jet.
+	h.Jet = nil
+	if out, err = h.weather(); err != nil || len(out) != 3 || !math.IsNaN(out[h.Time[0]].Jet) {
+		t.Errorf("no jet series: err %v, %d hours, jet %v", err, len(out), out[h.Time[0]].Jet)
 	}
 	h.Gust[1] = nil
 	if out, _ = h.weather(); out[h.Time[0]].Gust != 5 {
@@ -100,8 +119,9 @@ func TestGetRange(t *testing.T) {
 		{day(20), day(21), []string{"2026-10-20..2026-10-21", "2026-10-20..2026-10-20"}, false},
 		{day(21), day(22), []string{"2026-10-21..2026-10-22", "2026-10-21..2026-10-21"}, true},
 		{day(21), day(21), []string{"2026-10-21..2026-10-21"}, true},
-		{day(1), day(2), []string{"2026-10-01..2026-10-02"}, true}, // 429: no retry
+		{day(1), day(2), []string{"2026-10-01..2026-10-02", "2026-10-01..2026-10-02"}, true}, // 429: fetch retries as is, never narrowed
 	} {
+		fetch.RetryDelay = 0
 		queries = nil
 		var body struct{ Reason string }
 		err := getRange(context.Background(), srv.URL+"?x=1", c.start, c.end, &body)

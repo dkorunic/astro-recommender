@@ -3054,7 +3054,7 @@
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+10 26 37.19"
-  description: "True PN, PN G 43.5+02.2"
+  description: "True PN, PN G 043.5+02.2"
   name: "PaEk 1"
   ra: "19 03 00.03"
   size: 0.6
@@ -4097,7 +4097,7 @@
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+20 35 47.00"
-  description: "True PN, PN G -00.3+56.4"
+  description: "True PN, PN G 056.4-00.3"
   name: "Ra 24"
   ra: "19 37 40.00"
   size: 0.5

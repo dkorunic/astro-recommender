@@ -31,6 +31,38 @@ func TestGetJSONStatus(t *testing.T) {
 	}
 }
 
+// A 503 is retried once; a 400 is not.
+func TestGetJSONRetry(t *testing.T) {
+	RetryDelay = 0
+	t.Cleanup(func() { RetryDelay = time.Second })
+	var calls int
+	var code int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		calls++
+		if calls == 1 {
+			w.WriteHeader(code)
+			_, _ = w.Write([]byte(`{}`))
+
+			return
+		}
+		_, _ = w.Write([]byte(`{"ok":true}`))
+	}))
+	defer srv.Close()
+	for _, tc := range []struct {
+		code, calls int
+		ok          bool
+	}{{http.StatusServiceUnavailable, 2, true}, {http.StatusTooManyRequests, 2, true}, {http.StatusBadRequest, 1, false}} {
+		calls, code = 0, tc.code
+		var body struct {
+			OK bool `json:"ok"`
+		}
+		err := GetJSON(context.Background(), srv.URL, &body)
+		if calls != tc.calls || (err == nil) != tc.ok || body.OK != tc.ok {
+			t.Errorf("%d: %d calls, err %v, ok %v; want %d calls, ok %v", tc.code, calls, err, body.OK, tc.calls, tc.ok)
+		}
+	}
+}
+
 // A redirect within the host is followed; one to another host is refused
 // before the caller's headers (an API key) reach it.
 func TestRedirect(t *testing.T) {

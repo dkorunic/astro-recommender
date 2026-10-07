@@ -46,9 +46,26 @@ def sexagesimal(v, hours):
         return None
     sign, d, mi, s = m.groups()
     deg = int(d) + int(mi) / 60 + float(s) / 3600
-    if int(mi) >= 60 or float(s) >= 60 or (deg >= 24 if hours else deg > 90):
+    if (hours and sign) or int(mi) >= 60 or float(s) >= 60 or (deg >= 24 if hours else deg > 90):
         return None
     return f"{sign or ('' if hours else '+')}{int(d):02d} {int(mi):02d} {s}"
+
+
+PNG = re.compile(r"PN[ -]?G\s*([+-]?\d+(?:\.\d+)?)([+-]\d+(?:\.\d+)?)")
+
+
+def png(v):
+    """Normalize a PN G designation to "PN G lll.l+bb.b"; the site sometimes
+    drops the longitude's zero padding or swaps l and b (a negative l)."""
+    m = PNG.fullmatch(v.strip())
+    if not m:
+        return None
+    l, b = float(m[1]), float(m[2])
+    if l < 0 or abs(b) > 90:
+        l, b = b, l
+    if not (0 <= l < 360 and abs(b) <= 90):
+        return None
+    return f"PN G {l:05.1f}{b:+05.1f}"
 
 
 def size(v):
@@ -70,16 +87,19 @@ def main():
     for c in rows:
         if len(c) < 6 or c[5] not in KEEP:
             continue
-        name, png, ra, dec, sz, status = c[:6]
-        png = png.replace("PN-G", "PN G")  # as in PNnet.yaml
+        name, g, ra, dec, sz, status = c[:6]
         ra, dec = sexagesimal(ra, True), sexagesimal(dec, False)
         if not ra or not dec:
             print(f"warning: {name}: bad coordinates {c[2]!r} {c[3]!r}, skipped", file=sys.stderr)
             continue
+        if norm := png(g):
+            g = norm
+        else:
+            print(f"warning: {name}: odd designation {g!r}, kept as is", file=sys.stderr)
         kept += 1
         print('- constellation: ""')  # the loader computes it from RA/Dec
         print(f"  dec: {q(dec)}")
-        print(f"  description: {q(f'{status}, {png}')}")
+        print(f"  description: {q(f'{status}, {g}')}")
         print(f"  name: {q(name)}")
         print(f"  ra: {q(ra)}")
         print(f"  size: {size(sz)}")
