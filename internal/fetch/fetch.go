@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 )
 
@@ -32,6 +33,15 @@ func (e *StatusError) Error() string {
 func (e *StatusError) Is(target error) bool { return target == ErrStatus }
 
 const userAgent = "astro-recommender (+https://github.com/dkorunic/astro-recommender)"
+
+// identify sets the User-Agent Nominatim's usage policy requires. In the
+// browser (GOOS=js) the browser sends its own with a Referer, which the policy
+// accepts, and a custom one forces a CORS preflight that MPC's server fails.
+func identify(req *http.Request) {
+	if runtime.GOOS != "js" {
+		req.Header.Set("User-Agent", userAgent)
+	}
+}
 
 var httpClient = &http.Client{Timeout: 15 * time.Second, CheckRedirect: checkRedirect}
 
@@ -129,7 +139,7 @@ func GetText(ctx context.Context, url string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", userAgent)
+	identify(req)
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -162,7 +172,7 @@ func GetJSONHeader(ctx context.Context, url string, hdr http.Header, v any) erro
 	for k, vals := range hdr {
 		req.Header[http.CanonicalHeaderKey(k)] = vals
 	}
-	req.Header.Set("User-Agent", userAgent) // required by Nominatim's usage policy
+	identify(req)
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		return err

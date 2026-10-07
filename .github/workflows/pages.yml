@@ -1,0 +1,46 @@
+# Publishes the browser version (task web) to GitHub Pages for every tag.
+# Needs Pages enabled with "GitHub Actions" as the source, and the
+# github-pages environment allowing v* tags to deploy.
+name: Pages
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch: # redeploy by hand, e.g. after changing Pages settings
+
+permissions: {} # granted per job below
+
+concurrency:
+  group: pages
+  cancel-in-progress: false # never cut a deployment short
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # task web stamps the version from git describe
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2.2.0 (third party: pinned)
+      - run: task web
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

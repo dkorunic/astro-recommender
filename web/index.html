@@ -1,0 +1,308 @@
+<!doctype html>
+<!-- SPDX-FileCopyrightText: 2026 Dinko Korunic <dinko.korunic@gmail.com> -->
+<!-- SPDX-License-Identifier: MIT -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Astro Recommender</title>
+<style>
+:root {
+  --bg: #f7f7f5; --fg: #1d1d1b; --muted: #6b6b66; --line: #d9d9d4; --panel: #fff; --accent: #3b5bdb;
+  --c31: #c92a2a; --c32: #2b8a3e; --c33: #b8860b; --c34: #1c7ed6; --c35: #ae3ec9; --c36: #0c8599; --c90: #868e96;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111214; --fg: #e4e4e0; --muted: #9a9a94; --line: #2c2d31; --panel: #18191c; --accent: #748ffc;
+    --c31: #ff6b6b; --c32: #69db7c; --c33: #ffd43b; --c34: #4dabf7; --c35: #da77f2; --c36: #3bc9db; --c90: #adb5bd;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.45 system-ui, sans-serif; }
+main { max-width: 1400px; margin: 0 auto; padding: 16px; }
+h1 { font-size: 1.3rem; margin: 0 0 4px; }
+p.sub { margin: 0 0 16px; color: var(--muted); }
+form { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px 16px; }
+label { display: flex; flex-direction: column; gap: 3px; font-size: 13px; }
+label > span { font-family: ui-monospace, monospace; font-weight: 600; white-space: nowrap; }
+label.check { display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 8px; }
+label.check small { grid-column: 1 / -1; }
+input, select { font: inherit; padding: 5px 7px; border: 1px solid var(--line); border-radius: 5px; background: var(--bg); color: var(--fg); width: 100%; }
+input[type=checkbox] { width: auto; }
+details { margin-top: 14px; }
+summary { cursor: pointer; color: var(--accent); }
+details .grid { margin-top: 12px; }
+.bar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; align-items: center; }
+button { font: inherit; padding: 7px 16px; border-radius: 5px; border: 1px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer; }
+button.ghost { background: transparent; color: var(--accent); }
+button:disabled { opacity: .5; cursor: default; }
+#status { color: var(--muted); font-size: 13px; }
+#warn { white-space: pre-wrap; color: var(--c33); font: 13px/1.4 ui-monospace, monospace; margin: 16px 0 0; }
+#warn.error { color: var(--c31); }
+pre#out { margin: 16px 0 0; padding: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow-x: auto; font: 12.5px/1.35 ui-monospace, Menlo, monospace; }
+pre#out:empty { display: none; }
+.b { font-weight: 700; }
+.c31 { color: var(--c31); } .c32 { color: var(--c32); } .c33 { color: var(--c33); } .c34 { color: var(--c34); }
+.c35 { color: var(--c35); } .c36 { color: var(--c36); } .c90 { color: var(--c90); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Astro Recommender</h1>
+  <p class="sub">Ranks deep sky objects for tonight at your location. Runs entirely in your browser; the only network requests go to the forecast, geocoding and comet services. Leave a field empty for its default.</p>
+  <form id="form">
+    <div class="grid" id="main"></div>
+    <details><summary>All options</summary><div class="grid" id="more"></div></details>
+    <div class="bar">
+      <button type="submit" id="run" disabled>Loading…</button>
+      <button type="button" class="ghost" id="here">Use my location</button>
+      <button type="button" class="ghost" id="reset">Reset</button>
+      <span id="status"></span>
+    </div>
+  </form>
+  <div id="warn"></div>
+  <pre id="out"></pre>
+</main>
+<script src="wasm_exec.js"></script>
+<script>
+"use strict";
+// The Go program runs unchanged: argv comes from the form, stdout/stderr and
+// the -targets/-horizon files go through the fs shim that wasm_exec.js calls.
+const MAIN = ["lat", "lon", "date", "tz", "list", "n", "plan", "origin", "filter", "bortle", "sqm"];
+const FILES = ["targets", "horizon"];
+const HIDDEN = ["version", "no-sqm"]; // nothing to show; DarkSkySites blocks browser requests anyway
+const KEY = "astro-recommender-form";
+const $ = (id) => document.getElementById(id);
+
+// fs shim: fd 1/2 to the current run's sinks, uploaded files read-only.
+const files = new Map(); // path -> Uint8Array
+const open = new Map();  // fd -> {data, pos}
+let nextFD = 100, sink = null;
+const enoent = () => Object.assign(new Error("no such file"), { code: "ENOENT" });
+Object.assign(globalThis.fs, {
+  write(fd, buf, offset, length, position, cb) {
+    sink?.(fd, buf.subarray(offset, offset + length));
+    cb(null, length);
+  },
+  open(path, flags, mode, cb) {
+    const data = files.get(path);
+    if (!data || flags !== 0) return cb(enoent());
+    open.set(nextFD, { data, pos: 0 });
+    cb(null, nextFD++);
+  },
+  fstat(fd, cb) {
+    const f = open.get(fd);
+    if (!f) return cb(enoent());
+    cb(null, { dev: 0, ino: 0, mode: 0o100444, nlink: 1, uid: 0, gid: 0, rdev: 0, size: f.data.length,
+      blksize: 4096, blocks: 0, atimeMs: 0, mtimeMs: 0, ctimeMs: 0, isDirectory: () => false });
+  },
+  read(fd, buf, offset, length, position, cb) {
+    const f = open.get(fd);
+    if (!f) return cb(enoent());
+    const at = position ?? f.pos;
+    const chunk = f.data.subarray(at, at + length);
+    buf.set(chunk, offset);
+    if (position == null) f.pos += chunk.length;
+    cb(null, chunk.length);
+  },
+  close(fd, cb) { open.delete(fd); cb(null); },
+});
+
+// run executes the program once with args and resolves to {out, err, code}.
+let modulePromise = fetch("app.wasm").then((r) => {
+  if (!r.ok) throw new Error(`app.wasm: HTTP ${r.status}`);
+  return r.arrayBuffer();
+}).then((b) => WebAssembly.compile(b));
+// Runs share the fs sink, so they queue; argv0 "tz" is main_js.go's lookup.
+let queue = Promise.resolve();
+function run(args, argv0 = "astro-recommender") {
+  const p = queue.then(() => runNow(args, argv0));
+  queue = p.catch(() => {});
+  return p;
+}
+async function runNow(args, argv0) {
+  const dec = { 1: new TextDecoder(), 2: new TextDecoder() };
+  const text = { 1: "", 2: "" };
+  sink = (fd, bytes) => { if (dec[fd]) text[fd] += dec[fd].decode(bytes, { stream: true }); };
+  const go = new Go();
+  let code = 0;
+  go.argv = [argv0, ...args];
+  go.env = { CLICOLOR_FORCE: "1" };
+  go.exit = (c) => { code = c; };
+  const inst = await WebAssembly.instantiate(await modulePromise, go.importObject);
+  await go.run(inst);
+  sink = null;
+  return { out: text[1] + dec[1].decode(), err: text[2] + dec[2].decode(), code };
+}
+
+// ansi turns the SGR codes paint() writes into spans; codes may nest.
+function ansi(s) {
+  const esc = (t) => t.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
+  let html = "", depth = 0;
+  for (const [i, part] of s.split(/\x1b\[(\d+)m/).entries()) {
+    if (i % 2 === 0) { html += esc(part); continue; }
+    if (part === "0") { if (depth) { html += "</span>"; depth--; } continue; }
+    html += `<span class="${part === "01" || part === "1" ? "b" : "c" + part}">`;
+    depth++;
+  }
+  return html + "</span>".repeat(depth);
+}
+
+// parseUsage reads the flag list from -h, so the form follows the program.
+function parseUsage(text) {
+  const flags = [];
+  for (const line of text.split("\n")) {
+    const m = line.match(/^  -(\S+)(?: (\S+))?$/);
+    if (m) { flags.push({ name: m[1], type: m[2] || "bool", desc: "" }); continue; }
+    if (flags.length && line.startsWith("    \t")) flags.at(-1).desc += line.slice(5);
+  }
+  for (const f of flags) {
+    // Go quotes string defaults; an unquoted one is part of the help (-date).
+    const d = f.desc.match(f.type === "string" ? / \(default "(.*)"\)$/ : / \(default (.*)\)$/);
+    if (d) { f.def = d[1]; f.desc = f.desc.slice(0, d.index); }
+  }
+  return flags.filter((f) => !HIDDEN.includes(f.name));
+}
+
+function field(f) {
+  const label = document.createElement("label");
+  label.title = f.desc;
+  let input;
+  if (f.type === "bool") {
+    label.className = "check";
+    input = Object.assign(document.createElement("input"), { type: "checkbox" });
+    label.append(input, Object.assign(document.createElement("span"), { textContent: "-" + f.name }));
+  } else {
+    if (FILES.includes(f.name)) {
+      input = Object.assign(document.createElement("input"), { type: "file" });
+    } else if (f.name === "list") {
+      input = document.createElement("select");
+      const names = f.desc.split(": ")[1].split(", ");
+      for (const n of names) input.add(new Option(n, n === f.def ? "" : n, n === f.def));
+    } else {
+      input = Object.assign(document.createElement("input"), { type: "text", placeholder: f.def ?? "" });
+      if (f.type === "float" || f.type === "int") input.inputMode = "decimal";
+      if (f.name === "date") input.type = "date";
+    }
+    label.append(Object.assign(document.createElement("span"), { textContent: "-" + f.name }), input);
+  }
+  const small = Object.assign(document.createElement("small"), { textContent: f.desc });
+  small.style.color = "var(--muted)";
+  label.append(small);
+  input.name = f.name;
+  return label;
+}
+
+function save() {
+  const v = {};
+  for (const el of $("form").elements) {
+    if (!el.name || el.type === "file") continue;
+    v[el.name] = el.type === "checkbox" ? el.checked : el.value;
+  }
+  try { localStorage.setItem(KEY, JSON.stringify(v)); } catch {}
+}
+function restore() {
+  let v = {};
+  try { v = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch {}
+  for (const el of $("form").elements) {
+    if (!(el.name in v)) continue;
+    if (el.type === "checkbox") el.checked = v[el.name]; else el.value = v[el.name];
+  }
+}
+
+// args lists only the fields given, so flag.Visit sees what the user set.
+async function args() {
+  const a = [];
+  files.clear();
+  for (const el of $("form").elements) {
+    if (!el.name) continue;
+    if (el.type === "checkbox") { if (el.checked) a.push("-" + el.name); continue; }
+    if (el.type === "file") {
+      const file = el.files[0];
+      if (!file) continue;
+      const path = `/${el.name}/${file.name}`;
+      files.set(path, new Uint8Array(await file.arrayBuffer()));
+      a.push("-" + el.name, path);
+      continue;
+    }
+    const v = el.value.trim();
+    if (v !== "") a.push("-" + el.name, v);
+  }
+  return a;
+}
+
+// zone shows the location's time zone as the -tz placeholder: the field stays
+// empty, so the program looks it up itself and a typed -tz still wins.
+async function zone() {
+  const { lat, lon, tz } = $("form").elements;
+  const want = [lat.value.trim(), lon.value.trim()];
+  let name = "";
+  if (want[0] && want[1]) {
+    const { out, code } = await run(want, "tz");
+    if (code === 0) name = out.trim();
+  }
+  if (lat.value.trim() === want[0] && lon.value.trim() === want[1]) tz.placeholder = name; // skip stale answers
+}
+
+async function init() {
+  const { err } = await run(["-h"]);
+  const flags = parseUsage(err);
+  const byName = Object.fromEntries(flags.map((f) => [f.name, f]));
+  for (const n of MAIN) if (byName[n]) $("main").append(field(byName[n]));
+  for (const f of flags) if (!MAIN.includes(f.name)) $("more").append(field(f));
+  restore();
+  const el = $("form").elements;
+  el.lat.addEventListener("change", zone);
+  el.lon.addEventListener("change", zone);
+  zone();
+  $("run").disabled = false;
+  $("run").textContent = "Recommend";
+}
+
+$("form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  save();
+  $("run").disabled = true;
+  $("status").textContent = "Running…";
+  const t0 = performance.now();
+  try {
+    const a = await args();
+    const { out, err, code } = await run(a);
+    $("out").innerHTML = ansi(out);
+    $("warn").textContent = err.trim();
+    $("warn").className = code ? "error" : "";
+    $("status").textContent = code ? `exit status ${code}` : `done in ${((performance.now() - t0) / 1000).toFixed(1)} s`;
+  } catch (ex) {
+    $("warn").className = "error";
+    $("warn").textContent = String(ex);
+    $("status").textContent = "";
+  }
+  $("run").disabled = false;
+});
+
+$("here").addEventListener("click", () => {
+  if (!navigator.geolocation) { $("status").textContent = "geolocation unavailable"; return; }
+  $("status").textContent = "Locating…";
+  navigator.geolocation.getCurrentPosition((p) => {
+    $("form").elements.lat.value = p.coords.latitude.toFixed(4);
+    $("form").elements.lon.value = p.coords.longitude.toFixed(4);
+    $("status").textContent = "";
+    zone();
+  }, (ex) => { $("status").textContent = ex.message; });
+});
+
+$("reset").addEventListener("click", () => {
+  $("form").reset();
+  try { localStorage.removeItem(KEY); } catch {}
+  zone();
+});
+
+init().catch((ex) => {
+  $("warn").className = "error";
+  $("warn").textContent = String(ex);
+  $("run").textContent = "Failed to load";
+});
+</script>
+</body>
+</html>

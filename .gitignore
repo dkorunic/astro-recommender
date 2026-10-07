@@ -52,3 +52,7 @@ docs/
 
 ### Python ###
 __pycache__/
+
+### Browser build (task web) ###
+web/app.wasm
+web/wasm_exec.js

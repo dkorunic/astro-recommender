@@ -80,6 +80,16 @@ tasks:
       - task: fmt
       - go build -trimpath -pgo=auto -ldflags="-s -w -extldflags '-static' -X main.GitTag={{.GIT_LAST_TAG}} -X main.GitCommit={{.GIT_HEAD_COMMIT}} -X main.GitDirty={{.GIT_MODIFIED}} -X main.BuildTime={{.BUILD_DATE}}" -o {{.TARGET}}
 
+  web:
+    desc: Build the browser version into web/ (app.wasm + wasm_exec.js); serve the directory, e.g. python3 -m http.server -d web
+    vars: *build-vars
+    env:
+      GOOS: js
+      GOARCH: wasm
+    cmds:
+      - go build -trimpath -ldflags="-s -w -X main.GitTag={{.GIT_LAST_TAG}} -X main.GitCommit={{.GIT_HEAD_COMMIT}} -X main.GitDirty={{.GIT_MODIFIED}} -X main.BuildTime={{.BUILD_DATE}}" -o web/app.wasm
+      - cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" web/
+
   build-debug:
     desc: Build the race-enabled debug binary (CGO on, slower)
     vars: *build-vars

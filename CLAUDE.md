@@ -16,6 +16,7 @@ task build                          # fmt (gci, gofumpt, go fix, betteralign) + 
 task pgo                            # regenerate default.pgo from BenchmarkPipeline (internal/scoring); redo after hot-path changes
 task lint                           # fmt + golangci-lint (.golangci.yml: default all, some disabled); keep at 0 issues
 task fmt                            # NOTE: rewrites files in place
+task web                            # GOOS=js build into web/ (app.wasm + wasm_exec.js, both gitignored); serve with python3 -m http.server -d web
 task demo                           # re-render demo.jpg from a live run (scripts/demo.sh; needs freeze, jpegoptim optional, network)
 go build ./...
 go vet ./...
@@ -37,7 +38,7 @@ go run . -lat <deg> -lon <deg> [-tz Europe/Zagreb] [-date YYYY-MM-DD] [-origin] 
 | `sanitize` | `Text`: strip control chars/invalid UTF-8 from untrusted text | — |
 | `num` | `Finite`: NaN/Inf check that every parser of untrusted numbers runs before its range checks | — |
 | `fetch` | `GetJSON`/`GetJSONHeader` (size-capped; non-200 → `*StatusError` (matches `ErrStatus`, carries the code) with the body still decoded), `GetText`, `Cached[T]` (user cache dir, unique temp file + rename; returns the caller's `parse` result, and only data that parses is cached or served, so a bad 200 never replaces a good copy; the cache is read once, and a negative age (mtime in the future) counts as stale) | — |
-| `geotz` | `Lookup`: offline IANA zone from coordinates (tzf, ~150 ms, ~11 MB of embedded data) | — |
+| `geotz` | `Lookup`: offline IANA zone from coordinates (tzf `NewEmbeddedFinder`: the lite data queried in place, ~4 MB embedded) | — |
 | `geocode` | `Reverse` (Nominatim) | fetch, sanitize |
 | `sqm` | `Lookup` (DarkSkySites zenith SQM; key from `DARKSKYSITES_API_KEY`) | atmos, fetch, num, sanitize |
 | `weather` | Open-Meteo `Forecast`/`AerosolForecast` (both also return the site elevation), 7Timer `AstroForecast` | fetch, num, sanitize |
@@ -49,6 +50,8 @@ go run . -lat <deg> -lon <deg> [-tz Europe/Zagreb] [-date YYYY-MM-DD] [-origin] 
 | `scoring` | `Sky`/`BuildSky` (no I/O), `Forecast`/`FetchForecast` (the three weather sources, concurrently)/`NoForecast`, `Result`, `Score`, `skyK`, `frameFill` (scoring), `ramp` | astro, atmos, catalog, config, weather |
 | `plan` | `Slot`, `Make` (greedy + local search) | scoring |
 | `output` | `Header`/`Weather`/`Plan`/`Results`, ANSI colors | atmos, catalog, config, plan, scoring, weather |
+
+**Browser build** (`web/index.html`, `task web`): the unchanged `main` compiled to `GOOS=js`; the only Go code specific to it is `fetch.identify` (no custom User-Agent under js: it forces a CORS preflight that MPC fails) and `main_js.go`, whose `init` answers argv `["tz", lat, lon]` with `geotz.Lookup` and exits before `main` (the page's `-tz` placeholder; argv[0] rather than a flag keeps `-h` and the flags the CLI's). Runs are queued, since they share the fs sink. The page patches the `globalThis.fs` stub of Go's `wasm_exec.js` (`write` for stdout/stderr, read-only `open`/`fstat`/`read`/`close` over uploaded `-targets`/`-horizon` files), runs a fresh instance per click with the form as `go.argv` (only filled fields, so `flag.Visit` logic holds) and `CLICOLOR_FORCE=1`, turns the `paint()` escapes into spans, and builds the form by parsing `-h` (a string flag's default counts only when quoted, since `-date`'s help itself ends in "(default tonight; …)"). 7Timer and DarkSkySites send no CORS headers, so they fail there as warnings; `os.UserCacheDir` fails under js, so `fetch.Cached` silently does not cache. Check a change still runs there with `task web` and a browser. `.github/workflows/pages.yml` runs `task web` on every `v*` tag (or by hand) and deploys `web/` to GitHub Pages; the `github-pages` environment must allow `v*` tags.
 
 Only `main` exits (`fatal`); packages return errors. `version.go` holds `GitTag`/`GitCommit`/`GitDirty`/`BuildTime`, which Taskfile.yml and .goreleaser.yml set with `-X`; `-version` falls back to `debug.ReadBuildInfo` when they're empty. Tests sit beside each package. Every Go file starts with `SPDX-FileCopyrightText` and `SPDX-License-Identifier: MIT` headers; keep them on new files (`internal/constellation/constellation.go` also credits Rener Castro/astrogo).
 

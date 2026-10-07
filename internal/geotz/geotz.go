@@ -18,7 +18,7 @@ var errNotFound = errors.New("no time zone found")
 // Lookup returns the IANA time zone name at lat/lon (degrees). Open sea gets
 // the nautical zone, e.g. Etc/GMT+2.
 func Lookup(lat, lon float64) (string, error) {
-	f, err := tzf.NewDefaultFinder() // ~150 ms: only called when -tz is not given
+	f, err := tzf.NewEmbeddedFinder() // lite data queried in place (~4 MB): only called when -tz is not given
 	if err != nil {
 		return "", err
 	}
