@@ -157,7 +157,7 @@ func AstroForecast(ctx context.Context, lat, lon float64) (map[int64]AstroBlock,
 	// that adds them for the GitHub Pages origin only, caches for an hour, and
 	// appends output=json itself (it rejects parameters it does not know).
 	if runtime.GOOS == "js" {
-		url = fmt.Sprintf("https://7timer-proxy.dkorunic.workers.dev/api?lon=%.2f&lat=%.2f&product=astro&unit=metric&ac=0", lon, lat)
+		url = fmt.Sprintf("https://astro-recommender-proxy.dkorunic.workers.dev/api?lon=%.2f&lat=%.2f&product=astro&unit=metric&ac=0", lon, lat)
 	}
 	var body struct {
 		Init       string `json:"init"` // YYYYMMDDHH UTC

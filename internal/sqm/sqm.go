@@ -30,7 +30,7 @@ var baseURL = "https://www.darkskysites.com/api/sqm"
 
 // proxyURL is the Cloudflare Worker the browser build goes through:
 // DarkSkySites sends no CORS headers, and the Worker holds the API key.
-const proxyURL = "https://7timer-proxy.dkorunic.workers.dev/sqm"
+const proxyURL = "https://astro-recommender-proxy.dkorunic.workers.dev/sqm"
 
 // Key returns the API key from KeyEnv; empty means no lookup, except in the
 // browser, where Lookup sends none and the proxy adds its own.
