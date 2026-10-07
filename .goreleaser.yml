@@ -49,3 +49,32 @@ checksum:
   name_template: "checksums.txt"
 snapshot:
   version_template: "{{ .Tag }}-next"
+brews:
+  - name: astro-recommender
+    directory: Formula
+    repository:
+      owner: dkorunic
+      name: homebrew-tap
+    homepage: https://github.com/dkorunic/astro-recommender
+    description: Ranks deep sky objects and bright comets to image tonight from a given location
+    license: MIT
+    test: |
+      system "#{bin}/astro-recommender", "-version"
+    install: |
+      bin.install "astro-recommender"
+homebrew_casks:
+  - name: astro-recommender
+    binaries: [astro-recommender]
+    repository:
+      owner: dkorunic
+      name: homebrew-tap
+    homepage: https://github.com/dkorunic/astro-recommender
+    description: Ranks deep sky objects and bright comets to image tonight from a given location
+    license: MIT
+    # Remove the macOS quarantine attribute so the CLI runs without Gatekeeper prompts
+    hooks:
+      post:
+        install: |
+          if system_command("/usr/bin/xattr", args: ["-h"]).exit_status == 0
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/astro-recommender"]
+          end
