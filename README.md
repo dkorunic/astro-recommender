@@ -56,11 +56,17 @@ Or with Go:
 go install github.com/dkorunic/astro-recommender@latest
 ```
 
-On macOS, Homebrew users can install it from the tap:
+On macOS or Linux, Homebrew users can install it from the tap:
 
 ```sh
 brew tap dkorunic/tap
 brew install astro-recommender
+```
+
+On macOS the tap also has it as a cask:
+
+```sh
+brew install --cask dkorunic/tap/astro-recommender
 ```
 
 Or from a checkout, using [Task](https://taskfile.dev/):
