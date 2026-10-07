@@ -8,18 +8,19 @@
 <title>Astro Recommender</title>
 <style>
 :root {
-  color-scheme: dark light;
+  color-scheme: dark;
   --bg: #0e1322; --panel: #171e30; --field: #0b101c; --fg: #e6eaf2; --muted: #8b94a7; --line: #2a3349;
   --accent: #e9b44c; --accent-fg: #1a1203; --accent-soft: rgba(233, 180, 76, .14); --focus: #f3cf7a;
   --c31: #ff7b72; --c32: #6fd28a; --c33: #e9b44c; --c34: #6cb4f5; --c35: #d89af0; --c36: #4fc8d6; --c90: #7f889b;
   --dusk: linear-gradient(90deg, #22305e 0%, #4a4f8a 40%, #c0683a 75%, #e9b44c 100%);
+  --title: linear-gradient(90deg, #9db1f5 0%, #c9a6d8 45%, #e9b44c 100%);
 }
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg: #f2f4f8; --panel: #fff; --field: #f7f8fb; --fg: #151b29; --muted: #5f6878; --line: #d6dbe6;
-    --accent: #a8690f; --accent-fg: #fff; --accent-soft: rgba(168, 105, 15, .12); --focus: #c98a1f;
-    --c31: #c0392b; --c32: #1f8a4c; --c33: #a8690f; --c34: #1f6fd0; --c35: #9b3fc4; --c36: #0f7f8c; --c90: #7a8294;
-  }
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f2f4f8; --panel: #fff; --field: #f7f8fb; --fg: #151b29; --muted: #5f6878; --line: #d6dbe6;
+  --accent: #a8690f; --accent-fg: #fff; --accent-soft: rgba(168, 105, 15, .12); --focus: #c98a1f;
+  --c31: #c0392b; --c32: #1f8a4c; --c33: #a8690f; --c34: #1f6fd0; --c35: #9b3fc4; --c36: #0f7f8c; --c90: #7a8294;
+  --title: linear-gradient(90deg, #22305e 0%, #4a4f8a 45%, #a8690f 100%);
 }
 * { box-sizing: border-box; }
 html { background: var(--bg); }
@@ -29,9 +30,14 @@ body {
   border-top: 4px solid transparent; border-image: var(--dusk) 1;
 }
 main { max-width: 1400px; margin: 0 auto; padding: 28px 20px 48px; }
-header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 20px; margin-bottom: 20px; }
-h1 { font-size: 1.6rem; font-weight: 650; letter-spacing: -.01em; margin: 0; }
-header p { margin: 0; color: var(--muted); max-width: 70ch; }
+header { margin-bottom: 22px; }
+h1 {
+  display: flex; align-items: center; gap: 12px; margin: 0 0 6px;
+  font-size: clamp(1.7rem, 1.2rem + 1.6vw, 2.4rem); font-weight: 750; letter-spacing: -.03em; line-height: 1.1;
+}
+h1 .mark { flex: none; width: .9em; height: .9em; color: var(--accent); filter: drop-shadow(0 0 6px var(--accent-soft)); }
+h1 .word { background: var(--title); -webkit-background-clip: text; background-clip: text; color: transparent; padding-right: .05em; }
+header p { margin: 0; color: var(--muted); max-width: 72ch; }
 form { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px 18px; }
 label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; min-width: 0; }
@@ -85,11 +91,27 @@ pre#out:empty { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
+<script>
+// Theme before first paint: a stored override, else the browser's preference
+// (kept live until the user overrides it).
+(() => {
+  const media = matchMedia("(prefers-color-scheme: light)");
+  const apply = () => {
+    let t = null;
+    try { t = localStorage.getItem("astro-recommender-theme"); } catch {}
+    document.documentElement.dataset.theme = t ?? (media.matches ? "light" : "dark");
+    document.documentElement.dataset.themeChoice = t ?? "auto";
+  };
+  apply();
+  media.addEventListener("change", apply);
+  globalThis.applyTheme = apply;
+})();
+</script>
 </head>
 <body>
 <main>
   <header>
-    <h1>Astro Recommender</h1>
+    <h1><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 1.5c.6 5.3 3.8 9.3 10.5 10.5C15.8 13.2 12.6 17.2 12 22.5 11.4 17.2 8.2 13.2 1.5 12 8.2 10.8 11.4 6.8 12 1.5z"/></svg><span class="word">Astro Recommender</span></h1>
     <p>Ranks deep sky objects for tonight at your location. Runs entirely in your browser; the only network requests go to the forecast, geocoding and comet services. Leave a field empty for its default.</p>
   </header>
   <form id="form">
@@ -99,6 +121,7 @@ pre#out:empty { display: none; }
       <button type="submit" id="run" disabled>Loading…</button>
       <button type="button" class="ghost" id="here">Use my location</button>
       <button type="button" class="ghost" id="reset">Reset</button>
+      <button type="button" class="ghost" id="theme" title="Switch between the browser's theme, light and dark"></button>
       <span id="status"></span>
     </div>
   </form>
@@ -343,6 +366,21 @@ $("here").addEventListener("click", () => {
     zone();
   }, (ex) => { $("status").textContent = ex.message; });
 });
+
+// The theme button cycles auto (the browser's choice) -> light -> dark.
+const THEME = "astro-recommender-theme";
+function themeLabel() {
+  const choice = document.documentElement.dataset.themeChoice;
+  $("theme").textContent = choice === "auto" ? `Theme: auto (${document.documentElement.dataset.theme})` : `Theme: ${choice}`;
+}
+$("theme").addEventListener("click", () => {
+  const next = { auto: "light", light: "dark", dark: null }[document.documentElement.dataset.themeChoice];
+  try { next ? localStorage.setItem(THEME, next) : localStorage.removeItem(THEME); } catch {}
+  applyTheme();
+  themeLabel();
+});
+matchMedia("(prefers-color-scheme: light)").addEventListener("change", themeLabel);
+themeLabel();
 
 $("reset").addEventListener("click", () => {
   $("form").reset();
