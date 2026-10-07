@@ -4,8 +4,10 @@
 #
 # Render demo.jpg: the coloured output of a live run, drawn to an image by
 # freeze (github.com/charmbracelet/freeze), scaled and converted to JPEG by
-# sips and, when installed, recompressed by jpegoptim at quality 90. Needs
-# network for the weather, aerosol and geocoding lookups.
+# sips and, when installed, recompressed by jpegoptim at quality 85. Needs
+# network for the weather, aerosol and geocoding lookups. Lines wrap at 150
+# columns, the table's width, as in a real terminal, so the long legend
+# lines do not stretch the image.
 #
 # The default run is the Markovac site with -filter and its measured SQM, not
 # the README's Zagreb transcript. Any arguments replace that whole flag set,
@@ -30,7 +32,7 @@ go build -o "$tmp/astro-recommender" .
 } >"$tmp/demo.ansi"
 
 freeze --execute "cat $tmp/demo.ansi" --background '#1d1f21' --padding 20 --window=false \
-	--border.radius 0 --font.size 14 --line-height 1.35 -o "$tmp/demo.png" </dev/null
+	--border.radius 0 --wrap 150 --font.size 14 --line-height 1.35 -o "$tmp/demo.png" </dev/null
 sips -Z 2000 -s format jpeg -s formatOptions 95 "$tmp/demo.png" --out demo.jpg >/dev/null
-command -v jpegoptim >/dev/null && jpegoptim -q -m 90 --strip-all demo.jpg
+command -v jpegoptim >/dev/null && jpegoptim -q -m 85 --strip-all demo.jpg
 ls -l demo.jpg
