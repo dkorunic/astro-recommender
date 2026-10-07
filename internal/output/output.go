@@ -12,6 +12,7 @@ import (
 	"io"
 	"math"
 	"os"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -169,13 +170,16 @@ func Plan(s *scoring.Sky, slots []plan.Slot) {
 	fmt.Println()
 }
 
-func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) {
+// Results prints the target table and returns its width in columns (0 when
+// empty), which the legend wraps to.
+func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) int {
 	if len(results) == 0 {
 		fmt.Println("No objects within constraints.")
 
-		return
+		return 0
 	}
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	var buf bytes.Buffer
+	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', 0)
 	row(w, "01", names(resultColumns)...)
 	for i, r := range results[:min(cfg.Top, len(results))] {
 		px := "-" // without framing there is no pixel scale to measure against
@@ -193,7 +197,17 @@ func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) {
 			paint("39", px))
 	}
 	w.Flush()
+	width := 0
+	for line := range strings.Lines(buf.String()) {
+		width = max(width, utf8.RuneCountInString(strings.TrimRight(sgr.ReplaceAllString(line, ""), " \n")))
+	}
+	fmt.Print(buf.String())
+
+	return width
 }
+
+// sgr matches the escapes paint writes.
+var sgr = regexp.MustCompile("\x1b\\[[0-9]*m")
 
 var UseColor bool
 
@@ -368,8 +382,9 @@ func names(cols []column) []string {
 	return out
 }
 
-// Legend explains the columns of the tables that were printed and the colors.
-func Legend(s *scoring.Sky, withPlan bool) {
+// Legend explains the columns of the tables that were printed and the colors,
+// wrapped to tableWidth (legendWidth when 0).
+func Legend(s *scoring.Sky, withPlan bool, tableWidth int) {
 	fmt.Println()
 	fmt.Println(paint("01", "Legend"))
 	// One tabwriter for all sections keeps them aligned; the buffer lets the
@@ -395,7 +410,7 @@ func Legend(s *scoring.Sky, withPlan bool) {
 			indent = max(indent, len("    "+c.name))
 		}
 	}
-	width := legendWidth - indent - legendPad
+	width := cmp.Or(tableWidth, legendWidth) - indent - legendPad
 	var buf bytes.Buffer
 	w := tabwriter.NewWriter(&buf, 0, 0, legendPad, ' ', 0)
 	for _, sec := range sections {
@@ -417,7 +432,8 @@ func Legend(s *scoring.Sky, withPlan bool) {
 		paint("32", "green"), paint("33", "yellow"), paint("31", "red"), paint("35", "magenta"), paint("33", "yellow"))
 }
 
-// legendWidth is the terminal width the legend wraps to; legendPad is the
+// legendWidth is the width the legend wraps to without a target table;
+// legendPad is the
 // gap between a column name and its description.
 const (
 	legendWidth = 80

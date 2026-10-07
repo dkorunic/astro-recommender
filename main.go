@@ -122,8 +122,7 @@ func main() {
 	if cfg.Plan > 0 {
 		output.Plan(&s, plan.Make(&s, results, cfg.Plan))
 	}
-	output.Results(&cfg, &s, results)
-	output.Legend(&s, cfg.Plan > 0)
+	output.Legend(&s, cfg.Plan > 0, output.Results(&cfg, &s, results))
 }
 
 func fatal(msg string) {

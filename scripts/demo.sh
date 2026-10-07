@@ -6,8 +6,7 @@
 # freeze (github.com/charmbracelet/freeze), scaled and converted to JPEG by
 # sips and, when installed, recompressed by jpegoptim at quality 85. Needs
 # network for the weather, aerosol and geocoding lookups. Lines wrap at 150
-# columns, the table's width, as in a real terminal, so the long legend
-# lines do not stretch the image.
+# columns, as in a real terminal; the legend already wraps to the table.
 #
 # The default run is the Markovac site with -filter and its measured SQM, not
 # the README's Zagreb transcript. Any arguments replace that whole flag set,
