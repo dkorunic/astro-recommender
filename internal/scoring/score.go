@@ -82,6 +82,9 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, alt, weight []fl
 		ra, dec = astro.Precess(tg.RADeg, tg.DecDeg, s.Grid[len(s.Grid)/2])
 	}
 	hz := astro.NewHorizontal(cfg.Lat, dec)
+	// cos(LST - ra) by the difference formula: one Sincos per target instead
+	// of a Cos per target-minute.
+	sinRA, cosRA := math.Sincos(ra * deg)
 
 	// Fraction of sky glow (moonlight, light pollution) that counts against
 	// this target; also scales its Moon separation limit.
@@ -108,7 +111,12 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, alt, weight []fl
 			hz = hz.WithDec(dec)
 		}
 		ha := s.LST[i] - ra
-		sinAlt := hz.SinAlt(ha)
+		var sinAlt float64
+		if tg.Track != nil {
+			sinAlt = hz.SinAlt(ha)
+		} else {
+			sinAlt = hz.SinAltCos(s.CosLST[i]*cosRA + s.SinLST[i]*sinRA)
+		}
 		if sinAlt > maxSin {
 			maxSin, maxAt = sinAlt, i
 		}
@@ -133,7 +141,7 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, alt, weight []fl
 				continue
 			}
 		}
-		sb := atmos.SkyBrightness(s.ZenithNL, s.Ext[i], a, s.MoonAlt[i], rho, s.MoonPhase, s.MoonDist)
+		sb := atmos.SkyBrightnessLit(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i])
 		// SNR in a fixed time goes as signal/sqrt(signal+sky), relative to the
 		// same object under a pristine dark sky: an object much brighter than
 		// the sky loses nothing, a faint or unknown one (objNL = 0) is

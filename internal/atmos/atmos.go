@@ -81,27 +81,47 @@ func MagFromNL(b float64) float64 { return (20.7233 - math.Log(b/34.08)) / 0.921
 // Moon at moonAlt, rho degrees away, with phase angle alpha (0 = full) and
 // moonDist Earth radii away.
 func SkyBrightness(zenithNL, k, alt, moonAlt, rho, alpha, moonDist float64) float64 {
-	ks := func(alt float64) float64 { // K&S airmass for scattering paths
-		z := math.Sin((90 - alt) * deg)
+	return SkyBrightnessLit(zenithNL, k, alt, rho, MoonLight(k, moonAlt, alpha, moonDist))
+}
 
-		return 1 / math.Sqrt(1-0.96*z*z)
+// ks is K&S's airmass for scattering paths.
+func ks(alt float64) float64 {
+	z := math.Sin((90 - alt) * deg)
+
+	return 1 / math.Sqrt(1-0.96*z*z)
+}
+
+// MoonLight is the target-independent part of SkyBrightness's moonlight: the
+// Moon's brightness through its own airmass for extinction k; 0 while it is
+// down. Scoring computes it once per grid minute rather than per
+// target-minute (two of the moonlit minute's five exp10 calls).
+func MoonLight(k, moonAlt, alpha, moonDist float64) float64 {
+	if moonAlt <= 0 {
+		return 0
 	}
+	moon := exp10(-0.4 * (3.84 + 0.026*alpha + 4e-9*alpha*alpha*alpha*alpha))
+	// K&S give I* at the mean distance (60.27 Earth radii); the Moon is
+	// up to 13% nearer or farther, its light going as distance⁻².
+	r := meanMoonDist / moonDist
+	moon *= r * r
+	// Opposition surge, which K&S's I* leaves out (their p. 1035): 35%
+	// brighter at full, tapering linearly to none at 7°, as in Thorstensen's skycalc.
+	if alpha < 7 {
+		moon *= 1.35 - 0.05*alpha
+	}
+
+	return moon * exp10(-0.4*k*ks(moonAlt))
+}
+
+// SkyBrightnessLit is SkyBrightness with moonLight = MoonLight(k, moonAlt,
+// alpha, moonDist) precomputed.
+func SkyBrightnessLit(zenithNL, k, alt, rho, moonLight float64) float64 {
 	x := ks(alt)
 	b := zenithNL * exp10(-0.4*k*(x-1)) * x
-	if moonAlt > 0 {
-		moon := exp10(-0.4 * (3.84 + 0.026*alpha + 4e-9*alpha*alpha*alpha*alpha))
-		// K&S give I* at the mean distance (60.27 Earth radii); the Moon is
-		// up to 13% nearer or farther, its light going as distance⁻².
-		r := meanMoonDist / moonDist
-		moon *= r * r
-		// Opposition surge, which K&S's I* leaves out (their p. 1035): 35%
-		// brighter at full, tapering linearly to none at 7°, as in Thorstensen's skycalc.
-		if alpha < 7 {
-			moon *= 1.35 - 0.05*alpha
-		}
+	if moonLight > 0 {
 		c := math.Cos(rho * deg)
 		scatter := 2.2908677e5*(1.06+c*c) + exp10(6.15-rho/40) // 10^5.36
-		b += scatter * moon * exp10(-0.4*k*ks(moonAlt)) * (1 - exp10(-0.4*k*x))
+		b += scatter * moonLight * (1 - exp10(-0.4*k*x))
 	}
 
 	return b

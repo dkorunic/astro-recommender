@@ -270,7 +270,13 @@ func (h Horizontal) WithDec(dec float64) Horizontal {
 // Clamped to ±1: rounding can push it a hair past at the zenith, where Asin
 // would be NaN.
 func (h Horizontal) SinAlt(ha float64) float64 {
-	return max(-1, min(1, h.sinLat*h.sinDec+h.cosLat*h.cosDec*math.Cos(ha*deg)))
+	return h.SinAltCos(math.Cos(ha * deg))
+}
+
+// SinAltCos is SinAlt from the cosine of the hour angle, for callers that
+// get it without a Cos (scoring, from per-minute sidereal time sines).
+func (h Horizontal) SinAltCos(cosHA float64) float64 {
+	return max(-1, min(1, h.sinLat*h.sinDec+h.cosLat*h.cosDec*cosHA))
 }
 
 // Az returns the azimuth (from north through east) in degrees at hour angle ha (degrees).

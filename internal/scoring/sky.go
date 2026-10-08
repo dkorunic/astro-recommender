@@ -26,10 +26,13 @@ type Sky struct {
 	Astro      map[int64]weather.AstroBlock
 	AOD        map[int64]float64 // aerosol optical depth at 550 nm per unix hour (CAMS)
 	Grid       []time.Time
-	LST        []float64    // local sidereal time per grid minute, degrees
+	LST        []float64 // local sidereal time per grid minute, degrees
+	SinLST     []float64 // sin and cos of LST, so a fixed target's cos(hour angle) needs no Cos
+	CosLST     []float64
 	MoonPos    [][2]float64 // topocentric RA/Dec of date, degrees
 	MoonAlt    []float64
 	Ext        []float64 // extinction per grid minute, mag per airmass
+	MoonLight  []float64 // atmos.MoonLight per grid minute
 	Quality    []float64 // clear-sky fraction x transparency x dew x gust, 1 = perfect
 	Elevation  float64   // site elevation in m, from Open-Meteo; NaN if unknown
 	Illum      float64
@@ -116,19 +119,23 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 	s.LST = make([]float64, len(s.Grid))
 	s.MoonPos = make([][2]float64, len(s.Grid))
 	s.MoonAlt = make([]float64, len(s.Grid))
+	s.SinLST, s.CosLST = make([]float64, len(s.Grid)), make([]float64, len(s.Grid))
 	for i, t := range s.Grid {
 		s.LST[i] = astro.LST(t, cfg.Lon)
+		s.SinLST[i], s.CosLST[i] = math.Sincos(s.LST[i] * deg)
 		s.MoonPos[i][0], s.MoonPos[i][1] = astro.MoonTopo(t, cfg.Lat, cfg.Lon)
 		s.MoonAlt[i] = astro.Altitude(s.MoonPos[i][0], s.MoonPos[i][1], t, cfg.Lat, cfg.Lon)
 	}
 
 	s.Quality = make([]float64, len(s.Grid))
 	s.Ext = make([]float64, len(s.Grid))
+	s.MoonLight = make([]float64, len(s.Grid))
 	// Weather and transparency per minute; ok marks the minutes each forecast covers.
 	sky, skyOK := make([]float64, len(s.Grid)), make([]bool, len(s.Grid))
 	transp, transpOK := make([]float64, len(s.Grid)), make([]bool, len(s.Grid))
 	for i, t := range s.Grid {
 		s.Ext[i] = s.ExtinctionAt(t, cfg.Extinction)
+		s.MoonLight[i] = atmos.MoonLight(s.Ext[i], s.MoonAlt[i], s.MoonPhase, s.MoonDist)
 		if h, ok := s.Weather[t.Truncate(time.Hour).Unix()]; ok {
 			// ponytail: guessed ramps; dew (spread 4 -> 1 °C) and gusts (20 -> 40 km/h)
 			// cost up to 30% and 50% of usable frames.
