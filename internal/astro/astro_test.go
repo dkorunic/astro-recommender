@@ -55,14 +55,24 @@ func TestSunAltitude(t *testing.T) {
 func TestWindow(t *testing.T) {
 	// Zagreb 2026-10-05: astronomical dusk ~20:08, dawn ~05:2x CEST.
 	zg, _ := time.LoadLocation("Europe/Zagreb")
-	start, end, ok := Window(time.Date(2026, 10, 5, 0, 0, 0, 0, zg), 45.8, 16.0)
+	start, end, ok := Window(time.Date(2026, 10, 5, 0, 0, 0, 0, zg), 45.8, 16.0, Astronomical)
 	start, end = start.In(zg), end.In(zg)
 	if !ok || start.Hour() != 20 || end.Day() != 6 || end.Hour() != 5 {
 		t.Errorf("window = %v - %v, %v", start, end, ok)
 	}
+	// Nautical night (Sun below -12°) starts earlier and ends later; Zagreb
+	// gets about 35 minutes more at each end in October.
+	ns, ne, ok := Window(time.Date(2026, 10, 5, 0, 0, 0, 0, zg), 45.8, 16.0, Nautical)
+	if d1, d2 := start.Sub(ns), ne.Sub(end); !ok || d1 < 25*time.Minute || d1 > 45*time.Minute || d2 < 25*time.Minute || d2 > 45*time.Minute {
+		t.Errorf("nautical window = %v - %v, %v; want ~35 min wider than %v - %v", ns, ne, ok, start, end)
+	}
 	// Tromsø at midsummer never gets astronomically dark.
-	if _, _, ok := Window(time.Date(2026, 6, 21, 0, 0, 0, 0, time.UTC), 69.65, 18.96); ok {
+	if _, _, ok := Window(time.Date(2026, 6, 21, 0, 0, 0, 0, time.UTC), 69.65, 18.96, Astronomical); ok {
 		t.Error("window found night in Tromsø midsummer")
+	}
+	// Reykjavík (64°N) at midsummer has no nautical night either.
+	if _, _, ok := Window(time.Date(2026, 6, 21, 0, 0, 0, 0, time.UTC), 64.13, -21.9, Nautical); ok {
+		t.Error("window found nautical night in Reykjavík midsummer")
 	}
 	// -from/-to clip within the night and never extend it.
 	for _, c := range []struct {
@@ -128,7 +138,7 @@ func TestWindowDateLine(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		start, _, ok := Window(time.Date(2026, 10, 5, 0, 0, 0, 0, loc), c.lat, c.lon)
+		start, _, ok := Window(time.Date(2026, 10, 5, 0, 0, 0, 0, loc), c.lat, c.lon, Astronomical)
 		if start = start.In(loc); !ok || start.Day() != 5 || start.Hour() < 18 {
 			t.Errorf("%s: dusk %v, want the evening of 2026-10-05", c.zone, start)
 		}
@@ -137,7 +147,7 @@ func TestWindowDateLine(t *testing.T) {
 
 func TestWindowForeignTimeZone(t *testing.T) {
 	zg, _ := time.LoadLocation("Europe/Zagreb")
-	start, end, ok := Window(time.Date(2026, 10, 5, 0, 0, 0, 0, zg), -33.87, 151.21)
+	start, end, ok := Window(time.Date(2026, 10, 5, 0, 0, 0, 0, zg), -33.87, 151.21, Astronomical)
 	if !ok || start.UTC().Hour() != 9 || start.Second() != 0 || end.Sub(start) < 8*time.Hour {
 		t.Errorf("Sydney window = %v - %v, %v", start.UTC(), end.UTC(), ok)
 	}
@@ -157,7 +167,7 @@ func TestTonight(t *testing.T) {
 		{time.Date(2026, 10, 5, 22, 0, 0, 0, zg), 5, true},  // evening, after dusk (20:08)
 		{time.Date(2026, 10, 5, 20, 0, 0, 0, zg), 5, false}, // just before dusk
 	} {
-		day, inProgress := Tonight(c.now, 45.8, 16.0)
+		day, inProgress := Tonight(c.now, 45.8, 16.0, Astronomical)
 		if day.Day() != c.day || inProgress != c.inProgress {
 			t.Errorf("Tonight(%v) = %v, %v; want day %d, %v", c.now, day, inProgress, c.day, c.inProgress)
 		}
@@ -165,7 +175,7 @@ func TestTonight(t *testing.T) {
 	// Santiago de Compostela at midsummer: the night of the 20th starts at
 	// 00:35 on the 21st, so at 00:10 it is the coming night, not the 21st's.
 	mad, _ := time.LoadLocation("Europe/Madrid")
-	if day, inProgress := Tonight(time.Date(2026, 6, 21, 0, 10, 0, 0, mad), 42.88, -8.54); day.Day() != 20 || inProgress {
+	if day, inProgress := Tonight(time.Date(2026, 6, 21, 0, 10, 0, 0, mad), 42.88, -8.54, Astronomical); day.Day() != 20 || inProgress {
 		t.Errorf("Tonight(Santiago 00:10) = %v, %v; want day 20, false", day, inProgress)
 	}
 }

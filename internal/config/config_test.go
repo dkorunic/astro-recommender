@@ -7,9 +7,12 @@ import (
 	"flag"
 	"math"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/dkorunic/astro-recommender/internal/catalog"
 )
 
 func TestZenithMag(t *testing.T) {
@@ -206,5 +209,23 @@ func TestNear(t *testing.T) {
 	cfg.DecSet = false
 	if !cfg.Near(7.5, -80) || cfg.Near(30, 60) {
 		t.Error("RA alone: Dec must not limit, RA still must")
+	}
+}
+
+// A -skip file is one name per line with # comments, matched by catalog.NameKey.
+func TestLoadSkip(t *testing.T) {
+	f := filepath.Join(t.TempDir(), "done.txt")
+	if err := os.WriteFile(f, []byte("# imaged\nngc457\n NGC 7789 # Caroline's Rose\n\nm31\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	skip, err := loadSkip(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(skip) != 3 || !skip[catalog.NameKey("NGC 457")] || !skip[catalog.NameKey("NGC 7789")] || !skip[catalog.NameKey("M 31")] {
+		t.Errorf("loadSkip = %v", skip)
+	}
+	if _, err := loadSkip(filepath.Join(t.TempDir(), "missing")); err == nil {
+		t.Error("missing file accepted")
 	}
 }

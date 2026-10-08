@@ -144,7 +144,7 @@ footer a:hover { text-decoration: underline; }
 // The Go program runs unchanged: argv comes from the form, stdout/stderr and
 // the -targets/-horizon files go through the fs shim that wasm_exec.js calls.
 const MAIN = ["lat", "lon", "date", "tz", "list", "n", "plan", "origin", "filter", "bortle", "sqm"];
-const FILES = ["targets", "horizon"];
+const FILES = ["targets", "horizon", "skip"];
 const HIDDEN = ["version"]; // nothing to show
 const KEY = "astro-recommender-form";
 const $ = (id) => document.getElementById(id);
@@ -289,6 +289,28 @@ function restore() {
   }
 }
 
+// The URL carries the form (files excepted), so a run's address can be shared:
+// share() writes it after a run, fromURL() fills the form from it on load.
+function share() {
+  const q = new URLSearchParams();
+  for (const el of $("form").elements) {
+    if (!el.name || el.type === "file") continue;
+    if (el.type === "checkbox") { if (el.checked) q.set(el.name, ""); continue; }
+    if (el.value.trim() !== "") q.set(el.name, el.value.trim());
+  }
+  // String() rather than size, which Safari 16 and Firefox 111 lack.
+  history.replaceState(null, "", String(q) ? "?" + q : location.pathname);
+}
+function fromURL() {
+  const q = new URLSearchParams(location.search);
+  if (!String(q)) return false;
+  for (const el of $("form").elements) {
+    if (!el.name || el.type === "file") continue;
+    if (el.type === "checkbox") el.checked = q.has(el.name); else el.value = q.get(el.name) ?? "";
+  }
+  return true;
+}
+
 // args lists only the fields given, so flag.Visit sees what the user set.
 async function args() {
   const a = [];
@@ -338,17 +360,23 @@ async function init() {
   }
   for (const f of flags) if (!MAIN.includes(f.name)) $("more").append(field(f));
   restore();
+  const shared = fromURL();
   const el = $("form").elements;
   el.lat.addEventListener("change", zone);
   el.lon.addEventListener("change", zone);
   zone();
   $("run").disabled = false;
   $("run").textContent = "Run";
+  if (shared) { skipSave = true; $("form").requestSubmit(); }
 }
+
+// A shared link's first run must not replace the visitor's own saved form.
+let skipSave = false;
 
 $("form").addEventListener("submit", async (e) => {
   e.preventDefault();
-  save();
+  if (skipSave) skipSave = false; else save();
+  share();
   $("run").disabled = true;
   $("status").textContent = "Running…";
   const t0 = performance.now();
@@ -396,6 +424,7 @@ themeLabel();
 $("clear").addEventListener("click", () => {
   $("form").reset();
   try { localStorage.removeItem(KEY); } catch {}
+  history.replaceState(null, "", location.pathname);
   zone();
 });
 

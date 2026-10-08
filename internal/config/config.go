@@ -51,11 +51,15 @@ type Config struct {
 	Day            time.Time
 	Loc            *time.Location
 	TargetsFile    string
-	ListName       string // built-in target list (catalog.Lists)
-	From, To       string // optional local "HH:MM" limits within the night
-	SQMSource      string // where SQM was looked up; empty when given with -sqm
+	ListName       string          // built-in target list (catalog.Lists)
+	From, To       string          // optional local "HH:MM" limits within the night
+	Twilight       string          // -twilight: "astronomical" or "nautical", the dusk/dawn definition
+	SQMSource      string          // where SQM was looked up; empty when given with -sqm
+	SkipFile       string          // -skip: file of names to leave out, shown in the header
+	Skip           map[string]bool // its names as catalog.NameKey
 	Horizon        horizon.Horizon
 	Plan           time.Duration
+	MinRun         time.Duration // -min-run: shortest continuous observable stretch a target needs; 0 = any
 	Lat, Lon       float64
 	AltMin, AltMax float64
 	SizeMin        float64
@@ -73,6 +77,7 @@ type Config struct {
 	CometMag       float64
 	DateSet        bool // -date given; otherwise Day is now
 	Version        bool // -version: print the version and exit; nothing else is set
+	JSON           bool // -json: one JSON document instead of the tables
 	ExtinctionSet  bool // -extinction given: skip the aerosol-based estimate
 	SkySet         bool // -sqm or -bortle given, even as 0: skip the DarkSkySites lookup
 	RASet, DecSet  bool // -ra/-dec given: keep only targets within Tol of them
@@ -99,6 +104,7 @@ func Parse() (Config, error) {
 	flag.StringVar(&tz, "tz", "", "IANA time zone of the location (default: looked up from -lat/-lon)")
 	flag.StringVar(&cfg.From, "from", "", "start of the imaging window, local HH:MM (default astronomical dusk)")
 	flag.StringVar(&cfg.To, "to", "", "end of the imaging window, local HH:MM; before noon means next morning (default astronomical dawn)")
+	flag.StringVar(&cfg.Twilight, "twilight", "astronomical", "dusk and dawn definition: astronomical (Sun below -18°) or nautical (-12°, for bright targets)")
 	flag.Float64Var(&cfg.AltMin, "alt-min", 30, "minimum altitude in degrees")
 	flag.Float64Var(&cfg.AltMax, "alt-max", 80, "maximum altitude in degrees")
 	flag.Float64Var(&cfg.SizeMin, "size-min", 10, "minimum object size in arc minutes (0 = no minimum)")
@@ -107,14 +113,16 @@ func Parse() (Config, error) {
 	flag.StringVar(&dec, "dec", "", "keep only targets near this J2000 declination, degrees as -12.5 or \"-12 30 00\"")
 	flag.Float64Var(&cfg.Tol, "tol", 10, "with -ra/-dec, how near in degrees, above 0 and at most 180; RA counts 15° per hour")
 	flag.IntVar(&cfg.Top, "n", 20, "number of objects to list")
+	flag.BoolVar(&cfg.JSON, "json", false, "print the report as JSON instead of tables")
 	// web/index.html builds its select from the ": name, name" part of this help.
 	flag.StringVar(&cfg.ListName, "list", "GaryImm", "built-in target list: "+strings.Join(catalog.Lists, ", "))
 	flag.StringVar(&cfg.TargetsFile, "targets", "", "custom uptonight-style targets YAML file (overrides -list)")
+	flag.StringVar(&cfg.SkipFile, "skip", "", "file of target names to leave out, one per line (e.g. already imaged), # comments; case and spaces do not matter")
 	flag.BoolVar(&origin, "origin", false, "frame for the Celestron Origin (IMX678 at 335 mm: 1.32x0.75°, 1.23\"/px): fit the FOV, at least -min-px across")
 	flag.StringVar(&fov, "fov", "", "frame for another telescope: field of view WxH in degrees up to 180, e.g. 2.1x1.4 (default Origin; -scale optional)")
 	flag.Float64Var(&focal, "focal", 0, "frame for another telescope: focal length in mm; with -sensor sets the field of view (instead of -fov), with -pixel the pixel scale (instead of -scale)")
 	flag.StringVar(&sensor, "sensor", "", "frame for another telescope: sensor size WxH in mm, e.g. 23.5x15.6; with -focal, sets the field of view instead of -fov")
-	flag.Float64Var(&cfg.Scale, "scale", 0, "frame for another telescope: pixel scale in arc seconds per pixel, 0.01-1000 (default Origin 1.23; -fov optional)")
+	flag.Float64Var(&cfg.Scale, "scale", 0, "frame for another telescope: pixel scale in arc seconds per pixel, 0.01-1000 (Origin default 1.23; -fov optional)")
 	flag.Float64Var(&pixel, "pixel", 0, "frame for another telescope: camera pixel size in µm; with -focal, sets the pixel scale instead of -scale")
 	flag.Float64Var(&minPx, "min-px", 200, "with framing, minimum object size in pixels; 0 or more")
 	flag.BoolVar(&cfg.Filter, "filter", false, "dual-band nebula filter in use: emission nebulae tolerate moonlight")
@@ -124,6 +132,7 @@ func Parse() (Config, error) {
 	flag.Float64Var(&cfg.Extinction, "extinction", 0.2, "atmospheric extinction in mag per airmass; default: estimated per hour from elevation and CAMS aerosols, this value if unavailable")
 	flag.StringVar(&horizonFile, "horizon", "", "local horizon file: \"azimuth altitude\" lines in degrees, # comments")
 	flag.DurationVar(&cfg.Plan, "plan", 0, "print a night plan with one target per block of this length, e.g. 2h (0 = off)")
+	flag.DurationVar(&cfg.MinRun, "min-run", 0, "keep only targets observable without a break for at least this long, e.g. 1h (0 = any)")
 	flag.BoolVar(&cfg.NoWeather, "no-weather", false, "skip the Open-Meteo and 7Timer forecasts")
 	flag.BoolVar(&cfg.NoGeocode, "no-geocode", false, "skip the OpenStreetMap reverse geocoding of the location")
 	flag.BoolVar(&cfg.NoSQM, "no-sqm", false, "skip the DarkSkySites sky brightness lookup")
@@ -192,14 +201,12 @@ func Parse() (Config, error) {
 		}
 	}
 
+	cfg.Twilight = strings.ToLower(strings.TrimSpace(cfg.Twilight))
 	if err := cfg.validate(); err != nil {
 		return Config{}, err
 	}
-	if horizonFile != "" {
-		var err error
-		if cfg.Horizon, err = horizon.Load(horizonFile); err != nil {
-			return Config{}, err
-		}
+	if err := cfg.loadFiles(horizonFile); err != nil {
+		return Config{}, err
 	}
 
 	if tz == "" {
@@ -234,6 +241,32 @@ func (cfg *Config) ZenithMag() float64 {
 	return atmos.BortleMag[cfg.Bortle]
 }
 
+// loadSkip reads a -skip file: one name per line, # comments, as catalog.NameKey.
+func loadSkip(file string) (map[string]bool, error) {
+	data, err := os.ReadFile(file)
+	if err != nil {
+		return nil, err
+	}
+	skip := map[string]bool{}
+	for line := range strings.Lines(string(data)) {
+		name, _, _ := strings.Cut(line, "#")
+		if name = strings.TrimSpace(name); name != "" {
+			skip[catalog.NameKey(name)] = true
+		}
+	}
+
+	return skip, nil
+}
+
+// SunAlt returns the Sun altitude (degrees) below which -twilight counts as night.
+func (cfg *Config) SunAlt() float64 {
+	if cfg.Twilight == "nautical" {
+		return astro.Nautical
+	}
+
+	return astro.Astronomical
+}
+
 // Near reports whether a position (J2000 degrees) is within Tol of the -ra
 // and -dec given; an axis not given does not limit. RA wraps at 24h.
 func (cfg *Config) Near(ra, dec float64) bool {
@@ -266,6 +299,21 @@ func visited() (map[string]bool, []string) {
 // guarantees Scale > 0; a zero-value Config returns NaN (0/0).
 func (cfg *Config) FramePx() (float64, float64) {
 	return cfg.FOVLong * 60 / cfg.Scale, cfg.FOVShort * 60 / cfg.Scale
+}
+
+// loadFiles reads the -horizon and -skip files that were given.
+func (cfg *Config) loadFiles(horizonFile string) error {
+	var err error
+	if horizonFile != "" {
+		if cfg.Horizon, err = horizon.Load(horizonFile); err != nil {
+			return err
+		}
+	}
+	if cfg.SkipFile != "" {
+		cfg.Skip, err = loadSkip(cfg.SkipFile)
+	}
+
+	return err
 }
 
 // parseRegion sets RA/Dec (degrees) and RASet/DecSet from -ra (hours) and
@@ -394,12 +442,9 @@ func parseWxH(name, unit, example, s string) (float64, float64, error) {
 	return max(w, h), min(w, h), nil
 }
 
-// validate rejects numeric flags outside their meaningful range.
-func (cfg *Config) validate() error {
+// validateSky checks the sky flags: brightness, extinction, filter and twilight.
+func (cfg *Config) validateSky() error {
 	switch {
-	// NaN is Parse's "not given" sentinel here, not user input (visited rejects that).
-	case math.IsNaN(cfg.Lat) || math.IsNaN(cfg.Lon) || math.Abs(cfg.Lat) > 90 || math.Abs(cfg.Lon) > 180:
-		return fmt.Errorf("%w: valid -lat and -lon are required", errInvalidFlag)
 	case cfg.FilterK < 0 || cfg.FilterK > 1:
 		return fmt.Errorf("%w: -filter-k must be between 0 and 1", errInvalidFlag)
 	case cfg.Bortle < 0 || cfg.Bortle > 9:
@@ -408,10 +453,29 @@ func (cfg *Config) validate() error {
 		return fmt.Errorf("%w: -sqm must be between %g and %g mag/arcsec²", errInvalidFlag, atmos.MinSQM, atmos.MaxSQM)
 	case cfg.Extinction < 0 || cfg.Extinction > 1:
 		return fmt.Errorf("%w: -extinction must be between 0 and 1", errInvalidFlag)
+	// Empty is a hand-built Config: astronomical, as SunAlt reads it.
+	case cfg.Twilight != "" && cfg.Twilight != "astronomical" && cfg.Twilight != "nautical":
+		return fmt.Errorf("%w: -twilight must be astronomical or nautical", errInvalidFlag)
+	}
+
+	return nil
+}
+
+// validate rejects numeric flags outside their meaningful range.
+func (cfg *Config) validate() error {
+	if err := cfg.validateSky(); err != nil {
+		return err
+	}
+	switch {
+	// NaN is Parse's "not given" sentinel here, not user input (visited rejects that).
+	case math.IsNaN(cfg.Lat) || math.IsNaN(cfg.Lon) || math.Abs(cfg.Lat) > 90 || math.Abs(cfg.Lon) > 180:
+		return fmt.Errorf("%w: valid -lat and -lon are required", errInvalidFlag)
 	case cfg.Plan != 0 && cfg.Plan < 10*time.Minute:
 		return fmt.Errorf("%w: -plan must be at least 10m", errInvalidFlag)
 	case cfg.Plan%time.Minute != 0:
 		return fmt.Errorf("%w: -plan must be a whole number of minutes", errInvalidFlag)
+	case cfg.MinRun < 0:
+		return fmt.Errorf("%w: -min-run must be 0 or more", errInvalidFlag)
 	case cfg.Top < 1:
 		return fmt.Errorf("%w: -n must be at least 1", errInvalidFlag)
 	// Scoring compares the limits as sines, which only orders altitudes within ±90°.

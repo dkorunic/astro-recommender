@@ -40,13 +40,20 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 	fmt.Printf("%s %.4f, %.4f%s, %s\n", label("Location:"), cfg.Lat, cfg.Lon, place, cfg.Loc)
 	layout := clockLayout(s)
 	night := ""
-	if !s.Start.Equal(s.Night[0]) || !s.End.Equal(s.Night[1]) {
-		night = fmt.Sprintf(", astronomical night %s - %s", clock(s, s.Night[0]), clock(s, s.Night[1]))
+	switch {
+	case !s.Start.Equal(s.Night[0]) || !s.End.Equal(s.Night[1]):
+		night = fmt.Sprintf(", %s night %s - %s", cfg.Twilight, clock(s, s.Night[0]), clock(s, s.Night[1]))
+	case cfg.Twilight != "astronomical":
+		night = ", " + cfg.Twilight + " night"
 	}
 	fmt.Printf("%s %s - %s (%s%s)\n", label("Window:  "), s.Start.Format("2006-01-02 "+layout), s.End.Format("2006-01-02 "+layout),
 		s.End.Sub(s.Start).Round(time.Minute), night)
-	fmt.Printf("%s %s illuminated, min separation %.0f°\n", label("Moon:    "), paint(scale(s.Illum, 0.3, 0.7), fmt.Sprintf("%.0f%%", s.Illum*100)), s.MoonSep)
+	fmt.Printf("%s %s illuminated, min separation %.0f°, %s\n", label("Moon:    "), paint(scale(s.Illum, 0.3, 0.7), fmt.Sprintf("%.0f%%", s.Illum*100)),
+		s.MoonSep, moonText(s))
 	fmt.Printf("%s %.1f' - %.1f'\n", label("Size:    "), cfg.SizeMin, cfg.SizeMax)
+	if cfg.MinRun > 0 {
+		fmt.Printf("%s at least %s observable without a break\n", label("Min run: "), cfg.MinRun)
+	}
 	if cfg.RASet || cfg.DecSet {
 		ra, dec := position(cfg.RA, cfg.Dec)
 		var region []string
@@ -69,6 +76,9 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 		targetsDesc += ", comets unavailable"
 	default:
 		targetsDesc += fmt.Sprintf(", %d comets brighter than mag %.1f", s.Comets, cfg.CometMag)
+	}
+	if cfg.SkipFile != "" {
+		targetsDesc += fmt.Sprintf(", skipping %d names from %s", len(cfg.Skip), cfg.SkipFile)
 	}
 	fmt.Printf("%s %s\n", label("Targets: "), targetsDesc)
 	if cfg.Framing {
@@ -116,20 +126,22 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 	fmt.Printf("%s %s\n\n", label("Sky:     "), skyDesc)
 }
 
+// forecastFetched reports whether any forecast came back, so there is a
+// forecast table to print.
+func forecastFetched(s *scoring.Sky) bool { return s.Weather != nil || s.Astro != nil || s.AOD != nil }
+
 func Weather(cfg *config.Config, s *scoring.Sky) {
-	if s.Weather == nil && s.Astro == nil && s.AOD == nil {
+	if !forecastFetched(s) {
 		return
 	}
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	row(w, "01", names(weatherColumns)...)
 	na := paint("39", "-")
 	for t := s.Start.Truncate(time.Hour); t.Before(s.End); t = t.Add(time.Hour) {
-		cloud, layers, dew, wind, transp, ext, seeing := na, na, na, na, na, na, na
-		// The elevation alone gives an hourly value (typical aerosols), the one scoring uses.
-		if !math.IsNaN(s.Elevation) {
-			k := s.ExtinctionAt(t, cfg.Extinction)
-			ext = paint(scale(k, 0.25, 0.4), fmt.Sprintf("%.2f", k))
-		}
+		cloud, layers, dew, wind, transp, seeing := na, na, na, na, na, na
+		// The value scoring used: hourly from the aerosols or the elevation alone, else the fixed one.
+		k := s.ExtinctionAt(t, cfg.Extinction)
+		ext := paint(scale(k, 0.25, 0.4), fmt.Sprintf("%.2f", k))
 		if h, ok := s.Weather[t.Unix()]; ok {
 			cloud = paint(scale(h.Cloud, 30, 70), fmt.Sprintf("%.0f%%", h.Cloud))
 			layers = paint("39", fmt.Sprintf("%.0f/%.0f/%.0f%%", h.Low, h.Mid, h.High))
@@ -191,6 +203,7 @@ func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) int {
 			paint("39", r.Constellation), paint("39", ra), paint("39", dec), paint("39", sizeText(r.Target, "%.0f'", r.Size)),
 			paint(scale(r.Foto, 0.66, 0.33), fmt.Sprintf("%.2f", r.Foto)),
 			paint(scale(r.Score, 0.66, 0.33), fmt.Sprintf("%.2f", r.Score)),
+			paint("39", runText(s, r)),
 			paint("39", fmt.Sprintf("%.0f° @ %s", r.MaxAlt, clock(s, r.MaxAt))),
 			paint(scale(r.SkyMag, 20.5, 19), fmt.Sprintf("%.1f", r.SkyMag)),
 			paint("39", sbText(r)),
@@ -210,6 +223,40 @@ func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) int {
 var sgr = regexp.MustCompile("\x1b\\[[0-9]*m")
 
 var UseColor bool
+
+// runText is the OBSERVABLE column: the longest continuous observable
+// stretch, with a + when there are others.
+func runText(s *scoring.Sky, r scoring.Result) string {
+	text := clock(s, r.RunFrom) + "-" + clock(s, r.RunTo)
+	if r.Runs > 1 {
+		text += "+"
+	}
+
+	return text
+}
+
+// moonText says when the Moon is up within the window: "up throughout",
+// "never up", or its rises and sets in order (geometric altitude, no
+// refraction: a few minutes early for a rise, late for a set).
+func moonText(s *scoring.Sky) string {
+	var events []string
+	for i := 1; i < len(s.Grid); i++ {
+		switch {
+		case s.MoonAlt[i-1] <= 0 && s.MoonAlt[i] > 0:
+			events = append(events, "rises "+clock(s, s.Grid[i]))
+		case s.MoonAlt[i-1] > 0 && s.MoonAlt[i] <= 0:
+			events = append(events, "sets "+clock(s, s.Grid[i]))
+		}
+	}
+	switch {
+	case len(events) > 0:
+		return strings.Join(events, ", ")
+	case s.MoonAlt[0] > 0:
+		return "up throughout"
+	}
+
+	return "never up"
+}
 
 // sbText is the SB column: the object's surface brightness, ~ when estimated
 // (from its magnitude and size, or a B value moved to V by a typical colour),
@@ -367,6 +414,7 @@ var resultColumns = []column{
 	{"SIZE", "major axis in arcminutes (- unknown or comet)"},
 	{"FOTO", "fraction of the window within the altitude, horizon and Moon-distance limits"},
 	{"SCORE", "0-1 imaging quality: 1 = every minute observable under a perfect, pristine dark sky"},
+	{"OBSERVABLE", "longest stretch within the limits without a break (+ there are others)"},
 	{"MAX ALT", "highest altitude in the window, and when"},
 	{"SKY", "mean sky brightness at the object, mag/arcsec² (higher is darker; no filter)"},
 	{"SB", "the object's own surface brightness, mag/arcsec², set against the sky it sees: SKY, cut to k by -filter for emission-line objects or halved for star clusters without nebulosity, whose own brightness is then not used (~ estimated from the magnitude and size or from a B value and a typical colour; - unknown, scored as sky-limited)"},
@@ -394,7 +442,7 @@ func Legend(s *scoring.Sky, withPlan bool, tableWidth int) {
 		cols  []column
 	}
 	var sections []section
-	if s.Weather != nil || s.Astro != nil || s.AOD != nil {
+	if forecastFetched(s) {
 		sections = append(sections, section{"Forecast table:", weatherColumns})
 	}
 	if withPlan {

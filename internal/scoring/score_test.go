@@ -145,7 +145,7 @@ func BenchmarkPipelineMoon(b *testing.B) {
 		Lat: 45.8, Lon: 16, AltMin: 30, AltMax: 80, SizeMax: 300, NoWeather: true,
 		ExtinctionSet: true, Extinction: 0.2, FilterK: 0.25, Filter: true,
 	}
-	start, end, ok := astro.Window(time.Date(2026, 1, 3, 12, 0, 0, 0, time.UTC), cfg.Lat, cfg.Lon)
+	start, end, ok := astro.Window(time.Date(2026, 1, 3, 12, 0, 0, 0, time.UTC), cfg.Lat, cfg.Lon, astro.Astronomical)
 	if !ok {
 		b.Fatal("no night")
 	}
@@ -193,5 +193,44 @@ func TestScoreSurfaceBrightness(t *testing.T) {
 	d := score(&dark)
 	if gap, darkGap := r["bright"].Score-r["none"].Score, d["bright"].Score-d["none"].Score; darkGap >= gap/2 {
 		t.Errorf("bright-none gap %.4f at Bortle 8, %.4f at Bortle 1; want the dark-sky gap much smaller", gap, darkGap)
+	}
+}
+
+// A target that crosses -alt-max mid-window is observable in two runs; the
+// longest is reported and -min-run judges it, not the total. -skip drops a
+// target by normalized name.
+func TestScoreRuns(t *testing.T) {
+	cfg := &config.Config{
+		Lat: 45.8, Lon: 16, AltMin: 30, AltMax: 80, NoWeather: true, ExtinctionSet: true, Extinction: 0.2, SizeMin: 0, SizeMax: 300,
+	}
+	start := time.Date(2026, 1, 15, 18, 0, 0, 0, time.UTC)
+	s := BuildSky(cfg, NoForecast(), start, start.Add(4*time.Hour))
+	// Transits the zenith 100 minutes in: above 80° for ~56 minutes either side.
+	zenith := catalog.Target{Name: "Zenith X", RADeg: astro.LST(s.Grid[100], cfg.Lon), DecDeg: cfg.Lat}
+	polaris := catalog.Target{Name: "Polaris", RADeg: 37.95, DecDeg: 89.26}
+	res := Score(cfg, &s, []catalog.Target{zenith, polaris}, false)
+	if len(res) != 2 {
+		t.Fatalf("got %d results, want 2", len(res))
+	}
+	for _, r := range res {
+		switch r.Name {
+		case "Polaris":
+			if r.Runs != 1 || !r.RunFrom.Equal(s.Start) || !r.RunTo.Equal(s.End) {
+				t.Errorf("Polaris: %d runs %v - %v, want 1 over the window", r.Runs, r.RunFrom, r.RunTo)
+			}
+		case "Zenith X":
+			// The setting side is the longer run (more of the window remains).
+			if r.Runs != 2 || !r.RunFrom.After(s.Grid[100]) || !r.RunTo.Equal(s.End) || r.Foto >= 1 {
+				t.Errorf("zenith target: %d runs %v - %v, foto %v; want 2 with the later one longest", r.Runs, r.RunFrom, r.RunTo, r.Foto)
+			}
+		}
+	}
+	cfg.MinRun = 2 * time.Hour // the two runs total more, the longest is less
+	if res = Score(cfg, &s, []catalog.Target{zenith, polaris}, false); len(res) != 1 || res[0].Name != "Polaris" {
+		t.Errorf("-min-run 2h kept %v, want Polaris only", res)
+	}
+	cfg.MinRun, cfg.Skip = 0, map[string]bool{catalog.NameKey("polaris"): true}
+	if res = Score(cfg, &s, []catalog.Target{zenith, polaris}, false); len(res) != 1 || res[0].Name != "Zenith X" {
+		t.Errorf("-skip polaris kept %v", res)
 	}
 }

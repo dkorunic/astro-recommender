@@ -46,11 +46,11 @@ func main() {
 	// and only its remaining part is planned.
 	day, inProgress := cfg.Day, false
 	if !cfg.DateSet {
-		day, inProgress = astro.Tonight(cfg.Day, cfg.Lat, cfg.Lon)
+		day, inProgress = astro.Tonight(cfg.Day, cfg.Lat, cfg.Lon, cfg.SunAlt())
 	}
-	duskT, dawnT, ok := astro.Window(day, cfg.Lat, cfg.Lon)
+	duskT, dawnT, ok := astro.Window(day, cfg.Lat, cfg.Lon, cfg.SunAlt())
 	if !ok {
-		fmt.Println("No astronomical night at this location tonight.")
+		nothing(&cfg, fmt.Sprintf("No %s night at this location tonight.", cfg.Twilight))
 
 		return
 	}
@@ -61,7 +61,7 @@ func main() {
 	}
 	if now := cfg.Day.Truncate(time.Minute); inProgress && now.After(start) {
 		if start = now; !start.Before(end) {
-			fmt.Println("The requested part of tonight has already passed.")
+			nothing(&cfg, "The requested part of tonight has already passed.")
 
 			return
 		}
@@ -115,14 +115,36 @@ func main() {
 	s.Comets, s.CometsLost = len(cometList), cometErr != nil
 	targets = append(targets, cometList...)
 	results := scoring.Score(&cfg, &s, targets, cfg.Plan > 0)
+	var slots []plan.Slot
+	if cfg.Plan > 0 {
+		slots = plan.Make(&s, results, cfg.Plan)
+	}
 
+	if cfg.JSON {
+		if err := output.JSON(&cfg, &s, place, slots, results); err != nil {
+			fatal(err.Error())
+		}
+
+		return
+	}
 	output.UseColor = output.ColorTerminal()
 	output.Header(&cfg, &s, place)
 	output.Weather(&cfg, &s)
 	if cfg.Plan > 0 {
-		output.Plan(&s, plan.Make(&s, results, cfg.Plan))
+		output.Plan(&s, slots)
 	}
 	output.Legend(&s, cfg.Plan > 0, output.Results(&cfg, &s, results))
+}
+
+// nothing reports a night with nothing to plan: as text, or with -json as a
+// document a consumer can still parse.
+func nothing(cfg *config.Config, msg string) {
+	if cfg.JSON {
+		fmt.Printf("{\n  \"message\": %q,\n  \"targets\": []\n}\n", msg)
+
+		return
+	}
+	fmt.Println(msg)
 }
 
 func fatal(msg string) {

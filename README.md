@@ -31,8 +31,8 @@ It started as a port of the deep sky part of [uptonight](https://github.com/mawi
 
 ## Features
 
-- **Tonight's window**: astronomical dusk to dawn (Sun below −18°), found by searching from the site's own solar noon so time zones and polar nights can't cut it short. A run during the night (after dusk, or after midnight) plans only the rest of it; `-date` plans another evening and `-from`/`-to` narrow the window.
-- **Observability per minute**, following uptonight's rules: altitude between `-alt-min` and `-alt-max`, Moon separation of at least the illumination percentage in degrees (skipped while the Moon is below the horizon), and optionally above your measured **local horizon** profile (`-horizon`).
+- **Tonight's window**: astronomical dusk to dawn (Sun below −18°; `-twilight nautical` uses −12° for bright targets and short summer nights), found by searching from the site's own solar noon so time zones and polar nights can't cut it short. A run during the night (after dusk, or after midnight) plans only the rest of it; `-date` plans another evening and `-from`/`-to` narrow the window. The header says when the Moon rises or sets within it.
+- **Observability per minute**, following uptonight's rules: altitude between `-alt-min` and `-alt-max`, Moon separation of at least the illumination percentage in degrees (skipped while the Moon is below the horizon), and optionally above your measured **local horizon** profile (`-horizon`). Each object's longest unbroken observable stretch is listed, and `-min-run 1h` drops those without one that long.
 - **Ranking** by an imaging score that sums, over every observable minute, the forecast sky quality × atmospheric extinction × a sky weight that sets the object's own surface brightness against the sky's, so a bright-surface object shrugs off moonlight and light pollution that a faint smudge does not, with uptonight's observable fraction (FOTO) shown alongside. Mean altitude breaks ties.
 - **Sky brightness and moonlight**: the Krisciunas & Schaefer model of the moonless sky from `-bortle` or a measured `-sqm` value, brightened towards the horizon, plus scattered moonlight from the Moon's phase, altitude and distance to the target. Targets are weighted by sky-limited signal-to-noise.
 - **Target-type sensitivity to sky glow**: clusters count half of it, and with `-filter` emission-line targets (emission and planetary nebulae, supernova remnants, Wolf-Rayet nebulae, plus known mislabelled ones) count only `-filter-k` of it, which also relaxes their Moon-distance limit.
@@ -41,9 +41,9 @@ It started as a port of the deep sky part of [uptonight](https://github.com/mawi
 - **Framing for the Celestron Origin** (`-origin`) or any telescope (`-fov`/`-scale`, or `-focal` with `-sensor`/`-pixel`): keeps only objects that fit the frame's short side and are at least `-min-px` across, scores how well they fill it, and shows their size in pixels.
 - **Comets** from the Minor Planet Center's daily elements, cached locally: two-body positions every minute (elliptic, parabolic and hyperbolic orbits), kept when brighter than `-comet-mag`, ranked like any other target.
 - **Night plan** (`-plan 2h`): one target per time block, chosen by a greedy pass followed by a local search that swaps and moves targets between blocks.
-- **Fifteen built-in target lists** (about 30,000 objects: Gary Imm's selection and full Compendium, Messier, Herschel 400, Pensack 500, NGC, IC, LBN, LDN, Sharpless, MWSC, Melotte, Collinder and two planetary nebula databases) or your own uptonight-format YAML, with every object's constellation computed from the IAU boundaries.
+- **Fifteen built-in target lists** (about 30,000 objects: Gary Imm's selection and full Compendium, Messier, Herschel 400, Pensack 500, NGC, IC, LBN, LDN, Sharpless, MWSC, Melotte, Collinder and two planetary nebula databases) or your own uptonight-format YAML, with every object's constellation computed from the IAU boundaries; a `-skip` file leaves out the ones you have already imaged.
 - **Location handling**: offline IANA time-zone lookup from the coordinates, reverse geocoding of the site name, coordinates rounded to about 1 km before any request, and a fully offline mode.
-- **Terminal output**: aligned, colour-coded tables with a legend; honours `NO_COLOR`, `CLICOLOR_FORCE` and `TERM=dumb`. Text from the network or from target files is stripped of control characters so it cannot inject terminal escape sequences.
+- **Terminal output**: aligned, colour-coded tables with a legend; honours `NO_COLOR`, `CLICOLOR_FORCE` and `TERM=dumb`. Text from the network or from target files is stripped of control characters so it cannot inject terminal escape sequences. `-json` prints the same report as one JSON document for scripts.
 - **Verified astronomy**: the hand-rolled Sun, Moon, sidereal-time, precession and altitude formulas are checked against IAU SOFA in the test suite (see [Accuracy](#accuracy)); a single static binary with no API keys.
 
 ## Install
@@ -89,8 +89,9 @@ The same program runs at **https://dkorunic.github.io/astro-recommender/**, comp
 What works there:
 
 - every flag, built from the program's own `-h`; fields left empty keep their defaults
-- `-targets` and `-horizon` take an uploaded file
+- `-targets`, `-horizon` and `-skip` take an uploaded file
 - "Use my location" asks the browser for your position, and the location's time zone shows in the empty `-tz` field
+- the address bar carries the form after each run (files excepted), so the URL can be bookmarked or shared; opening such a link fills the form and runs it
 - weather, transparency and seeing, aerosols, geocoding and comets, as on the command line
 - the DarkSkySites sky-brightness lookup, without a key of your own (the page's key is shared; `-no-sqm` skips it)
 - light or dark theme following the browser, with a Theme button to override it (remembered by the browser)
@@ -108,7 +109,7 @@ astro-recommender -lat 45.815 -lon 15.982 -origin -filter -bortle 6 -n 5 -date 2
 ```
 Location: 45.8150, 15.9820 (Mjesni odbor Zrinjevac, Gradska četvrt Donji grad, Zagreb, Grad Zagreb, Hrvatska), Europe/Zagreb
 Window:   2026-10-07 20:04 - 2026-10-08 05:25 (9h21m0s)
-Moon:     8% illuminated, min separation 8°
+Moon:     8% illuminated, min separation 8°, sets 20:48
 Size:     4.1' - 44.7'
 Targets:  GaryImm, 1 comets brighter than mag 12.0
 Frame:    1.32° x 0.75°, 1.23"/px (3856 x 2180 px)
@@ -126,12 +127,12 @@ HOUR   CLOUD  LOW/MID/HIGH  TRANSP  EXT   SEEING     DEW SPREAD  WIND/GUST
 04:00  100%   23/100/11%    4/8     0.31  1.25-1.5"  5.1°C       4/8 km/h
 05:00  94%    47/89/7%      4/8     0.31  1.25-1.5"  3.8°C       1/8 km/h
 
-#  NAME      DESCRIPTION                  TYPE               CONSTELLATION  RA       DEC     SIZE  FOTO  SCORE  MAX ALT      SKY   SB     PX
-1  NGC 7380  Wizard Nebula                Emission Nebula    Cepheus        22 47.4  +58 08  25'   1.00  0.18   78° @ 22:38  18.7  ~22.8  1218
-2  NGC 7635  Bubble Nebula                Emission Nebula    Cassiopeia     23 20.8  +61 13  15'   1.00  0.16   74° @ 23:12  18.7  -      731
-3  Abell 85  CTB 1 or Garlic Nebula       Supernova Remnant  Cassiopeia     23 59.9  +62 27  35'   1.00  0.15   73° @ 23:51  18.7  -      1705
-4  Sh2-173   Phantom of the Opera Nebula  Emission Nebula    Cassiopeia     00 21.3  +61 44  25'   1.00  0.15   74° @ 00:13  18.7  -      1218
-5  NGC 281   PacMan Nebula                Emission Nebula    Cassiopeia     00 52.9  +56 37  35'   1.00  0.15   79° @ 00:44  18.7  -      1705
+#  NAME      DESCRIPTION                  TYPE               CONSTELLATION  RA       DEC     SIZE  FOTO  SCORE  OBSERVABLE   MAX ALT      SKY   SB     PX
+1  NGC 7380  Wizard Nebula                Emission Nebula    Cepheus        22 47.4  +58 08  25'   1.00  0.18   20:04-05:25  78° @ 22:38  18.7  ~22.8  1218
+2  NGC 7635  Bubble Nebula                Emission Nebula    Cassiopeia     23 20.8  +61 13  15'   1.00  0.16   20:04-05:25  74° @ 23:12  18.7  -      731
+3  Abell 85  CTB 1 or Garlic Nebula       Supernova Remnant  Cassiopeia     23 59.9  +62 27  35'   1.00  0.15   20:04-05:25  73° @ 23:51  18.7  -      1705
+4  Sh2-173   Phantom of the Opera Nebula  Emission Nebula    Cassiopeia     00 21.3  +61 44  25'   1.00  0.15   20:04-05:25  74° @ 00:13  18.7  -      1218
+5  NGC 281   PacMan Nebula                Emission Nebula    Cassiopeia     00 52.9  +56 37  35'   1.00  0.15   20:04-05:25  79° @ 00:44  18.7  -      1705
 ```
 
 The output ends with a legend explaining every column of the tables shown and the colours. In short:
@@ -139,12 +140,15 @@ The output ends with a legend explaining every column of the tables shown and th
 - **RA**, **DEC**: the J2000 position as `hh mm.m` and `±dd mm`; comets show where they are mid-window.
 - **FOTO**: the fraction of the window during which the object meets the altitude, horizon and Moon-distance limits (uptonight's metric).
 - **SCORE**: imaging quality from 0 to 1, where 1 means a perfect minute for the whole window under a pristine dark sky. It accounts for weather, extinction, sky brightness and, with framing, how well the object fits the frame. This column decides the order.
+- **OBSERVABLE**: the longest stretch during which the object meets the limits without a break; a trailing `+` means there are other, shorter stretches (the Moon rising, a tree in the horizon profile, a pass through the zenith above `-alt-max`). `-min-run` filters on this length.
 - **MAX ALT**: the object's highest altitude in the window, and when it occurs.
 - **SKY**: the average sky brightness at the object while it is observable, in V mag/arcsec². Higher is darker: about 22 is pristine and 18–19 is a suburb or a bright Moon. The filter isn't included.
 - **SB**: the object's own surface brightness in the same units, which the score sets against the sky the object sees: SKY, cut to a quarter by `-filter` for emission-line objects or halved for star clusters without nebulosity, whose own surface brightness is then not used. `~` marks an estimate (derived from the magnitude and size, or a B value moved to V by a typical colour) rather than a measurement, `-` an object with no brightness data, which is scored as if far fainter than the sky.
 - **PX**: the object's size in pixels at the frame's pixel scale; `-` without framing (`-origin`, `-fov`, `-scale`, `-focal`), since there is no frame to measure against.
 
 On a colour-capable terminal the output is colour-coded green/yellow/red. Colours are turned off when output is piped, when `NO_COLOR` is set or when `TERM=dumb`. `CLICOLOR_FORCE=1` turns them on regardless.
+
+`-json` replaces the tables with one JSON document holding the same report: `location`, `window` (RFC 3339 times in `-tz`), `moon` (illumination 0–1 and when it is up), `sky`, `frame` (with framing), `forecast` per hour, `plan` (with `-plan`) and `targets` (RA/Dec in J2000 degrees, size in arcminutes, `observable` as the longest run and the number of runs). Unknown values are left out rather than written as null. A night with nothing to plan (no night at that twilight, or a window already past) gives `{"message": "…", "targets": []}`. Warnings still go to stderr.
 
 ### Examples
 
@@ -246,9 +250,12 @@ astro-recommender -lat 45.815 -lon 15.982 -no-weather -no-geocode -no-sqm -no-co
 | `-lat`, `-lon` | required | Location in degrees, north and east positive |
 | `-tz` | from location | IANA time zone used for all displayed times. By default it's looked up offline from `-lat`/`-lon`, falling back to the system zone |
 | `-date` | tonight | Evening to plan, `YYYY-MM-DD`. Without it, a run during the night (after dusk, or after midnight) plans only the rest of the night in progress |
-| `-from`, `-to` | dusk, dawn | Imaging window in local `HH:MM`, e.g. `-from 22:00 -to 02:00`. Times before noon mean the next morning. Always clamped to full astronomical night |
+| `-from`, `-to` | dusk, dawn | Imaging window in local `HH:MM`, e.g. `-from 22:00 -to 02:00`. Times before noon mean the next morning. Always clamped to the night as `-twilight` defines it |
+| `-twilight` | `astronomical` | What counts as night: `astronomical` (Sun below −18°) or `nautical` (below −12°), which starts earlier and ends later, for bright clusters and planetaries or short summer nights that never reach full darkness |
 | `-n` | `20` | Number of objects to list |
 | `-plan` | `0` (off) | Print a night plan with one target per block of this length, e.g. `2h` |
+| `-min-run` | `0` (any) | Keep only objects observable without a break for at least this long, e.g. `1h`: FOTO counts every observable minute, this needs them in one stretch (the OBSERVABLE column) |
+| `-json` | off | Print the report as one JSON document instead of the tables |
 | `-horizon` | none | Local horizon file (see below) |
 | `-origin` | off | Framing for the Celestron Origin (IMX678, 3856 × 2180 px of 2.0 µm at 335 mm: 1.32° × 0.75°, 1.23″/px): keep only objects that fit the frame and are at least `-min-px` across, and score how well they fill it |
 | `-fov`, `-scale` | Origin | Framing for another telescope: field of view `WxH` in degrees up to 180 (e.g. `2.5x1.7`) and pixel scale in ″/px between 0.01 and 1000. Either one turns framing on; the one you leave out uses the Origin's value. When both are given, a frame of more than 20,000 px across is rejected, which catches a field typed in arcminutes or a scale from another camera; with only one of them set there is nothing to compare and a field typed in arcminutes goes unnoticed, so check the `Frame:` line in the header |
@@ -265,6 +272,7 @@ astro-recommender -lat 45.815 -lon 15.982 -no-weather -no-geocode -no-sqm -no-co
 | `-tol` | `10` | With `-ra`/`-dec`, how near in degrees on each axis, above 0 and at most 180; RA counts 15° per hour and wraps at 24h |
 | `-list` | `GaryImm` | Built-in target list (see below) |
 | `-targets` | none | Your own uptonight-format targets YAML file; overrides `-list` |
+| `-skip` | none | A file of names to leave out, one per line with `#` comments, e.g. the objects you have already imaged. Case and spaces do not matter (`ngc7789` is `NGC 7789`); comets can be named too |
 | `-comet-mag` | `12` | Include comets brighter than this total visual magnitude |
 | `-no-comets` | off | Skip comets |
 | `-no-weather` | off | Skip the Open-Meteo and 7Timer forecasts |
@@ -399,7 +407,7 @@ To measure it, stand where the telescope sits and use a compass and an inclinome
 
 ## How objects are ranked
 
-1. **Time window.** Each minute from astronomical dusk to astronomical dawn is checked. The search runs for 24 hours from the site's solar noon, worked out from its longitude, so polar night is capped at 24 hours and the time zone can't cut the night short. Without `-date`, a run during the night (after dusk, before dawn) plans only what's left of the night in progress; otherwise it plans the coming evening. If full night never happens (for example at high latitudes in summer), the program says so and lists nothing. `-from`/`-to` narrow this to part of the night, but never extend it past dusk or dawn. A window that falls entirely outside the night is an error. Moon illumination is taken at the middle of the window.
+1. **Time window.** Each minute from astronomical dusk to astronomical dawn (or nautical, with `-twilight nautical`) is checked. The search runs for 24 hours from the site's solar noon, worked out from its longitude, so polar night is capped at 24 hours and the time zone can't cut the night short. Without `-date`, a run during the night (after dusk, before dawn) plans only what's left of the night in progress; otherwise it plans the coming evening. If full night never happens (for example at high latitudes in summer), the program says so and lists nothing; `-twilight nautical` may still find a window there. `-from`/`-to` narrow this to part of the night, but never extend it past dusk or dawn. A window that falls entirely outside the night is an error. Moon illumination is taken at the middle of the window.
 2. **Observable minutes**, following uptonight's rules:
    - the object is between 30° and 80° altitude (≥ 30° also covers uptonight's airmass ≤ 2 limit), and above the `-horizon` profile if given
    - it is at least *Moon illumination %* degrees from the Moon, e.g. 25% lit means 25° away

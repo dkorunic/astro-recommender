@@ -26,11 +26,19 @@ var (
 
 const deg = math.Pi / 180
 
-// Window returns [astronomical dusk, astronomical dawn) for the night starting
-// on the evening of day's date in day's location. It searches from the site's
-// solar noon (from its longitude, so a -tz that does not match the site cannot
-// cut the night short) for 24 hours; polar night is capped there.
-func Window(day time.Time, lat, lon float64) (time.Time, time.Time, bool) {
+// Sun altitude limits of the twilights, degrees: the night is while the Sun
+// is below one.
+const (
+	Astronomical = -18.0
+	Nautical     = -12.0
+)
+
+// Window returns [dusk, dawn) for the night starting on the evening of day's
+// date in day's location, while the Sun is below sunAlt (Astronomical or
+// Nautical). It searches from the site's solar noon (from its longitude, so a
+// -tz that does not match the site cannot cut the night short) for 24 hours;
+// polar night is capped there.
+func Window(day time.Time, lat, lon, sunAlt float64) (time.Time, time.Time, bool) {
 	y, m, d := day.Date()
 	noon := time.Date(y, m, d, 12, 0, 0, 0, time.UTC).Add(-time.Duration(lon / 15 * float64(time.Hour)))
 	// Take the solar noon nearest local noon: zones across the date line from
@@ -48,7 +56,7 @@ func Window(day time.Time, lat, lon float64) (time.Time, time.Time, bool) {
 	dark := func(t time.Time) bool {
 		ra, dec := SunRADec(t)
 
-		return Altitude(ra, dec, t, lat, lon) < -18
+		return Altitude(ra, dec, t, lat, lon) < sunAlt
 	}
 	t := noon
 	for t.Before(limit) && !dark(t) {
@@ -69,9 +77,9 @@ func Window(day time.Time, lat, lon float64) (time.Time, time.Time, bool) {
 // yesterday's and today's nights that has not ended, so a night whose dusk
 // falls after midnight is still yesterday's. inProgress reports that it has
 // already begun, so that the elapsed part is not planned.
-func Tonight(now time.Time, lat, lon float64) (time.Time, bool) {
+func Tonight(now time.Time, lat, lon, sunAlt float64) (time.Time, bool) {
 	for _, day := range []time.Time{now.AddDate(0, 0, -1), now} {
-		if dusk, dawn, ok := Window(day, lat, lon); ok && now.Before(dawn) {
+		if dusk, dawn, ok := Window(day, lat, lon, sunAlt); ok && now.Before(dawn) {
 			return day, !now.Before(dusk)
 		}
 	}

@@ -367,3 +367,9 @@ var emissionNames = map[string]bool{
 func EmissionLine(tg Target) bool {
 	return emissionTypes[strings.ToLower(tg.Type)] || emissionNames[tg.Name]
 }
+
+// NameKey normalizes a designation for matching names typed by hand against
+// the lists': case and spaces do not count, so "ngc7789" is "NGC 7789".
+func NameKey(name string) string {
+	return strings.ToLower(strings.ReplaceAll(name, " ", ""))
+}

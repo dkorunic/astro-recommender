@@ -22,8 +22,11 @@ type Result struct { // betteralign:ignore (embedded target first, per embeddeds
 	catalog.Target
 
 	MaxAt   time.Time
+	RunFrom time.Time // longest continuous observable stretch, [RunFrom, RunTo)
+	RunTo   time.Time
 	Alt     []float64 // per grid minute; only from Score with perMinute, for plan.Make
 	Weight  []float64 // per grid minute, 0 when not observable; as Alt
+	Runs    int       // continuous observable stretches
 	Foto    float64   // fraction of time observable
 	Score   float64   // foto weighted by clouds, moonlight and framing
 	Frame   float64   // framing factor (1 without framing)
@@ -54,7 +57,7 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 		if tg.Track == nil && (size < cfg.SizeMin || size > cfg.SizeMax) {
 			continue
 		}
-		if !cfg.Near(tg.Position()) {
+		if !cfg.Near(tg.Position()) || cfg.Skip[catalog.NameKey(tg.Name)] {
 			continue
 		}
 		if r, ok := scoreTarget(cfg, s, tg, alt, weight); ok {
@@ -111,6 +114,9 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, alt, weight []fl
 	var good int
 	var altSum, weighted, skySum float64
 	maxSin, maxAt := -2.0, 0
+	// Continuous observable stretches: the current one starts at runStart and
+	// the longest so far is [best, best+bestLen).
+	runStart, prev, best, bestLen := 0, -2, 0, 0
 	for i := range s.Grid {
 		if tg.Track != nil {
 			ra, dec = tg.Track[i][0], tg.Track[i][1]
@@ -160,6 +166,14 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, alt, weight []fl
 		// sky-limited, sqrt(RefNL/(k·sky)). A filter cuts the sky the target
 		// sees to k; the emission-line signal that passes it is unchanged.
 		skyW := min(1, math.Sqrt(objRef/(objNL+k*sb)))
+		if i != prev+1 {
+			runStart = i
+			r.Runs++
+		}
+		prev = i
+		if n := i - runStart + 1; n > bestLen {
+			best, bestLen = runStart, n
+		}
 		good++
 		altSum += a
 		skySum += atmos.MagFromNL(sb)
@@ -167,8 +181,14 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, alt, weight []fl
 		weighted += weight[i]
 	}
 	r.MaxAlt, r.MaxAt = math.Asin(maxSin)/deg, s.Grid[maxAt]
-	if good == 0 {
+	if good == 0 || time.Duration(bestLen)*time.Minute < cfg.MinRun {
 		return r, false
+	}
+	// The grid is minute-aligned from Start, so the run ends a minute after
+	// its last minute, or at End for the last grid minute.
+	r.RunFrom, r.RunTo = s.Grid[best], s.End
+	if best+bestLen < len(s.Grid) {
+		r.RunTo = s.Grid[best+bestLen]
 	}
 	r.Foto = float64(good) / float64(len(s.Grid))
 	r.MeanAlt = altSum / float64(good)
