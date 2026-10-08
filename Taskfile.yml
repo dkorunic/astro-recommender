@@ -63,6 +63,11 @@ tasks:
     cmds:
       - go run golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest -fix -test ./...
 
+  lists:
+    desc: Regenerate the embedded target lists (internal/catalog/targets/*.gob) from their YAML
+    cmds:
+      - go test -count=1 -run '^TestEmbeddedLists$' ./internal/catalog -args -update
+
   pgo:
     desc: Regenerate default.pgo (used by -pgo=auto) from the offline pipeline benchmark
     cmds:

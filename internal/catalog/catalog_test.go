@@ -28,7 +28,7 @@ func TestConstellationLists(t *testing.T) {
 		if name == "GaryImmFull" {
 			continue
 		}
-		data, err := targetFS.ReadFile("targets/" + name + ".yaml")
+		data, err := os.ReadFile(filepath.Join("targets", name+".yaml"))
 		if err != nil {
 			t.Fatal(err)
 		}

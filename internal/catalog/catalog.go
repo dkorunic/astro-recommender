@@ -7,6 +7,7 @@ package catalog
 
 import (
 	"embed"
+	"encoding/gob"
 	"errors"
 	"fmt"
 	"math"
@@ -29,7 +30,13 @@ import (
 // Planetary Nebulae.net catalogue (planetarynebulae.net, with permission); HASH is the HASH PN database (Parker, Bojicic &
 // Frew 2016, hashpn.space).
 //
-//go:embed targets/*.yaml
+// The binary embeds each list as the gob of what Load makes of its YAML
+// (sanitized, checked, positions in degrees, constellations looked up):
+// decoding OpenNGC that way takes 2 ms and 3 MB instead of YAML's 87 ms and
+// 52 MB (631 ms in the browser build). The YAML stays the source; task lists
+// regenerates the gob files, and TestEmbeddedLists fails when they are stale.
+//
+//go:embed targets/*.gob
 var targetFS embed.FS
 
 type Target struct {
@@ -228,18 +235,16 @@ var (
 // Load reads -targets, or the embedded -list target list.
 // It returns the targets and the canonical list name.
 func Load(listName, file string) ([]Target, string, error) {
-	var data []byte
-	var err error
-	if file != "" {
-		data, err = os.ReadFile(file)
-	} else {
+	if file == "" {
 		i := slices.IndexFunc(Lists, func(n string) bool { return strings.EqualFold(n, listName) })
 		if i < 0 {
 			return nil, "", fmt.Errorf("%w %q, want one of %s", errList, listName, strings.Join(Lists, ", "))
 		}
-		listName = Lists[i]
-		data, err = targetFS.ReadFile("targets/" + listName + ".yaml")
+		targets, err := embedded(Lists[i])
+
+		return targets, Lists[i], err
 	}
+	data, err := os.ReadFile(file)
 	if err != nil {
 		return nil, "", err
 	}
@@ -284,6 +289,23 @@ func Load(listName, file string) ([]Target, string, error) {
 	}
 
 	return targets, listName, nil
+}
+
+// embedded decodes the gob of list name, already in Load's form. Open
+// rather than ReadFile: the decoder reads the embedded data in place
+// instead of a copy.
+func embedded(name string) ([]Target, error) {
+	f, err := targetFS.Open("targets/" + name + ".gob")
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	var targets []Target
+	if err := gob.NewDecoder(f).Decode(&targets); err != nil {
+		return nil, fmt.Errorf("embedded list %s: %w", name, err)
+	}
+
+	return targets, nil
 }
 
 // emissionTypes are the lists' spellings (lower case) of emission-line types:
