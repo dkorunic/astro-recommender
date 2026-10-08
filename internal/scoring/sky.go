@@ -30,6 +30,7 @@ type Sky struct {
 	SinLST     []float64 // sin and cos of LST, so a fixed target's cos(hour angle) needs no Cos
 	CosLST     []float64
 	MoonPos    [][2]float64 // topocentric RA/Dec of date, degrees
+	MoonUnit   [][3]float64 // astro.Unit of MoonPos, for the per-minute Moon separations
 	MoonAlt    []float64
 	Ext        []float64 // extinction per grid minute, mag per airmass
 	MoonLight  []float64 // atmos.MoonLight per grid minute
@@ -119,11 +120,13 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 	s.LST = make([]float64, len(s.Grid))
 	s.MoonPos = make([][2]float64, len(s.Grid))
 	s.MoonAlt = make([]float64, len(s.Grid))
+	s.MoonUnit = make([][3]float64, len(s.Grid))
 	s.SinLST, s.CosLST = make([]float64, len(s.Grid)), make([]float64, len(s.Grid))
 	for i, t := range s.Grid {
 		s.LST[i] = astro.LST(t, cfg.Lon)
 		s.SinLST[i], s.CosLST[i] = math.Sincos(s.LST[i] * deg)
 		s.MoonPos[i][0], s.MoonPos[i][1] = astro.MoonTopo(t, cfg.Lat, cfg.Lon)
+		s.MoonUnit[i] = astro.Unit(s.MoonPos[i][0], s.MoonPos[i][1])
 		s.MoonAlt[i] = astro.Altitude(s.MoonPos[i][0], s.MoonPos[i][1], t, cfg.Lat, cfg.Lon)
 	}
 

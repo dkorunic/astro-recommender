@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dkorunic/astro-recommender/internal/astro"
 	"github.com/dkorunic/astro-recommender/internal/catalog"
 	"github.com/dkorunic/astro-recommender/internal/config"
 )
@@ -126,6 +127,28 @@ func BenchmarkPipeline(b *testing.B) {
 	}
 	start := time.Date(2026, 10, 5, 18, 8, 0, 0, time.UTC)
 	end := start.Add(9*time.Hour + 14*time.Minute)
+	for b.Loop() {
+		s := BuildSky(cfg, NoForecast(), start, end)
+		Score(cfg, &s, targets, false)
+	}
+}
+
+// BenchmarkPipelineMoon is BenchmarkPipeline on a full-moon night (3 Jan
+// 2026), when nearly every observable minute is tested against the Moon,
+// which BenchmarkPipeline's 24% Moon rarely reaches; task pgo profiles both.
+func BenchmarkPipelineMoon(b *testing.B) {
+	targets, _, err := catalog.Load("GaryImmFull", "")
+	if err != nil {
+		b.Fatal(err)
+	}
+	cfg := &config.Config{
+		Lat: 45.8, Lon: 16, AltMin: 30, AltMax: 80, SizeMax: 300, NoWeather: true,
+		ExtinctionSet: true, Extinction: 0.2, FilterK: 0.25, Filter: true,
+	}
+	start, end, ok := astro.Window(time.Date(2026, 1, 3, 12, 0, 0, 0, time.UTC), cfg.Lat, cfg.Lon)
+	if !ok {
+		b.Fatal("no night")
+	}
 	for b.Loop() {
 		s := BuildSky(cfg, NoForecast(), start, end)
 		Score(cfg, &s, targets, false)

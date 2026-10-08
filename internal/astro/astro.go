@@ -303,6 +303,16 @@ func Separation(ra1, dec1, ra2, dec2 float64) float64 {
 	return math.Acos(max(-1, min(1, c))) / deg
 }
 
+// Unit returns the unit vector of an equatorial position (degrees): the
+// cosine of the separation of two positions is the dot product of theirs,
+// which spares Separation's trigonometry for many pairs.
+func Unit(ra, dec float64) [3]float64 {
+	sinRA, cosRA := math.Sincos(ra * deg)
+	sinDec, cosDec := math.Sincos(dec * deg)
+
+	return [3]float64{cosDec * cosRA, cosDec * sinRA, sinDec}
+}
+
 // Sexagesimal parses "[+-]a b c" into a + b/60 + c/3600 with the sign applied.
 // Errors quote text as given (%q, so control characters are escaped).
 func Sexagesimal(text string) (float64, error) {

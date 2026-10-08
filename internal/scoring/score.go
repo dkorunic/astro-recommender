@@ -89,6 +89,12 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, alt, weight []fl
 	// Fraction of sky glow (moonlight, light pollution) that counts against
 	// this target; also scales its Moon separation limit.
 	k := skyK(tg, cfg.Filter, cfg.FilterK)
+	// The Moon separation is the Acos of a dot product of unit vectors, and a
+	// minute closer than the limit (at most 100°, where the cosine still
+	// falls) is rejected on the cosine alone. On a moonlit night with low
+	// altitude limits Separation's trigonometry was 40% of scoring.
+	unit := astro.Unit(ra, dec) // a comet's is redone per minute
+	cosMoonSep := math.Cos(k * s.MoonSep * deg)
 
 	// The limits compare as sines, so the Asin runs only for the minutes
 	// that pass them (and for alt): the bulk of the minutes do not.
@@ -137,9 +143,15 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, alt, weight []fl
 		}
 		rho := 180.0
 		if s.MoonAlt[i] > 0 {
-			if rho = astro.Separation(ra, dec, s.MoonPos[i][0], s.MoonPos[i][1]); rho < k*s.MoonSep {
+			if tg.Track != nil {
+				unit = astro.Unit(ra, dec)
+			}
+			m := &s.MoonUnit[i]
+			c := max(-1, min(1, unit[0]*m[0]+unit[1]*m[1]+unit[2]*m[2]))
+			if c > cosMoonSep {
 				continue
 			}
+			rho = math.Acos(c) / deg
 		}
 		sb := atmos.SkyBrightnessLit(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i])
 		// SNR in a fixed time goes as signal/sqrt(signal+sky), relative to the
