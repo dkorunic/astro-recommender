@@ -318,12 +318,22 @@ func Sexagesimal(text string) (float64, error) {
 	if strings.HasPrefix(s, "-") || strings.HasPrefix(s, "+") {
 		return 0, fmt.Errorf("%w: %q", errSign, text)
 	}
-	fields := strings.Fields(s)
-	if len(fields) == 0 || len(fields) > 3 {
+	// Up to three fields in an array: strings.Fields would allocate a slice
+	// for every coordinate of every -targets entry.
+	var fields [3]string
+	n := 0
+	for f := range strings.FieldsSeq(s) {
+		if n == len(fields) {
+			return 0, fmt.Errorf("%w: %q", errFields, text)
+		}
+		fields[n] = f
+		n++
+	}
+	if n == 0 {
 		return 0, fmt.Errorf("%w: %q", errFields, text)
 	}
 	var v float64
-	for i, f := range fields {
+	for i, f := range fields[:n] {
 		x, err := strconv.ParseFloat(f, 64)
 		if err != nil {
 			return 0, fmt.Errorf("%q: %w", text, err)
