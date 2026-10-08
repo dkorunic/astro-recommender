@@ -84,6 +84,12 @@ pre#out:empty { display: none; }
 .b { font-weight: 700; }
 .c31 { color: var(--c31); } .c32 { color: var(--c32); } .c33 { color: var(--c33); } .c34 { color: var(--c34); }
 .c35 { color: var(--c35); } .c36 { color: var(--c36); } .c90 { color: var(--c90); }
+footer {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px;
+  margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted);
+}
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
 @media (max-width: 600px) {
   main { padding: 20px 14px 40px; }
   form { padding: 16px; border-radius: 10px; }
@@ -127,6 +133,10 @@ pre#out:empty { display: none; }
   </form>
   <div id="warn"></div>
   <pre id="out"></pre>
+  <footer>
+    <span>© 2026 Dinko Korunic</span>
+    <span>Code: <a rel="license" href="https://github.com/dkorunic/astro-recommender/blob/main/LICENSE">MIT</a> · <a href="https://github.com/dkorunic/astro-recommender/">GitHub</a></span>
+  </footer>
 </main>
 <script src="wasm_exec.js"></script>
 <script>
