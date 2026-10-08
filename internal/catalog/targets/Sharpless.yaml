@@ -1478,7 +1478,7 @@
   mag: -9999
   name: "Sh2-185"
   ra: "00 59 29.0"
-  size: 9.0
+  size: 120.0
   type: "Emission Nebula"
 - constellation: ""
   dec: "+63 07 00.0"
@@ -1902,7 +1902,7 @@
   mag: -9999
   name: "Sh2-238"
   ra: "04 21 57.0"
-  size: 20.0
+  size: 1.0
   type: "Reflection Nebula"
 - constellation: ""
   dec: "+18 06 00.0"

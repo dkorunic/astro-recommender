@@ -14,7 +14,8 @@ precessed by VizieR to J2000) and diameter. The Compendium row named Sh2-N
 (column BB), gives the type, magnitude and surface brightness, a common name,
 and the position, since Sharpless's B1900 positions, read off the BD, are off
 by up to ~15' (NGC 6302); its size only for a row that is the Sharpless
-object itself, since a cross-identified M 16 is a part of Sh2-49. A row
+object itself, since a cross-identified M 16 is a part of Sh2-49 (an
+alternative-ID row more than 4x off the diameter is one too: IC 63 of Sh2-185). A row
 farther than max(20', half the diameter) is a Compendium typo (Sh2-210 is
 4.6 degrees off) or another object, and is ignored with a warning, unless
 SIMBAD confirms it (TRUSTED: there Sharpless is the one off). Wikipedia
@@ -79,7 +80,11 @@ def match(n, ra, dec, diam, index):
         for r in sorted(rows, key=lambda r: (designation(r["A"]) != f"Sh2-{n}", sep(*position(r), ra, dec))):
             d = sep(*position(r), ra, dec)
             if d <= max(20, diam / 2) or n in TRUSTED:
-                return r, itself
+                # An alternative-ID row 4x off the diameter is a part of the
+                # region (IC 63, 9', of the 120' Sh2-185), not the object.
+                size = num(r.get("G"))
+                part = designation(r["A"]) != f"Sh2-{n}" and size and not diam / 4 <= size <= diam * 4
+                return r, itself and not part
             print(f"warning: Sh2-{n}: Compendium {r['A'].strip()} is {d:.0f}' away, ignored", file=sys.stderr)
     return None, False
 
