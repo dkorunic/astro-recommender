@@ -2,6 +2,9 @@ version: 2
 before:
   hooks:
     - go mod tidy
+    # Fail on a stale embedded list rather than regenerate it: the release
+    # must be what was committed (task lists, then commit the .gob files).
+    - go test -count=1 -run '^TestEmbeddedLists$' ./internal/catalog
 builds:
   - flags:
       - -trimpath

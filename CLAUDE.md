@@ -12,8 +12,8 @@ Single-binary Go CLI that ranks deep sky objects for a location for tonight's wi
 ## Commands
 
 ```sh
-task build                          # fmt (gci, gofumpt, go fix, betteralign) + static PGO binary (default.pgo)
-task lists                          # regenerate the embedded internal/catalog/targets/*.gob from their YAML (TestEmbeddedLists -update); redo after any list change, TestEmbeddedLists fails until then
+task build                          # fmt (gci, gofumpt, go fix, betteralign) + task lists + static PGO binary (default.pgo)
+task lists                          # regenerate the embedded internal/catalog/targets/*.gob from their YAML (TestEmbeddedLists -update); task build and task web run it, skipped while the YAML and internal/**/*.go are unchanged (.task/ checksums); TestEmbeddedLists fails on a stale gob, and so does the GoReleaser before hook, so commit the regenerated files
 task pgo                            # regenerate default.pgo from BenchmarkPipeline (internal/scoring); redo after hot-path changes
 task lint                           # fmt + golangci-lint (.golangci.yml: default all, some disabled); keep at 0 issues
 task fmt                            # NOTE: rewrites files in place

@@ -65,6 +65,13 @@ tasks:
 
   lists:
     desc: Regenerate the embedded target lists (internal/catalog/targets/*.gob) from their YAML
+    # Skipped while neither the YAML nor the Go code behind Load changed
+    # (checksums in .task/); the output is deterministic either way.
+    sources:
+      - internal/catalog/targets/*.yaml
+      - internal/**/*.go
+    generates:
+      - internal/catalog/targets/*.gob
     cmds:
       - go test -count=1 -run '^TestEmbeddedLists$' ./internal/catalog -args -update
 
@@ -83,6 +90,7 @@ tasks:
     vars: *build-vars
     cmds:
       - task: fmt
+      - task: lists
       - go build -trimpath -pgo=auto -ldflags="-s -w -extldflags '-static' -X main.GitTag={{.GIT_LAST_TAG}} -X main.GitCommit={{.GIT_HEAD_COMMIT}} -X main.GitDirty={{.GIT_MODIFIED}} -X main.BuildTime={{.BUILD_DATE}}" -o {{.TARGET}}
 
   web:
@@ -92,6 +100,7 @@ tasks:
       GOOS: js
       GOARCH: wasm
     cmds:
+      - task: lists
       - go build -trimpath -ldflags="-s -w -X main.GitTag={{.GIT_LAST_TAG}} -X main.GitCommit={{.GIT_HEAD_COMMIT}} -X main.GitDirty={{.GIT_MODIFIED}} -X main.BuildTime={{.BUILD_DATE}}" -o web/app.wasm
       - cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" web/
 
