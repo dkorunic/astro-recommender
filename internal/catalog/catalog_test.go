@@ -12,7 +12,7 @@ import (
 
 	"github.com/dkorunic/astro-recommender/internal/astro"
 	"github.com/dkorunic/astro-recommender/internal/constellation"
-	"go.yaml.in/yaml/v3"
+	"go.yaml.in/yaml/v4"
 )
 
 func TestConstellationLists(t *testing.T) {

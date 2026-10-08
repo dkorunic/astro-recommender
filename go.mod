@@ -6,7 +6,7 @@ require (
 	github.com/fatih/color v1.19.0
 	github.com/hebl/gofa v1.19.1
 	github.com/ringsaturn/tzf/v2 v2.1.2
-	go.yaml.in/yaml/v3 v3.0.5
+	go.yaml.in/yaml/v4 v4.0.0-rc.6
 )
 
 require (

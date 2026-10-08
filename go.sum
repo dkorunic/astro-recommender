@@ -12,7 +12,7 @@ github.com/ringsaturn/tzf-dist v0.0.2026-d-fix1 h1:lT6jQEwS7NRpBSG7lZ3Cwl16ADkZ6
 github.com/ringsaturn/tzf-dist v0.0.2026-d-fix1/go.mod h1:MLn3mRLioai5ceZLV8k+uAr4cLxdVEHoTQIGKpuVS/c=
 github.com/ringsaturn/tzf/v2 v2.1.2 h1:amFL2Vv6+b4Kv710R1xAb3jJ0tW7vbCf3NPBtepq9S4=
 github.com/ringsaturn/tzf/v2 v2.1.2/go.mod h1:JsnmzJF71pXCrTdyR2UjsaUbwO1cAndQyROtGu41Li8=
-go.yaml.in/yaml/v3 v3.0.5 h1:N6y/pJk8buWs9NY5ERU2HSMfm+IuD/OtfdAnq6kESPw=
-go.yaml.in/yaml/v3 v3.0.5/go.mod h1:HVTZu1O7/Vkt2N+BFy8Zza+lnLsABggaTM2ZpNIGuKg=
+go.yaml.in/yaml/v4 v4.0.0-rc.6 h1:1h7H1ohdUh93/FyE4YaDa1Zh64K6VVbjF4K6WUxMtH4=
+go.yaml.in/yaml/v4 v4.0.0-rc.6/go.mod h1:aZqd9kCMsGL7AuUv/m/PvWLdg5sjJsZ4oHDEnfPPfY0=
 golang.org/x/sys v0.48.0 h1:bbX/i/6MgT9BVLM9RT1thmxL04yeTAhbEz4SyadbXoo=
 golang.org/x/sys v0.48.0/go.mod h1:hNLxWAXmnKAxqDtdwIYC4bM9oQPEecfsnNMuSxOs3og=

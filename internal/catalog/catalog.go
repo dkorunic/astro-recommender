@@ -18,7 +18,7 @@ import (
 	"github.com/dkorunic/astro-recommender/internal/constellation"
 	"github.com/dkorunic/astro-recommender/internal/num"
 	"github.com/dkorunic/astro-recommender/internal/sanitize"
-	"go.yaml.in/yaml/v3"
+	"go.yaml.in/yaml/v4"
 )
 
 // Target lists from uptonight (MIT, (c) Markus Winkler); OpenNGC and OpenIC
