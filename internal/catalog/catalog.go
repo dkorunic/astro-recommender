@@ -28,7 +28,8 @@ import (
 // (1915) and Collinder (1931) with NGC/IC and take positions from MWSC,
 // OpenNGC, Dias et al. (2002, CDS B/ocl) and SIMBAD; PNnet is the
 // Planetary Nebulae.net catalogue (planetarynebulae.net, with permission); HASH is the HASH PN database (Parker, Bojicic &
-// Frew 2016, hashpn.space).
+// Frew 2016, hashpn.space); Sharpless is Sharpless (1959, CDS VII/20)
+// cross-identified with Gary Imm's Deep Sky Compendium.
 //
 // The binary embeds each list as the gob of what Load makes of its YAML
 // (sanitized, checked, positions in degrees, constellations looked up):
@@ -223,7 +224,7 @@ func (t Target) typicalBV(k kind) float64 {
 }
 
 // Lists are the embedded uptonight target lists selectable with -list.
-var Lists = []string{"GaryImm", "GaryImmFull", "Messier", "Herschel400", "Pensack500", "OpenNGC", "OpenIC", "LBN", "LDN", "MWSC", "Melotte", "Collinder", "PNnet", "HASH"}
+var Lists = []string{"GaryImm", "GaryImmFull", "Messier", "Herschel400", "Pensack500", "OpenNGC", "OpenIC", "LBN", "LDN", "MWSC", "Melotte", "Collinder", "PNnet", "HASH", "Sharpless"}
 
 var (
 	errList        = errors.New("unknown target list")

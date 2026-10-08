@@ -156,6 +156,7 @@ func TestEmissionLineLists(t *testing.T) {
 		"Melotte":     {"Mel 15": true, "Mel 49": true, "Mel 198": true, "Mel 22": false},
 		"PNnet":       {"Ou 2": true, "StDr 56": true},
 		"HASH":        {"NGC 7293": true, "Sh 2-216": true},
+		"Sharpless":   {"Sh2-155": true, "Sh2-49": true, "Sh2-1": false},
 		"Collinder":   {"Cr 26": true, "Cr 375": true, "Cr 429": false, "Cr 399": false},
 	} {
 		targets, _, err := Load(list, "")
