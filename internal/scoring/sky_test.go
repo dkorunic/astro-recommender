@@ -4,6 +4,7 @@
 package scoring
 
 import (
+	"errors"
 	"math"
 	"os"
 	"strings"
@@ -148,6 +149,31 @@ func TestMissingSeeing(t *testing.T) {
 	} {
 		if missing, needed := missingSeeing(c.f, start, end); missing != c.missing || needed != c.needed {
 			t.Errorf("%s: missingSeeing = %d of %d, want %d of %d", name, missing, needed, c.missing, c.needed)
+		}
+	}
+}
+
+// seeingWarning speaks only when some hour needs the estimate: then the
+// fetch error if the profile failed, else the count of hours without one.
+func TestSeeingWarning(t *testing.T) {
+	start := time.Date(2026, 10, 9, 18, 0, 0, 0, time.UTC)
+	end := start.Add(2 * time.Hour)
+	h0, h1 := start.Unix(), start.Add(time.Hour).Unix()
+	astro := map[int64]weather.AstroBlock{weather.AstroKey(start): {}, weather.AstroKey(start.Add(time.Hour)): {}}
+	failed := errors.New("open-meteo: HTTP status 500")
+	for name, c := range map[string]struct {
+		f    Forecast
+		err  error
+		want string
+	}{
+		"7Timer covers all, profile failed": {Forecast{Weather: map[int64]weather.HourWeather{h0: {}, h1: {}}, Astro: astro}, failed, ""},
+		"needed, profile failed":            {Forecast{Weather: map[int64]weather.HourWeather{h0: {}, h1: {}}}, failed, "no upper-air profile, no seeing estimate: open-meteo: HTTP status 500"},
+		"needed, one missing":               {Forecast{Weather: map[int64]weather.HourWeather{h0: {}, h1: {Seeing: 1.2}}}, nil, "no usable upper-air seeing estimate for 1 of the 2 hours without a 7Timer point"},
+		"needed, none missing":              {Forecast{Weather: map[int64]weather.HourWeather{h0: {Seeing: 1.1}, h1: {Seeing: 1.2}}}, nil, ""},
+		"no weather at all":                 {Forecast{}, failed, ""},
+	} {
+		if got := seeingWarning(c.f, c.err, start, end); got != c.want {
+			t.Errorf("%s: %q, want %q", name, got, c.want)
 		}
 	}
 }

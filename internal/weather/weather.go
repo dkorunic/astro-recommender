@@ -55,12 +55,33 @@ type Level struct{ P, Z, T, Wind, Dir float64 }
 // about 1037 hPa.
 var pressures = [...]int{925, 850, 700, 600, 500, 400, 300, 250, 200, 150, 100}
 
-// surfaceKeys are the surface level's hourly variables, in the order of
-// hourly.surface: Profile requests and checks them by this list.
-var surfaceKeys = [...]string{"surface_pressure", "temperature_2m", "wind_speed_10m", "wind_direction_10m"}
+// surfaceSeries are the surface level's hourly variables and where they
+// decode: decodeHourly fills them (strictly: Forecast scores two of them),
+// Profile requests and checks them by this one table.
+var surfaceSeries = [...]struct {
+	key string
+	of  func(*hourly) *[]*float64
+}{
+	{"surface_pressure", func(h *hourly) *[]*float64 { return &h.SurfP }},
+	{"temperature_2m", func(h *hourly) *[]*float64 { return &h.Temp }},
+	{"wind_speed_10m", func(h *hourly) *[]*float64 { return &h.Wind }},
+	{"wind_direction_10m", func(h *hourly) *[]*float64 { return &h.Dir }},
+}
 
-// surface is the surface level's series in surfaceKeys order.
-func (h *hourly) surface() [4][]*float64 { return [4][]*float64{h.SurfP, h.Temp, h.Wind, h.Dir} }
+// profileVars is Profile's hourly list: the surface series, then levelKeys
+// per pressure level.
+var profileVars = func() string {
+	var vars []string
+	for _, s := range surfaceSeries {
+		vars = append(vars, s.key)
+	}
+	for _, p := range pressures {
+		k := levelKeys(p)
+		vars = append(vars, k[:]...)
+	}
+
+	return strings.Join(vars, ",")
+}()
 
 // levelSeries is one pressure level's hourly block.
 type levelSeries struct{ Z, T, Wind, Dir []*float64 }
@@ -116,20 +137,15 @@ func fetchHourly(ctx context.Context, url string, start, end time.Time) (hourly,
 }
 
 // Profile fetches the upper-air levels per unix hour from ECMWF IFS 0.25
-// (3-hourly, 6-hourly past 144 h, interpolated to hours by Open-Meteo; 15
-// days ahead) for
-// Seeing. Its own model rather than Forecast's best_match blend, whose
-// pressure levels come from whichever model covers the site, so the
-// estimate means the same thing everywhere; the surface fields come along
-// so the ground layer's gradient is read within one model.
+// (3-hourly, 6-hourly past 144 h, interpolated to hours by Open-Meteo;
+// 15 days ahead) for Seeing. Its own model rather than Forecast's
+// best_match blend, whose pressure levels come from whichever model covers
+// the site, so the estimate means the same thing everywhere; the surface
+// fields come along so the ground layer's gradient is read within one
+// model.
 func Profile(ctx context.Context, lat, lon float64, start, end time.Time) (map[int64][]Level, error) {
-	vars := surfaceKeys[:]
-	for _, p := range pressures {
-		k := levelKeys(p)
-		vars = append(vars, k[:]...)
-	}
 	url := fmt.Sprintf("https://api.open-meteo.com/v1/forecast?latitude=%.2f&longitude=%.2f&models=ecmwf_ifs025&hourly=%s&timeformat=unixtime&timezone=UTC",
-		lat, lon, strings.Join(vars, ","))
+		lat, lon, profileVars)
 	h, elev, err := fetchHourly(ctx, url, start, end)
 	if err != nil {
 		return nil, err
@@ -140,9 +156,9 @@ func Profile(ctx context.Context, lat, lon float64, start, end time.Time) (map[i
 	// Every hour needs the surface fields: a series missing or short is the
 	// request or the model, not a gap (weather() treats its series the same),
 	// and the error should say which.
-	for i, s := range h.surface() {
-		if len(s) != len(h.Time) {
-			return nil, fmt.Errorf("%w: %s series has %d of %d hours", errOpenMeteo, surfaceKeys[i], len(s), len(h.Time))
+	for _, s := range surfaceSeries {
+		if series := *s.of(&h); len(series) != len(h.Time) {
+			return nil, fmt.Errorf("%w: %s series has %d of %d hours", errOpenMeteo, s.key, len(series), len(h.Time))
 		}
 	}
 	out := h.levels(elev)
@@ -191,11 +207,14 @@ func decodeHourly(raw json.RawMessage) (hourly, error) {
 	if err := json.Unmarshal(raw, &block); err != nil {
 		return h, fmt.Errorf("%w: %w", errOpenMeteo, err)
 	}
-	for key, dst := range map[string]any{
+	named := map[string]any{
 		"time": &h.Time, "cloud_cover_low": &h.Low, "cloud_cover_mid": &h.Mid, "cloud_cover_high": &h.High,
-		"temperature_2m": &h.Temp, "dew_point_2m": &h.DewPoint, "wind_speed_10m": &h.Wind,
-		"wind_gusts_10m": &h.Gust, "precipitation": &h.Precip, "surface_pressure": &h.SurfP, "wind_direction_10m": &h.Dir,
-	} {
+		"dew_point_2m": &h.DewPoint, "wind_gusts_10m": &h.Gust, "precipitation": &h.Precip,
+	}
+	for _, s := range surfaceSeries {
+		named[s.key] = s.of(&h)
+	}
+	for key, dst := range named {
 		if b, ok := block[key]; ok {
 			if err := json.Unmarshal(b, dst); err != nil {
 				return h, fmt.Errorf("%w: %s: %w", errOpenMeteo, key, err)

@@ -95,12 +95,8 @@ func FetchForecast(ctx context.Context, cfg *config.Config, start, end time.Time
 	}
 	wg.Wait()
 	mergeProfile(f.Weather, profile)
-	// The estimate matters only for hours 7Timer leaves; with none, a failed
-	// or thin profile changes nothing and says nothing.
-	if missing, needed := missingSeeing(f, start, end); needed > 0 && profileErr != nil {
-		fmt.Fprintln(os.Stderr, "warning: no upper-air profile, no seeing estimate:", profileErr)
-	} else if missing > 0 {
-		fmt.Fprintf(os.Stderr, "warning: no usable upper-air seeing estimate for %d of the %d hours without a 7Timer point\n", missing, needed)
+	if w := seeingWarning(f, profileErr, start, end); w != "" {
+		fmt.Fprintln(os.Stderr, "warning:", w)
 	}
 	// The elevation alone gives extinction with typical aerosols, so the
 	// weather forecast's (longer range) stands in when CAMS has none. An
@@ -128,11 +124,29 @@ func mergeProfile(w map[int64]weather.HourWeather, profile map[int64][]weather.L
 	}
 }
 
+// seeingWarning is the stderr warning about the upper-air estimate, "" for
+// none: the estimate matters only for hours 7Timer leaves, so with none a
+// failed or thin profile changes nothing and says nothing; else the fetch
+// error (profileErr) when the profile failed, else the hours without an
+// estimate when there are any.
+func seeingWarning(f Forecast, profileErr error, start, end time.Time) string {
+	missing, needed := missingSeeing(f, start, end)
+	switch {
+	case needed == 0:
+		return ""
+	case profileErr != nil:
+		return "no upper-air profile, no seeing estimate: " + profileErr.Error()
+	case missing > 0:
+		return fmt.Sprintf("no usable upper-air seeing estimate for %d of the %d hours without a 7Timer point", missing, needed)
+	}
+
+	return ""
+}
+
 // missingSeeing counts the hours of [start, end) whose SEEING cell falls
 // back to the upper-air estimate (weather but no 7Timer point), and how many
 // of them get none: the profile's only reader, so its gaps would otherwise
-// show only as dashes. FetchForecast warns on the fetch error when any hour
-// needs the estimate, else on the count: a fetched profile may miss hours
+// show only as dashes (seeingWarning). A fetched profile may miss hours
 // (the ECMWF range ends a day before best_match's, and a narrowed getRange
 // covers one day), have too few levels, or give estimates Seeing rejects.
 func missingSeeing(f Forecast, start, end time.Time) (int, int) {
