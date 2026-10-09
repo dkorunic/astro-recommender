@@ -178,6 +178,7 @@ func mutLevels(h *hourly, i int, vals [len(pressures)][4]float64) {
 
 func TestMutWeatherLevels(t *testing.T) {
 	h := mutHourly(1)
+	h.SurfP, h.Dir = []*float64{new(980.0)}, []*float64{new(90.0)}
 	var vals [len(pressures)][4]float64
 	for k, z := range [...]float64{110, 800, 1500, 3000, 4200, 5600, 7200, 9200, 10400, 11800, 13500, 15800} {
 		vals[k] = [4]float64{z, 15 - 6.5*z/1000, 10, 0}
@@ -185,19 +186,19 @@ func TestMutWeatherLevels(t *testing.T) {
 	vals[5][2], vals[7][3] = -1, 400 // 500 hPa: negative wind; 300 hPa: 400°
 	mutLevels(&h, 0, vals)
 	got := h.levels(2000)[mutT0]
-	// 1000-850 lie below the 2000 m site; the surface needs SurfP and Dir, absent here.
-	if len(got) != 7 || got[0].P != 700 || got[0].Z != 3000 || got[0].Wind != 10 || got[2].P != 400 || got[3].P != 250 {
+	// The surface at 2002 m, then 1000-850 lie below the site.
+	if len(got) != 8 || got[0] != (Level{P: 980, Z: 2002, Wind: 0, Dir: 90}) || got[1].P != 700 || got[1].Wind != 10 || got[3].P != 400 || got[4].P != 250 {
 		t.Errorf("levels %+v", got)
 	}
 	if l := h.levels(math.NaN())[mutT0]; len(l) != 10 || l[0].P != 1000 {
 		t.Errorf("NaN elevation levels %+v", l)
 	}
-	if l := h.levels(1500)[mutT0]; len(l) != 8 || l[0].P != 850 {
-		t.Errorf("level at the site's own height dropped: %+v", l)
+	if l := h.levels(1500)[mutT0]; len(l) != 8 || l[0].Z != 1502 || l[1].P != 700 {
+		t.Errorf("850 hPa at the surface's own height kept: %+v", l)
 	}
-	h.SurfP, h.Dir = []*float64{new(980.0)}, []*float64{new(90.0)}
-	if l := h.levels(1500)[mutT0]; len(l) != 8 || l[0] != (Level{P: 980, Z: 1500, Wind: 0, Dir: 90}) || l[1].P != 700 {
-		t.Errorf("surface level %+v", l)
+	h.Dir[0] = nil
+	if l, ok := h.levels(1500)[mutT0]; ok {
+		t.Errorf("no surface wind direction: hour kept as %+v", l)
 	}
 	for _, l := range []Level{{P: 500, Z: 30001, T: 0}, {P: 500, Z: -1001}, {P: 500, T: 61}, {P: 500, T: -151}, {P: 500, Wind: 1001}, {P: 500, Dir: -1}} {
 		if plausible(l) {

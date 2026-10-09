@@ -261,18 +261,25 @@ next:
 // 2 m temperature and 10 m wind) when elev is known, then every pressure
 // level with all four values, physical, and above the site: at a high site
 // 1000 hPa lies underground, where the model's values are extrapolated
-// (NaN keeps them all). With a surface level the next one must be 50 m
-// above it, the pair Seeing reads, so the ground layer always exists rather
-// than depending on how far below the 1000 hPa surface the site happens to
-// sit. Hours with no level are left out.
+// (NaN keeps them all). The surface sits at 2 m, where its temperature is
+// read, and the next level must be 50 m above it, the pair Seeing reads, so
+// the ground layer always exists rather than depending on how far below the
+// 1000 hPa surface the site happens to sit. With the elevation known, an
+// hour without a surface level is left out: the ground layer is the
+// estimate's largest term, and the surface fields come in the same request,
+// so their absence means a broken hour, not a thin one. Hours with no level
+// are left out too.
 func (h *hourly) levels(elev float64) map[int64][]Level {
 	out := map[int64][]Level{}
 	for i, t := range h.Time {
 		var levels []Level
 		minZ := elev // NaN: no comparison holds, every level stays
-		if l := (Level{Z: elev}); !math.IsNaN(elev) &&
-			fill(&l.P, h.SurfP, i) && fill(&l.T, h.Temp, i) && fill(&l.Wind, h.Wind, i) && fill(&l.Dir, h.Dir, i) && plausible(l) {
-			levels, minZ = append(levels, l), elev+50
+		if !math.IsNaN(elev) {
+			l := Level{Z: elev + 2}
+			if !(fill(&l.P, h.SurfP, i) && fill(&l.T, h.Temp, i) && fill(&l.Wind, h.Wind, i) && fill(&l.Dir, h.Dir, i) && plausible(l)) {
+				continue
+			}
+			levels, minZ = append(levels, l), l.Z+50
 		}
 		for k, p := range pressures {
 			l, s := Level{P: float64(p)}, h.Level[k]
@@ -310,7 +317,10 @@ func plausible(l Level) bool {
 // always spans the jet). Each layer between adjacent levels, the surface
 // first when known, gets Dewan et al.'s (1993) Cn² (cn2) from its
 // temperature gradient and wind shear; the integral over height gives
-// Fried's r0 = (0.423 k² ∫Cn² dz)^(-3/5) and FWHM = 0.98 λ/r0. It is
+// Fried's r0 = (0.423 k² ∫Cn² dz)^(-3/5) and FWHM = 0.98 λ/r0. Above
+// maxSeeing, or not finite, it is 0 too: values plausible one by one can
+// still be nonsense together (opposed 1000 km/h winds put 10^470 in the
+// outer scale), and a +Inf would abort the JSON encoder. It is
 // display-only, for hours 7Timer's seeing does not cover.
 // ponytail: the levels are 0.7-2 km apart, so the gradients average out
 // and thin turbulent layers are missed, and the ground layer is one
@@ -330,9 +340,20 @@ func Seeing(h HourWeather) float64 {
 	const lambda = 500e-9
 	k := 2 * math.Pi / lambda
 	r0 := math.Pow(0.423*k*k*integral, -0.6)
+	fwhm := 0.98 * lambda / r0 * 180 / math.Pi * 3600
+	if !num.Finite(fwhm) || fwhm > maxSeeing {
+		return 0
+	}
 
-	return 0.98 * lambda / r0 * 180 / math.Pi * 3600
+	return fwhm
 }
+
+// maxSeeing is the largest FWHM (arcseconds) taken as an estimate; the
+// worst sites see 5".
+const maxSeeing = 30
+
+// l0Scale is 0.1^(4/3), the outer scale's prefactor in cn2.
+const l0Scale = 0.046415888336127795
 
 // cn2 is the refractive index structure constant (m^-2/3) of the layer from
 // a up to b after Dewan et al. (1993), the AFGL radiosonde model:
@@ -353,7 +374,7 @@ func cn2(a, b Level, stratospheric bool) float64 {
 		y = 0.506 + 50*s
 	}
 
-	return 2.8 * m * m * math.Pow(0.1, 4.0/3) * math.Pow(10, y)
+	return 2.8 * m * m * l0Scale * math.Pow(10, y)
 }
 
 // tropopause returns the index of the level at the tropopause, the WMO
