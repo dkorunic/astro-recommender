@@ -405,8 +405,8 @@ const scaleHeightPerK = 29.3
 // kilometre-thick radiosonde layers: over a 50 m ground layer an ordinary
 // 15 km/h wind difference reads as a shear that puts 10^2-10^4 into Cn² and
 // a 100" estimate on the table. At 300 m the ground layer is surface to
-// 925 hPa (800 m) or higher at any site, and the same cases come out at
-// 1.2-1.3"; adjacent pressure levels are 600 m (925-850 hPa in polar
+// 925 hPa (800 m) or higher at any site, and the same cases come out near
+// 1"; adjacent pressure levels are 600 m (925-850 hPa in polar
 // winter air) to 700 m apart at the least.
 const minLayer = 300
 
@@ -433,7 +433,8 @@ func plausible(l Level) bool {
 // a complete profile (the gate levels() keeps, repeated for direct
 // callers). Each layer between adjacent levels, the surface
 // first when known, gets Dewan et al.'s (1993) Cn² (cn2) from its
-// temperature gradient and wind shear; the integral over height gives
+// temperature gradient and wind shear, scaled by groundFactor for the lowest
+// readable layer and freeFactor above it; the integral over height gives
 // Fried's r0 = (0.423 k² ∫Cn² dz)^(-3/5) and FWHM = 0.98 λ/r0. Outside
 // minSeeing-maxSeeing, or not finite, it is 0 too: values plausible one by
 // one can still be nonsense together (opposed 1000 km/h winds put 10^470
@@ -449,11 +450,12 @@ func Seeing(levels []Level) float64 {
 	if !complete(levels) {
 		return 0
 	}
-	integral, trop := 0.0, tropopause(levels)
+	integral, trop, factor := 0.0, tropopause(levels), groundFactor
 	for i := 1; i < len(levels); i++ {
 		a, b := levels[i-1], levels[i]
 		if dz := b.Z - a.Z; dz >= minLayer {
-			integral += cn2(a, b, i-1 >= trop) * dz
+			integral += factor * cn2(a, b, i-1 >= trop) * dz
+			factor = freeFactor // the lowest readable layer is the ground layer
 		}
 	}
 	const lambda = 500e-9
@@ -466,6 +468,21 @@ func Seeing(levels []Level) float64 {
 
 	return fwhm
 }
+
+// groundFactor and freeFactor scale Dewan's Cn² in the ground layer (the
+// lowest readable layer: from the surface in a production profile) and in
+// the free atmosphere above it. Dewan was fitted on free-atmosphere
+// radiosonde layers and, extended to the surface, overestimates the
+// boundary layer most (Cuevas et al. 2024, MNRAS 529, 2208), while the
+// 0.7-2 km IFS levels smooth the shear that drives the free-atmosphere
+// term. The factors are the least-squares fit of scripts/calibrate_seeing.py
+// against the ESO DIMM archives at Paranal and La Silla (12222 hours, May
+// 2024 to September 2026, Open-Meteo's archived IFS 0.25 runs): bias +0.21"
+// to +0.03", RMSE 0.49" to 0.33", r 0.32 to 0.41; held-out months and the
+// two sites agree within ±0.05. Refit after changing cn2, levels() or
+// pressures, not on a schedule: they are properties of the model, not of
+// the weather.
+const groundFactor, freeFactor = 0.2, 1.45
 
 // minSeeing and maxSeeing bound the FWHM (arcseconds) taken as an estimate:
 // the best sites see 0.3", the worst 5".

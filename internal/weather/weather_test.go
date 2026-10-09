@@ -50,8 +50,8 @@ func profile(seaT, lapse float64, winds, dirs []float64) []Level {
 func uniform(v float64) []float64 { return slices.Repeat([]float64{v}, len(pressures)) }
 
 // Dewan's model on the standard atmosphere (6.5 K/km) with a uniform
-// 20 km/h wind integrates to r0 ≈ 0.16 m at 500 nm: 0.63" (scripts/dewan.py
-// reproduces every number here).
+// 20 km/h wind integrates to 0.74" at 500 nm (groundFactor on its lowest
+// layer, freeFactor above; scripts/dewan.py reproduces every number here).
 func TestSeeing(t *testing.T) {
 	west := uniform(270)
 	calm := profile(15, 6.5, uniform(20), west)
@@ -104,14 +104,15 @@ func TestSeeing(t *testing.T) {
 		t.Errorf("calm %.2f, jet %.2f, veering %.2f: want increasing", c, j, v)
 	}
 	// A nocturnal inversion in the ground layer (10 °C at the 120 m site, 12 °C
-	// at 925 hPa, 10 to 20 km/h) roughly doubles the free-atmosphere seeing.
+	// at 925 hPa, 10 to 20 km/h) adds about a quarter to the free-atmosphere
+	// seeing (0.99" against 0.78"; it doubled it before groundFactor).
 	above := slices.DeleteFunc(profile(12, 6.5, uniform(20), west), func(l Level) bool { return l.Z < 120 })
 	above[0].T = 12 // 925 hPa warmer than the surface
 	surface := Level{P: 1000, Z: 120, T: 10, Wind: 10, Dir: 270}
 	neutral := slices.DeleteFunc(profile(10, 6.5, uniform(20), west), func(l Level) bool { return l.Z < 120 })
 	inv, neu, free := Seeing(append([]Level{surface}, above...)),
 		Seeing(append([]Level{surface}, neutral...)), Seeing(neutral)
-	if !(inv > 1.2 && inv < 1.6 && neu >= free && neu < free+0.1) {
+	if !(inv > 0.9 && inv < 1.1 && neu >= free && neu < free+0.1) {
 		t.Errorf("inversion %.2f, neutral ground %.2f, no ground layer %.2f", inv, neu, free)
 	}
 }
@@ -187,8 +188,8 @@ func TestCn2Stratospheric(t *testing.T) {
 		t.Errorf("cn2 stratospheric %.3g, tropospheric %.3g", strat, trop)
 	}
 	// Seeing reads the branch off tropopause: the polar profile, isothermal
-	// from 400 hPa, integrates to 0.62" with its tropopause there, 1.10" with
-	// the stratosphere starting at 200 hPa and 1.18" read as all troposphere.
+	// from 400 hPa, integrates to 0.72" with its tropopause there, 1.33" with
+	// the stratosphere starting at 200 hPa and 1.44" read as all troposphere.
 	polar := profile(0, 6.5, uniform(20), uniform(270))
 	for i := range polar {
 		polar[i].T = max(polar[i].T, polar[5].T)

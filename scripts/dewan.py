@@ -8,6 +8,7 @@ TestMutCn2); change the Go code and this together."""
 
 import math
 
+GROUND, FREE = 0.2, 1.45  # weather.go's groundFactor and freeFactor, from scripts/calibrate_seeing.py
 PRESSURES = [925, 850, 700, 600, 500, 400, 300, 250, 200, 150, 100]
 HEIGHTS = [800, 1500, 3000, 4200, 5600, 7200, 9200, 10400, 11800, 13500, 15800]
 
@@ -52,7 +53,11 @@ def seeing(lv, trop=None):
     if len(lv) <= 3 or lv[-1][0] > 300:  # the surface and three levels
         return 0
     trop = tropopause(lv) if trop is None else trop
-    integral = sum(cn2(a, b, i >= trop) * (b[1] - a[1]) for i, (a, b) in enumerate(zip(lv, lv[1:])) if b[1] - a[1] >= 300)
+    integral, factor = 0, GROUND
+    for i, (a, b) in enumerate(zip(lv, lv[1:])):
+        if b[1] - a[1] >= 300:
+            integral += factor * cn2(a, b, i >= trop) * (b[1] - a[1])
+            factor = FREE  # the lowest readable layer is the ground layer
     k = 2 * math.pi / 500e-9
     r0 = (0.423 * k * k * integral) ** -0.6
     fwhm = 0.98 * 500e-9 / r0 * 180 / math.pi * 3600
@@ -76,7 +81,7 @@ if __name__ == "__main__":
     above[0] = (above[0][0], above[0][1], 12, above[0][3], above[0][4])
     surface = (1000, 120, 10, 10, 270)
     neutral = [l for l in profile(10, 6.5, [20] * 11, west) if l[1] >= 120]
-    print(f"inversion ground layer   {seeing([surface] + above):.3f}\"  (1.2-1.6)")
+    print(f"inversion ground layer   {seeing([surface] + above):.3f}\"  (0.9-1.1)")
     print(f"neutral ground layer     {seeing([surface] + neutral):.3f}\"  vs none {seeing(neutral):.3f}\"")
     polar = profile(0, 6.5, [20] * 11, west)
     polar = [(p, z, max(t, polar[5][2]), w, d) for p, z, t, w, d in polar]
