@@ -60,6 +60,16 @@ func Window(day time.Time, lat, lon, sunAlt float64) (time.Time, time.Time, bool
 		return Altitude(ra, dec, t, lat, lon) < sunAlt
 	}
 	t := noon
+	// Dark at noon is the previous night's tail when light follows: near the
+	// pole the Sun can rise above sunAlt only minutes after mean noon (the
+	// equation of time, and its declination drifting more than its daily
+	// swing), and that is not tonight. Dark until limit is polar night.
+	for t.Before(limit) && dark(t) {
+		t = t.Add(time.Minute)
+	}
+	if !t.Before(limit) {
+		return noon, limit, true
+	}
 	for t.Before(limit) && !dark(t) {
 		t = t.Add(time.Minute)
 	}

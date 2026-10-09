@@ -81,6 +81,15 @@ func TestWindow(t *testing.T) {
 	if _, _, ok := Window(time.Date(2026, 6, 21, 0, 0, 0, 0, time.UTC), 64.13, -21.9, Nautical); ok {
 		t.Error("window found nautical night in Reykjavík midsummer")
 	}
+	// Where the Sun only just rises above the limit around its transit, mean
+	// noon (14 min early in February, the equation of time) is still dark:
+	// starting there gave a 12:00-12:05 "night" before the real one.
+	for _, lat := range []float64{87.665, 87.668, 87.6725} {
+		dusk, dawn, ok := Window(time.Date(2027, 2, 10, 0, 0, 0, 0, time.UTC), lat, 0, Nautical)
+		if !ok || dawn.Sub(dusk) < 20*time.Hour {
+			t.Errorf("lat %v: window %v - %v (%v), want the night after the brief twilight", lat, dusk, dawn, ok)
+		}
+	}
 	// -from/-to clip within the night and never extend it.
 	for _, c := range []struct {
 		from, to, wantStart, wantEnd string
