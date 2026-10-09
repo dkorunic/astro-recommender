@@ -285,9 +285,10 @@ func TestLevels(t *testing.T) {
 	}
 }
 
-// barometric accepts a surface pressure within 12% of the elevation's at
-// the surface temperature: the cold Antarctic plateau sits well under a
-// temperate column's pressure.
+// barometric accepts a surface pressure within 12% of the elevation's for
+// the column's mean temperature: the cold Antarctic plateau sits well under
+// a temperate column's pressure, and its surface air, under the winter
+// inversion, well under the column's own mean.
 func TestBarometric(t *testing.T) {
 	for _, tc := range []struct {
 		name       string
@@ -303,8 +304,8 @@ func TestBarometric(t *testing.T) {
 		{"700 hPa at 120 m", 700, 120, 10, false},
 		{"5500 m", 505, 5500, 0, true},
 		{"South Pole winter", 641, 2835, -60, true},
-		{"Vostok", 600, 3488, -65, true},
-		{"Dome A", 556, 4093, -55, true},
+		{"Vostok winter", 624, 3488, -68, true},
+		{"Dome A winter", 575, 4093, -70, true},
 	} {
 		if got := barometric(tc.p, tc.elev, tc.t); got != tc.want {
 			t.Errorf("%s: barometric(%v hPa, %v m, %v °C) = %v", tc.name, tc.p, tc.elev, tc.t, got)
@@ -342,7 +343,7 @@ func TestProfile(t *testing.T) {
 
 			return
 		}
-		_, _ = w.Write([]byte(`{"elevation":120,"hourly":{"time":[1791748800,1791752400,1791756000],
+		_, _ = w.Write([]byte(`{"elevation":120,"hourly":{"time":[1791763200,1791766800,1791770400],
 			"surface_pressure":[998,998,700],"temperature_2m":[10,10,10],"wind_speed_10m":[10,10,10],"wind_direction_10m":[270,270,270],
 			"geopotential_height_850hPa":[1500,1500,1500],"temperature_850hPa":[8,8,8],"wind_speed_850hPa":[20,20,20],"wind_direction_850hPa":[270,270,270],
 			"geopotential_height_500hPa":[5600,5600,5600],"temperature_500hPa":[-20,-20,-20],"wind_speed_500hPa":[40,40,40],"wind_direction_500hPa":[270,270,270],
@@ -353,13 +354,13 @@ func TestProfile(t *testing.T) {
 	if err != nil || len(out) != 2 {
 		t.Fatalf("Profile %v %v", out, err)
 	}
-	if l := out[1791748800]; len(l) != 4 || l[0] != (Level{P: 998, Z: 122, T: 10, Wind: 10, Dir: 270}) || l[3].P != 300 {
+	if l := out[1791763200]; len(l) != 4 || l[0] != (Level{P: 998, Z: 122, T: 10, Wind: 10, Dir: 270}) || l[3].P != 300 {
 		t.Errorf("levels %+v", l)
 	}
-	if s := Seeing(out[1791752400]); s <= 0 {
+	if s := Seeing(out[1791766800]); s <= 0 {
 		t.Errorf("seeing %v", s)
 	}
-	if l, ok := out[1791756000]; ok {
+	if l, ok := out[1791770400]; ok {
 		t.Errorf("700 hPa surface pressure at 120 m: hour kept as %+v", l)
 	}
 	q := m.reqs[0].Query()
@@ -369,15 +370,22 @@ func TestProfile(t *testing.T) {
 	if q.Get("start_date") != "2026-10-12" || q.Get("end_date") != "2026-10-12" || q.Get("models") != "ecmwf_ifs025" {
 		t.Errorf("range and model %v", q)
 	}
+	// A window ending exactly at a UTC midnight needs no hour of the next day.
+	if _, err := Profile(context.Background(), 45.8149, 15.9781, start.Add(22*time.Hour), start.Add(24*time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	if q := m.reqs[len(m.reqs)-1].Query(); q.Get("end_date") != "2026-10-12" {
+		t.Errorf("window to midnight: end_date %s, want 2026-10-12", q.Get("end_date"))
+	}
 	for body, want := range map[string]string{
 		`{}`:                            "no upper-air data",
 		`{"elevation":120,"hourly":{}}`: "no upper-air data",
-		`{"elevation":120,"hourly":{"time":[1791748800],"surface_pressure":[998]}}`:                                                                                                 "temperature_2m series has 0 of 1 hours",
-		`{"elevation":120,"hourly":{"time":[1791748800],"temperature_2m":[10],"wind_speed_10m":[10],"wind_direction_10m":[270],"geopotential_height_850hPa":[1500]}}`:               "surface_pressure series has 0 of 1 hours",
-		`{"elevation":120,"hourly":{"time":[1791748800,1791752400],"surface_pressure":[998],"temperature_2m":[10,10],"wind_speed_10m":[10,10],"wind_direction_10m":[270,270]}}`:     "surface_pressure series has 1 of 2 hours",
-		`{"elevation":120,"hourly":{"time":[1791748800,1791752400],"surface_pressure":[700,700],"temperature_2m":[10,10],"wind_speed_10m":[10,10],"wind_direction_10m":[270,270]}}`: "no usable hour of 2",
-		`{"hourly":{"time":[1791748800],"surface_pressure":[998]}}`:                                                                                                                 "no site elevation",
-		`{"elevation":-9999,"hourly":{"time":[1791748800],"surface_pressure":[998]}}`:                                                                                               "no site elevation",
+		`{"elevation":120,"hourly":{"time":[1791763200],"surface_pressure":[998]}}`:                                                                                                 "temperature_2m series has 0 of 1 hours",
+		`{"elevation":120,"hourly":{"time":[1791763200],"temperature_2m":[10],"wind_speed_10m":[10],"wind_direction_10m":[270],"geopotential_height_850hPa":[1500]}}`:               "surface_pressure series has 0 of 1 hours",
+		`{"elevation":120,"hourly":{"time":[1791763200,1791766800],"surface_pressure":[998],"temperature_2m":[10,10],"wind_speed_10m":[10,10],"wind_direction_10m":[270,270]}}`:     "surface_pressure series has 1 of 2 hours",
+		`{"elevation":120,"hourly":{"time":[1791763200,1791766800],"surface_pressure":[700,700],"temperature_2m":[10,10],"wind_speed_10m":[10,10],"wind_direction_10m":[270,270]}}`: "no usable hour of 2",
+		`{"hourly":{"time":[1791763200],"surface_pressure":[998]}}`:                                                                                                                 "no site elevation",
+		`{"elevation":-9999,"hourly":{"time":[1791763200],"surface_pressure":[998]}}`:                                                                                               "no site elevation",
 	} {
 		mutServe(t, func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte(body)) })
 		if out, err := Profile(context.Background(), 1, 2, start, start); err == nil || !strings.Contains(err.Error(), want) {

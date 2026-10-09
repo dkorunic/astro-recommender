@@ -151,7 +151,10 @@ func fetchHourly(ctx context.Context, url string, start, end time.Time) (hourly,
 func Profile(ctx context.Context, lat, lon float64, start, end time.Time) (map[int64][]Level, error) {
 	url := fmt.Sprintf("https://api.open-meteo.com/v1/forecast?latitude=%.2f&longitude=%.2f&models=ecmwf_ifs025&hourly=%s&timeformat=unixtime&timezone=UTC",
 		lat, lon, profileVars)
-	h, elev, err := fetchHourly(ctx, url, start, end)
+	// The last hour read starts before end: a window ending at a UTC midnight
+	// needs nothing of the next day (Forecast reads one hour past end for
+	// the gusts; this does not).
+	h, elev, err := fetchHourly(ctx, url, start, end.Add(-time.Second))
 	if err != nil {
 		return nil, err
 	}
@@ -354,13 +357,16 @@ func (h *hourly) levels(elev float64) map[int64][]Level {
 
 // barometric reports whether a surface pressure p (hPa) fits the elevation
 // elev (m) at the surface temperature t (°C): within 12% of
-// 1013.25 exp(-elev/H), H = scaleHeightPerK times t in kelvin. Weather
-// moves sea-level pressure 5%, a typhoon 10%;
-// the Antarctic plateau in winter (641 hPa at the 2835 m South Pole) sits
-// 11% under a temperate column's 8400 m scale height, so the temperature
-// has to enter.
+// 1013.25 exp(-elev/H), H = scaleHeightPerK times the mean temperature of
+// the column below the site in kelvin, t plus 3.25 K per km (the standard
+// 6.5 K/km over half the column). Weather moves sea-level pressure 5%, a
+// typhoon 10%; the Antarctic plateau in winter (641 hPa at the 2835 m
+// South Pole) sits 11% under a temperate column's 8400 m scale height, so
+// the temperature has to enter, and under the winter inversion its surface
+// air is 15-25 K colder than the column (575 hPa at the 4093 m Dome A at
+// -70 °C), so the surface temperature alone would not do.
 func barometric(p, elev, t float64) bool {
-	want := 1013.25 * math.Exp(-elev/(scaleHeightPerK*(t+273.15)))
+	want := 1013.25 * math.Exp(-elev/(scaleHeightPerK*(t+273.15+0.00325*elev)))
 
 	return p >= 0.88*want && p <= 1.12*want
 }

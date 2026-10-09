@@ -58,9 +58,9 @@ type Forecast struct {
 // NoForecast is a Forecast with nothing fetched: perfect sky, fixed extinction.
 func NoForecast() Forecast { return Forecast{Elevation: math.NaN()} }
 
-// FetchForecast downloads the weather, transparency and aerosol forecasts
-// for [start, end) concurrently, as -no-weather and -extinction allow. A
-// failed source is a stderr warning and stays empty.
+// FetchForecast downloads the weather, upper-air profile, transparency and
+// aerosol forecasts for [start, end) concurrently, as -no-weather and
+// -extinction allow. A failed source is a stderr warning and stays empty.
 func FetchForecast(ctx context.Context, cfg *config.Config, start, end time.Time) Forecast {
 	f := NoForecast()
 	if cfg.NoWeather {
