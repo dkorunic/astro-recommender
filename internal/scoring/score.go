@@ -181,14 +181,18 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, alt, weight []fl
 		weighted += weight[i]
 	}
 	r.MaxAlt, r.MaxAt = math.Asin(maxSin)/deg, s.Grid[maxAt]
-	if good == 0 || time.Duration(bestLen)*time.Minute < cfg.MinRun {
+	if good == 0 {
 		return r, false
 	}
 	// The grid is minute-aligned from Start, so the run ends a minute after
-	// its last minute, or at End for the last grid minute.
+	// its last minute, or at End for the last grid minute (which End may cut
+	// short, so -min-run judges the clock span, not the minute count).
 	r.RunFrom, r.RunTo = s.Grid[best], s.End
 	if best+bestLen < len(s.Grid) {
 		r.RunTo = s.Grid[best+bestLen]
+	}
+	if r.RunTo.Sub(r.RunFrom) < cfg.MinRun {
+		return r, false
 	}
 	r.Foto = float64(good) / float64(len(s.Grid))
 	r.MeanAlt = altSum / float64(good)

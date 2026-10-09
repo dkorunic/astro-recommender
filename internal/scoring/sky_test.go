@@ -65,6 +65,21 @@ func TestBuildSkyPartialForecast(t *testing.T) {
 			t.Errorf("minute %d: quality %v, want %v", i, got, want)
 		}
 	}
+	// Rain is a gate: 0.1 mm in the hour zeroes it whatever the cloud cover,
+	// a trace halves it, and an unknown amount (NaN) does nothing.
+	wet := clear
+	wet.Precip = 0.1
+	trace := clear
+	trace.Precip = 0.05
+	unknown := clear
+	unknown.Precip = math.NaN()
+	f.Weather = map[int64]weather.HourWeather{start.Unix(): wet, start.Add(time.Hour).Unix(): trace, start.Add(2 * time.Hour).Unix(): unknown}
+	s = BuildSky(cfg, f, start, end)
+	for i, want := range map[int]float64{0: 0, 60: 0.5, 120: 1} {
+		if got := s.Quality[i]; math.Abs(got-want) > 1e-9 {
+			t.Errorf("rain minute %d: quality %v, want %v", i, got, want)
+		}
+	}
 	// Transparency only up to 22:30 (the 21:00 point; 7Timer ends sooner than
 	// Open-Meteo): its worst class halves quality, and the uncovered rest
 	// (minute 179) gets the same mean factor (0.5), not a perfect 1.

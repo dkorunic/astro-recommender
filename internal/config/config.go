@@ -248,7 +248,8 @@ func loadSkip(file string) (map[string]bool, error) {
 		return nil, err
 	}
 	skip := map[string]bool{}
-	for line := range strings.Lines(string(data)) {
+	// Editors that save "UTF-8 with BOM" would otherwise hide the first name.
+	for line := range strings.Lines(strings.TrimPrefix(string(data), "\uFEFF")) {
 		name, _, _ := strings.Cut(line, "#")
 		if name = strings.TrimSpace(name); name != "" {
 			skip[catalog.NameKey(name)] = true

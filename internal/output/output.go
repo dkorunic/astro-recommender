@@ -92,6 +92,9 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 			slices.MaxFunc(cfg.Horizon, func(a, b [2]float64) int { return cmp.Compare(a[1], b[1]) })[1])
 	}
 	skyDesc := fmt.Sprintf("Bortle not set (dark sky, %.1f mag/arcsec²)", atmos.RefZenithMag)
+	if cfg.SkySet { // -bortle 0 or -sqm 0: asked for, not defaulted
+		skyDesc = fmt.Sprintf("Bortle/SQM off (dark sky, %.1f mag/arcsec²)", atmos.RefZenithMag)
+	}
 	switch {
 	case cfg.SQM != 0:
 		b := atmos.BortleClass(cfg.SQM)
@@ -144,11 +147,14 @@ func Weather(cfg *config.Config, s *scoring.Sky) {
 		ext := paint(scale(k, 0.25, 0.4), fmt.Sprintf("%.2f", k))
 		if h, ok := s.Weather[t.Unix()]; ok {
 			cloud = paint(scale(h.Cloud, 30, 70), fmt.Sprintf("%.0f%%", h.Cloud))
+			if h.Precip >= weather.RainGate/2 { // the cell is painted once either way
+				cloud = paint("31", fmt.Sprintf("%.0f%% %.1fmm", h.Cloud, h.Precip))
+			}
 			layers = paint("39", fmt.Sprintf("%.0f/%.0f/%.0f%%", h.Low, h.Mid, h.High))
 			spread := h.Temp - h.DewPoint // < 2-3 °C: dew on the optics
 			dew = paint(scale(spread, 4, 2), fmt.Sprintf("%.1f°C", spread))
 			wind = paint(scale(h.Gust, 20, 35), fmt.Sprintf("%.0f/%.0f km/h", h.Wind, h.Gust))
-			// The jet stream class stands in for hours 7Timer does not cover.
+			// The turbulence class stands in for hours 7Timer does not cover.
 			if c := weather.Seeing(h); c > 0 {
 				seeing = paint(scale(float64(c), 2, 4), fmt.Sprintf("~%d/5", c))
 			}
@@ -383,11 +389,11 @@ type column struct{ name, desc string }
 
 var weatherColumns = []column{
 	{"HOUR", "local hour"},
-	{"CLOUD", "effective cloud cover (thin high cloud counts half)"},
+	{"CLOUD", "effective cloud cover (thin high cloud counts half), with the rain in the hour when any"},
 	{"LOW/MID/HIGH", "cloud cover per layer"},
 	{"TRANSP", "7Timer transparency, 1 best to 8 worst"},
 	{"EXT", "atmospheric extinction, mag per airmass"},
-	{"SEEING", "7Timer seeing (star FWHM); ~n/5 without it: a jet stream and gust class, 1 steady to 5 turbulent"},
+	{"SEEING", "7Timer seeing (star FWHM); ~n/5 without it: an upper-air turbulence class, 1 steady to 5 turbulent"},
 	{"DEW SPREAD", "temperature minus dew point; dew forms below ~2-3 °C"},
 	{"WIND/GUST", "mean wind / gusts, km/h"},
 }

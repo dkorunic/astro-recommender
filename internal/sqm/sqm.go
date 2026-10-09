@@ -75,7 +75,8 @@ func Lookup(ctx context.Context, key string, lat, lon float64) (float64, string,
 	if !num.Finite(body.SQM) || body.SQM < atmos.MinSQM || body.SQM > atmos.MaxSQM {
 		return 0, "", fmt.Errorf("%w: implausible SQM %g", errDarkSky, body.SQM)
 	}
-	source := sanitize.Text(cmp.Or(body.Attribution, "darkskysites.com"))
+	// Sanitize before the default: main takes an empty source for no result.
+	source := cmp.Or(sanitize.Text(body.Attribution), "darkskysites.com")
 	if id := sanitize.Text(body.Dataset.ID); id != "" {
 		source += " " + id
 	}

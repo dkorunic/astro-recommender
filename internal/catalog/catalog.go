@@ -6,10 +6,12 @@
 package catalog
 
 import (
+	"bytes"
 	"embed"
 	"encoding/gob"
 	"errors"
 	"fmt"
+	"io"
 	"math"
 	"os"
 	"slices"
@@ -199,7 +201,8 @@ var groupWords = []string{"group", "cluster", "pair", "duo", "trio", "triplet"}
 // colour is the object's B−V and whether it is the object's own (both
 // magnitudes known and plausible) rather than typicalBV.
 func (t Target) colour(k kind) (float64, bool) {
-	if bv := t.BMag - t.Mag; t.BMag > 0 && t.HasMag() && bv >= minBV && bv <= maxBV {
+	// 9.7 - 10 is -0.3000000000000007: the bounds are inclusive, so allow rounding.
+	if bv := t.BMag - t.Mag; t.BMag > 0 && t.HasMag() && bv >= minBV-1e-9 && bv <= maxBV+1e-9 {
 		return bv, true
 	}
 
@@ -231,6 +234,7 @@ var (
 	errCoordinates = errors.New("bad coordinates")
 	errSky         = errors.New("RA must be 0 to 24h and Dec within ±90°")
 	errNumber      = errors.New("bad number")
+	errDocuments   = errors.New("more than one YAML document")
 )
 
 // Load reads -targets, or the embedded -list target list.
@@ -250,8 +254,14 @@ func Load(listName, file string) ([]Target, string, error) {
 		return nil, "", err
 	}
 	var targets []Target
-	if err := yaml.Unmarshal(data, &targets); err != nil {
+	dec := yaml.NewDecoder(bytes.NewReader(data))
+	if err := dec.Decode(&targets); err != nil {
 		return nil, "", err
+	}
+	// Unmarshal would read the first document and drop the rest without a
+	// word: a stray "---" would silently lose every target after it.
+	if err := dec.Decode(new(any)); !errors.Is(err, io.EOF) {
+		return nil, "", fmt.Errorf("%w: %s", errDocuments, file)
 	}
 	// -targets may come from anywhere; its text ends up on the terminal.
 	for i := range targets {

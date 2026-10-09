@@ -303,7 +303,9 @@ function share() {
 }
 function fromURL() {
   const q = new URLSearchParams(location.search);
-  if (!String(q)) return false;
+  // Only a link share() made (it always names a field) fills and runs the
+  // form; a foreign parameter such as a tracking tag must not start a run.
+  if (![...$("form").elements].some((el) => el.name && el.type !== "file" && q.has(el.name))) return false;
   for (const el of $("form").elements) {
     if (!el.name || el.type === "file") continue;
     if (el.type === "checkbox") el.checked = q.has(el.name); else el.value = q.get(el.name) ?? "";

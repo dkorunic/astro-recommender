@@ -64,7 +64,12 @@ func Make(s *scoring.Sky, results []scoring.Result, block time.Duration) []Slot 
 	plan := make([]Slot, len(bounds))
 	for b, bd := range bounds {
 		lo, hi := bd[0], bd[1]
+		// A minute past the last sample, but never past the window's end,
+		// which a -from/-to clip in a zone with an odd offset can put earlier.
 		plan[b] = Slot{Start: s.Grid[lo], End: s.Grid[hi-1].Add(time.Minute)}
+		if plan[b].End.After(s.End) {
+			plan[b].End = s.End
+		}
 		if pick[b] < 0 {
 			continue
 		}

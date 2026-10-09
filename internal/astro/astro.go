@@ -22,6 +22,7 @@ var (
 	errRange  = errors.New("fields must be positive, minutes and seconds below 60")
 	errSign   = errors.New("more than one sign")
 	errWindow = errors.New("requested window lies outside astronomical night")
+	errClock  = errors.New("no such local time")
 )
 
 const deg = math.Pi / 180
@@ -100,8 +101,14 @@ func ClipWindow(day time.Time, loc *time.Location, start, end time.Time, from, t
 		if c.Hour() < 12 {
 			d++
 		}
+		t := time.Date(y, m, d, c.Hour(), c.Minute(), 0, 0, loc)
+		// time.Date moves a clock the zone skips (02:30 on the spring-forward
+		// night) an hour on; that is another time than asked for.
+		if t.Hour() != c.Hour() || t.Minute() != c.Minute() {
+			return time.Time{}, fmt.Errorf("%w: %s on %s in %s (clocks skip it)", errClock, s, t.Format(time.DateOnly), loc)
+		}
 
-		return time.Date(y, m, d, c.Hour(), c.Minute(), 0, 0, loc), nil
+		return t, nil
 	}
 	if from != "" {
 		t, err := clock(from)
@@ -154,7 +161,8 @@ func PrecessT(ra, dec, t float64) (float64, float64) {
 	sinT, cosT := math.Sincos(theta)
 	a := cosD * sinA
 	b := cosT*cosD*cosA - sinT*sinD
-	c := sinT*cosD*cosA + cosT*sinD
+	// Within rounding of the pole c lands above 1 and Asin would be NaN.
+	c := max(-1, min(1, sinT*cosD*cosA+cosT*sinD))
 
 	return math.Mod((math.Atan2(a, b)+z)/deg+360, 360), math.Asin(c) / deg
 }
@@ -352,6 +360,11 @@ func Sexagesimal(text string) (float64, error) {
 	}
 	var v float64
 	for i, f := range fields[:n] {
+		// The sign was taken above, so one in a field ("+ -00 30 00", where
+		// ParseFloat's -0 would pass the range check) is a second sign.
+		if f[0] == '-' || f[0] == '+' {
+			return 0, fmt.Errorf("%w: %q", errSign, text)
+		}
 		x, err := strconv.ParseFloat(f, 64)
 		if err != nil {
 			return 0, fmt.Errorf("%q: %w", text, err)

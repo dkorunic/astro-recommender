@@ -4,6 +4,7 @@
 package catalog
 
 import (
+	"errors"
 	"math"
 	"os"
 	"path/filepath"
@@ -126,6 +127,18 @@ func TestLoadAcceptsKnownAndUnknownNumbers(t *testing.T) {
 	}
 }
 
+// A second YAML document is an error, not silently dropped.
+func TestLoadRejectsSecondDocument(t *testing.T) {
+	f := filepath.Join(t.TempDir(), "t.yaml")
+	yml := "[{name: X, ra: \"00 50 00\", dec: \"10 00 00\"}]\n---\n[{name: Y, ra: \"01 00 00\", dec: \"10 00 00\"}]\n"
+	if err := os.WriteFile(f, []byte(yml), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := Load("", f); !errors.Is(err, errDocuments) {
+		t.Errorf("Load = %v, want errDocuments", err)
+	}
+}
+
 // A track key in a -targets file is ignored: Track comes only from comets,
 // and a YAML one shorter than the grid crashed scoring.
 func TestLoadIgnoresTrack(t *testing.T) {
@@ -188,6 +201,7 @@ func TestSurfaceBrightness(t *testing.T) {
 	}{
 		"measured V wins":      {Target{SurfBr: 22.5, BSurfBr: 23.3, BMag: 10, Mag: 9, Size: 10}, 22.5, false},
 		"B minus own colour":   {Target{BSurfBr: 23.3, BMag: 10, Mag: 9.1}, 22.4, false},
+		"own colour on bound":  {Target{Type: "Galaxy", BSurfBr: 23.3, BMag: 9.7, Mag: 10}, 23.6, false}, // 9.7 - 10 rounds below -0.3
 		"B minus galaxy 0.8":   {Target{Type: "Galaxy", BSurfBr: 23.3, Mag: 9.1}, 22.5, true},
 		"B minus group 0.8":    {Target{Type: "GTrpl", BSurfBr: 23.3}, 22.5, true},
 		"B minus emission 0":   {Target{Type: "Planetary Nebula", BSurfBr: 23.3}, 23.3, true},

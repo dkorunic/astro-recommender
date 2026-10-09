@@ -15,6 +15,13 @@ func TestSexagesimal(t *testing.T) {
 	if _, err := Sexagesimal("+-10 00 00"); !errors.Is(err, errSign) || !strings.Contains(err.Error(), `"+-10 00 00"`) {
 		t.Errorf("sexagesimal(+-10 00 00) = %v, want errSign quoting the input", err)
 	}
+	// A second sign after whitespace, or in a later field, is one too: "-00"
+	// parses as -0, which the range check cannot see.
+	for _, bad := range []string{"+ -00 30 00", "- +10 00 00", "00 -00 30"} {
+		if _, err := Sexagesimal(bad); !errors.Is(err, errSign) {
+			t.Errorf("sexagesimal(%q) = %v, want errSign", bad, err)
+		}
+	}
 	if _, err := Sexagesimal("-10 75 00"); !errors.Is(err, errRange) || !strings.Contains(err.Error(), `"-10 75 00"`) {
 		t.Errorf("sexagesimal(-10 75 00) = %v, want errRange quoting the input with its sign", err)
 	}
@@ -90,6 +97,16 @@ func TestWindow(t *testing.T) {
 			t.Errorf("clipWindow(%q, %q) = %v - %v, %v", c.from, c.to, s, e, err)
 		}
 	}
+	// A clock the zone skips (02:30 on the night Zagreb springs forward) is
+	// an error, not silently 03:30; 03:30 itself is fine.
+	dst := time.Date(2026, 3, 28, 0, 0, 0, 0, zg)
+	dstStart, dstEnd := time.Date(2026, 3, 28, 19, 0, 0, 0, zg), time.Date(2026, 3, 29, 5, 0, 0, 0, zg)
+	if _, _, err := ClipWindow(dst, zg, dstStart, dstEnd, "02:30", ""); err == nil {
+		t.Error("clipWindow(02:30) on the spring-forward night accepted")
+	}
+	if s, _, err := ClipWindow(dst, zg, dstStart, dstEnd, "03:30", ""); err != nil || s.Format("15:04 MST") != "03:30 CEST" {
+		t.Errorf("clipWindow(03:30) on the spring-forward night = %v, %v", s, err)
+	}
 }
 
 func TestAltAz(t *testing.T) {
@@ -112,6 +129,11 @@ func TestPrecess(t *testing.T) {
 		if d := Separation(ra, dec, c[2], c[3]) * 3600; d > 1 {
 			t.Errorf("precess(%v, %v) = %v, %v: %.2f\" from SOFA", c[0], c[1], ra, dec, d)
 		}
+	}
+	// A position within rounding of the precessed pole: the sine of the
+	// declination comes out above 1 and must be clamped, not NaN.
+	if _, dec := Precess(23.99087414049274*15, 89.88104100680276, time.Date(2021, 5, 15, 0, 0, 0, 0, time.UTC)); !(dec > 89.99 && dec <= 90) {
+		t.Errorf("precess at the pole: dec %v, want 90", dec)
 	}
 }
 

@@ -5,6 +5,7 @@ package weather
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"math"
 	"net/http"
@@ -29,14 +30,54 @@ func TestSeeingLabel(t *testing.T) {
 	}
 }
 
+// profile builds the six standard levels from a temperature (°C) and a wind
+// speed (km/h) per level, all winds from the same direction.
+func profile(temp, wind []float64, dir float64) []Level {
+	heights := []float64{1500, 3000, 5600, 9200, 10400, 11800}
+	var out []Level
+	for i, p := range pressures {
+		out = append(out, Level{P: float64(p), Z: heights[i], T: temp[i], Wind: wind[i], Dir: dir})
+	}
+
+	return out
+}
+
 func TestSeeing(t *testing.T) {
+	// A stable lapse rate, little shear and a weak jet: steady. A dry-adiabatic
+	// (negative Ri) lowest layer, 18 m/s/km shear and a 260 km/h jet: turbulent.
+	stable := profile([]float64{8, -5, -20, -45, -52, -58}, []float64{20, 20, 25, 30, 30, 30}, 270)
+	turbulent := profile([]float64{20, 0, -20, -45, -52, -58}, []float64{30, 90, 180, 180, 260, 260}, 270)
+	// A stable profile under a 150 km/h jet with 7 m/s/km shear: poor.
+	jetty := profile([]float64{8, -5, -20, -45, -52, -58}, []float64{20, 20, 60, 150, 150, 150}, 270)
+	// The steady profile with a convective lowest layer: the Ri flag alone adds a class.
+	convective := profile([]float64{20, 0, -20, -45, -52, -58}, []float64{20, 20, 25, 30, 30, 30}, 270)
 	for _, tc := range []struct {
-		jet, gust float64
-		want      int
-	}{{math.NaN(), 0, 0}, {-1, 0, 0}, {0, 0, 1}, {49, 0, 1}, {50, 0, 2}, {100, 0, 3}, {149, 31, 4}, {150, 0, 4}, {150, 31, 5}, {400, 50, 5}} {
-		if got := Seeing(HourWeather{Jet: tc.jet, Gust: tc.gust}); got != tc.want {
-			t.Errorf("Seeing(jet %v, gust %v) = %d, want %d", tc.jet, tc.gust, got, tc.want)
+		name   string
+		levels []Level
+		gust   float64
+		want   int
+	}{
+		{"no profile", nil, 50, 0},
+		{"two levels", stable[:2], 0, 0},
+		{"no jet level", turbulent[:3], 0, 0},
+		{"stable", stable, 0, 1},
+		{"stable, gusty", stable, 31, 2},
+		{"convective layer", convective, 0, 2},
+		{"jet", jetty, 0, 4},
+		{"turbulent", turbulent, 0, 5},
+		{"turbulent, gusty", turbulent, 50, 5},
+	} {
+		if got := Seeing(HourWeather{Levels: tc.levels, Gust: tc.gust}); got != tc.want {
+			t.Errorf("Seeing(%s) = %d, want %d", tc.name, got, tc.want)
 		}
+	}
+	// Direction matters: the same speeds veering 90° between levels are shear.
+	veering := profile([]float64{8, -5, -20, -45, -52, -58}, []float64{60, 60, 60, 60, 60, 60}, 270)
+	for i := range veering {
+		veering[i].Dir = float64(270 + 90*(i%2))
+	}
+	if same, veer := Seeing(HourWeather{Levels: stable}), Seeing(HourWeather{Levels: veering}); veer <= same {
+		t.Errorf("veering winds class %d, want worse than the steady %d", veer, same)
 	}
 }
 
@@ -48,7 +89,6 @@ func TestGustShift(t *testing.T) {
 		Time: []int64{72000, 75600, 79200},
 		Low:  zero, Mid: zero, High: zero, Temp: zero, DewPoint: zero, Wind: zero,
 		Gust: []*float64{p(10), p(30), p(50)},
-		Jet:  make([]*float64, 3),
 	}
 	out, err := h.weather()
 	if err != nil {
@@ -77,14 +117,70 @@ func TestGustShift(t *testing.T) {
 		_, present := out[h.Time[0]]
 		t.Errorf("null own gust: got %v (present %v), want 30", out[h.Time[0]].Gust, present)
 	}
-	// A jet series that is missing or short keeps every hour, without a jet.
-	h.Jet = nil
-	if out, err = h.weather(); err != nil || len(out) != 3 || !math.IsNaN(out[h.Time[0]].Jet) {
-		t.Errorf("no jet series: err %v, %d hours, jet %v", err, len(out), out[h.Time[0]].Jet)
+	// Without precipitation and upper-air series every hour stays, unknown.
+	if out, err = h.weather(); err != nil || len(out) != 3 || !math.IsNaN(out[h.Time[0]].Precip) || out[h.Time[0]].Levels != nil {
+		t.Errorf("no precipitation/levels: err %v, %d hours, precip %v, levels %v", err, len(out), out[h.Time[0]].Precip, out[h.Time[0]].Levels)
+	}
+	// Precipitation is the preceding hour's sum, shifted like the gusts, but
+	// an hour without a next entry stays unknown rather than taking its own
+	// value, which is the previous hour's rain.
+	h.Precip = []*float64{p(0), p(0.3)}
+	if out, _ = h.weather(); out[h.Time[0]].Precip != 0.3 || !math.IsNaN(out[h.Time[1]].Precip) || !math.IsNaN(out[h.Time[2]].Precip) {
+		t.Errorf("precipitation: got %v, %v, %v, want 0.3, NaN, NaN", out[h.Time[0]].Precip, out[h.Time[1]].Precip, out[h.Time[2]].Precip)
+	}
+	// A level is kept only with all four values; a null drops that level alone.
+	for k := range h.Level {
+		h.Level[k] = levelSeries{Z: []*float64{p(1500), p(1500), nil}, T: zero, Wind: zero, Dir: zero}
+	}
+	h.Level[1].T = []*float64{p(1), nil, p(1)}
+	h.Level[2].Wind = []*float64{p(0), p(-9999), p(0)} // a sentinel speed drops the level like a null
+	h.Level[3].Dir = []*float64{p(0), p(0), p(-9999)}  // and so does a sentinel direction
+	out, _ = h.weather()
+	if l := out[h.Time[0]].Levels; len(l) != len(pressures) || l[0].P != 850 || l[0].Z != 1500 || l[1].T != 1 {
+		t.Errorf("hour 0 levels: %+v", l)
+	}
+	if l := out[h.Time[1]].Levels; len(l) != len(pressures)-2 || l[1].P != 300 {
+		t.Errorf("hour 1 levels (null 700 hPa temperature, -9999 500 hPa wind): %+v", l)
+	}
+	if l := out[h.Time[2]].Levels; l != nil {
+		t.Errorf("hour 2 levels (null heights): %+v", l)
+	}
+	for k := range h.Level {
+		h.Level[k].Z[2] = p(1500)
+	}
+	out, _ = h.weather()
+	if l := out[h.Time[2]].Levels; len(l) != len(pressures)-1 || l[3].P != 250 {
+		t.Errorf("hour 2 levels (-9999 300 hPa direction): %+v", l)
 	}
 	h.Gust[1] = nil
 	if out, _ = h.weather(); out[h.Time[0]].Gust != 5 {
 		t.Errorf("null gusts: got %v, want the wind, 5", out[h.Time[0]].Gust)
+	}
+}
+
+// decodeHourly fills the pressure levels from the keys levelKeys names, a
+// level missing from the response stays empty, and a block the level decode
+// cannot read as series (a non-array value) still yields the weather.
+func TestDecodeHourly(t *testing.T) {
+	h, err := decodeHourly(json.RawMessage(`{"time":[0,3600],"cloud_cover_low":[1,2],"geopotential_height_850hPa":[1500,1510],
+		"temperature_850hPa":[8,7],"wind_speed_850hPa":[20,25],"wind_direction_850hPa":[270,280],"wind_speed_200hPa":[100,null]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if h.Time[1] != 3600 || *h.Low[1] != 2 || *h.Level[0].Z[1] != 1510 || *h.Level[0].T[0] != 8 || *h.Level[0].Wind[1] != 25 || *h.Level[0].Dir[1] != 280 {
+		t.Errorf("850 hPa: %+v", h.Level[0])
+	}
+	if h.Level[1].Z != nil || h.Level[5].Wind == nil || h.Level[5].Wind[1] != nil || h.Level[5].Z != nil {
+		t.Errorf("700 hPa (absent) %+v, 200 hPa (wind only) %+v", h.Level[1], h.Level[5])
+	}
+	if h, err = decodeHourly(json.RawMessage(`{"time":[0],"cloud_cover_low":[1],"units":"percent"}`)); err != nil || len(h.Time) != 1 || h.Level[0].Z != nil {
+		t.Errorf("non-series value: err %v, %d hours, levels %+v", err, len(h.Time), h.Level[0])
+	}
+	if h, err = decodeHourly(nil); err != nil || h.Time != nil {
+		t.Errorf("no block: err %v, %+v", err, h)
+	}
+	if _, err = decodeHourly(json.RawMessage(`{"time":"x"}`)); err == nil {
+		t.Error("malformed block accepted")
 	}
 }
 

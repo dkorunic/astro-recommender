@@ -215,7 +215,7 @@ func TestNear(t *testing.T) {
 // A -skip file is one name per line with # comments, matched by catalog.NameKey.
 func TestLoadSkip(t *testing.T) {
 	f := filepath.Join(t.TempDir(), "done.txt")
-	if err := os.WriteFile(f, []byte("# imaged\nngc457\n NGC 7789 # Caroline's Rose\n\nm31\n"), 0o600); err != nil {
+	if err := os.WriteFile(f, []byte("\uFEFFngc457\n NGC 7789 # Caroline's Rose\n\nm31 # imaged\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	skip, err := loadSkip(f)

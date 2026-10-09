@@ -233,4 +233,16 @@ func TestScoreRuns(t *testing.T) {
 	if res = Score(cfg, &s, []catalog.Target{zenith, polaris}, false); len(res) != 1 || res[0].Name != "Zenith X" {
 		t.Errorf("-skip polaris kept %v", res)
 	}
+	// A window ending mid-minute (a -to clip in a zone whose offset has
+	// seconds) has a last grid minute shorter than a minute: -min-run judges
+	// the clock span, so a 30-second window fails a 1-minute minimum.
+	cfg.Skip, cfg.MinRun = nil, time.Minute
+	short := BuildSky(cfg, NoForecast(), start, start.Add(30*time.Second))
+	if res = Score(cfg, &short, []catalog.Target{polaris}, false); len(res) != 0 {
+		t.Errorf("30 s window with -min-run 1m kept %v", res)
+	}
+	cfg.MinRun = 0
+	if res = Score(cfg, &short, []catalog.Target{polaris}, false); len(res) != 1 || !res[0].RunTo.Equal(short.End) {
+		t.Errorf("30 s window: %v, want Polaris with the run ending at the window's end", res)
+	}
 }

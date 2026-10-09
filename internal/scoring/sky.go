@@ -34,7 +34,7 @@ type Sky struct {
 	MoonAlt    []float64
 	Ext        []float64 // extinction per grid minute, mag per airmass
 	MoonLight  []float64 // atmos.MoonLight per grid minute
-	Quality    []float64 // clear-sky fraction x transparency x dew x gust, 1 = perfect
+	Quality    []float64 // clear-sky fraction x rain x dew x gust x transparency, 1 = perfect
 	Elevation  float64   // site elevation in m, from Open-Meteo; NaN if unknown
 	Illum      float64
 	MoonPhase  float64 // phase angle in degrees, 0 = full
@@ -89,6 +89,15 @@ func FetchForecast(ctx context.Context, cfg *config.Config, start, end time.Time
 		})
 	}
 	wg.Wait()
+	// The seeing class is the only reader of the profile, so its absence
+	// would otherwise show only as a column of dashes.
+	anyProfile := false
+	for _, h := range f.Weather {
+		anyProfile = anyProfile || len(h.Levels) > 0
+	}
+	if len(f.Weather) > 0 && !anyProfile {
+		fmt.Fprintln(os.Stderr, "warning: the weather forecast has no upper-air profile; no seeing class")
+	}
 	// The elevation alone gives extinction with typical aerosols, so the
 	// weather forecast's (longer range) stands in when CAMS has none. An
 	// explicit -extinction keeps it NaN: fixed extinction.
@@ -141,8 +150,13 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 		s.MoonLight[i] = atmos.MoonLight(s.Ext[i], s.MoonAlt[i], s.MoonPhase, s.MoonDist)
 		if h, ok := s.Weather[t.Truncate(time.Hour).Unix()]; ok {
 			// ponytail: guessed ramps; dew (spread 4 -> 1 °C) and gusts (20 -> 40 km/h)
-			// cost up to 30% and 50% of usable frames.
+			// cost up to 30% and 50% of usable frames; rain (0 -> RainGate mm
+			// in the hour) all of them, whatever the cloud layers say. Like cloud it
+			// weighs the score only: FOTO and the observable runs are geometric.
 			sky[i] = (1 - h.Cloud/100) * ramp(h.Temp-h.DewPoint, 4, 1, 0.7) * ramp(h.Gust, 20, 40, 0.5)
+			if h.Precip > 0 { // NaN (unknown) does not gate
+				sky[i] *= ramp(h.Precip, 0, weather.RainGate, 0)
+			}
 			skyOK[i] = true
 		}
 		if a, ok := s.Astro[weather.AstroKey(t)]; ok {

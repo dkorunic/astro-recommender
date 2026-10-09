@@ -77,7 +77,7 @@ func (h Horizon) At(az float64) float64 {
 	if span < 0 { // wrapping across north
 		span += 360
 	}
-	if span == 0 { // a single point
+	if span == 0 { // a single point (or every point at one azimuth: the last)
 		return lo[1]
 	}
 

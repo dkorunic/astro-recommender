@@ -38,6 +38,12 @@ func TestLookup(t *testing.T) {
 	if gotKey != "sqm_test" || gotQuery != "lat=45.81&lng=15.99" {
 		t.Errorf("sent key %q, query %q", gotKey, gotQuery)
 	}
+	// An attribution that sanitizes to nothing still yields a source, since
+	// main reads an empty one as no result.
+	reply = `{"sqm":21.5,"attribution":"\u0007"}`
+	if mag, src, err := Lookup(ctx, "k", 0, 0); err != nil || mag != 21.5 || src != "darkskysites.com" {
+		t.Errorf("control-character attribution: Lookup = %v, %q, %v", mag, src, err)
+	}
 
 	for name, c := range map[string]struct {
 		reply  string

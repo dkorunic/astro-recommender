@@ -63,7 +63,7 @@ type sky struct { // betteralign:ignore
 	SQM        float64    `json:"sqm,omitempty"`
 	SQMSource  string     `json:"sqmSource,omitempty"`
 	Extinction [2]float64 `json:"extinction"` // min and max over the window, mag per airmass
-	FilterK    float64    `json:"filterK,omitempty"`
+	FilterK    *float64   `json:"filterK,omitempty"`
 }
 
 type frame struct {
@@ -127,7 +127,7 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 		r.Sky.Bortle = cfg.Bortle
 	}
 	if cfg.Filter {
-		r.Sky.FilterK = cfg.FilterK
+		r.Sky.FilterK = &cfg.FilterK
 	}
 	if cfg.Framing {
 		r.Frame = &frame{FOVLong: cfg.FOVLong, FOVShort: cfg.FOVShort, Scale: cfg.Scale}
@@ -137,6 +137,9 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 		if h, ok := s.Weather[t.Unix()]; ok {
 			hour["cloud"], hour["low"], hour["mid"], hour["high"] = h.Cloud, h.Low, h.Mid, h.High
 			hour["dewSpread"], hour["wind"], hour["gust"] = h.Temp-h.DewPoint, h.Wind, h.Gust
+			if h.Precip >= 0 { // not NaN
+				hour["precipitation"] = h.Precip
+			}
 			if c := weather.Seeing(h); c > 0 {
 				hour["seeingClass"] = c
 			}
