@@ -118,9 +118,9 @@ func TestSOFA(t *testing.T) {
 		{"topocentric Moon (degrees)", worst.moonTopo, 0.4},
 		{"Moon illumination (percentage points)", worst.illum, 0.3},
 		{"GMST (degrees)", worst.gmst, 0.3 * arcsec},
-		{"precession (degrees)", worst.prec, 0.1 * arcsec},
+		{"precession (degrees)", worst.prec, 0.01 * arcsec}, // 0.004″ seen; a t² slip in zeta is 0.075″
 		{"target altitude (degrees)", worst.alt, 0.3 / 60},
-		{"Earth position (AU)", worst.earth, 0.0003},
+		{"Earth position (AU)", worst.earth, 0.00025}, // 0.000215 seen; dropping the r 2g term gives 0.00026
 	} {
 		if c.got > c.limit {
 			t.Errorf("%s: worst difference from SOFA %g exceeds %g", c.name, c.got, c.limit)

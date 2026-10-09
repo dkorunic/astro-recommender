@@ -45,9 +45,6 @@ func mutServe(t *testing.T, h http.HandlerFunc) *mutTransport {
 	return m
 }
 
-//go:fix inline
-func mutF(v float64) *float64 { return new(v) }
-
 func mutNear(t *testing.T, name string, got, want, tol float64) {
 	t.Helper()
 	if math.IsNaN(got) || math.Abs(got-want) > tol {
@@ -62,7 +59,7 @@ func mutHourly(n int) hourly {
 	for i := range n {
 		h.Time = append(h.Time, mutT0+int64(i)*3600)
 		for _, s := range []*[]*float64{&h.Low, &h.Mid, &h.High, &h.Temp, &h.DewPoint, &h.Wind, &h.Gust, &h.Precip} {
-			*s = append(*s, mutF(0))
+			*s = append(*s, new(0.0))
 		}
 	}
 
@@ -71,11 +68,11 @@ func mutHourly(n int) hourly {
 
 func TestMutWeatherCloudAndShift(t *testing.T) {
 	h := mutHourly(3)
-	h.Low[0], h.Mid[0], h.High[0] = mutF(50), mutF(0), mutF(100)
-	h.Low[1], h.Mid[1], h.High[1] = mutF(20), mutF(50), mutF(40)
-	h.Wind = []*float64{mutF(5), mutF(6), mutF(7)}
-	h.Gust = []*float64{mutF(10), mutF(20), mutF(30)}
-	h.Precip = []*float64{mutF(9), new(0.3), new(0.7)}
+	h.Low[0], h.Mid[0], h.High[0] = new(50.0), new(0.0), new(100.0)
+	h.Low[1], h.Mid[1], h.High[1] = new(20.0), new(50.0), new(40.0)
+	h.Wind = []*float64{new(5.0), new(6.0), new(7.0)}
+	h.Gust = []*float64{new(10.0), new(20.0), new(30.0)}
+	h.Precip = []*float64{new(9.0), new(0.3), new(0.7)}
 	out, err := h.weather(math.NaN())
 	if err != nil {
 		t.Fatal(err)
@@ -107,9 +104,9 @@ func TestMutWeatherCloudAndShift(t *testing.T) {
 func TestMutWeatherGaps(t *testing.T) {
 	h := mutHourly(4)
 	h.Time[2] = mutT0 + 5*3600 // a gap: hour 1's next entry is not its next hour
-	h.Gust = []*float64{nil, mutF(40), mutF(50), nil}
-	h.Wind = []*float64{mutF(3), mutF(4), mutF(5), mutF(6)}
-	h.Precip = []*float64{mutF(0), mutF(-1), mutF(2), mutF(3)}
+	h.Gust = []*float64{nil, new(40.0), new(50.0), nil}
+	h.Wind = []*float64{new(3.0), new(4.0), new(5.0), new(6.0)}
+	h.Precip = []*float64{new(0.0), new(-1.0), new(2.0), new(3.0)}
 	out, err := h.weather(math.NaN())
 	if err != nil {
 		t.Fatal(err)
@@ -132,7 +129,7 @@ func TestMutWeatherGaps(t *testing.T) {
 	// Null or out-of-range cloud drops the hour.
 	h = mutHourly(3)
 	h.Mid[0] = nil
-	h.High[1] = mutF(101)
+	h.High[1] = new(101.0)
 	h.Gust[2] = nil
 	out, _ = h.weather(math.NaN())
 	if _, ok := out[mutT0]; ok {
@@ -145,7 +142,7 @@ func TestMutWeatherGaps(t *testing.T) {
 		t.Error("null gust dropped the hour")
 	}
 	h = mutHourly(3)
-	h.Low[1] = mutF(-1)
+	h.Low[1] = new(-1.0)
 	if out, _ = h.weather(math.NaN()); len(out) != 2 {
 		t.Errorf("negative cloud kept: %d hours", len(out))
 	}
@@ -237,7 +234,7 @@ func TestMutElevation(t *testing.T) {
 	for _, c := range []struct {
 		p    *float64
 		want float64
-	}{{mutF(120), 120}, {mutF(-500), -500}, {mutF(9000), 9000}, {mutF(-501), math.NaN()}, {mutF(9001), math.NaN()}, {new(math.Inf(1)), math.NaN()}, {nil, math.NaN()}} {
+	}{{new(120.0), 120}, {new(-500.0), -500}, {new(9000.0), 9000}, {new(-501.0), math.NaN()}, {new(9001.0), math.NaN()}, {new(math.Inf(1)), math.NaN()}, {nil, math.NaN()}} {
 		got := elevation(c.p)
 		if !(got == c.want || math.IsNaN(got) && math.IsNaN(c.want)) {
 			t.Errorf("elevation = %v, want %v", got, c.want)
