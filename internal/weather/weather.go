@@ -29,7 +29,7 @@ var (
 )
 
 type HourWeather struct {
-	Levels         []Level // the upper-air levels (Profile), lowest first (display-only: Seeing)
+	Seeing         float64 // star FWHM estimate in arcseconds from the upper-air profile, 0 = unknown (display-only)
 	Cloud          float64 // effective cover, thin high cloud counted half
 	Low, Mid, High float64
 	Temp, DewPoint float64
@@ -43,14 +43,23 @@ const RainGate = 0.1
 
 // Level is an upper-air point: pressure (hPa), geopotential height (m),
 // temperature (°C), wind speed (km/h) and direction (°). The surface is one
-// too: the site elevation with the surface pressure, 2 m temperature and
-// 10 m wind.
+// too: 2 m above the site elevation, where its temperature is read, with
+// the surface pressure and the 10 m wind (8 m higher than the level says,
+// which overstates the ground layer's shear by about a percent).
 type Level struct{ P, Z, T, Wind, Dir float64 }
 
 // pressures are the levels Profile fetches, from the boundary layer to the
 // lower stratosphere, in the order Open-Meteo's heights increase. ECMWF IFS
-// 0.25 has no 975-950 or 900 hPa.
-var pressures = [...]int{1000, 925, 850, 700, 600, 500, 400, 300, 250, 200, 150, 100}
+// 0.25 has no 975-950 or 900 hPa, and 1000 hPa is left out: minLayer above
+// a site it would survive only at sea level under 1037 hPa.
+var pressures = [...]int{925, 850, 700, 600, 500, 400, 300, 250, 200, 150, 100}
+
+// surfaceKeys are the surface level's hourly variables, in the order of
+// hourly.surface: Profile requests and checks them by this list.
+var surfaceKeys = [...]string{"surface_pressure", "temperature_2m", "wind_speed_10m", "wind_direction_10m"}
+
+// surface is the surface level's series in surfaceKeys order.
+func (h *hourly) surface() [4][]*float64 { return [4][]*float64{h.SurfP, h.Temp, h.Wind, h.Dir} }
 
 // levelSeries is one pressure level's hourly block.
 type levelSeries struct{ Z, T, Wind, Dir []*float64 }
@@ -112,7 +121,7 @@ func fetchHourly(ctx context.Context, url string, start, end time.Time) (hourly,
 // estimate means the same thing everywhere; the surface fields come along
 // so the ground layer's gradient is read within one model.
 func Profile(ctx context.Context, lat, lon float64, start, end time.Time) (map[int64][]Level, error) {
-	vars := []string{"surface_pressure", "temperature_2m", "wind_speed_10m", "wind_direction_10m"}
+	vars := surfaceKeys[:]
 	for _, p := range pressures {
 		k := levelKeys(p)
 		vars = append(vars, k[:]...)
@@ -122,6 +131,16 @@ func Profile(ctx context.Context, lat, lon float64, start, end time.Time) (map[i
 	h, elev, err := fetchHourly(ctx, url, start, end)
 	if err != nil {
 		return nil, err
+	}
+	if math.IsNaN(elev) { // the surface level, the ground layer's base, needs it
+		return nil, fmt.Errorf("%w: no site elevation", errOpenMeteo)
+	}
+	// Every hour needs the surface fields: a series missing whole is the
+	// request or the model, not a gap, and the error should say which.
+	for i, s := range h.surface() {
+		if len(h.Time) > 0 && len(s) == 0 {
+			return nil, fmt.Errorf("%w: no %s series", errOpenMeteo, surfaceKeys[i])
+		}
 	}
 	out := h.levels(elev)
 	if len(out) == 0 {
@@ -181,9 +200,9 @@ func decodeHourly(raw json.RawMessage) (hourly, error) {
 		}
 	}
 	for k, p := range pressures {
-		l := &h.Level[k]
+		l, keys := &h.Level[k], levelKeys(p)
 		for j, dst := range [...]*[]*float64{&l.Z, &l.T, &l.Wind, &l.Dir} {
-			if b, ok := block[levelKeys(p)[j]]; !ok || json.Unmarshal(b, dst) != nil {
+			if b, ok := block[keys[j]]; !ok || json.Unmarshal(b, dst) != nil {
 				*dst = nil // absent or unreadable: that series only
 			}
 		}
@@ -259,35 +278,36 @@ next:
 // levels turns the profile block into the upper-air levels per unix hour,
 // lowest first: the surface (elev, the site in m, with the surface pressure,
 // 2 m temperature and 10 m wind), then every pressure level with all four
-// values, physical, and at least groundLayer above the surface. The surface
-// sits at 2 m, where its temperature is read. An hour is left out without
-// the elevation or a surface level, since the ground layer is the
-// estimate's largest term (the surface fields come in the same request, so
-// their absence means a broken hour), and with fewer than three pressure
-// levels, since two multi-kilometre layers are no profile.
+// values, physical, and at least minLayer above the level kept before it
+// (the surface first), so a level reported under its neighbour, a glitch,
+// never reaches Seeing as a negative or diluted layer. The surface sits at
+// 2 m, where its temperature is read. An hour is left out without a surface
+// level, since the ground layer is the estimate's largest term (the surface
+// fields come in the same request, so their absence means a broken hour;
+// Profile has checked elev, and a NaN fails plausible anyway), with fewer
+// than minPressureLevels, since two multi-kilometre layers are no profile,
+// and with none at 300 hPa or above, so Seeing's integral always spans the
+// jet. Seeing guards the last two more loosely for other callers.
 // ponytail: the level heights are the model's, absolute, while elev is
 // Open-Meteo's 90 m terrain model, so in a deep valley a level underground
 // in the model's own coarse orography can pass with extrapolated values;
-// nothing from our side tells, and groundLayer keeps such a level from
+// nothing from our side tells, and minLayer keeps such a level from
 // forming a thin ground layer at least.
 func (h *hourly) levels(elev float64) map[int64][]Level {
 	out := map[int64][]Level{}
-	if math.IsNaN(elev) {
-		return out
-	}
 	for i, t := range h.Time {
 		l := Level{Z: elev + 2}
 		if !(fill(&l.P, h.SurfP, i) && fill(&l.T, h.Temp, i) && fill(&l.Wind, h.Wind, i) && fill(&l.Dir, h.Dir, i) && plausible(l)) {
 			continue
 		}
-		levels, minZ := []Level{l}, l.Z+groundLayer
+		levels, minZ := []Level{l}, l.Z+minLayer
 		for k, p := range pressures {
 			l, s := Level{P: float64(p)}, h.Level[k]
 			if fill(&l.Z, s.Z, i) && fill(&l.T, s.T, i) && fill(&l.Wind, s.Wind, i) && fill(&l.Dir, s.Dir, i) && plausible(l) && l.Z >= minZ {
-				levels = append(levels, l)
+				levels, minZ = append(levels, l), l.Z+minLayer
 			}
 		}
-		if len(levels) >= 4 {
+		if len(levels) > minPressureLevels && levels[len(levels)-1].P <= 300 { // the surface plus the levels
 			out[t] = levels
 		}
 	}
@@ -295,13 +315,19 @@ func (h *hourly) levels(elev float64) map[int64][]Level {
 	return out
 }
 
-// groundLayer is the least height (m) of the first level above the surface.
-// Dewan's outer scale was fitted on kilometre-thick radiosonde layers: over
-// a 50 m ground layer an ordinary 15 km/h wind difference reads as a shear
-// that puts 10^2-10^4 into Cn² and a 100" estimate on the table. At 300 m
-// the ground layer is surface to 925 hPa (800 m) or higher at any site, and
-// the same cases come out at 1.2-1.3".
-const groundLayer = 300
+// minPressureLevels is the fewest pressure levels, above the surface, an
+// hour's profile needs.
+const minPressureLevels = 3
+
+// minLayer is the least thickness (m) of a layer the model reads: levels()
+// keeps each level that far above the one before, and Seeing and tropopause
+// skip thinner pairs. Dewan's outer scale was fitted on
+// kilometre-thick radiosonde layers: over a 50 m ground layer an ordinary
+// 15 km/h wind difference reads as a shear that puts 10^2-10^4 into Cn² and
+// a 100" estimate on the table. At 300 m the ground layer is surface to
+// 925 hPa (800 m) or higher at any site, and the same cases come out at
+// 1.2-1.3"; adjacent pressure levels are never closer than 700 m.
+const minLayer = 300
 
 // fill stores s[i] in dst and reports whether it was present and finite.
 func fill(dst *float64, s []*float64, i int) bool {
@@ -320,28 +346,32 @@ func plausible(l Level) bool {
 }
 
 // Seeing estimates the hour's seeing, the FWHM of a star image in
-// arcseconds at the zenith and 500 nm, from the upper-air profile: 0 without
-// one (fewer than three levels, or none at 300 hPa or above, so the integral
-// always spans the jet). Each layer between adjacent levels, the surface
+// arcseconds at the zenith and 500 nm, from the upper-air levels (Profile,
+// lowest first): 0 without a profile (fewer than minPressureLevels levels in
+// all, a looser floor than levels() keeps since the surface cannot be told
+// apart here, or none at 300 hPa or above, so the integral always spans
+// the jet). Each layer between adjacent levels, the surface
 // first when known, gets Dewan et al.'s (1993) Cn² (cn2) from its
 // temperature gradient and wind shear; the integral over height gives
-// Fried's r0 = (0.423 k² ∫Cn² dz)^(-3/5) and FWHM = 0.98 λ/r0. Above
-// maxSeeing, or not finite, it is 0 too: values plausible one by one can
-// still be nonsense together (opposed 1000 km/h winds put 10^470 in the
-// outer scale), and a +Inf would abort the JSON encoder. It is
-// display-only, for hours 7Timer's seeing does not cover.
+// Fried's r0 = (0.423 k² ∫Cn² dz)^(-3/5) and FWHM = 0.98 λ/r0. Outside
+// minSeeing-maxSeeing, or not finite, it is 0 too: values plausible one by
+// one can still be nonsense together (opposed 1000 km/h winds put 10^470
+// in the outer scale, and a +Inf would abort the JSON encoder; a profile
+// adiabatic throughout has no gradient of refractive index at all). It is
+// display-only, for hours 7Timer's seeing does not cover; scoring computes
+// it once per hour into HourWeather.Seeing.
 // ponytail: the levels are 0.7-2 km apart, so the gradients average out
 // and thin turbulent layers are missed, and the ground layer is one
 // gradient from 2 m to the first level above. Fine for ranking nights; an
 // observatory's Cn² profiler it is not.
-func Seeing(h HourWeather) float64 {
-	if len(h.Levels) < 3 || h.Levels[len(h.Levels)-1].P > 300 { // lowest first
+func Seeing(levels []Level) float64 {
+	if len(levels) < minPressureLevels || levels[len(levels)-1].P > 300 {
 		return 0
 	}
-	integral, trop := 0.0, tropopause(h.Levels)
-	for i := 1; i < len(h.Levels); i++ {
-		a, b := h.Levels[i-1], h.Levels[i]
-		if dz := b.Z - a.Z; dz >= 50 {
+	integral, trop := 0.0, tropopause(levels)
+	for i := 1; i < len(levels); i++ {
+		a, b := levels[i-1], levels[i]
+		if dz := b.Z - a.Z; dz >= minLayer {
 			integral += cn2(a, b, i-1 >= trop) * dz
 		}
 	}
@@ -349,16 +379,16 @@ func Seeing(h HourWeather) float64 {
 	k := 2 * math.Pi / lambda
 	r0 := math.Pow(0.423*k*k*integral, -0.6)
 	fwhm := 0.98 * lambda / r0 * 180 / math.Pi * 3600
-	if !num.Finite(fwhm) || fwhm > maxSeeing {
+	if !num.Finite(fwhm) || fwhm < minSeeing || fwhm > maxSeeing {
 		return 0
 	}
 
 	return fwhm
 }
 
-// maxSeeing is the largest FWHM (arcseconds) taken as an estimate; the
-// worst sites see 5".
-const maxSeeing = 30
+// minSeeing and maxSeeing bound the FWHM (arcseconds) taken as an estimate:
+// the best sites see 0.3", the worst 5".
+const minSeeing, maxSeeing = 0.1, 30
 
 // l0Scale is 0.1^(4/3), the outer scale's prefactor in cn2.
 const l0Scale = 0.046415888336127795
@@ -390,19 +420,26 @@ func cn2(a, b Level, stratospheric bool) float64 {
 // of the lowest layer whose lapse rate is 2 K/km or less (cooling less than
 // that, or warming) and whose next layer, when there is one, qualifies too,
 // standing in for the rule's average over the next 2 km (the levels there
-// are 1.2-2.3 km apart). The layers from it up are stratospheric, whatever
-// their own lapse rate. Without one every layer is tropospheric: the top
-// index (-1 for no levels).
+// are 1.2-2.3 km apart). A pair thinner than minLayer has no readable
+// gradient: Seeing skips it, and here it is looked past, so the next
+// readable layer confirms. The ground layer (from the first level, the
+// surface) is never a candidate: the rule is about the free atmosphere,
+// and at a 5500 m site a nocturnal inversion would otherwise qualify it.
+// The layers from the tropopause up are stratospheric, whatever their own
+// lapse rate. Without one every layer is tropospheric: the top index (-1
+// for no levels).
 func tropopause(levels []Level) int {
-	// qualifies is the layer from level i up; a pair under 50 m apart has no
-	// readable gradient and is Seeing's skipped layer too.
-	qualifies := func(i int) bool {
-		dz := levels[i+1].Z - levels[i].Z
-
-		return dz >= 50 && (levels[i+1].T-levels[i].T)/dz >= -2e-3
-	}
-	for i := 0; i+1 < len(levels); i++ {
-		if (levels[i].P+levels[i+1].P)/2 <= 500 && qualifies(i) && (i+2 >= len(levels) || qualifies(i+1)) {
+	readable := func(i int) bool { return levels[i+1].Z-levels[i].Z >= minLayer }
+	qualifies := func(i int) bool { return (levels[i+1].T-levels[i].T)/(levels[i+1].Z-levels[i].Z) >= -2e-3 }
+	for i := 1; i+1 < len(levels); i++ {
+		if (levels[i].P+levels[i+1].P)/2 > 500 || !readable(i) || !qualifies(i) {
+			continue
+		}
+		next := i + 1
+		for next+1 < len(levels) && !readable(next) {
+			next++
+		}
+		if next+1 >= len(levels) || qualifies(next) {
 			return i
 		}
 	}

@@ -8,8 +8,8 @@ TestMutCn2); change the Go code and this together."""
 
 import math
 
-PRESSURES = [1000, 925, 850, 700, 600, 500, 400, 300, 250, 200, 150, 100]
-HEIGHTS = [110, 800, 1500, 3000, 4200, 5600, 7200, 9200, 10400, 11800, 13500, 15800]
+PRESSURES = [925, 850, 700, 600, 500, 400, 300, 250, 200, 150, 100]
+HEIGHTS = [800, 1500, 3000, 4200, 5600, 7200, 9200, 10400, 11800, 13500, 15800]
 
 
 def wind(l):
@@ -31,12 +31,19 @@ def cn2(a, b, stratospheric):
 
 
 def tropopause(lv):
-    def qualifies(i):
-        dz = lv[i + 1][1] - lv[i][1]
-        return dz >= 50 and (lv[i + 1][2] - lv[i][2]) / dz >= -2e-3
+    def readable(i):
+        return lv[i + 1][1] - lv[i][1] >= 300
 
-    for i in range(len(lv) - 1):
-        if (lv[i][0] + lv[i + 1][0]) / 2 <= 500 and qualifies(i) and (i + 2 >= len(lv) or qualifies(i + 1)):
+    def qualifies(i):
+        return (lv[i + 1][2] - lv[i][2]) / (lv[i + 1][1] - lv[i][1]) >= -2e-3
+
+    for i in range(1, len(lv) - 1):  # never the ground layer
+        if (lv[i][0] + lv[i + 1][0]) / 2 > 500 or not readable(i) or not qualifies(i):
+            continue
+        nxt = i + 1
+        while nxt + 1 < len(lv) and not readable(nxt):
+            nxt += 1
+        if nxt + 1 >= len(lv) or qualifies(nxt):
             return i
     return len(lv) - 1
 
@@ -45,11 +52,11 @@ def seeing(lv, trop=None):
     if len(lv) < 3 or lv[-1][0] > 300:
         return 0
     trop = tropopause(lv) if trop is None else trop
-    integral = sum(cn2(a, b, i >= trop) * (b[1] - a[1]) for i, (a, b) in enumerate(zip(lv, lv[1:])) if b[1] - a[1] >= 50)
+    integral = sum(cn2(a, b, i >= trop) * (b[1] - a[1]) for i, (a, b) in enumerate(zip(lv, lv[1:])) if b[1] - a[1] >= 300)
     k = 2 * math.pi / 500e-9
     r0 = (0.423 * k * k * integral) ** -0.6
     fwhm = 0.98 * 500e-9 / r0 * 180 / math.pi * 3600
-    return fwhm if math.isfinite(fwhm) and fwhm <= 30 else 0  # Seeing's maxSeeing
+    return fwhm if math.isfinite(fwhm) and 0.1 <= fwhm <= 30 else 0  # Seeing's minSeeing-maxSeeing
 
 
 def profile(sea_t, lapse, winds, dirs):
@@ -58,22 +65,22 @@ def profile(sea_t, lapse, winds, dirs):
 
 
 if __name__ == "__main__":
-    west = [270] * 12
-    std = profile(15, 6.5, [20] * 12, west)
+    west = [270] * 11
+    std = profile(15, 6.5, [20] * 11, west)
     print(f"standard atmosphere      {seeing(std):.3f}\"  (TestSeeing 0.5-0.9)")
-    jet = profile(15, 6.5, [20, 20, 30, 50, 80, 120, 180, 250, 250, 200, 120, 60], west)
+    jet = profile(15, 6.5, [20, 30, 50, 80, 120, 180, 250, 250, 200, 120, 60], west)
     print(f"jet                      {seeing(jet):.3f}\"  (0.9-1.5)")
-    veer = profile(15, 6.5, [60] * 12, [270 + 90 * (i % 2) for i in range(12)])
-    print(f"veering every level      {seeing(veer):.3f}\"  (2-4)")
-    above = [l for l in profile(12, 6.5, [20] * 12, west) if l[1] >= 120]
+    veer = profile(15, 6.5, [60] * 11, [270 + 90 * (i % 2) for i in range(11)])
+    print(f"veering every level      {seeing(veer):.3f}\"  (1.5-4)")
+    above = [l for l in profile(12, 6.5, [20] * 11, west) if l[1] >= 120]
     above[0] = (above[0][0], above[0][1], 12, above[0][3], above[0][4])
     surface = (1000, 120, 10, 10, 270)
-    neutral = [l for l in profile(10, 6.5, [20] * 12, west) if l[1] >= 120]
+    neutral = [l for l in profile(10, 6.5, [20] * 11, west) if l[1] >= 120]
     print(f"inversion ground layer   {seeing([surface] + above):.3f}\"  (1.2-1.6)")
     print(f"neutral ground layer     {seeing([surface] + neutral):.3f}\"  vs none {seeing(neutral):.3f}\"")
-    polar = profile(0, 6.5, [20] * 12, west)
-    polar = [(p, z, max(t, polar[6][2]), w, d) for p, z, t, w, d in polar]
-    print(f"polar, tropopause at 400 {seeing(polar):.3f}\"  (0.6-0.75); at 200 {seeing(polar, 9):.3f}\"; all troposphere {seeing(polar, 99):.3f}\"")
+    polar = profile(0, 6.5, [20] * 11, west)
+    polar = [(p, z, max(t, polar[5][2]), w, d) for p, z, t, w, d in polar]
+    print(f"polar, tropopause at 400 {seeing(polar):.3f}\"  (0.6-0.75); at 200 {seeing(polar, 8):.3f}\"; all troposphere {seeing(polar, 99):.3f}\"")
     wild = [(1000, 100, 10, 1000, 90), (925, 800, 5, 1000, 270), (300, 9200, -45, 50, 270)]
     print(f"opposed 1000 km/h winds  {seeing(wild)}  (0: rejected)")
     a, b = (850, 1500, 8, 20, 270), (700, 3000, -4.5, 56, 270)

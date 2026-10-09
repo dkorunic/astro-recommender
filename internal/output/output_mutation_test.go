@@ -335,9 +335,8 @@ func TestMutResultsAlignment(t *testing.T) {
 func TestMutWeatherTable(t *testing.T) {
 	cfg, s := mutSky(t)
 	h0 := s.Start.Truncate(time.Hour).Unix()
-	levels := []weather.Level{{P: 850, Z: 1500, T: 10, Wind: 10}, {P: 500, Z: 5600, T: -10, Wind: 10}, {P: 300, Z: 9200, T: -30, Wind: 10}}
 	s.Weather = map[int64]weather.HourWeather{
-		h0:        {Cloud: 20, Low: 10, Mid: 5, High: 10, Temp: 5, DewPoint: 1, Wind: 8, Gust: 15, Precip: 0.05, Levels: levels},
+		h0:        {Cloud: 20, Low: 10, Mid: 5, High: 10, Temp: 5, DewPoint: 1, Wind: 8, Gust: 15, Precip: 0.05, Seeing: 1.2},
 		h0 + 3600: {Cloud: 90, Temp: 5, DewPoint: 4, Wind: 8, Gust: 40, Precip: 0.04},
 	}
 	s.Astro = map[int64]weather.AstroBlock{weather.AstroKey(s.Start.Add(time.Hour)): {Seeing: 3, Transparency: 2}}

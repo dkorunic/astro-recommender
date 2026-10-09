@@ -503,24 +503,24 @@ func TestMutBuildSkyGaps(t *testing.T) {
 	}
 }
 
-func TestMutNoSeeing(t *testing.T) {
+func TestMutMissingSeeing(t *testing.T) {
 	start := time.Date(2026, 10, 12, 19, 0, 0, 0, time.UTC)
 	end := start.Add(2 * time.Hour)
 	good := []weather.Level{{P: 850, Z: 1500, T: 10, Wind: 10, Dir: 270}, {P: 500, Z: 5600, T: -10, Wind: 10, Dir: 270}, {P: 300, Z: 9200, T: -30, Wind: 10, Dir: 270}}
 	f := Forecast{Weather: map[int64]weather.HourWeather{start.Unix(): {}, start.Unix() + 3600: {}}}
-	if !noSeeing(f, true, start, end) {
-		t.Error("no profile, no 7Timer: want warning")
+	if m, n := missingSeeing(f, start, end); m != 2 || n != 2 {
+		t.Errorf("no profile, no 7Timer: %d of %d, want 2 of 2", m, n)
 	}
-	f.Weather[start.Unix()+3600] = weather.HourWeather{Levels: good}
-	if noSeeing(f, true, start, end) {
-		t.Error("one hour with an estimate: no warning")
+	f.Weather[start.Unix()+3600] = weather.HourWeather{Seeing: weather.Seeing(good)}
+	if m, n := missingSeeing(f, start, end); m != 1 || n != 2 {
+		t.Errorf("one hour with an estimate: %d of %d, want 1 of 2", m, n)
 	}
-	f = Forecast{Weather: map[int64]weather.HourWeather{start.Unix(): {}}, Astro: map[int64]weather.AstroBlock{weather.AstroKey(start): {1, 1}}}
-	if noSeeing(f, true, start, start.Add(time.Hour)) {
-		t.Error("7Timer covers it: no warning")
+	f = Forecast{Weather: map[int64]weather.HourWeather{start.Unix(): {}}, Astro: map[int64]weather.AstroBlock{weather.AstroKey(start): {Seeing: 1, Transparency: 1}}}
+	if m, n := missingSeeing(f, start, start.Add(time.Hour)); m != 0 || n != 0 {
+		t.Errorf("7Timer covers it: %d of %d, want none", m, n)
 	}
-	if noSeeing(Forecast{}, true, start, end) {
-		t.Error("no forecast at all: no warning")
+	if m, n := missingSeeing(Forecast{}, start, end); m != 0 || n != 0 {
+		t.Errorf("no forecast at all: %d of %d, want none", m, n)
 	}
 }
 

@@ -69,6 +69,7 @@ func FetchForecast(ctx context.Context, cfg *config.Config, start, end time.Time
 	var wg sync.WaitGroup
 	weatherElev, aodElev := math.NaN(), math.NaN()
 	var profile map[int64][]weather.Level
+	var profileErr error
 	wg.Go(func() {
 		var err error
 		if f.Weather, weatherElev, err = weather.Forecast(ctx, cfg.Lat, cfg.Lon, start, end); err != nil {
@@ -76,10 +77,7 @@ func FetchForecast(ctx context.Context, cfg *config.Config, start, end time.Time
 		}
 	})
 	wg.Go(func() {
-		var err error
-		if profile, err = weather.Profile(ctx, cfg.Lat, cfg.Lon, start, end); err != nil {
-			fmt.Fprintln(os.Stderr, "warning: no upper-air profile, no seeing estimate:", err)
-		}
+		profile, profileErr = weather.Profile(ctx, cfg.Lat, cfg.Lon, start, end)
 	})
 	wg.Go(func() {
 		var err error
@@ -97,8 +95,12 @@ func FetchForecast(ctx context.Context, cfg *config.Config, start, end time.Time
 	}
 	wg.Wait()
 	mergeProfile(f.Weather, profile)
-	if noSeeing(f, profile != nil, start, end) {
-		fmt.Fprintln(os.Stderr, "warning: no usable upper-air seeing estimate for the hours without a 7Timer point")
+	// The estimate matters only for hours 7Timer leaves; with none, a failed
+	// or thin profile changes nothing and says nothing.
+	if missing, needed := missingSeeing(f, start, end); needed > 0 && profileErr != nil {
+		fmt.Fprintln(os.Stderr, "warning: no upper-air profile, no seeing estimate:", profileErr)
+	} else if missing > 0 {
+		fmt.Fprintf(os.Stderr, "warning: no usable upper-air seeing estimate for %d of the %d hours without a 7Timer point\n", missing, needed)
 	}
 	// The elevation alone gives extinction with typical aerosols, so the
 	// weather forecast's (longer range) stands in when CAMS has none. An
@@ -113,43 +115,40 @@ func FetchForecast(ctx context.Context, cfg *config.Config, start, end time.Time
 	return f
 }
 
-// mergeProfile attaches the upper-air levels to the hours the surface
-// forecast has: the table and JSON read them through Weather. Without a
-// surface forecast there is no table to show them in, so a profile then
-// goes unused; the weather warning already says so.
+// mergeProfile computes the seeing estimate of each hour the surface
+// forecast has from the upper-air levels, once: the table and JSON read it
+// through Weather. Without a surface forecast there is no table to show it
+// in, so a profile then goes unused; the weather warning already says so.
 func mergeProfile(w map[int64]weather.HourWeather, profile map[int64][]weather.Level) {
 	for t, lv := range profile {
 		if h, ok := w[t]; ok {
-			h.Levels = lv
+			h.Seeing = weather.Seeing(lv)
 			w[t] = h
 		}
 	}
 }
 
-// noSeeing reports whether the SEEING column falls back to the upper-air
-// estimate for some hour of [start, end) (weather but no 7Timer point) and
-// gets none for any: the profile's only reader, so its absence would
-// otherwise show only as a column of dashes. A profile that was not fetched
-// (fetched false) has had its own warning. One that was may still miss the
-// hours (the ECMWF range ends a day before best_match's), have too few
-// levels, or give estimates Seeing rejects; the warning does not tell which.
-func noSeeing(f Forecast, fetched bool, start, end time.Time) bool {
-	if !fetched {
-		return false
-	}
-	needed := false
+// missingSeeing counts the hours of [start, end) whose SEEING cell falls
+// back to the upper-air estimate (weather but no 7Timer point), and how many
+// of them get none: the profile's only reader, so its gaps would otherwise
+// show only as dashes. FetchForecast warns on the fetch error when any hour
+// needs the estimate, else on the count: a fetched profile may miss hours
+// (the ECMWF range ends a day before best_match's, and a narrowed getRange
+// covers one day), have too few levels, or give estimates Seeing rejects.
+func missingSeeing(f Forecast, start, end time.Time) (int, int) {
+	missing, needed := 0, 0
 	for t := start.Truncate(time.Hour); t.Before(end); t = t.Add(time.Hour) {
 		h, ok := f.Weather[t.Unix()]
 		if _, astro := f.Astro[weather.AstroKey(t)]; !ok || astro {
 			continue
 		}
-		if weather.Seeing(h) > 0 {
-			return false
+		needed++
+		if h.Seeing == 0 {
+			missing++
 		}
-		needed = true
 	}
 
-	return needed
+	return missing, needed
 }
 
 // BuildSky samples the night [start, end) on a 1-minute grid with forecast

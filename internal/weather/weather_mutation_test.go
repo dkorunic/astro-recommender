@@ -180,13 +180,13 @@ func TestMutWeatherLevels(t *testing.T) {
 	h := mutHourly(1)
 	h.SurfP, h.Dir = []*float64{new(980.0)}, []*float64{new(90.0)}
 	var vals [len(pressures)][4]float64
-	for k, z := range [...]float64{110, 800, 1500, 3000, 4200, 5600, 7200, 9200, 10400, 11800, 13500, 15800} {
+	for k, z := range [...]float64{800, 1500, 3000, 4200, 5600, 7200, 9200, 10400, 11800, 13500, 15800} {
 		vals[k] = [4]float64{z, 15 - 6.5*z/1000, 10, 0}
 	}
-	vals[5][2], vals[7][3] = -1, 400 // 500 hPa: negative wind; 300 hPa: 400°
+	vals[4][2], vals[6][3] = -1, 400 // 500 hPa: negative wind; 300 hPa: 400°
 	mutLevels(&h, 0, vals)
 	got := h.levels(2000)[mutT0]
-	// The surface at 2002 m, then 1000-850 lie below the site.
+	// The surface at 2002 m, then 925-850 lie below the site.
 	if len(got) != 8 || got[0] != (Level{P: 980, Z: 2002, Wind: 0, Dir: 90}) || got[1].P != 700 || got[1].Wind != 10 || got[3].P != 400 || got[4].P != 250 {
 		t.Errorf("levels %+v", got)
 	}
@@ -221,7 +221,7 @@ func TestMutDecodeHourly(t *testing.T) {
 	if len(h.Time) != 2 || *h.Low[0] != 10 || h.Low[1] != nil || *h.Precip[0] != 0.5 {
 		t.Errorf("decoded %+v", h)
 	}
-	if len(h.Level[2].Z) != 2 || *h.Level[2].Z[1] != 1510 || h.Level[2].T != nil || *h.Level[3].Wind[0] != 30 {
+	if len(h.Level[1].Z) != 2 || *h.Level[1].Z[1] != 1510 || h.Level[1].T != nil || *h.Level[2].Wind[0] != 30 {
 		t.Errorf("levels %+v", h.Level)
 	}
 	if _, err := decodeHourly(json.RawMessage(`{"time":["x"]}`)); err == nil {
@@ -260,7 +260,7 @@ func TestMutWind(t *testing.T) {
 // mutProfile builds the standard levels (6.5 K/km, isothermal above 11 km)
 // from a wind speed (km/h) and direction per level.
 func mutProfile(winds, dirs [len(pressures)]float64) []Level {
-	z := [len(pressures)]float64{110, 800, 1500, 3000, 4200, 5600, 7200, 9200, 10400, 11800, 13500, 15800}
+	z := [len(pressures)]float64{800, 1500, 3000, 4200, 5600, 7200, 9200, 10400, 11800, 13500, 15800}
 	var out []Level
 	for i, p := range pressures {
 		out = append(out, Level{P: float64(p), Z: z[i], T: 15 - 6.5*min(z[i], 11000)/1000, Wind: winds[i], Dir: dirs[i]})
@@ -297,42 +297,40 @@ func TestMutCn2(t *testing.T) {
 
 func TestMutSeeing(t *testing.T) {
 	west := mutUniform(270)
-	calm := Seeing(HourWeather{Levels: mutProfile(mutUniform(10), west)})
+	calm := Seeing(mutProfile(mutUniform(10), west))
 	if calm < 0.5 || calm > 0.9 {
 		t.Errorf("calm standard atmosphere = %.2f, want 0.5-0.9", calm)
 	}
 	// Speed without shear changes nothing.
-	mutNear(t, "uniform 144 km/h", Seeing(HourWeather{Levels: mutProfile(mutUniform(144), west)}), calm, 1e-9)
+	mutNear(t, "uniform 144 km/h", Seeing(mutProfile(mutUniform(144), west)), calm, 1e-9)
 	// Shear below 300 hPa counts even without a jet aloft.
 	low := mutUniform(10)
-	low[2], low[3] = 100, 10
-	if s := Seeing(HourWeather{Levels: mutProfile(low, west)}); s <= calm {
+	low[1], low[2] = 100, 10
+	if s := Seeing(mutProfile(low, west)); s <= calm {
 		t.Errorf("sheared 850-700 = %.2f, want above %.2f", s, calm)
 	}
-	// A pair closer than 50 m is skipped: a 700 hPa level 30 m above 850 hPa
+	// A pair thinner than minLayer is skipped: a 700 hPa level 30 m above 850 hPa
 	// with the wind reversed would be 20 m/s of shear over 30 m, blowing the
 	// estimate up; instead the profile reads as if 850 hPa were not there.
 	full := mutProfile(mutUniform(36), west)
-	thin := []Level{full[2], full[3], full[5], full[7]}
+	thin := []Level{full[1], full[2], full[4], full[6]}
 	thin[1].Z, thin[1].Dir = thin[0].Z+30, 90
-	mutNear(t, "thin layer", Seeing(HourWeather{Levels: thin}), Seeing(HourWeather{Levels: thin[1:]}), 1e-12)
+	mutNear(t, "thin layer", Seeing(thin), Seeing(thin[1:]), 1e-12)
 	// Veering 180° at 36 km/h between 850 and 700 hPa: 20 m/s of shear.
 	dirs := west
-	dirs[3] = 90
+	dirs[2] = 90
 	w := mutUniform(10)
-	w[2], w[3] = 36, 36
-	if s := Seeing(HourWeather{Levels: mutProfile(w, dirs)}); s <= calm {
+	w[1], w[2] = 36, 36
+	if s := Seeing(mutProfile(w, dirs)); s <= calm {
 		t.Errorf("veer = %.2f, want above %.2f", s, calm)
 	}
-	// Gusts no longer enter: the surface wind is a level of its own.
-	mutNear(t, "gusty", Seeing(HourWeather{Levels: mutProfile(mutUniform(10), west), Gust: 80}), calm, 0)
 	full = mutProfile(mutUniform(10), west)
-	for name, lv := range map[string][]Level{"two levels": full[:2], "no level at 300 hPa": full[:7], "two levels up to 300 hPa": full[6:8]} {
-		if s := Seeing(HourWeather{Levels: lv}); s != 0 {
+	for name, lv := range map[string][]Level{"two levels": full[:2], "no level at 300 hPa": full[:6], "two levels up to 300 hPa": full[5:7]} {
+		if s := Seeing(lv); s != 0 {
 			t.Errorf("%s = %v", name, s)
 		}
 	}
-	if s := Seeing(HourWeather{Levels: full[5:8]}); s <= 0 || s > calm {
+	if s := Seeing(full[4:7]); s <= 0 || s > calm {
 		t.Errorf("500-300 only = %.2f, want 0 < s <= %.2f", s, calm)
 	}
 }
