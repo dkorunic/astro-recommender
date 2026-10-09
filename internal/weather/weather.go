@@ -108,6 +108,9 @@ func elevation(p *float64) float64 {
 	return *p
 }
 
+// maxAOD is the largest aerosol optical depth taken as data.
+const maxAOD = 10
+
 // The Dead Sea shore to above Everest, in metres.
 const minElevation, maxElevation = -500, 9000
 
@@ -220,7 +223,7 @@ next:
 			l.T, okT = at(h.Level[k].T, i)
 			l.Wind, okW = at(h.Level[k].Wind, i)
 			l.Dir, okD = at(h.Level[k].Dir, i)
-			if okZ && okT && okW && okD && l.Wind >= 0 && l.Dir >= 0 && l.Dir <= 360 && (math.IsNaN(elev) || l.Z >= elev) { // a negative speed or direction is a sentinel, not data
+			if okZ && okT && okW && okD && plausible(l) && (math.IsNaN(elev) || l.Z >= elev) {
 				levels = append(levels, l)
 			}
 		}
@@ -231,6 +234,14 @@ next:
 	}
 
 	return out, nil
+}
+
+// plausible reports whether an upper-air level's values are physical: a
+// sentinel (-9999) or an overflowing value would carry Inf, then NaN,
+// through the shear and Richardson number into Seeing.
+func plausible(l Level) bool {
+	return l.Z >= -1000 && l.Z <= 30000 && l.T >= -150 && l.T <= 60 &&
+		l.Wind >= 0 && l.Wind <= 1000 && l.Dir >= 0 && l.Dir <= 360
 }
 
 // Seeing classes the hour's seeing 1 (steady) to 5 (turbulent) from the
@@ -384,8 +395,11 @@ func AerosolForecast(ctx context.Context, lat, lon float64, start, end time.Time
 	}
 	out := map[int64]float64{}
 	for i, t := range body.Hourly.Time {
-		// Negative AOD is bad data: it would push extinction below 0 and scores above 1.
-		if a := body.Hourly.AOD[i]; a != nil && *a >= 0 {
+		// Negative AOD is bad data: it would push extinction below 0 and scores
+		// above 1. Above maxAOD (real CAMS values stay under ~5, dust storms
+		// included) it would zero every score for the hour; both fall back
+		// to TypicalAOD like a missing hour.
+		if a := body.Hourly.AOD[i]; a != nil && *a >= 0 && *a <= maxAOD {
 			out[t] = *a
 		}
 	}

@@ -260,3 +260,23 @@ func mustWeather(t *testing.T, h *hourly, elev float64) map[int64]HourWeather {
 
 	return out
 }
+
+// Sentinel and overflowing level values are not data: one huge wind and
+// height made the shear Inf/Inf = NaN and Seeing "steady" on arm64.
+func TestPlausible(t *testing.T) {
+	ok := Level{P: 200, Z: 11800, T: -55, Wind: 150, Dir: 270}
+	if !plausible(ok) {
+		t.Fatalf("%+v rejected", ok)
+	}
+	for name, l := range map[string]Level{
+		"huge height": {P: 200, Z: 1e308, T: -55, Wind: 150, Dir: 270},
+		"huge wind":   {P: 200, Z: 11800, T: -55, Wind: 1e308, Dir: 270},
+		"huge temp":   {P: 200, Z: 11800, T: 1e308, Wind: 150, Dir: 270},
+		"sentinel":    {P: 200, Z: 11800, T: -9999, Wind: 150, Dir: 270},
+		"direction":   {P: 200, Z: 11800, T: -55, Wind: 150, Dir: 361},
+	} {
+		if plausible(l) {
+			t.Errorf("%s: %+v accepted", name, l)
+		}
+	}
+}

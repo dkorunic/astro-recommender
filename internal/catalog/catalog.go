@@ -253,21 +253,28 @@ func Load(listName, file string) ([]Target, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
+	// Every document is read: Unmarshal would take the first and drop the
+	// rest without a word, so a stray "---" lost every target after it. An
+	// empty document (a leading or trailing "---", a comment-only file) holds
+	// nothing and is skipped; a second list is an error, not merged.
 	var targets []Target
 	dec := yaml.NewDecoder(bytes.NewReader(data))
-	// An empty or comment-only file has no document at all: zero targets,
-	// as Unmarshal gave.
-	if err := dec.Decode(&targets); err != nil && !errors.Is(err, io.EOF) {
-		return nil, "", fmt.Errorf("%s: %w", file, err)
-	}
-	// Unmarshal would read the first document and drop the rest without a
-	// word: a stray "---" would silently lose every target after it. An
-	// empty one (a trailing "---") loses nothing.
-	var extra any
-	if err := dec.Decode(&extra); err != nil && !errors.Is(err, io.EOF) {
-		return nil, "", fmt.Errorf("%s: %w", file, err)
-	} else if err == nil && extra != nil {
-		return nil, "", fmt.Errorf("%w: %s", errDocuments, file)
+	for seen := false; ; {
+		var doc []Target
+		err := dec.Decode(&doc)
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			return nil, "", fmt.Errorf("%s: %w", file, err)
+		}
+		if doc == nil {
+			continue
+		}
+		if seen {
+			return nil, "", fmt.Errorf("%w: %s", errDocuments, file)
+		}
+		targets, seen = doc, true
 	}
 	// -targets may come from anywhere; its text ends up on the terminal.
 	for i := range targets {

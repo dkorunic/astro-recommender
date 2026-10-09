@@ -12,7 +12,7 @@ x-build-vars: &build-vars
   GIT_MODIFIED1:
     sh: git diff {{.GIT_HEAD_COMMIT}} {{.GIT_TAG_COMMIT}} --quiet 2>/dev/null || echo .dev
   GIT_MODIFIED2:
-    sh: git diff --quiet 2>/dev/null || echo .dirty
+    sh: git diff HEAD --quiet 2>/dev/null || echo .dirty
   GIT_MODIFIED:
     sh: echo "{{.GIT_MODIFIED1}}{{.GIT_MODIFIED2}}"
   BUILD_DATE:

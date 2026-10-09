@@ -261,7 +261,6 @@ function field(f) {
       for (const n of names) input.add(new Option(n, n === f.def ? "" : n, n === f.def));
     } else {
       input = Object.assign(document.createElement("input"), { type: "text", placeholder: f.def ?? "" });
-      if (f.type === "float" || f.type === "int") input.inputMode = "decimal";
       if (f.name === "date") input.type = "date";
     }
     label.append(Object.assign(document.createElement("span"), { textContent: "-" + f.name }), input);

@@ -21,7 +21,7 @@ var (
 	errFields = errors.New("want 1 to 3 fields")
 	errRange  = errors.New("fields must be positive, minutes and seconds below 60")
 	errSign   = errors.New("more than one sign")
-	errWindow = errors.New("requested window lies outside astronomical night")
+	errWindow = errors.New("requested window is empty or outside the night")
 	errClock  = errors.New("no such local time")
 )
 

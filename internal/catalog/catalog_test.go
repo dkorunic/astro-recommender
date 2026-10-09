@@ -132,10 +132,12 @@ func TestLoadAcceptsKnownAndUnknownNumbers(t *testing.T) {
 func TestLoadDocuments(t *testing.T) {
 	const list = `[{name: X, ra: "00 50 00", dec: "10 00 00"}]`
 	for yml, want := range map[string]int{
-		"":                             0,
-		"# only a comment\n":           0,
-		list + "\n---\n":               1,
-		list + "\n---\n" + list + "\n": -1,
+		"":                                  0,
+		"# only a comment\n":                0,
+		list + "\n---\n":                    1,
+		list + "\n---\n" + list + "\n":      -1,
+		list + "\n---\n---\n" + list + "\n": -1, // an empty document does not end the file
+		"---\n---\n" + list + "\n":          1,  // nor does a leading one count as the list
 	} {
 		f := filepath.Join(t.TempDir(), "t.yaml")
 		if err := os.WriteFile(f, []byte(yml), 0o600); err != nil {
