@@ -373,8 +373,24 @@ var emissionNames = map[string]bool{
 	"NGC 7380":      true, // Wizard
 	"IC 1805":       true, // Heart (MWSC)
 	"Mel 15":        true, // IC 1805 Heart (Melotte)
+	"NGC 2244":      true, // Rosette's cluster
+	"Mel 47":        true, // NGC 2244 (Melotte)
+	"NGC 6530":      true, // M 8 Lagoon's cluster
+	"IC 1848":       true, // Soul (MWSC)
+	"LBN 667":       true, // IC 1848 Soul (LBN's "Open cluster")
+	"NGC 1893":      true, // in IC 410
+	"Mel 33":        true, // NGC 1893 (Melotte)
+	"NGC 6823":      true, // with NGC 6820
+	"LBN 135":       true, // NGC 6823 (LBN's "Open cluster")
 	// Collinder spellings of the above
 	"Cr 26":  true, // IC 1805 Heart
+	"Cr 32":  true, // in IC 1848 Soul
+	"Cr 33":  true, // in IC 1848 Soul
+	"Cr 34":  true, // IC 1848 Soul
+	"Cr 63":  true, // NGC 1893
+	"Cr 99":  true, // NGC 2244 Rosette
+	"Cr 362": true, // NGC 6530 Lagoon
+	"Cr 405": true, // NGC 6823
 	"Cr 68":  true, // NGC 1931 Fly
 	"Cr 112": true, // NGC 2264 Cone
 	"Cr 164": true, // NGC 2467

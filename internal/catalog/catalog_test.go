@@ -173,18 +173,18 @@ func TestLoadIgnoresTrack(t *testing.T) {
 func TestEmissionLineLists(t *testing.T) {
 	for list, want := range map[string]map[string]bool{
 		"Messier":     {"M 42": true, "M 8": true, "M 16": true, "M 20": true, "M 78": false},
-		"LBN":         {"LBN 1": true},
+		"LBN":         {"LBN 1": true, "LBN 667": true, "LBN 135": true},
 		"OpenNGC":     {"NGC 1715": true, "NGC 1736": true},
 		"OpenIC":      {"IC 63": true, "IC 1310": true},
-		"Pensack500":  {"IC1805": true, "NGC 281": true, "NGC 1977(CLUSTER)": false},
-		"Herschel400": {"NGC 7380": true, "NGC 2362": false},
+		"Pensack500":  {"IC1805": true, "NGC 281": true, "NGC 1977(CLUSTER)": false, "NGC 2244": true, "NGC 6530": true, "NGC 1893": true, "NGC 6823": true},
+		"Herschel400": {"NGC 7380": true, "NGC 2362": false, "NGC 2244": true, "NGC 6823": true},
 		"GaryImm":     {"Sh2-155": true},
-		"MWSC":        {"NGC 2264": true, "NGC 6611": true, "IC 1805": true},
-		"Melotte":     {"Mel 15": true, "Mel 49": true, "Mel 198": true, "Mel 22": false},
+		"MWSC":        {"NGC 2264": true, "NGC 6611": true, "IC 1805": true, "IC 1848": true, "NGC 2244": true, "NGC 6530": true, "NGC 1893": true, "NGC 6823": true},
+		"Melotte":     {"Mel 15": true, "Mel 49": true, "Mel 198": true, "Mel 22": false, "Mel 33": true, "Mel 47": true},
 		"PNnet":       {"Ou 2": true, "StDr 56": true},
 		"HASH":        {"NGC 7293": true, "Sh 2-216": true},
 		"Sharpless":   {"Sh2-155": true, "Sh2-49": true, "Sh2-1": false},
-		"Collinder":   {"Cr 26": true, "Cr 375": true, "Cr 429": false, "Cr 399": false},
+		"Collinder":   {"Cr 26": true, "Cr 375": true, "Cr 429": false, "Cr 399": false, "Cr 34": true, "Cr 63": true, "Cr 99": true, "Cr 362": true, "Cr 405": true},
 	} {
 		targets, _, err := Load(list, "")
 		if err != nil {

@@ -20,7 +20,7 @@ import (
 // Sky holds everything about the night that does not depend on the target,
 // sampled on a 1-minute grid (as in uptonight).
 type Sky struct {
-	Night      [2]time.Time // full astronomical night; start/end may be clipped inside it
+	Night      [2]time.Time // full night at -twilight's Sun limit; start/end may be clipped inside it
 	Start, End time.Time
 	Weather    map[int64]weather.HourWeather
 	Astro      map[int64]weather.AstroBlock

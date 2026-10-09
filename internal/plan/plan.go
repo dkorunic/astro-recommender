@@ -13,7 +13,7 @@ import (
 	"github.com/dkorunic/astro-recommender/internal/scoring"
 )
 
-// Slot is one block of the night plan; r is nil when nothing is observable.
+// Slot is one block of the night plan; Result is nil when nothing is observable.
 type Slot struct {
 	Start, End time.Time
 	PeakAt     time.Time

@@ -22,10 +22,19 @@ var (
 // versionString describes the build. Without -X values (e.g. go install) it
 // falls back to the module version and VCS data Go embeds in the binary.
 func versionString() string {
+	info, _ := debug.ReadBuildInfo()
+
+	return describe(info)
+}
+
+// describe formats the version from the -X values and info (nil: none).
+func describe(info *debug.BuildInfo) string {
 	tag, commit, dirty, built := GitTag, GitCommit, strings.TrimSpace(GitDirty), BuildTime
-	if info, ok := debug.ReadBuildInfo(); ok {
-		if tag == "" && info.Main.Version != "" && info.Main.Version != "(devel)" {
-			tag = info.Main.Version
+	if info != nil {
+		// Since Go 1.24 a modified tree's module version ends in "+dirty",
+		// which vcs.modified below already reports after the commit.
+		if v := strings.TrimSuffix(info.Main.Version, "+dirty"); tag == "" && v != "" && v != "(devel)" {
+			tag = v
 		}
 		for _, s := range info.Settings {
 			switch {
