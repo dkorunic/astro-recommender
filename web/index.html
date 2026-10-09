@@ -126,6 +126,7 @@ footer a:hover { text-decoration: underline; }
     <div class="bar">
       <button type="submit" id="run" disabled>Loading…</button>
       <button type="button" class="ghost" id="here">Use my location</button>
+      <button type="button" class="ghost" id="link" title="Copy a link that fills this form and runs it">Copy link</button>
       <button type="button" class="ghost" id="clear">Reset</button>
       <button type="button" class="ghost" id="theme" title="Switch between the browser's theme, light and dark"></button>
       <span id="status"></span>
@@ -290,7 +291,7 @@ function restore() {
 
 // The URL carries the form (files excepted), so a run's address can be shared:
 // share() writes it after a run, fromURL() fills the form from it on load.
-function share() {
+function query() {
   const q = new URLSearchParams();
   for (const el of $("form").elements) {
     if (!el.name || el.type === "file") continue;
@@ -298,11 +299,12 @@ function share() {
     if (el.value.trim() !== "") q.set(el.name, el.value.trim());
   }
   // String() rather than size, which Safari 16 and Firefox 111 lack.
-  history.replaceState(null, "", String(q) ? "?" + q : location.pathname);
+  return String(q) ? "?" + q : location.pathname;
 }
+function share() { history.replaceState(null, "", query()); }
 function fromURL() {
   const q = new URLSearchParams(location.search);
-  // Only a link share() made (it always names a field) fills and runs the
+  // Only a link query() made (it always names a field) fills and runs the
   // form; a foreign parameter such as a tracking tag must not start a run.
   if (![...$("form").elements].some((el) => el.name && el.type !== "file" && q.has(el.name))) return false;
   for (const el of $("form").elements) {
@@ -421,6 +423,17 @@ $("theme").addEventListener("click", () => {
 });
 matchMedia("(prefers-color-scheme: light)").addEventListener("change", themeLabel);
 themeLabel();
+
+// The link is of the form as it stands, run or not; uploaded files are left out.
+$("link").addEventListener("click", async () => {
+  const url = new URL(query(), location.href).href;
+  try {
+    await navigator.clipboard.writeText(url);
+    $("status").textContent = "Link copied";
+  } catch {
+    prompt("Copy this link:", url); // no clipboard: http other than localhost, or denied
+  }
+});
 
 $("clear").addEventListener("click", () => {
   $("form").reset();
