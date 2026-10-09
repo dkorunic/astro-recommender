@@ -317,10 +317,11 @@ func AstroForecast(ctx context.Context, lat, lon float64) (map[int64]AstroBlock,
 	url := fmt.Sprintf("https://www.7timer.info/bin/astro.php?lon=%.2f&lat=%.2f&ac=0&unit=metric&output=json", lon, lat)
 	// 7Timer sends no CORS headers, so the browser build goes through a
 	// Cloudflare Worker (github.com/dkorunic/astro-recommender-cloudflare)
-	// that adds them for the GitHub Pages origin only, caches for an hour, and
-	// appends output=json itself (it rejects parameters it does not know).
+	// that adds them for the site's origin (astrorecommender.org) only, caches
+	// for an hour, and appends output=json itself (it rejects parameters it
+	// does not know).
 	if runtime.GOOS == "js" {
-		url = fmt.Sprintf("https://astro-recommender-proxy.dkorunic.workers.dev/api?lon=%.2f&lat=%.2f&product=astro&unit=metric&ac=0", lon, lat)
+		url = fmt.Sprintf("https://proxy.astrorecommender.org/api?lon=%.2f&lat=%.2f&product=astro&unit=metric&ac=0", lon, lat)
 	}
 	var body struct {
 		Init       string `json:"init"` // YYYYMMDDHH UTC
