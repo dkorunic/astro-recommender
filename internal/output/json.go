@@ -5,6 +5,7 @@ package output
 
 import (
 	"encoding/json"
+	"math"
 	"os"
 	"slices"
 	"time"
@@ -140,8 +141,8 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 			if h.Precip >= 0 { // not NaN
 				hour["precipitation"] = h.Precip
 			}
-			if c := weather.Seeing(h); c > 0 {
-				hour["seeingClass"] = c
+			if fwhm := weather.Seeing(h); fwhm > 0 {
+				hour["seeingArcsec"] = math.Round(fwhm*100) / 100
 			}
 		}
 		if a, ok := s.Astro[weather.AstroKey(t)]; ok {

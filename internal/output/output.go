@@ -154,9 +154,9 @@ func Weather(cfg *config.Config, s *scoring.Sky) {
 			spread := h.Temp - h.DewPoint // < 2-3 °C: dew on the optics
 			dew = paint(scale(spread, 4, 2), fmt.Sprintf("%.1f°C", spread))
 			wind = paint(scale(h.Gust, 20, 35), fmt.Sprintf("%.0f/%.0f km/h", h.Wind, h.Gust))
-			// The turbulence class stands in for hours 7Timer does not cover.
-			if c := weather.Seeing(h); c > 0 {
-				seeing = paint(scale(float64(c), 2, 4), fmt.Sprintf("~%d/5", c))
+			// The upper-air estimate stands in for hours 7Timer does not cover.
+			if fwhm := weather.Seeing(h); fwhm > 0 {
+				seeing = paint(scale(fwhm, 1.5, 2.5), fmt.Sprintf("~%.1f\"", fwhm))
 			}
 		}
 		if a, ok := s.Astro[weather.AstroKey(t)]; ok {
@@ -393,7 +393,7 @@ var weatherColumns = []column{
 	{"LOW/MID/HIGH", "cloud cover per layer"},
 	{"TRANSP", "7Timer transparency, 1 best to 8 worst"},
 	{"EXT", "atmospheric extinction, mag per airmass"},
-	{"SEEING", "7Timer seeing (star FWHM); ~n/5 without it: an upper-air turbulence class, 1 steady to 5 turbulent"},
+	{"SEEING", "7Timer seeing (star FWHM); ~n\" without it: the FWHM estimated from the upper-air profile"},
 	{"DEW SPREAD", "temperature minus dew point; dew forms below ~2-3 °C"},
 	{"WIND/GUST", "mean wind / gusts, km/h"},
 }

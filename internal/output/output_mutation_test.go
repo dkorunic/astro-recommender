@@ -347,7 +347,7 @@ func TestMutWeatherTable(t *testing.T) {
 	if len(lines) != 3 {
 		t.Fatalf("weather table:\n%s", out)
 	}
-	if !strings.HasPrefix(lines[1], "20:00") || !strings.Contains(lines[1], "20% 0.1mm") || !strings.Contains(lines[1], "~1/5") || !strings.Contains(lines[1], " 4.0°C") || strings.Contains(lines[1], "-4.0") || !strings.Contains(lines[1], "8/15 km/h") {
+	if !strings.HasPrefix(lines[1], "20:00") || !strings.Contains(lines[1], "20% 0.1mm") || !regexp.MustCompile(`~\d\.\d"`).MatchString(lines[1]) || !strings.Contains(lines[1], " 4.0°C") || strings.Contains(lines[1], "-4.0") || !strings.Contains(lines[1], "8/15 km/h") {
 		t.Errorf("row 1 %q", lines[1])
 	}
 	if !strings.HasPrefix(lines[2], "21:00") || strings.Contains(lines[2], "mm") || !strings.Contains(lines[2], "2/8") || !strings.Contains(lines[2], `0.75-1"`) {

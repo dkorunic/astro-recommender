@@ -73,7 +73,7 @@ func TestMutWeatherCloudAndShift(t *testing.T) {
 	h.Wind = []*float64{new(5.0), new(6.0), new(7.0)}
 	h.Gust = []*float64{new(10.0), new(20.0), new(30.0)}
 	h.Precip = []*float64{new(9.0), new(0.3), new(0.7)}
-	out, err := h.weather(math.NaN())
+	out, err := h.weather()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -107,7 +107,7 @@ func TestMutWeatherGaps(t *testing.T) {
 	h.Gust = []*float64{nil, new(40.0), new(50.0), nil}
 	h.Wind = []*float64{new(3.0), new(4.0), new(5.0), new(6.0)}
 	h.Precip = []*float64{new(0.0), new(-1.0), new(2.0), new(3.0)}
-	out, err := h.weather(math.NaN())
+	out, err := h.weather()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -131,7 +131,7 @@ func TestMutWeatherGaps(t *testing.T) {
 	h.Mid[0] = nil
 	h.High[1] = new(101.0)
 	h.Gust[2] = nil
-	out, _ = h.weather(math.NaN())
+	out, _ = h.weather()
 	if _, ok := out[mutT0]; ok {
 		t.Error("null hour kept")
 	}
@@ -143,7 +143,7 @@ func TestMutWeatherGaps(t *testing.T) {
 	}
 	h = mutHourly(3)
 	h.Low[1] = new(-1.0)
-	if out, _ = h.weather(math.NaN()); len(out) != 2 {
+	if out, _ = h.weather(); len(out) != 2 {
 		t.Errorf("negative cloud kept: %d hours", len(out))
 	}
 	// Malformed series.
@@ -154,14 +154,14 @@ func TestMutWeatherGaps(t *testing.T) {
 	} {
 		h = mutHourly(3)
 		f(&h)
-		if _, err := h.weather(math.NaN()); err == nil {
+		if _, err := h.weather(); err == nil {
 			t.Error("short series accepted")
 		}
 	}
 	// A short precipitation series only costs the rain gate.
 	h = mutHourly(3)
 	h.Precip = h.Precip[:1]
-	if out, err := h.weather(math.NaN()); err != nil || len(out) != 3 {
+	if out, err := h.weather(); err != nil || len(out) != 3 {
 		t.Errorf("short precip: %d %v", len(out), err)
 	}
 }
@@ -178,22 +178,26 @@ func mutLevels(h *hourly, i int, vals [len(pressures)][4]float64) {
 
 func TestMutWeatherLevels(t *testing.T) {
 	h := mutHourly(1)
-	mutLevels(&h, 0, [len(pressures)][4]float64{
-		{1500, 5, 10, 0}, {3000, -5, 20, 0}, {5600, -20, -1, 0}, {9200, -45, 60, 400}, {10400, -50, 80, 0}, {11800, -55, 90, 0},
-	})
-	out, _ := h.weather(2000)
-	got := out[mutT0].Levels
-	// 850 is below the 2000 m site, 500 has negative wind, 300 a 400° direction.
-	if len(got) != 3 || got[0].P != 700 || got[1].P != 250 || got[2].P != 200 || got[0].Z != 3000 || got[0].Wind != 20 {
+	var vals [len(pressures)][4]float64
+	for k, z := range [...]float64{110, 800, 1500, 3000, 4200, 5600, 7200, 9200, 10400, 11800, 13500, 15800} {
+		vals[k] = [4]float64{z, 15 - 6.5*z/1000, 10, 0}
+	}
+	vals[5][2], vals[7][3] = -1, 400 // 500 hPa: negative wind; 300 hPa: 400°
+	mutLevels(&h, 0, vals)
+	got := h.levels(2000)[mutT0]
+	// 1000-850 lie below the 2000 m site; the surface needs SurfP and Dir, absent here.
+	if len(got) != 7 || got[0].P != 700 || got[0].Z != 3000 || got[0].Wind != 10 || got[2].P != 400 || got[3].P != 250 {
 		t.Errorf("levels %+v", got)
 	}
-	out, _ = h.weather(math.NaN())
-	if l := out[mutT0].Levels; len(l) != 4 || l[0].P != 850 {
+	if l := h.levels(math.NaN())[mutT0]; len(l) != 10 || l[0].P != 1000 {
 		t.Errorf("NaN elevation levels %+v", l)
 	}
-	out, _ = h.weather(1500)
-	if l := out[mutT0].Levels; len(l) != 4 {
+	if l := h.levels(1500)[mutT0]; len(l) != 8 || l[0].P != 850 {
 		t.Errorf("level at the site's own height dropped: %+v", l)
+	}
+	h.SurfP, h.Dir = []*float64{new(980.0)}, []*float64{new(90.0)}
+	if l := h.levels(1500)[mutT0]; len(l) != 8 || l[0] != (Level{P: 980, Z: 1500, Wind: 0, Dir: 90}) || l[1].P != 700 {
+		t.Errorf("surface level %+v", l)
 	}
 	for _, l := range []Level{{P: 500, Z: 30001, T: 0}, {P: 500, Z: -1001}, {P: 500, T: 61}, {P: 500, T: -151}, {P: 500, Wind: 1001}, {P: 500, Dir: -1}} {
 		if plausible(l) {
@@ -216,7 +220,7 @@ func TestMutDecodeHourly(t *testing.T) {
 	if len(h.Time) != 2 || *h.Low[0] != 10 || h.Low[1] != nil || *h.Precip[0] != 0.5 {
 		t.Errorf("decoded %+v", h)
 	}
-	if len(h.Level[0].Z) != 2 || *h.Level[0].Z[1] != 1510 || h.Level[0].T != nil || *h.Level[1].Wind[0] != 30 {
+	if len(h.Level[2].Z) != 2 || *h.Level[2].Z[1] != 1510 || h.Level[2].T != nil || *h.Level[3].Wind[0] != 30 {
 		t.Errorf("levels %+v", h.Level)
 	}
 	if _, err := decodeHourly(json.RawMessage(`{"time":["x"]}`)); err == nil {
@@ -242,10 +246,7 @@ func TestMutElevation(t *testing.T) {
 	}
 }
 
-// Potential temperature: θ = T (1000/p)^(R/cp), R/cp = 0.286.
-func TestMutThetaWindQuality(t *testing.T) {
-	mutNear(t, "theta500", theta(Level{P: 500, T: -20}), 253.15*math.Pow(2, 0.286), 1e-9)
-	mutNear(t, "theta1000", theta(Level{P: 1000, T: 15}), 288.15, 1e-9)
+func TestMutWind(t *testing.T) {
 	// From the north at 36 km/h: blowing south at 10 m/s.
 	u, v := wind(Level{Wind: 36, Dir: 0})
 	mutNear(t, "u N", u, 0, 1e-9)
@@ -253,83 +254,85 @@ func TestMutThetaWindQuality(t *testing.T) {
 	u, v = wind(Level{Wind: 36, Dir: 90})
 	mutNear(t, "u E", u, -10, 1e-9)
 	mutNear(t, "v E", v, 0, 1e-9)
-	mutNear(t, "q good", quality(2, 2.5, 18), 100, 0)
-	mutNear(t, "q bad", quality(20, 2.5, 18), 0, 0)
-	mutNear(t, "q mid", quality(10.25, 2.5, 18), 50, 1e-9)
 }
 
-// mutProfile builds six levels from 850 to 200 hPa, 1.5 km apart, warming in
-// θ (stable) unless temps are given.
-func mutProfile(winds, dirs [6]float64, temps *[6]float64) []Level {
-	z := [6]float64{1500, 3000, 5600, 9200, 10400, 11800}
-	tt := [6]float64{10, 5, -10, -30, -35, -40}
-	if temps != nil {
-		tt = *temps
-	}
+// mutProfile builds the standard levels (6.5 K/km, isothermal above 11 km)
+// from a wind speed (km/h) and direction per level.
+func mutProfile(winds, dirs [len(pressures)]float64) []Level {
+	z := [len(pressures)]float64{110, 800, 1500, 3000, 4200, 5600, 7200, 9200, 10400, 11800, 13500, 15800}
 	var out []Level
 	for i, p := range pressures {
-		out = append(out, Level{P: float64(p), Z: z[i], T: tt[i], Wind: winds[i], Dir: dirs[i]})
+		out = append(out, Level{P: float64(p), Z: z[i], T: 15 - 6.5*min(z[i], 11000)/1000, Wind: winds[i], Dir: dirs[i]})
 	}
 
 	return out
 }
 
+func mutUniform(v float64) (out [len(pressures)]float64) {
+	for i := range out {
+		out[i] = v
+	}
+
+	return out
+}
+
+// Dewan's Cn² for one layer by hand: 850-700 hPa, 8 and -4.5 °C (T 274.9 K),
+// 1.5 km apart, 20 and 56 km/h from the west (shear 10 m/s / 1500 m):
+// M = -79e-6 775/274.9² (-8.33e-3 + 9.8e-3) = -1.19e-9, Y = 1.64 + 0.28,
+// Cn² = 2.8 M² 0.0464 10^1.92 = 1.53e-17 m^-2/3.
+func TestMutCn2(t *testing.T) {
+	a, b := Level{P: 850, Z: 1500, T: 8, Wind: 20, Dir: 270}, Level{P: 700, Z: 3000, T: -4.5, Wind: 56, Dir: 270}
+	mutNear(t, "cn2", cn2(a, b, false), 1.53e-17, 0.02e-17)
+	// Shear is a vector: the same speeds from opposite directions shear
+	// 76 km/h (14.1e-3 1/s), Y rises by 0.31 and Cn² doubles (10^0.31 = 2.04).
+	b.Dir = 90
+	if r := cn2(a, b, false) / 1.53e-17; r < 2 || r > 2.1 {
+		t.Errorf("opposed winds: %.2f times the westerly layer, want 2.04", r)
+	}
+	// An exactly adiabatic layer has no gradient of refractive index.
+	b.Dir, b.T = 270, 8-9.8*1.5
+	mutNear(t, "adiabatic", cn2(a, b, false), 0, 1e-30)
+}
+
 func TestMutSeeing(t *testing.T) {
-	calm := [6]float64{10, 10, 10, 10, 10, 10}
-	var north [6]float64
-	if s := Seeing(HourWeather{Levels: mutProfile(calm, north, nil)}); s != 1 {
-		t.Errorf("calm stable = %d, want 1", s)
+	west := mutUniform(270)
+	calm := Seeing(HourWeather{Levels: mutProfile(mutUniform(10), west)})
+	if calm < 0.5 || calm > 0.9 {
+		t.Errorf("calm standard atmosphere = %.2f, want 0.5-0.9", calm)
 	}
-	// Uniform 144 km/h (40 m/s) everywhere: no shear (q 100), jet q 0, so
-	// q = 50 and class 1 + 50/20 = 3.
-	jet := [6]float64{144, 144, 144, 144, 144, 144}
-	if s := Seeing(HourWeather{Levels: mutProfile(jet, north, nil)}); s != 3 {
-		t.Errorf("uniform jet = %d, want 3", s)
+	// Speed without shear changes nothing.
+	mutNear(t, "uniform 144 km/h", Seeing(HourWeather{Levels: mutProfile(mutUniform(144), west)}), calm, 1e-9)
+	// Shear below 300 hPa counts even without a jet aloft.
+	low := mutUniform(10)
+	low[2], low[3] = 100, 10
+	if s := Seeing(HourWeather{Levels: mutProfile(low, west)}); s <= calm {
+		t.Errorf("sheared 850-700 = %.2f, want above %.2f", s, calm)
 	}
-	// Strong wind below 300 hPa only does not count as jet.
-	low := [6]float64{144, 144, 144, 10, 10, 10}
-	lowLv := mutProfile(low, north, nil)
-	lowLv[3].Z = lowLv[2].Z + 30 // below the 50 m step: that pair's shear is skipped
-	lowLv[4].Z, lowLv[5].Z = lowLv[3].Z+1500, lowLv[3].Z+3000
-	if s := Seeing(HourWeather{Levels: lowLv}); s != 1 {
-		t.Errorf("low wind = %d, want 1", s)
+	// A pair closer than 50 m is skipped: a 700 hPa level 30 m above 850 hPa
+	// with the wind reversed would be 20 m/s of shear over 30 m, blowing the
+	// estimate up; instead the profile reads as if 850 hPa were not there.
+	full := mutProfile(mutUniform(36), west)
+	thin := []Level{full[2], full[3], full[5], full[7]}
+	thin[1].Z, thin[1].Dir = thin[0].Z+30, 90
+	mutNear(t, "thin layer", Seeing(HourWeather{Levels: thin}), Seeing(HourWeather{Levels: thin[1:]}), 1e-12)
+	// Veering 180° at 36 km/h between 850 and 700 hPa: 20 m/s of shear.
+	dirs := west
+	dirs[3] = 90
+	w := mutUniform(10)
+	w[2], w[3] = 36, 36
+	if s := Seeing(HourWeather{Levels: mutProfile(w, dirs)}); s <= calm {
+		t.Errorf("veer = %.2f, want above %.2f", s, calm)
 	}
-	// Gusts above 30 km/h add one; 30 does not.
-	if s := Seeing(HourWeather{Levels: mutProfile(jet, north, nil), Gust: 31}); s != 4 {
-		t.Errorf("gusty = %d, want 4", s)
+	// Gusts no longer enter: the surface wind is a level of its own.
+	mutNear(t, "gusty", Seeing(HourWeather{Levels: mutProfile(mutUniform(10), west), Gust: 80}), calm, 0)
+	full = mutProfile(mutUniform(10), west)
+	for name, lv := range map[string][]Level{"two levels": full[:2], "no level at 300 hPa": full[:7], "two levels up to 300 hPa": full[6:8]} {
+		if s := Seeing(HourWeather{Levels: lv}); s != 0 {
+			t.Errorf("%s = %v", name, s)
+		}
 	}
-	if s := Seeing(HourWeather{Levels: mutProfile(jet, north, nil), Gust: 30}); s != 3 {
-		t.Errorf("gust 30 = %d, want 3", s)
-	}
-	// Veering 180° at 36 km/h between 850 and 700 (1.5 km): 20 m/s / 1.5 km
-	// = 13.3 m/s/km, q_shear = 100(1 − 10.83/15.5) = 30.1, q = 65, class 2.
-	wind := [6]float64{36, 36, 10, 10, 10, 10}
-	dirs := [6]float64{0, 180, 180, 180, 180, 180}
-	if s := Seeing(HourWeather{Levels: mutProfile(wind, dirs, nil)}); s != 2 {
-		t.Errorf("veer = %d, want 2", s)
-	}
-	// θ falling with height (superadiabatic): Ri < 0, one class worse.
-	hot := [6]float64{40, -10, -40, -70, -80, -90}
-	if s := Seeing(HourWeather{Levels: mutProfile(calm, north, &hot)}); s != 2 {
-		t.Errorf("convective = %d, want 2", s)
-	}
-	// Everything bad caps at 5.
-	worst := [6]float64{0, 300, 0, 300, 300, 300}
-	if s := Seeing(HourWeather{Levels: mutProfile(worst, dirs, &hot), Gust: 80}); s != 5 {
-		t.Errorf("worst = %d, want 5", s)
-	}
-	lv := mutProfile(calm, north, nil)
-	if s := Seeing(HourWeather{Levels: lv[:2]}); s != 0 {
-		t.Errorf("two levels = %d", s)
-	}
-	if s := Seeing(HourWeather{Levels: lv[:3]}); s != 0 {
-		t.Errorf("no level at 300 hPa = %d", s)
-	}
-	if s := Seeing(HourWeather{Levels: lv[2:4]}); s != 0 {
-		t.Errorf("two levels up to 300 hPa = %d", s)
-	}
-	if s := Seeing(HourWeather{Levels: lv[1:4]}); s != 1 {
-		t.Errorf("700-300 = %d, want 1", s)
+	if s := Seeing(HourWeather{Levels: full[5:8]}); s <= 0 || s > calm {
+		t.Errorf("500-300 only = %.2f, want 0 < s <= %.2f", s, calm)
 	}
 }
 
@@ -485,29 +488,6 @@ func TestMutForecast(t *testing.T) {
 	mutServe(t, func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte(`{"elevation":120,"hourly":{}}`)) })
 	if _, _, err := Forecast(context.Background(), 1, 2, start, start); err == nil {
 		t.Error("empty forecast accepted")
-	}
-}
-
-// 72 km/h = 20 m/s jet, no shear: q_jet = 100(1 − 12/32) = 62.5, q = 81.25,
-// class 1. A 180° veer at 74.88 km/h (20.8 m/s) between 850 and 700 hPa:
-// shear 27.7 m/s/km (q 0) and jet q 60 give q = 30, class 4; isothermal
-// −20 °C keeps Ri at 0.47, while θ rising only 4.2 K over that layer puts it
-// at 0.13, a fifth class.
-func TestMutSeeingClasses(t *testing.T) {
-	var north [6]float64
-	mid := [6]float64{72, 72, 72, 72, 72, 72}
-	if s := Seeing(HourWeather{Levels: mutProfile(mid, north, nil)}); s != 1 {
-		t.Errorf("20 m/s jet = %d, want 1", s)
-	}
-	w := [6]float64{74.88, 74.88, 74.88, 74.88, 74.88, 74.88}
-	dirs := [6]float64{0, 180, 180, 180, 180, 180}
-	iso := [6]float64{-20, -20, -20, -20, -20, -20}
-	if s := Seeing(HourWeather{Levels: mutProfile(w, dirs, &iso)}); s != 4 {
-		t.Errorf("veer + jet = %d, want 4", s)
-	}
-	weak := [6]float64{-20, -29.9, -20, -20, -20, -20}
-	if s := Seeing(HourWeather{Levels: mutProfile(w, dirs, &weak)}); s != 5 {
-		t.Errorf("veer + jet + Ri 0.13 = %d, want 5", s)
 	}
 }
 

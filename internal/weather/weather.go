@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2026 Dinko Korunic <dinko.korunic@gmail.com>
 // SPDX-License-Identifier: MIT
 
-// Package weather fetches Open-Meteo weather and aerosol forecasts and 7Timer
-// transparency and seeing, with a turbulence seeing class from the upper-air
-// profile as the fallback.
+// Package weather fetches Open-Meteo weather, upper-air and aerosol forecasts
+// and 7Timer transparency and seeing, with a seeing estimate from the
+// upper-air profile as the fallback.
 package weather
 
 import (
@@ -29,7 +29,7 @@ var (
 )
 
 type HourWeather struct {
-	Levels         []Level // the upper-air levels Open-Meteo had, lowest first (display-only: Seeing)
+	Levels         []Level // the upper-air levels (Profile), lowest first (display-only: Seeing)
 	Cloud          float64 // effective cover, thin high cloud counted half
 	Low, Mid, High float64
 	Temp, DewPoint float64
@@ -42,51 +42,42 @@ type HourWeather struct {
 const RainGate = 0.1
 
 // Level is an upper-air point: pressure (hPa), geopotential height (m),
-// temperature (°C), wind speed (km/h) and direction (°).
+// temperature (°C), wind speed (km/h) and direction (°). The surface is one
+// too: the site elevation with the surface pressure, 2 m temperature and
+// 10 m wind.
 type Level struct{ P, Z, T, Wind, Dir float64 }
 
-// pressures are the levels fetched, from the top of the boundary layer to
-// the jet stream, in the order Open-Meteo's heights increase.
-var pressures = [...]int{850, 700, 500, 300, 250, 200}
+// pressures are the levels Profile fetches, from the boundary layer to the
+// lower stratosphere, in the order Open-Meteo's heights increase. ECMWF IFS
+// 0.25 has no 975-950 or 900 hPa.
+var pressures = [...]int{1000, 925, 850, 700, 600, 500, 400, 300, 250, 200, 150, 100}
 
 // levelSeries is one pressure level's hourly block.
 type levelSeries struct{ Z, T, Wind, Dir []*float64 }
 
-// hourly is Open-Meteo's hourly block, values null when missing.
+// hourly is Open-Meteo's hourly block, values null when missing. Forecast
+// fills the surface weather, Profile the levels with SurfP, Temp, Wind and Dir.
 type hourly struct {
-	Time                                               []int64
-	Low, Mid, High, Temp, DewPoint, Wind, Gust, Precip []*float64
-	Level                                              [len(pressures)]levelSeries
+	Time                                                           []int64
+	Low, Mid, High, Temp, DewPoint, Wind, Gust, Precip, SurfP, Dir []*float64
+	Level                                                          [len(pressures)]levelSeries
 }
 
 // Forecast fetches hourly weather from Open-Meteo, keyed by unix hour, plus
 // the site elevation (NaN if missing), which the aerosol forecast also gives
 // but only over its shorter range.
 func Forecast(ctx context.Context, lat, lon float64, start, end time.Time) (map[int64]HourWeather, float64, error) {
-	vars := []string{"cloud_cover_low", "cloud_cover_mid", "cloud_cover_high", "temperature_2m", "dew_point_2m", "wind_speed_10m", "wind_gusts_10m", "precipitation"}
-	for _, p := range pressures {
-		k := levelKeys(p)
-		vars = append(vars, k[:]...)
-	}
+	vars := "cloud_cover_low,cloud_cover_mid,cloud_cover_high,temperature_2m,dew_point_2m,wind_speed_10m,wind_gusts_10m,precipitation"
 	// 2 decimals (~1 km) is finer than the weather models and avoids sending an exact address.
 	url := fmt.Sprintf("https://api.open-meteo.com/v1/forecast?latitude=%.2f&longitude=%.2f&hourly=%s&timeformat=unixtime&timezone=UTC",
-		lat, lon, strings.Join(vars, ","))
-	var body struct {
-		Elevation *float64        `json:"elevation"`
-		Reason    string          `json:"reason"`
-		Hourly    json.RawMessage `json:"hourly"`
-	}
+		lat, lon, vars)
 	// One hour past the end: the last hour's gust is in the next entry, which
 	// falls on the next UTC day when the night ends after 23:00 UTC.
-	if err := getRange(ctx, url, start, end.Add(time.Hour), &body); err != nil {
-		return nil, math.NaN(), fmt.Errorf("%w: %w %s", errOpenMeteo, err, sanitize.Text(body.Reason))
-	}
-	h, err := decodeHourly(body.Hourly)
+	h, elev, err := fetchHourly(ctx, url, start, end.Add(time.Hour))
 	if err != nil {
 		return nil, math.NaN(), err
 	}
-	elev := elevation(body.Elevation)
-	out, err := h.weather(elev)
+	out, err := h.weather()
 	if err != nil {
 		return nil, math.NaN(), err
 	}
@@ -95,6 +86,49 @@ func Forecast(ctx context.Context, lat, lon float64, start, end time.Time) (map[
 	}
 
 	return out, elev, nil
+}
+
+// fetchHourly gets an Open-Meteo forecast for [start, end) and decodes its
+// hourly block; Forecast and Profile differ only in the URL and in what they
+// make of the block. The elevation is NaN when missing or implausible.
+func fetchHourly(ctx context.Context, url string, start, end time.Time) (hourly, float64, error) {
+	var body struct {
+		Elevation *float64        `json:"elevation"`
+		Reason    string          `json:"reason"`
+		Hourly    json.RawMessage `json:"hourly"`
+	}
+	if err := getRange(ctx, url, start, end, &body); err != nil {
+		return hourly{}, math.NaN(), fmt.Errorf("%w: %w %s", errOpenMeteo, err, sanitize.Text(body.Reason))
+	}
+	h, err := decodeHourly(body.Hourly)
+
+	return h, elevation(body.Elevation), err
+}
+
+// Profile fetches the upper-air levels per unix hour from ECMWF IFS 0.25
+// (3-hourly, interpolated to hours by Open-Meteo, 15 days ahead) for
+// Seeing. Its own model rather than Forecast's best_match blend, whose
+// pressure levels come from whichever model covers the site, so the
+// estimate means the same thing everywhere; the surface fields come along
+// so the ground layer's gradient is read within one model.
+func Profile(ctx context.Context, lat, lon float64, start, end time.Time) (map[int64][]Level, error) {
+	vars := []string{"surface_pressure", "temperature_2m", "wind_speed_10m", "wind_direction_10m"}
+	for _, p := range pressures {
+		k := levelKeys(p)
+		vars = append(vars, k[:]...)
+	}
+	url := fmt.Sprintf("https://api.open-meteo.com/v1/forecast?latitude=%.2f&longitude=%.2f&models=ecmwf_ifs025&hourly=%s&timeformat=unixtime&timezone=UTC",
+		lat, lon, strings.Join(vars, ","))
+	h, elev, err := fetchHourly(ctx, url, start, end)
+	if err != nil {
+		return nil, err
+	}
+	out := h.levels(elev)
+	if len(out) == 0 {
+		return nil, fmt.Errorf("%w: no upper-air data for %s", errOpenMeteo, start.Format(time.DateOnly))
+	}
+
+	return out, nil
 }
 
 // elevation returns a response's site elevation, NaN when missing or
@@ -138,7 +172,7 @@ func decodeHourly(raw json.RawMessage) (hourly, error) {
 	for key, dst := range map[string]any{
 		"time": &h.Time, "cloud_cover_low": &h.Low, "cloud_cover_mid": &h.Mid, "cloud_cover_high": &h.High,
 		"temperature_2m": &h.Temp, "dew_point_2m": &h.DewPoint, "wind_speed_10m": &h.Wind,
-		"wind_gusts_10m": &h.Gust, "precipitation": &h.Precip,
+		"wind_gusts_10m": &h.Gust, "precipitation": &h.Precip, "surface_pressure": &h.SurfP, "wind_direction_10m": &h.Dir,
 	} {
 		if b, ok := block[key]; ok {
 			if err := json.Unmarshal(b, dst); err != nil {
@@ -167,13 +201,11 @@ func at(s []*float64, i int) (float64, bool) {
 	return *s[i], true
 }
 
-// weather turns the hourly block into HourWeather keyed by unix hour. Levels
-// below elev (the site, in m; NaN keeps them all) are dropped: at a high site
-// 850 hPa lies underground, where the model's values are extrapolated.
-func (h *hourly) weather(elev float64) (map[int64]HourWeather, error) {
+// weather turns the hourly block into HourWeather keyed by unix hour.
+func (h *hourly) weather() (map[int64]HourWeather, error) {
 	// Gust is not in series: a null gust does not drop the hour (see below).
-	// Precipitation and the levels are optional too: a missing or short
-	// series costs only the rain gate or that hour's seeing class.
+	// Precipitation is optional too: a missing or short series costs only
+	// the rain gate.
 	series := [][]*float64{h.Low, h.Mid, h.High, h.Temp, h.DewPoint, h.Wind}
 	if len(h.Gust) != len(h.Time) {
 		return nil, fmt.Errorf("%w: malformed response", errOpenMeteo)
@@ -215,20 +247,8 @@ next:
 		if v, ok := at(h.Precip, i+1); ok && v >= 0 && i+1 < len(h.Time) && h.Time[i+1] == t+3600 {
 			precip = v
 		}
-		var levels []Level
-		for k, p := range pressures {
-			l := Level{P: float64(p)}
-			var okZ, okT, okW, okD bool
-			l.Z, okZ = at(h.Level[k].Z, i)
-			l.T, okT = at(h.Level[k].T, i)
-			l.Wind, okW = at(h.Level[k].Wind, i)
-			l.Dir, okD = at(h.Level[k].Dir, i)
-			if okZ && okT && okW && okD && plausible(l) && (math.IsNaN(elev) || l.Z >= elev) {
-				levels = append(levels, l)
-			}
-		}
 		out[t] = HourWeather{
-			Levels: levels, Cloud: cloud, Low: *h.Low[i], Mid: *h.Mid[i], High: *h.High[i],
+			Cloud: cloud, Low: *h.Low[i], Mid: *h.Mid[i], High: *h.High[i],
 			Temp: *h.Temp[i], DewPoint: *h.DewPoint[i], Wind: *h.Wind[i], Gust: gust, Precip: precip,
 		}
 	}
@@ -236,63 +256,129 @@ next:
 	return out, nil
 }
 
-// plausible reports whether an upper-air level's values are physical: a
-// sentinel (-9999) or an overflowing value would carry Inf, then NaN,
-// through the shear and Richardson number into Seeing.
+// levels turns the profile block into the upper-air levels per unix hour,
+// lowest first: the surface (elev, the site in m, with the surface pressure,
+// 2 m temperature and 10 m wind) when elev is known, then every pressure
+// level with all four values, physical, and above the site: at a high site
+// 1000 hPa lies underground, where the model's values are extrapolated
+// (NaN keeps them all). With a surface level the next one must be 50 m
+// above it, the pair Seeing reads, so the ground layer always exists rather
+// than depending on how far below the 1000 hPa surface the site happens to
+// sit. Hours with no level are left out.
+func (h *hourly) levels(elev float64) map[int64][]Level {
+	out := map[int64][]Level{}
+	for i, t := range h.Time {
+		var levels []Level
+		minZ := elev // NaN: no comparison holds, every level stays
+		if l := (Level{Z: elev}); !math.IsNaN(elev) &&
+			fill(&l.P, h.SurfP, i) && fill(&l.T, h.Temp, i) && fill(&l.Wind, h.Wind, i) && fill(&l.Dir, h.Dir, i) && plausible(l) {
+			levels, minZ = append(levels, l), elev+50
+		}
+		for k, p := range pressures {
+			l, s := Level{P: float64(p)}, h.Level[k]
+			if fill(&l.Z, s.Z, i) && fill(&l.T, s.T, i) && fill(&l.Wind, s.Wind, i) && fill(&l.Dir, s.Dir, i) && plausible(l) && !(l.Z < minZ) {
+				levels = append(levels, l)
+			}
+		}
+		if len(levels) > 0 {
+			out[t] = levels
+		}
+	}
+
+	return out
+}
+
+// fill stores s[i] in dst and reports whether it was present and finite.
+func fill(dst *float64, s []*float64, i int) bool {
+	v, ok := at(s, i)
+	*dst = v
+
+	return ok
+}
+
+// plausible reports whether a level's values are physical: a sentinel
+// (-9999) or an overflowing value would carry Inf, then NaN, through the
+// shear and the temperature gradient into Seeing.
 func plausible(l Level) bool {
-	return l.Z >= -1000 && l.Z <= 30000 && l.T >= -150 && l.T <= 60 &&
+	return l.P >= 50 && l.P <= 1100 && l.Z >= -1000 && l.Z <= 30000 && l.T >= -150 && l.T <= 60 &&
 		l.Wind >= 0 && l.Wind <= 1000 && l.Dir >= 0 && l.Dir <= 360
 }
 
-// Seeing classes the hour's seeing 1 (steady) to 5 (turbulent) from the
-// upper-air profile, 0 without one (fewer than three levels, or none at
-// 300 hPa or above, which the jet term reads): the display-only fallback
-// for hours 7Timer's seeing does not cover. The
-// strongest wind shear between adjacent levels and the jet (the fastest wind
-// at 300 hPa and above) weigh equally into a 0-100 quality that maps onto
-// the classes in steps of 20. A layer whose gradient Richardson number
-// (buoyancy over shear squared) is below 0.25, dynamically unstable or
-// convective, adds a class; between levels kilometres apart the shear
-// averages out and Ri is 4-19 on an ordinary night, so this is a flag for
-// the exceptional layer, not a graded term. Gusts above 30 km/h, stirring
-// the boundary layer below the lowest level, add another.
-// ponytail: thresholds are amateur rules of thumb after
-// markusschierz/astro-forecast (shear 2.5-18 m/s/km, jet 8-40 m/s), not a
-// Cn² model.
-func Seeing(h HourWeather) int {
+// Seeing estimates the hour's seeing, the FWHM of a star image in
+// arcseconds at the zenith and 500 nm, from the upper-air profile: 0 without
+// one (fewer than three levels, or none at 300 hPa or above, so the integral
+// always spans the jet). Each layer between adjacent levels, the surface
+// first when known, gets Dewan et al.'s (1993) Cn² (cn2) from its
+// temperature gradient and wind shear; the integral over height gives
+// Fried's r0 = (0.423 k² ∫Cn² dz)^(-3/5) and FWHM = 0.98 λ/r0. It is
+// display-only, for hours 7Timer's seeing does not cover.
+// ponytail: the levels are 0.7-2 km apart, so the gradients average out
+// and thin turbulent layers are missed, and the ground layer is one
+// gradient from 2 m to the first level above. Fine for ranking nights; an
+// observatory's Cn² profiler it is not.
+func Seeing(h HourWeather) float64 {
 	if len(h.Levels) < 3 || h.Levels[len(h.Levels)-1].P > 300 { // lowest first
 		return 0
 	}
-	const g = 9.80665
-	minRi, maxShear, jet := math.Inf(1), 0.0, 0.0
+	integral, trop := 0.0, tropopause(h.Levels)
 	for i := 1; i < len(h.Levels); i++ {
 		a, b := h.Levels[i-1], h.Levels[i]
-		dz := b.Z - a.Z
-		if dz < 50 {
-			continue
-		}
-		au, av := wind(a)
-		bu, bv := wind(b)
-		shear2 := max(((bu-au)*(bu-au)+(bv-av)*(bv-av))/(dz*dz), 1e-8)
-		ta, tb := theta(a), theta(b)
-		minRi = min(minRi, g/((ta+tb)/2)*(tb-ta)/dz/shear2)
-		maxShear = max(maxShear, math.Sqrt(shear2)*1000)
-	}
-	for _, l := range h.Levels {
-		if l.P <= 300 {
-			jet = max(jet, l.Wind/3.6)
+		if dz := b.Z - a.Z; dz >= 50 {
+			integral += cn2(a, b, i-1 >= trop) * dz
 		}
 	}
-	q := 0.5*quality(maxShear, 2.5, 18) + 0.5*quality(jet, 8, 40)
-	class := 1 + int((100-q)/20)
-	if minRi < 0.25 {
-		class++
-	}
-	if h.Gust > 30 {
-		class++
+	const lambda = 500e-9
+	k := 2 * math.Pi / lambda
+	r0 := math.Pow(0.423*k*k*integral, -0.6)
+
+	return 0.98 * lambda / r0 * 180 / math.Pi * 3600
+}
+
+// cn2 is the refractive index structure constant (m^-2/3) of the layer from
+// a up to b after Dewan et al. (1993), the AFGL radiosonde model:
+// Cn² = 2.8 M² L0^(4/3), with M = -79e-6 P/T² (dT/dz + Γ) the gradient of
+// the potential refractive index (P in hPa, T in K, Γ = 9.8 K/km the dry
+// adiabatic lapse rate) and the outer scale L0^(4/3) = 0.1^(4/3) 10^Y,
+// Y = 1.64 + 42 S in the troposphere, 0.506 + 50 S in the stratosphere
+// (stratospheric), S the vector wind shear in 1/s.
+func cn2(a, b Level, stratospheric bool) float64 {
+	dz := b.Z - a.Z
+	p, t := (a.P+b.P)/2, (a.T+b.T)/2+273.15
+	au, av := wind(a)
+	bu, bv := wind(b)
+	s := math.Hypot(bu-au, bv-av) / dz
+	m := -79e-6 * p / (t * t) * ((b.T-a.T)/dz + 9.8e-3)
+	y := 1.64 + 42*s
+	if stratospheric {
+		y = 0.506 + 50*s
 	}
 
-	return min(class, 5)
+	return 2.8 * m * m * math.Pow(0.1, 4.0/3) * math.Pow(10, y)
+}
+
+// tropopause returns the index of the level at the tropopause, the WMO
+// definition read on the forecast levels: searched above 500 hPa, the base
+// of the lowest layer whose lapse rate is 2 K/km or less (cooling less than
+// that, or warming) and whose next layer, when there is one, qualifies too,
+// standing in for the rule's average over the next 2 km (the levels there
+// are 1.2-2.3 km apart). The layers from it up are stratospheric, whatever
+// their own lapse rate. Without one every layer is tropospheric: the top
+// index (-1 for no levels).
+func tropopause(levels []Level) int {
+	// qualifies is the layer from level i up; a pair under 50 m apart has no
+	// readable gradient and is Seeing's skipped layer too.
+	qualifies := func(i int) bool {
+		dz := levels[i+1].Z - levels[i].Z
+
+		return dz >= 50 && (levels[i+1].T-levels[i].T)/dz >= -2e-3
+	}
+	for i := 0; i+1 < len(levels); i++ {
+		if (levels[i].P+levels[i+1].P)/2 <= 500 && qualifies(i) && (i+2 >= len(levels) || qualifies(i+1)) {
+			return i
+		}
+	}
+
+	return len(levels) - 1
 }
 
 // wind returns the level's wind as east and north components in m/s.
@@ -302,12 +388,6 @@ func wind(l Level) (float64, float64) {
 
 	return -ms * s, -ms * c
 }
-
-// theta is the level's potential temperature in K.
-func theta(l Level) float64 { return (l.T + 273.15) * math.Pow(1000/l.P, 0.286) }
-
-// quality maps v onto 100 at or below good, 0 at or above bad, linearly between.
-func quality(v, good, bad float64) float64 { return 100 * (1 - max(0, min(1, (v-good)/(bad-good)))) }
 
 type AstroBlock struct{ Seeing, Transparency int } // 7Timer scales, 1 = best, 8 = worst
 

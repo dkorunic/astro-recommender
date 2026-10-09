@@ -126,32 +126,51 @@ func TestFillGapsWarns(t *testing.T) {
 	}
 }
 
-// The no-profile warning fires only when an hour shows the fallback class
-// (weather, no 7Timer point) and no such hour gets one.
+// The no-profile warning fires only when an hour shows the fallback
+// estimate (weather, no 7Timer point) and no such hour gets one.
 func TestNoSeeing(t *testing.T) {
 	start := time.Date(2026, 10, 9, 18, 0, 0, 0, time.UTC)
 	end := start.Add(2 * time.Hour)
 	h0, h1 := start.Unix(), start.Add(time.Hour).Unix()
 	profile := weather.HourWeather{Levels: []weather.Level{
-		{P: 850, Z: 1500, T: 10}, {P: 500, Z: 5500, T: -20, Wind: 20}, {P: 250, Z: 10500, T: -50, Wind: 30},
+		{P: 850, Z: 1500, T: 10, Dir: 270}, {P: 500, Z: 5500, T: -20, Wind: 20, Dir: 270}, {P: 250, Z: 10500, T: -50, Wind: 30, Dir: 270},
 	}}
 	if weather.Seeing(profile) == 0 {
-		t.Fatal("test profile has no class")
+		t.Fatal("test profile has no estimate")
 	}
-	low := weather.HourWeather{Levels: profile.Levels[:2]} // 850/700 only: no class
+	low := weather.HourWeather{Levels: profile.Levels[:2]} // 850/500 only: no estimate
 	astro := map[int64]weather.AstroBlock{weather.AstroKey(start): {}, weather.AstroKey(start.Add(time.Hour)): {}}
 	for name, c := range map[string]struct {
 		f    Forecast
 		want bool
 	}{
-		"no weather":            {Forecast{}, false},
-		"no levels":             {Forecast{Weather: map[int64]weather.HourWeather{h0: {}, h1: {}}}, true},
-		"too few levels":        {Forecast{Weather: map[int64]weather.HourWeather{h0: low, h1: low}}, true},
-		"7Timer covers all":     {Forecast{Weather: map[int64]weather.HourWeather{h0: {}, h1: {}}, Astro: astro}, false},
-		"one hour with a class": {Forecast{Weather: map[int64]weather.HourWeather{h0: {}, h1: profile}}, false},
+		"no weather":                {Forecast{}, false},
+		"no levels":                 {Forecast{Weather: map[int64]weather.HourWeather{h0: {}, h1: {}}}, true},
+		"too few levels":            {Forecast{Weather: map[int64]weather.HourWeather{h0: low, h1: low}}, true},
+		"7Timer covers all":         {Forecast{Weather: map[int64]weather.HourWeather{h0: {}, h1: {}}, Astro: astro}, false},
+		"one hour with an estimate": {Forecast{Weather: map[int64]weather.HourWeather{h0: {}, h1: profile}}, false},
 	} {
-		if got := noSeeing(c.f, start, end); got != c.want {
+		if got := noSeeing(c.f, true, start, end); got != c.want {
 			t.Errorf("%s: noSeeing = %v, want %v", name, got, c.want)
 		}
+	}
+	// A failed profile fetch has its own warning: no second one.
+	if noSeeing(Forecast{Weather: map[int64]weather.HourWeather{h0: {}, h1: {}}}, false, start, end) {
+		t.Error("profile fetch failed: noSeeing warned too")
+	}
+}
+
+// mergeProfile attaches the upper-air levels to the hours the surface
+// forecast has; hours only the profile has are not weather.
+func TestMergeProfile(t *testing.T) {
+	w := map[int64]weather.HourWeather{0: {Cloud: 10}, 3600: {Cloud: 20}}
+	lv := []weather.Level{{P: 850}, {P: 500}, {P: 300}}
+	mergeProfile(w, map[int64][]weather.Level{3600: lv, 7200: lv})
+	if len(w) != 2 || w[0].Levels != nil || len(w[3600].Levels) != 3 || w[3600].Cloud != 20 {
+		t.Errorf("merged %+v", w)
+	}
+	mergeProfile(w, nil)
+	if len(w[3600].Levels) != 3 {
+		t.Error("a nil profile cleared the levels")
 	}
 }
