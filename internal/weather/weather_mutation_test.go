@@ -178,7 +178,7 @@ func mutLevels(h *hourly, i int, vals [len(pressures)][4]float64) {
 
 func TestMutWeatherLevels(t *testing.T) {
 	h := mutHourly(1)
-	h.SurfP, h.Dir = []*float64{new(980.0)}, []*float64{new(90.0)}
+	h.SurfP, h.Dir = []*float64{new(795.0)}, []*float64{new(90.0)} // 2000 m
 	var vals [len(pressures)][4]float64
 	for k, z := range [...]float64{800, 1500, 3000, 4200, 5600, 7200, 9200, 10400, 11800, 13500, 15800} {
 		vals[k] = [4]float64{z, 15 - 6.5*z/1000, 10, 0}
@@ -187,12 +187,13 @@ func TestMutWeatherLevels(t *testing.T) {
 	mutLevels(&h, 0, vals)
 	got := h.levels(2000)[mutT0]
 	// The surface at 2002 m, then 925-850 lie below the site.
-	if len(got) != 8 || got[0] != (Level{P: 980, Z: 2002, Wind: 0, Dir: 90}) || got[1].P != 700 || got[1].Wind != 10 || got[3].P != 400 || got[4].P != 250 {
+	if len(got) != 8 || got[0] != (Level{P: 795, Z: 2002, Wind: 0, Dir: 90}) || got[1].P != 700 || got[1].Wind != 10 || got[3].P != 400 || got[4].P != 250 {
 		t.Errorf("levels %+v", got)
 	}
 	if l, ok := h.levels(math.NaN())[mutT0]; ok {
 		t.Errorf("NaN elevation: hour kept as %+v", l)
 	}
+	h.SurfP[0] = new(845.0) // 1500 m
 	if l := h.levels(1500)[mutT0]; len(l) != 8 || l[0].Z != 1502 || l[1].P != 700 {
 		t.Errorf("850 hPa at the surface's own height kept: %+v", l)
 	}
@@ -313,7 +314,7 @@ func TestMutSeeing(t *testing.T) {
 	// with the wind reversed would be 20 m/s of shear over 30 m, blowing the
 	// estimate up; instead the profile reads as if 850 hPa were not there.
 	full := mutProfile(mutUniform(36), west)
-	thin := []Level{full[1], full[2], full[4], full[6]}
+	thin := []Level{full[1], full[2], full[4], full[6], full[8]}
 	thin[1].Z, thin[1].Dir = thin[0].Z+30, 90
 	mutNear(t, "thin layer", Seeing(thin), Seeing(thin[1:]), 1e-12)
 	// Veering 180° at 36 km/h between 850 and 700 hPa: 20 m/s of shear.
@@ -325,13 +326,13 @@ func TestMutSeeing(t *testing.T) {
 		t.Errorf("veer = %.2f, want above %.2f", s, calm)
 	}
 	full = mutProfile(mutUniform(10), west)
-	for name, lv := range map[string][]Level{"two levels": full[:2], "no level at 300 hPa": full[:6], "two levels up to 300 hPa": full[5:7]} {
+	for name, lv := range map[string][]Level{"two levels": full[:2], "three levels": full[4:7], "no level at 300 hPa": full[:6], "two levels up to 300 hPa": full[5:7]} {
 		if s := Seeing(lv); s != 0 {
 			t.Errorf("%s = %v", name, s)
 		}
 	}
-	if s := Seeing(full[4:7]); s <= 0 || s > calm {
-		t.Errorf("500-300 only = %.2f, want 0 < s <= %.2f", s, calm)
+	if s := Seeing(full[3:7]); s <= 0 || s > calm {
+		t.Errorf("600-300 only = %.2f, want 0 < s <= %.2f", s, calm)
 	}
 }
 

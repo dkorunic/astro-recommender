@@ -506,7 +506,7 @@ func TestMutBuildSkyGaps(t *testing.T) {
 func TestMutMissingSeeing(t *testing.T) {
 	start := time.Date(2026, 10, 12, 19, 0, 0, 0, time.UTC)
 	end := start.Add(2 * time.Hour)
-	good := []weather.Level{{P: 850, Z: 1500, T: 10, Wind: 10, Dir: 270}, {P: 500, Z: 5600, T: -10, Wind: 10, Dir: 270}, {P: 300, Z: 9200, T: -30, Wind: 10, Dir: 270}}
+	good := []weather.Level{{P: 998, Z: 122, T: 12, Wind: 5, Dir: 270}, {P: 850, Z: 1500, T: 10, Wind: 10, Dir: 270}, {P: 500, Z: 5600, T: -10, Wind: 10, Dir: 270}, {P: 300, Z: 9200, T: -30, Wind: 10, Dir: 270}}
 	f := Forecast{Weather: map[int64]weather.HourWeather{start.Unix(): {}, start.Unix() + 3600: {}}}
 	if m, n := missingSeeing(f, start, end); m != 2 || n != 2 {
 		t.Errorf("no profile, no 7Timer: %d of %d, want 2 of 2", m, n)

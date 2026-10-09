@@ -156,7 +156,7 @@ func TestMissingSeeing(t *testing.T) {
 // has; hours only the profile has are not weather.
 func TestMergeProfile(t *testing.T) {
 	w := map[int64]weather.HourWeather{0: {Cloud: 10}, 3600: {Cloud: 20}}
-	lv := []weather.Level{{P: 850, Z: 1500, T: 10, Dir: 270}, {P: 500, Z: 5500, T: -20, Wind: 20, Dir: 270}, {P: 250, Z: 10500, T: -50, Wind: 30, Dir: 270}}
+	lv := []weather.Level{{P: 998, Z: 122, T: 12, Wind: 5, Dir: 270}, {P: 850, Z: 1500, T: 10, Dir: 270}, {P: 500, Z: 5500, T: -20, Wind: 20, Dir: 270}, {P: 250, Z: 10500, T: -50, Wind: 30, Dir: 270}}
 	mergeProfile(w, map[int64][]weather.Level{3600: lv, 7200: lv})
 	if len(w) != 2 || w[0].Seeing != 0 || w[3600].Seeing != weather.Seeing(lv) || w[3600].Seeing == 0 || w[3600].Cloud != 20 {
 		t.Errorf("merged %+v", w)

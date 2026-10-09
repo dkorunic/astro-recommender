@@ -68,6 +68,7 @@ func TestSeeing(t *testing.T) {
 	}{
 		{"no profile", nil, 0, 0},
 		{"two levels", calm[:2], 0, 0},
+		{"three levels", calm[4:7], 0, 0},
 		{"no level at 300 hPa", calm[:6], 0, 0},
 		{"standard atmosphere", calm, 0.5, 0.9},
 		{"standard, 700-100 hPa only", calm[2:], 0.4, 0.9},
@@ -81,7 +82,7 @@ func TestSeeing(t *testing.T) {
 	// Values plausible one by one can still be nonsense together: opposed
 	// 1000 km/h winds 700 m apart put 10^470 in the outer scale. Unknown, not
 	// a 1e19" cell or a +Inf the JSON encoder refuses.
-	wild := []Level{{P: 1000, Z: 100, T: 10, Wind: 1000, Dir: 90}, {P: 925, Z: 800, T: 5, Wind: 1000, Dir: 270}, {P: 300, Z: 9200, T: -45, Wind: 50, Dir: 270}}
+	wild := []Level{{P: 1000, Z: 100, T: 10, Wind: 1000, Dir: 90}, {P: 925, Z: 800, T: 5, Wind: 1000, Dir: 270}, {P: 850, Z: 1500, T: 0, Wind: 50, Dir: 270}, {P: 300, Z: 9200, T: -45, Wind: 50, Dir: 270}}
 	if got := Seeing(wild); got != 0 {
 		t.Errorf("opposed 1000 km/h winds = %v, want 0", got)
 	}
@@ -192,9 +193,10 @@ func TestCn2Stratospheric(t *testing.T) {
 	}
 }
 
-// levels keeps a pressure level with all four values, physical and above
-// the site, and starts the profile at the surface (the site elevation with
-// the 2 m temperature and 10 m wind) when the elevation is known.
+// levels keeps a pressure level with all four values, physical, consistent
+// with the level before it, and starts the profile at the surface (2 m
+// above the site elevation with the surface pressure, 2 m temperature and
+// 10 m wind). The fixture is the standard atmosphere at a 120 m site.
 func TestLevels(t *testing.T) {
 	p := func(v float64) *float64 { return &v }
 	h := hourly{Time: []int64{3600}, Temp: []*float64{p(10)}, Wind: []*float64{p(10)}, Dir: []*float64{p(270)}, SurfP: []*float64{p(998)}}
@@ -212,40 +214,50 @@ func TestLevels(t *testing.T) {
 	if got, ok := h.levels(math.NaN())[3600]; ok {
 		t.Errorf("unknown elevation: hour kept as %+v", got)
 	}
-	// The first level above the surface must be minLayer (300 m) up: Dewan's
-	// outer scale was fitted on kilometre-thick layers, and a 50 m ground
-	// layer turns an ordinary 15 km/h wind difference into a 100" estimate.
+	// A 1500 m site (850 hPa at the surface): 850 hPa is dropped beside it.
+	h.SurfP[0] = p(850)
 	if got := h.levels(1500)[3600]; len(got) != 4 || got[0].Z != 1502 || got[1].P != 700 {
 		t.Errorf("surface at 850 hPa's height: 850 hPa kept beside it: %+v", got)
 	}
-	h.Level[0].Z[0] = p(421)
-	if got := h.levels(120)[3600]; len(got) != 5 || got[1].P != 850 {
-		t.Errorf("925 hPa 299 m above the surface kept: %+v", got)
-	}
-	h.Level[0].Z[0] = p(422)
-	if got := h.levels(120)[3600]; len(got) != 6 || got[1].P != 925 {
+	// The first level above the surface must be minLayer (300 m) up: Dewan's
+	// outer scale was fitted on kilometre-thick layers, and a 50 m ground
+	// layer turns an ordinary 15 km/h wind difference into a 100" estimate.
+	// 925 hPa at 800 m is 300 m above a 500 m surface under 959 hPa.
+	h.SurfP[0], h.Level[0].Z[0] = p(959), p(800)
+	if got := h.levels(498)[3600]; len(got) != 6 || got[1].P != 925 {
 		t.Errorf("925 hPa 300 m above the surface dropped: %+v", got)
 	}
-	// Each level must be minLayer above the one kept before it: a 700 hPa
-	// reported under 850 hPa is a glitch, not a layer.
+	if got := h.levels(499)[3600]; len(got) != 5 || got[1].P != 850 {
+		t.Errorf("925 hPa 299 m above the surface kept: %+v", got)
+	}
+	h.SurfP[0], h.Level[0].Z[0] = p(998), p(110)
+	// Each level must sit where the hypsometric equation puts it above the
+	// level kept before: 850 hPa reported at 5000 m is a glitch, dropped, and
+	// 700 hPa at 3000 m then reads against the surface.
+	h.Level[1].Z[0] = p(5000)
+	if got := h.levels(120)[3600]; len(got) != 4 || got[1].P != 700 {
+		t.Errorf("850 hPa at 5000 m kept: %+v", got)
+	}
+	h.Level[1].Z[0] = p(1500)
+	// So is a 700 hPa reported under 850 hPa.
 	h.Level[2].Z[0] = p(1400)
-	if got := h.levels(120)[3600]; len(got) != 5 || got[2].P != 850 || got[3].P != 400 {
+	if got := h.levels(120)[3600]; len(got) != 4 || got[2].P != 400 {
 		t.Errorf("700 hPa below 850 hPa kept: %+v", got)
 	}
 	h.Level[2].Z[0] = p(3000)
 	// Fewer than three pressure levels: two multi-kilometre layers are no
 	// profile, the hour goes.
 	h.Level[2].T[0] = nil
-	if got := h.levels(120)[3600]; len(got) != 5 || got[2].P != 850 {
+	if got := h.levels(120)[3600]; len(got) != 4 || got[2].P != 400 {
 		t.Errorf("null 700 hPa: %+v", got)
 	}
-	h.Level[0].Z[0], h.Level[5].T[0] = p(110), nil // 850 and 250 hPa left
+	h.Level[5].T[0] = nil // 850 and 250 hPa left
 	if got, ok := h.levels(120)[3600]; ok {
 		t.Errorf("two pressure levels: hour kept as %+v", got)
 	}
-	// The top must reach 300 hPa, so the integral spans the jet: 925, 850 and
+	// The top must reach 300 hPa, so the integral spans the jet: 850, 700 and
 	// 400 hPa are three levels, but the hour goes.
-	h.Level[0].Z[0], h.Level[5].T[0], h.Level[7].T[0] = p(422), p(-31), nil
+	h.Level[2].T[0], h.Level[5].T[0], h.Level[7].T[0] = p(-5), p(-31), nil
 	if got, ok := h.levels(120)[3600]; ok {
 		t.Errorf("top at 400 hPa: hour kept as %+v", got)
 	}
@@ -258,6 +270,27 @@ func TestLevels(t *testing.T) {
 	h.Time = nil
 	if got := h.levels(120); len(got) != 0 {
 		t.Errorf("no hours: %+v", got)
+	}
+}
+
+// hypsometric accepts the standard atmosphere's layers and rejects a level
+// a third too high or too low for its pressure.
+func TestHypsometric(t *testing.T) {
+	std := profile(15, 6.5, uniform(20), uniform(270))
+	for i := 1; i < len(std); i++ {
+		if !hypsometric(std[i-1], std[i]) {
+			t.Errorf("standard %v-%v hPa rejected", std[i-1].P, std[i].P)
+		}
+	}
+	surface := Level{P: 998, Z: 122, T: 10}
+	for _, tc := range []struct {
+		name string
+		z    float64
+		want bool
+	}{{"850 hPa at 1500 m", 1500, true}, {"at 1000 m", 1000, false}, {"at 1900 m", 1900, false}, {"below the surface", 100, false}} {
+		if got := hypsometric(surface, Level{P: 850, Z: tc.z, T: 5}); got != tc.want {
+			t.Errorf("surface to %s: %v", tc.name, got)
+		}
 	}
 }
 
@@ -296,8 +329,9 @@ func TestProfile(t *testing.T) {
 	}
 	for body, want := range map[string]string{
 		`{"elevation":120,"hourly":{}}`:                                             "no upper-air data",
-		`{"elevation":120,"hourly":{"time":[1791748800],"surface_pressure":[998]}}`: "no temperature_2m series",
-		`{"elevation":120,"hourly":{"time":[1791748800],"temperature_2m":[10],"wind_speed_10m":[10],"wind_direction_10m":[270],"geopotential_height_850hPa":[1500]}}`: "no surface_pressure series",
+		`{"elevation":120,"hourly":{"time":[1791748800],"surface_pressure":[998]}}`: "temperature_2m series has 0 of 1 hours",
+		`{"elevation":120,"hourly":{"time":[1791748800],"temperature_2m":[10],"wind_speed_10m":[10],"wind_direction_10m":[270],"geopotential_height_850hPa":[1500]}}`:           "surface_pressure series has 0 of 1 hours",
+		`{"elevation":120,"hourly":{"time":[1791748800,1791752400],"surface_pressure":[998],"temperature_2m":[10,10],"wind_speed_10m":[10,10],"wind_direction_10m":[270,270]}}`: "surface_pressure series has 1 of 2 hours",
 		`{"hourly":{"time":[1791748800],"surface_pressure":[998]}}`:                   "no site elevation",
 		`{"elevation":-9999,"hourly":{"time":[1791748800],"surface_pressure":[998]}}`: "no site elevation",
 	} {
@@ -359,12 +393,13 @@ func TestGustShift(t *testing.T) {
 	// alone. A known elevation needs the surface fields; the site is 1100 m,
 	// so 925 hPa (800 m) lies below it and ten levels remain.
 	for k := range h.Level {
-		h.Level[k] = levelSeries{Z: []*float64{p(heights[k]), p(heights[k]), nil}, T: zero, Wind: zero, Dir: zero}
+		tk := p(15 - 6.5*heights[k]/1000)
+		h.Level[k] = levelSeries{Z: []*float64{p(heights[k]), p(heights[k]), nil}, T: []*float64{tk, tk, tk}, Wind: zero, Dir: zero}
 	}
 	if l, ok := h.levels(1100)[h.Time[0]]; ok {
 		t.Errorf("known elevation, no surface fields: hour kept as %+v", l)
 	}
-	h.SurfP, h.Dir = []*float64{p(850), p(850), p(850)}, zero
+	h.SurfP, h.Dir = []*float64{p(890), p(890), p(890)}, zero
 	h.Level[2].T = []*float64{p(1), nil, p(1)}
 	h.Level[4].Wind = []*float64{p(0), p(-9999), p(0)} // a sentinel speed drops the level like a null
 	h.Level[6].Dir = []*float64{p(0), p(0), p(-9999)}  // and so does a sentinel direction
