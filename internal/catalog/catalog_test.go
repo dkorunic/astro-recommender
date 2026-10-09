@@ -127,15 +127,27 @@ func TestLoadAcceptsKnownAndUnknownNumbers(t *testing.T) {
 	}
 }
 
-// A second YAML document is an error, not silently dropped.
-func TestLoadRejectsSecondDocument(t *testing.T) {
-	f := filepath.Join(t.TempDir(), "t.yaml")
-	yml := "[{name: X, ra: \"00 50 00\", dec: \"10 00 00\"}]\n---\n[{name: Y, ra: \"01 00 00\", dec: \"10 00 00\"}]\n"
-	if err := os.WriteFile(f, []byte(yml), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	if _, _, err := Load("", f); !errors.Is(err, errDocuments) {
-		t.Errorf("Load = %v, want errDocuments", err)
+// A second YAML document is an error, not silently dropped; an empty file
+// or an empty trailing document loses nothing and loads.
+func TestLoadDocuments(t *testing.T) {
+	const list = `[{name: X, ra: "00 50 00", dec: "10 00 00"}]`
+	for yml, want := range map[string]int{
+		"":                             0,
+		"# only a comment\n":           0,
+		list + "\n---\n":               1,
+		list + "\n---\n" + list + "\n": -1,
+	} {
+		f := filepath.Join(t.TempDir(), "t.yaml")
+		if err := os.WriteFile(f, []byte(yml), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		targets, _, err := Load("", f)
+		switch {
+		case want < 0 && !errors.Is(err, errDocuments):
+			t.Errorf("%q: Load = %v, want errDocuments", yml, err)
+		case want >= 0 && (err != nil || len(targets) != want):
+			t.Errorf("%q: Load = %d targets, %v; want %d", yml, len(targets), err, want)
+		}
 	}
 }
 

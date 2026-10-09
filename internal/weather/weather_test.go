@@ -90,7 +90,7 @@ func TestGustShift(t *testing.T) {
 		Low:  zero, Mid: zero, High: zero, Temp: zero, DewPoint: zero, Wind: zero,
 		Gust: []*float64{p(10), p(30), p(50)},
 	}
-	out, err := h.weather()
+	out, err := h.weather(math.NaN())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,30 +102,30 @@ func TestGustShift(t *testing.T) {
 	// Gust is optional per hour but must still cover every hour.
 	short := h
 	short.Gust = h.Gust[:2]
-	if _, err := short.weather(); err == nil {
+	if _, err := short.weather(math.NaN()); err == nil {
 		t.Error("short gust series accepted")
 	}
 	// A null next gust leaves the hour its own value rather than skipping it.
 	h.Gust[1] = nil
-	if out, _ = h.weather(); out[h.Time[0]].Gust != 10 {
+	if out, _ = h.weather(math.NaN()); out[h.Time[0]].Gust != 10 {
 		t.Errorf("null next gust: got %v, want 10", out[h.Time[0]].Gust)
 	}
 	// A null gust of its own keeps the hour (scored, not clear sky): it takes
 	// the next entry's gust, or with none the mean wind.
 	h.Gust[0], h.Gust[1], h.Wind[0] = nil, p(30), p(5)
-	if out, _ = h.weather(); out[h.Time[0]].Gust != 30 {
+	if out, _ = h.weather(math.NaN()); out[h.Time[0]].Gust != 30 {
 		_, present := out[h.Time[0]]
 		t.Errorf("null own gust: got %v (present %v), want 30", out[h.Time[0]].Gust, present)
 	}
 	// Without precipitation and upper-air series every hour stays, unknown.
-	if out, err = h.weather(); err != nil || len(out) != 3 || !math.IsNaN(out[h.Time[0]].Precip) || out[h.Time[0]].Levels != nil {
+	if out, err = h.weather(math.NaN()); err != nil || len(out) != 3 || !math.IsNaN(out[h.Time[0]].Precip) || out[h.Time[0]].Levels != nil {
 		t.Errorf("no precipitation/levels: err %v, %d hours, precip %v, levels %v", err, len(out), out[h.Time[0]].Precip, out[h.Time[0]].Levels)
 	}
 	// Precipitation is the preceding hour's sum, shifted like the gusts, but
 	// an hour without a next entry stays unknown rather than taking its own
 	// value, which is the previous hour's rain.
 	h.Precip = []*float64{p(0), p(0.3)}
-	if out, _ = h.weather(); out[h.Time[0]].Precip != 0.3 || !math.IsNaN(out[h.Time[1]].Precip) || !math.IsNaN(out[h.Time[2]].Precip) {
+	if out, _ = h.weather(math.NaN()); out[h.Time[0]].Precip != 0.3 || !math.IsNaN(out[h.Time[1]].Precip) || !math.IsNaN(out[h.Time[2]].Precip) {
 		t.Errorf("precipitation: got %v, %v, %v, want 0.3, NaN, NaN", out[h.Time[0]].Precip, out[h.Time[1]].Precip, out[h.Time[2]].Precip)
 	}
 	// A level is kept only with all four values; a null drops that level alone.
@@ -135,7 +135,7 @@ func TestGustShift(t *testing.T) {
 	h.Level[1].T = []*float64{p(1), nil, p(1)}
 	h.Level[2].Wind = []*float64{p(0), p(-9999), p(0)} // a sentinel speed drops the level like a null
 	h.Level[3].Dir = []*float64{p(0), p(0), p(-9999)}  // and so does a sentinel direction
-	out, _ = h.weather()
+	out, _ = h.weather(math.NaN())
 	if l := out[h.Time[0]].Levels; len(l) != len(pressures) || l[0].P != 850 || l[0].Z != 1500 || l[1].T != 1 {
 		t.Errorf("hour 0 levels: %+v", l)
 	}
@@ -148,12 +148,20 @@ func TestGustShift(t *testing.T) {
 	for k := range h.Level {
 		h.Level[k].Z[2] = p(1500)
 	}
-	out, _ = h.weather()
+	out, _ = h.weather(math.NaN())
 	if l := out[h.Time[2]].Levels; len(l) != len(pressures)-1 || l[3].P != 250 {
 		t.Errorf("hour 2 levels (-9999 300 hPa direction): %+v", l)
 	}
+	// A level below the site is underground: dropped, one at it kept.
+	if l := mustWeather(t, &h, 1500)[h.Time[0]].Levels; len(l) != len(pressures) {
+		t.Errorf("site at the levels' 1500 m: %d levels, want all %d", len(l), len(pressures))
+	}
+	h.Level[0].Z[0] = p(1400)
+	if l := mustWeather(t, &h, 1450)[h.Time[0]].Levels; len(l) != len(pressures)-1 || l[0].P != 700 {
+		t.Errorf("site at 1450 m, 850 hPa at 1400 m: %+v, want 850 hPa dropped", l)
+	}
 	h.Gust[1] = nil
-	if out, _ = h.weather(); out[h.Time[0]].Gust != 5 {
+	if out, _ = h.weather(math.NaN()); out[h.Time[0]].Gust != 5 {
 		t.Errorf("null gusts: got %v, want the wind, 5", out[h.Time[0]].Gust)
 	}
 }
@@ -175,6 +183,14 @@ func TestDecodeHourly(t *testing.T) {
 	}
 	if h, err = decodeHourly(json.RawMessage(`{"time":[0],"cloud_cover_low":[1],"units":"percent"}`)); err != nil || len(h.Time) != 1 || h.Level[0].Z != nil {
 		t.Errorf("non-series value: err %v, %d hours, levels %+v", err, len(h.Time), h.Level[0])
+	}
+	// An unreadable level series costs that series only; a named one is an error.
+	h, err = decodeHourly(json.RawMessage(`{"time":[0],"cloud_cover_low":[1],"temperature_700hPa":"oops","wind_speed_700hPa":[1,"x"],"wind_direction_700hPa":[90]}`))
+	if err != nil || len(h.Time) != 1 || h.Level[1].T != nil || h.Level[1].Wind != nil || len(h.Level[1].Dir) != 1 {
+		t.Errorf("bad level series: err %v, 700 hPa %+v", err, h.Level[1])
+	}
+	if _, err = decodeHourly(json.RawMessage(`{"time":[0],"precipitation":"oops"}`)); err == nil {
+		t.Error("bad precipitation series accepted")
 	}
 	if h, err = decodeHourly(nil); err != nil || h.Time != nil {
 		t.Errorf("no block: err %v, %+v", err, h)
@@ -233,4 +249,14 @@ func TestGetRange(t *testing.T) {
 			}
 		}
 	}
+}
+
+func mustWeather(t *testing.T, h *hourly, elev float64) map[int64]HourWeather {
+	t.Helper()
+	out, err := h.weather(elev)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return out
 }

@@ -255,12 +255,18 @@ func Load(listName, file string) ([]Target, string, error) {
 	}
 	var targets []Target
 	dec := yaml.NewDecoder(bytes.NewReader(data))
-	if err := dec.Decode(&targets); err != nil {
-		return nil, "", err
+	// An empty or comment-only file has no document at all: zero targets,
+	// as Unmarshal gave.
+	if err := dec.Decode(&targets); err != nil && !errors.Is(err, io.EOF) {
+		return nil, "", fmt.Errorf("%s: %w", file, err)
 	}
 	// Unmarshal would read the first document and drop the rest without a
-	// word: a stray "---" would silently lose every target after it.
-	if err := dec.Decode(new(any)); !errors.Is(err, io.EOF) {
+	// word: a stray "---" would silently lose every target after it. An
+	// empty one (a trailing "---") loses nothing.
+	var extra any
+	if err := dec.Decode(&extra); err != nil && !errors.Is(err, io.EOF) {
+		return nil, "", fmt.Errorf("%s: %w", file, err)
+	} else if err == nil && extra != nil {
 		return nil, "", fmt.Errorf("%w: %s", errDocuments, file)
 	}
 	// -targets may come from anywhere; its text ends up on the terminal.

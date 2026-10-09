@@ -89,14 +89,8 @@ func FetchForecast(ctx context.Context, cfg *config.Config, start, end time.Time
 		})
 	}
 	wg.Wait()
-	// The seeing class is the only reader of the profile, so its absence
-	// would otherwise show only as a column of dashes.
-	anyProfile := false
-	for _, h := range f.Weather {
-		anyProfile = anyProfile || len(h.Levels) > 0
-	}
-	if len(f.Weather) > 0 && !anyProfile {
-		fmt.Fprintln(os.Stderr, "warning: the weather forecast has no upper-air profile; no seeing class")
+	if noSeeing(f, start, end) {
+		fmt.Fprintln(os.Stderr, "warning: the weather forecast has no usable upper-air profile; no seeing class")
 	}
 	// The elevation alone gives extinction with typical aerosols, so the
 	// weather forecast's (longer range) stands in when CAMS has none. An
@@ -109,6 +103,26 @@ func FetchForecast(ctx context.Context, cfg *config.Config, start, end time.Time
 	}
 
 	return f
+}
+
+// noSeeing reports whether the SEEING column falls back to the upper-air
+// class for some hour of [start, end) (weather but no 7Timer point) and gets
+// none for any: the profile's only reader, so its absence would otherwise
+// show only as a column of dashes.
+func noSeeing(f Forecast, start, end time.Time) bool {
+	needed := false
+	for t := start.Truncate(time.Hour); t.Before(end); t = t.Add(time.Hour) {
+		h, ok := f.Weather[t.Unix()]
+		if _, astro := f.Astro[weather.AstroKey(t)]; !ok || astro {
+			continue
+		}
+		if weather.Seeing(h) > 0 {
+			return false
+		}
+		needed = true
+	}
+
+	return needed
 }
 
 // BuildSky samples the night [start, end) on a 1-minute grid with forecast

@@ -125,3 +125,33 @@ func TestFillGapsWarns(t *testing.T) {
 		t.Errorf("nothing fetched: stderr %q, want none", out)
 	}
 }
+
+// The no-profile warning fires only when an hour shows the fallback class
+// (weather, no 7Timer point) and no such hour gets one.
+func TestNoSeeing(t *testing.T) {
+	start := time.Date(2026, 10, 9, 18, 0, 0, 0, time.UTC)
+	end := start.Add(2 * time.Hour)
+	h0, h1 := start.Unix(), start.Add(time.Hour).Unix()
+	profile := weather.HourWeather{Levels: []weather.Level{
+		{P: 850, Z: 1500, T: 10}, {P: 500, Z: 5500, T: -20, Wind: 20}, {P: 250, Z: 10500, T: -50, Wind: 30},
+	}}
+	if weather.Seeing(profile) == 0 {
+		t.Fatal("test profile has no class")
+	}
+	low := weather.HourWeather{Levels: profile.Levels[:2]} // 850/700 only: no class
+	astro := map[int64]weather.AstroBlock{weather.AstroKey(start): {}, weather.AstroKey(start.Add(time.Hour)): {}}
+	for name, c := range map[string]struct {
+		f    Forecast
+		want bool
+	}{
+		"no weather":            {Forecast{}, false},
+		"no levels":             {Forecast{Weather: map[int64]weather.HourWeather{h0: {}, h1: {}}}, true},
+		"too few levels":        {Forecast{Weather: map[int64]weather.HourWeather{h0: low, h1: low}}, true},
+		"7Timer covers all":     {Forecast{Weather: map[int64]weather.HourWeather{h0: {}, h1: {}}, Astro: astro}, false},
+		"one hour with a class": {Forecast{Weather: map[int64]weather.HourWeather{h0: {}, h1: profile}}, false},
+	} {
+		if got := noSeeing(c.f, start, end); got != c.want {
+			t.Errorf("%s: noSeeing = %v, want %v", name, got, c.want)
+		}
+	}
+}

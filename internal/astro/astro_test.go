@@ -107,6 +107,16 @@ func TestWindow(t *testing.T) {
 	if s, _, err := ClipWindow(dst, zg, dstStart, dstEnd, "03:30", ""); err != nil || s.Format("15:04 MST") != "03:30 CEST" {
 		t.Errorf("clipWindow(03:30) on the spring-forward night = %v, %v", s, err)
 	}
+	// A clock the zone repeats (02:30 on the night Zagreb falls back) is
+	// read as the widest window: -from at CEST, -to at CET.
+	fb := time.Date(2026, 10, 24, 0, 0, 0, 0, zg)
+	fbStart, fbEnd := time.Date(2026, 10, 24, 19, 0, 0, 0, zg), time.Date(2026, 10, 25, 5, 0, 0, 0, zg)
+	if s, _, err := ClipWindow(fb, zg, fbStart, fbEnd, "02:30", ""); err != nil || !s.Equal(time.Date(2026, 10, 25, 0, 30, 0, 0, time.UTC)) {
+		t.Errorf("clipWindow(-from 02:30) on the fall-back night = %v, %v; want 02:30 CEST", s, err)
+	}
+	if _, e, err := ClipWindow(fb, zg, fbStart, fbEnd, "", "02:30"); err != nil || !e.Equal(time.Date(2026, 10, 25, 1, 30, 0, 0, time.UTC)) {
+		t.Errorf("clipWindow(-to 02:30) on the fall-back night = %v, %v; want 02:30 CET", e, err)
+	}
 }
 
 func TestAltAz(t *testing.T) {

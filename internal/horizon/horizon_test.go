@@ -43,7 +43,7 @@ func TestLoadRejects(t *testing.T) {
 		}
 	}
 	f := filepath.Join(t.TempDir(), "h.txt")
-	if err := os.WriteFile(f, []byte("# ok\n0 25\n180 20 # trees\n"), 0o600); err != nil {
+	if err := os.WriteFile(f, []byte("\uFEFF0 25 # BOM: UTF-8 with BOM\n180 20 # trees\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if h, err := Load(f); err != nil || len(h) != 2 {

@@ -35,7 +35,8 @@ func Load(path string) (Horizon, error) {
 	var h Horizon
 	sc := bufio.NewScanner(f)
 	for line := 1; sc.Scan(); line++ {
-		text, _, _ := strings.Cut(sc.Text(), "#")
+		// Editors that save "UTF-8 with BOM" would otherwise fail line 1.
+		text, _, _ := strings.Cut(strings.TrimPrefix(sc.Text(), "\uFEFF"), "#")
 		fields := strings.Fields(text)
 		if len(fields) == 0 {
 			continue

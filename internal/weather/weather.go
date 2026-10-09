@@ -53,21 +53,10 @@ var pressures = [...]int{850, 700, 500, 300, 250, 200}
 type levelSeries struct{ Z, T, Wind, Dir []*float64 }
 
 // hourly is Open-Meteo's hourly block, values null when missing.
-//
-//nolint:tagliatelle // Open-Meteo's field names
 type hourly struct {
-	Time     []int64    `json:"time"`
-	Low      []*float64 `json:"cloud_cover_low"`
-	Mid      []*float64 `json:"cloud_cover_mid"`
-	High     []*float64 `json:"cloud_cover_high"`
-	Temp     []*float64 `json:"temperature_2m"`
-	DewPoint []*float64 `json:"dew_point_2m"`
-	Wind     []*float64 `json:"wind_speed_10m"`
-	Gust     []*float64 `json:"wind_gusts_10m"`
-	Precip   []*float64 `json:"precipitation"`
-	// The level keys carry the pressure, so Forecast fills these from the
-	// block decoded as a map.
-	Level [len(pressures)]levelSeries `json:"-"`
+	Time                                               []int64
+	Low, Mid, High, Temp, DewPoint, Wind, Gust, Precip []*float64
+	Level                                              [len(pressures)]levelSeries
 }
 
 // Forecast fetches hourly weather from Open-Meteo, keyed by unix hour, plus
@@ -96,7 +85,8 @@ func Forecast(ctx context.Context, lat, lon float64, start, end time.Time) (map[
 	if err != nil {
 		return nil, math.NaN(), err
 	}
-	out, err := h.weather()
+	elev := elevation(body.Elevation)
+	out, err := h.weather(elev)
 	if err != nil {
 		return nil, math.NaN(), err
 	}
@@ -104,7 +94,7 @@ func Forecast(ctx context.Context, lat, lon float64, start, end time.Time) (map[
 		return nil, math.NaN(), fmt.Errorf("%w: no data for %s", errOpenMeteo, start.Format(time.DateOnly))
 	}
 
-	return out, elevation(body.Elevation), nil
+	return out, elev, nil
 }
 
 // elevation returns a response's site elevation, NaN when missing or
@@ -130,23 +120,36 @@ func levelKeys(p int) [4]string {
 	}
 }
 
-// decodeHourly decodes Open-Meteo's hourly block (nil or empty: no data)
-// into the named series and, through a second decode as a map, the pressure
-// levels, whose keys carry the pressure. The levels are display-only, so a
-// failure there costs only them, never the forecast.
+// decodeHourly decodes Open-Meteo's hourly block (nil or empty: no data):
+// the named series strictly, the pressure levels best-effort, since they
+// are display-only and a failure there must cost only them.
 func decodeHourly(raw json.RawMessage) (hourly, error) {
 	var h hourly
 	if len(raw) == 0 {
 		return h, nil
 	}
-	if err := json.Unmarshal(raw, &h); err != nil {
+	var block map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &block); err != nil {
 		return h, fmt.Errorf("%w: %w", errOpenMeteo, err)
 	}
-	var series map[string][]*float64 // the time series decodes as floats too, unused
-	_ = json.Unmarshal(raw, &series)
+	for key, dst := range map[string]any{
+		"time": &h.Time, "cloud_cover_low": &h.Low, "cloud_cover_mid": &h.Mid, "cloud_cover_high": &h.High,
+		"temperature_2m": &h.Temp, "dew_point_2m": &h.DewPoint, "wind_speed_10m": &h.Wind,
+		"wind_gusts_10m": &h.Gust, "precipitation": &h.Precip,
+	} {
+		if b, ok := block[key]; ok {
+			if err := json.Unmarshal(b, dst); err != nil {
+				return h, fmt.Errorf("%w: %s: %w", errOpenMeteo, key, err)
+			}
+		}
+	}
 	for k, p := range pressures {
-		keys := levelKeys(p)
-		h.Level[k] = levelSeries{Z: series[keys[0]], T: series[keys[1]], Wind: series[keys[2]], Dir: series[keys[3]]}
+		l := &h.Level[k]
+		for j, dst := range [...]*[]*float64{&l.Z, &l.T, &l.Wind, &l.Dir} {
+			if b, ok := block[levelKeys(p)[j]]; !ok || json.Unmarshal(b, dst) != nil {
+				*dst = nil // absent or unreadable: that series only
+			}
+		}
 	}
 
 	return h, nil
@@ -161,8 +164,10 @@ func at(s []*float64, i int) (float64, bool) {
 	return *s[i], true
 }
 
-// weather turns the hourly block into HourWeather keyed by unix hour.
-func (h *hourly) weather() (map[int64]HourWeather, error) {
+// weather turns the hourly block into HourWeather keyed by unix hour. Levels
+// below elev (the site, in m; NaN keeps them all) are dropped: at a high site
+// 850 hPa lies underground, where the model's values are extrapolated.
+func (h *hourly) weather(elev float64) (map[int64]HourWeather, error) {
 	// Gust is not in series: a null gust does not drop the hour (see below).
 	// Precipitation and the levels are optional too: a missing or short
 	// series costs only the rain gate or that hour's seeing class.
@@ -215,7 +220,7 @@ next:
 			l.T, okT = at(h.Level[k].T, i)
 			l.Wind, okW = at(h.Level[k].Wind, i)
 			l.Dir, okD = at(h.Level[k].Dir, i)
-			if okZ && okT && okW && okD && l.Wind >= 0 && l.Dir >= 0 && l.Dir <= 360 { // a negative speed or direction is a sentinel, not data
+			if okZ && okT && okW && okD && l.Wind >= 0 && l.Dir >= 0 && l.Dir <= 360 && (math.IsNaN(elev) || l.Z >= elev) { // a negative speed or direction is a sentinel, not data
 				levels = append(levels, l)
 			}
 		}
@@ -371,8 +376,10 @@ func AerosolForecast(ctx context.Context, lat, lon float64, start, end time.Time
 	if err := getRange(ctx, url, start, end, &body); err != nil {
 		return nil, math.NaN(), fmt.Errorf("%w: %w %s", errAirQuality, err, sanitize.Text(body.Reason))
 	}
+	// A missing elevation is NaN, not a failure: the AOD does not depend on
+	// it, and FetchForecast falls back to the weather forecast's.
 	elev := elevation(body.Elevation)
-	if math.IsNaN(elev) || len(body.Hourly.AOD) != len(body.Hourly.Time) {
+	if len(body.Hourly.AOD) != len(body.Hourly.Time) {
 		return nil, math.NaN(), fmt.Errorf("%w: malformed response", errAirQuality)
 	}
 	out := map[int64]float64{}

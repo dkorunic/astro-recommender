@@ -90,9 +90,13 @@ func Tonight(now time.Time, lat, lon, sunAlt float64) (time.Time, bool) {
 
 // ClipWindow narrows the night [start, end) to the local clock times from and
 // to ("HH:MM", empty = no limit). Times before noon mean the morning after day,
-// so -from 22:00 -to 02:00 spans midnight. The night is never extended.
+// so -from 22:00 -to 02:00 spans midnight. The night is never extended. A
+// clock the zone skips (the spring-forward hour) is an error; one it repeats
+// (the fall-back hour) is read as the widest window, from at its first
+// occurrence and to at its second, so the window then spans the change and
+// the header shows which offset each end has.
 func ClipWindow(day time.Time, loc *time.Location, start, end time.Time, from, to string) (time.Time, time.Time, error) {
-	clock := func(s string) (time.Time, error) {
+	clock := func(s string, last bool) (time.Time, error) {
 		c, err := time.Parse("15:04", s)
 		if err != nil {
 			return time.Time{}, fmt.Errorf("bad time %q, want HH:MM: %w", s, err)
@@ -101,17 +105,28 @@ func ClipWindow(day time.Time, loc *time.Location, start, end time.Time, from, t
 		if c.Hour() < 12 {
 			d++
 		}
-		t := time.Date(y, m, d, c.Hour(), c.Minute(), 0, 0, loc)
-		// time.Date moves a clock the zone skips (02:30 on the spring-forward
-		// night) an hour on; that is another time than asked for.
-		if t.Hour() != c.Hour() || t.Minute() != c.Minute() {
-			return time.Time{}, fmt.Errorf("%w: %s on %s in %s (clocks skip it)", errClock, s, t.Format(time.DateOnly), loc)
+		// time.Date picks one occurrence of a repeated clock and moves a
+		// skipped one an hour on, so try the offsets in force either side
+		// (zone changes are months apart): each that gives this clock back
+		// at its own instant is an occurrence.
+		wall := time.Date(y, m, d, c.Hour(), c.Minute(), 0, 0, time.UTC)
+		near := time.Date(y, m, d, c.Hour(), c.Minute(), 0, 0, loc)
+		var t time.Time
+		for _, probe := range []time.Duration{-12 * time.Hour, 12 * time.Hour} {
+			_, off := near.Add(probe).Zone()
+			u := wall.Add(-time.Duration(off) * time.Second).In(loc)
+			if _, o := u.Zone(); o == off && (t.IsZero() || last == u.After(t)) {
+				t = u
+			}
+		}
+		if t.IsZero() {
+			return time.Time{}, fmt.Errorf("%w: %s on %s in %s (clocks skip it)", errClock, s, near.Format(time.DateOnly), loc)
 		}
 
 		return t, nil
 	}
 	if from != "" {
-		t, err := clock(from)
+		t, err := clock(from, false)
 		if err != nil {
 			return start, end, err
 		}
@@ -120,7 +135,7 @@ func ClipWindow(day time.Time, loc *time.Location, start, end time.Time, from, t
 		}
 	}
 	if to != "" {
-		t, err := clock(to)
+		t, err := clock(to, true)
 		if err != nil {
 			return start, end, err
 		}
