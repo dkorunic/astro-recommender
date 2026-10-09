@@ -98,7 +98,7 @@ func FetchForecast(ctx context.Context, cfg *config.Config, start, end time.Time
 	wg.Wait()
 	mergeProfile(f.Weather, profile)
 	if noSeeing(f, profile != nil, start, end) {
-		fmt.Fprintln(os.Stderr, "warning: no upper-air profile for the hours without a 7Timer point; no seeing estimate")
+		fmt.Fprintln(os.Stderr, "warning: no usable upper-air seeing estimate for the hours without a 7Timer point")
 	}
 	// The elevation alone gives extinction with typical aerosols, so the
 	// weather forecast's (longer range) stands in when CAMS has none. An
@@ -131,8 +131,8 @@ func mergeProfile(w map[int64]weather.HourWeather, profile map[int64][]weather.L
 // gets none for any: the profile's only reader, so its absence would
 // otherwise show only as a column of dashes. A profile that was not fetched
 // (fetched false) has had its own warning. One that was may still miss the
-// hours (the ECMWF range ends a day before best_match's) or be unusable;
-// the warning does not tell which.
+// hours (the ECMWF range ends a day before best_match's), have too few
+// levels, or give estimates Seeing rejects; the warning does not tell which.
 func noSeeing(f Forecast, fetched bool, start, end time.Time) bool {
 	if !fetched {
 		return false

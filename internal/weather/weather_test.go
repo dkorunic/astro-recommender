@@ -171,39 +171,48 @@ func TestCn2Stratospheric(t *testing.T) {
 func TestLevels(t *testing.T) {
 	p := func(v float64) *float64 { return &v }
 	h := hourly{Time: []int64{3600}, Temp: []*float64{p(10)}, Wind: []*float64{p(10)}, Dir: []*float64{p(270)}, SurfP: []*float64{p(998)}}
-	for k, v := range map[int][4]float64{0: {110, 14, 10, 270}, 2: {1500, 5, 20, 270}, 5: {5600, -20, -1, 270}, 7: {9200, -45, 60, 400}, 8: {10400, -50, 80, 270}} {
+	for k, v := range map[int][4]float64{0: {110, 14, 10, 270}, 2: {1500, 5, 20, 270}, 3: {3000, -5, 30, 270}, 5: {5600, -20, -1, 270}, 6: {7200, -31, 50, 270}, 7: {9200, -45, 60, 400}, 8: {10400, -50, 80, 270}} {
 		h.Level[k] = levelSeries{Z: []*float64{p(v[0])}, T: []*float64{p(v[1])}, Wind: []*float64{p(v[2])}, Dir: []*float64{p(v[3])}}
 	}
 	got := h.levels(120)[3600]
 	// The surface sits at 2 m, where the temperature is read. 1000 hPa is
 	// below the 120 m site, 500 has a negative wind, 300 a 400° direction.
-	if len(got) != 3 || got[0] != (Level{P: 998, Z: 122, T: 10, Wind: 10, Dir: 270}) || got[1].P != 850 || got[2].P != 250 {
+	if len(got) != 5 || got[0] != (Level{P: 998, Z: 122, T: 10, Wind: 10, Dir: 270}) || got[1].P != 850 || got[4].P != 250 {
 		t.Errorf("levels %+v", got)
 	}
-	if got := h.levels(math.NaN())[3600]; len(got) != 3 || got[0].P != 1000 {
-		t.Errorf("unknown elevation: no surface level, nothing dropped: %+v", got)
+	// Without the elevation there is no surface level, and the estimate would
+	// miss its largest term: no hour.
+	if got, ok := h.levels(math.NaN())[3600]; ok {
+		t.Errorf("unknown elevation: hour kept as %+v", got)
 	}
-	if got := h.levels(1500)[3600]; len(got) != 2 || got[0].Z != 1502 || got[1].P != 250 {
-		t.Errorf("surface level at 850 hPa's height: 850 hPa kept beside it: %+v", got)
+	// The first level above the surface must be 300 m up: Dewan's outer scale
+	// was fitted on kilometre-thick layers, and a 50 m ground layer turns an
+	// ordinary 15 km/h wind difference into a 100" estimate.
+	if got := h.levels(1500)[3600]; len(got) != 4 || got[0].Z != 1502 || got[1].P != 700 {
+		t.Errorf("surface at 850 hPa's height: 850 hPa kept beside it: %+v", got)
 	}
-	// With a surface level the next one must be 50 m above it, so the ground
-	// layer always exists: Seeing skips thinner pairs.
-	h.Level[0].Z[0] = p(171)
-	if got := h.levels(120)[3600]; len(got) != 3 || got[1].P != 850 {
-		t.Errorf("1000 hPa 49 m above the surface kept: %+v", got)
+	h.Level[0].Z[0] = p(421)
+	if got := h.levels(120)[3600]; len(got) != 5 || got[1].P != 850 {
+		t.Errorf("1000 hPa 299 m above the surface kept: %+v", got)
 	}
-	h.Level[0].Z[0] = p(172)
-	if got := h.levels(120)[3600]; len(got) != 4 || got[1].P != 1000 {
-		t.Errorf("1000 hPa 50 m above the surface dropped: %+v", got)
+	h.Level[0].Z[0] = p(422)
+	if got := h.levels(120)[3600]; len(got) != 6 || got[1].P != 1000 {
+		t.Errorf("1000 hPa 300 m above the surface dropped: %+v", got)
 	}
-	// Without a surface level the estimate would miss its dominant term: the
-	// hour is dropped when the elevation is known, kept whole when it is not.
-	h.SurfP[0] = nil
+	// Fewer than three pressure levels: two multi-kilometre layers are no
+	// profile, the hour goes.
+	h.Level[3].T[0] = nil
+	if got := h.levels(120)[3600]; len(got) != 5 || got[2].P != 850 {
+		t.Errorf("null 700 hPa: %+v", got)
+	}
+	h.Level[0].Z[0], h.Level[6].T[0] = p(110), nil // 850 and 250 hPa left
+	if got, ok := h.levels(120)[3600]; ok {
+		t.Errorf("two pressure levels: hour kept as %+v", got)
+	}
+	// Without a surface level the estimate would miss its dominant term: no hour.
+	h.Level[0].Z[0], h.SurfP[0] = p(422), nil
 	if got, ok := h.levels(120)[3600]; ok {
 		t.Errorf("no surface pressure: hour kept as %+v", got)
-	}
-	if got := h.levels(math.NaN())[3600]; len(got) != 3 || got[0].P != 1000 {
-		t.Errorf("no surface pressure, unknown elevation: %+v", got)
 	}
 	h.Time = nil
 	if got := h.levels(120); len(got) != 0 {
@@ -228,7 +237,7 @@ func TestProfile(t *testing.T) {
 	})
 	start := time.Date(2026, 10, 12, 0, 0, 0, 0, time.UTC)
 	out, err := Profile(context.Background(), 45.8149, 15.9781, start, start.Add(2*time.Hour))
-	if err != nil || len(out) != 3 {
+	if err != nil || len(out) != 2 {
 		t.Fatalf("Profile %v %v", out, err)
 	}
 	if l := out[1791748800]; len(l) != 4 || l[0] != (Level{P: 998, Z: 122, T: 10, Wind: 10, Dir: 270}) || l[3].P != 300 {
@@ -237,8 +246,8 @@ func TestProfile(t *testing.T) {
 	if s := Seeing(HourWeather{Levels: out[1791752400]}); s <= 0 {
 		t.Errorf("seeing %v", s)
 	}
-	if l := out[1791756000]; len(l) != 3 || l[2].P != 500 {
-		t.Errorf("null 300 hPa direction: %+v", l)
+	if l, ok := out[1791756000]; ok {
+		t.Errorf("null 300 hPa direction leaves two pressure levels: hour kept as %+v", l)
 	}
 	q := m.reqs[0].Query()
 	if h := q.Get("hourly"); strings.Contains(h, "cloud_cover") || !strings.Contains(h, "wind_speed_300hPa") || !strings.Contains(h, "surface_pressure") || q.Get("latitude") != "45.81" {
@@ -299,18 +308,24 @@ func TestGustShift(t *testing.T) {
 	if out, _ = h.weather(); out[h.Time[0]].Precip != 0.3 || !math.IsNaN(out[h.Time[1]].Precip) || !math.IsNaN(out[h.Time[2]].Precip) {
 		t.Errorf("precipitation: got %v, %v, %v, want 0.3, NaN, NaN", out[h.Time[0]].Precip, out[h.Time[1]].Precip, out[h.Time[2]].Precip)
 	}
-	// A level is kept only with all four values; a null drops that level alone.
+	// A level is kept only with all four values; a null drops that level
+	// alone. A known elevation needs the surface fields; the site is 1100 m,
+	// the levels 1500 m.
 	for k := range h.Level {
 		h.Level[k] = levelSeries{Z: []*float64{p(1500), p(1500), nil}, T: zero, Wind: zero, Dir: zero}
 	}
+	if l, ok := h.levels(1100)[h.Time[0]]; ok {
+		t.Errorf("known elevation, no surface fields: hour kept as %+v", l)
+	}
+	h.SurfP, h.Dir = []*float64{p(850), p(850), p(850)}, zero
 	h.Level[3].T = []*float64{p(1), nil, p(1)}
 	h.Level[5].Wind = []*float64{p(0), p(-9999), p(0)} // a sentinel speed drops the level like a null
 	h.Level[7].Dir = []*float64{p(0), p(0), p(-9999)}  // and so does a sentinel direction
-	lv := h.levels(math.NaN())
-	if l := lv[h.Time[0]]; len(l) != len(pressures) || l[0].P != 1000 || l[0].Z != 1500 || l[3].T != 1 {
+	lv := h.levels(1100)
+	if l := lv[h.Time[0]]; len(l) != len(pressures)+1 || l[0].Z != 1102 || l[1].P != 1000 || l[1].Z != 1500 || l[4].T != 1 {
 		t.Errorf("hour 0 levels: %+v", l)
 	}
-	if l := lv[h.Time[1]]; len(l) != len(pressures)-2 || l[5].P != 300 {
+	if l := lv[h.Time[1]]; len(l) != len(pressures)-1 || l[6].P != 300 {
 		t.Errorf("hour 1 levels (null 700 hPa temperature, -9999 500 hPa wind): %+v", l)
 	}
 	if l, ok := lv[h.Time[2]]; ok {
@@ -319,21 +334,14 @@ func TestGustShift(t *testing.T) {
 	for k := range h.Level {
 		h.Level[k].Z[2] = p(1500)
 	}
-	if l := h.levels(math.NaN())[h.Time[2]]; len(l) != len(pressures)-1 || l[7].P != 250 {
+	if l := h.levels(1100)[h.Time[2]]; len(l) != len(pressures) || l[8].P != 250 {
 		t.Errorf("hour 2 levels (-9999 300 hPa direction): %+v", l)
 	}
-	// A level below the site is underground: dropped, one 50 m above the
-	// surface kept. A known elevation needs the surface fields.
-	if l, ok := h.levels(1400)[h.Time[0]]; ok {
-		t.Errorf("known elevation, no surface fields: hour kept as %+v", l)
-	}
-	h.SurfP, h.Dir = []*float64{p(850), p(850), p(850)}, zero
-	if l := h.levels(1400)[h.Time[0]]; len(l) != len(pressures)+1 || l[0].Z != 1402 {
-		t.Errorf("site at 1400 m, levels at 1500 m: %d levels, want the surface and all %d", len(l), len(pressures))
-	}
-	h.Level[2].Z[0] = p(1440)
-	if l := h.levels(1400)[h.Time[0]]; len(l) != len(pressures) || l[3].P != 700 {
-		t.Errorf("850 hPa 38 m above the surface: %+v, want it dropped", l)
+	// A level less than 300 m above the surface is dropped, the ground layer
+	// being too thin for the model.
+	h.Level[2].Z[0] = p(1400)
+	if l := h.levels(1100)[h.Time[0]]; len(l) != len(pressures) || l[3].P != 700 {
+		t.Errorf("850 hPa 298 m above the surface: %+v, want it dropped", l)
 	}
 	h.Gust[1] = nil
 	if out, _ = h.weather(); out[h.Time[0]].Gust != 5 {

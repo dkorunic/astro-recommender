@@ -82,7 +82,7 @@ func Forecast(ctx context.Context, lat, lon float64, start, end time.Time) (map[
 		return nil, math.NaN(), err
 	}
 	if len(out) == 0 {
-		return nil, math.NaN(), fmt.Errorf("%w: no data for %s", errOpenMeteo, start.Format(time.DateOnly))
+		return nil, math.NaN(), fmt.Errorf("%w: no data for %s", errOpenMeteo, start.UTC().Format(time.DateOnly))
 	}
 
 	return out, elev, nil
@@ -125,7 +125,7 @@ func Profile(ctx context.Context, lat, lon float64, start, end time.Time) (map[i
 	}
 	out := h.levels(elev)
 	if len(out) == 0 {
-		return nil, fmt.Errorf("%w: no upper-air data for %s", errOpenMeteo, start.Format(time.DateOnly))
+		return nil, fmt.Errorf("%w: no upper-air data for %s", errOpenMeteo, start.UTC().Format(time.DateOnly))
 	}
 
 	return out, nil
@@ -258,42 +258,50 @@ next:
 
 // levels turns the profile block into the upper-air levels per unix hour,
 // lowest first: the surface (elev, the site in m, with the surface pressure,
-// 2 m temperature and 10 m wind) when elev is known, then every pressure
-// level with all four values, physical, and above the site: at a high site
-// 1000 hPa lies underground, where the model's values are extrapolated
-// (NaN keeps them all). The surface sits at 2 m, where its temperature is
-// read, and the next level must be 50 m above it, the pair Seeing reads, so
-// the ground layer always exists rather than depending on how far below the
-// 1000 hPa surface the site happens to sit. With the elevation known, an
-// hour without a surface level is left out: the ground layer is the
-// estimate's largest term, and the surface fields come in the same request,
-// so their absence means a broken hour, not a thin one. Hours with no level
-// are left out too.
+// 2 m temperature and 10 m wind), then every pressure level with all four
+// values, physical, and at least groundLayer above the surface. The surface
+// sits at 2 m, where its temperature is read. An hour is left out without
+// the elevation or a surface level, since the ground layer is the
+// estimate's largest term (the surface fields come in the same request, so
+// their absence means a broken hour), and with fewer than three pressure
+// levels, since two multi-kilometre layers are no profile.
+// ponytail: the level heights are the model's, absolute, while elev is
+// Open-Meteo's 90 m terrain model, so in a deep valley a level underground
+// in the model's own coarse orography can pass with extrapolated values;
+// nothing from our side tells, and groundLayer keeps such a level from
+// forming a thin ground layer at least.
 func (h *hourly) levels(elev float64) map[int64][]Level {
 	out := map[int64][]Level{}
+	if math.IsNaN(elev) {
+		return out
+	}
 	for i, t := range h.Time {
-		var levels []Level
-		minZ := elev // NaN: no comparison holds, every level stays
-		if !math.IsNaN(elev) {
-			l := Level{Z: elev + 2}
-			if !(fill(&l.P, h.SurfP, i) && fill(&l.T, h.Temp, i) && fill(&l.Wind, h.Wind, i) && fill(&l.Dir, h.Dir, i) && plausible(l)) {
-				continue
-			}
-			levels, minZ = append(levels, l), l.Z+50
+		l := Level{Z: elev + 2}
+		if !(fill(&l.P, h.SurfP, i) && fill(&l.T, h.Temp, i) && fill(&l.Wind, h.Wind, i) && fill(&l.Dir, h.Dir, i) && plausible(l)) {
+			continue
 		}
+		levels, minZ := []Level{l}, l.Z+groundLayer
 		for k, p := range pressures {
 			l, s := Level{P: float64(p)}, h.Level[k]
-			if fill(&l.Z, s.Z, i) && fill(&l.T, s.T, i) && fill(&l.Wind, s.Wind, i) && fill(&l.Dir, s.Dir, i) && plausible(l) && !(l.Z < minZ) {
+			if fill(&l.Z, s.Z, i) && fill(&l.T, s.T, i) && fill(&l.Wind, s.Wind, i) && fill(&l.Dir, s.Dir, i) && plausible(l) && l.Z >= minZ {
 				levels = append(levels, l)
 			}
 		}
-		if len(levels) > 0 {
+		if len(levels) >= 4 {
 			out[t] = levels
 		}
 	}
 
 	return out
 }
+
+// groundLayer is the least height (m) of the first level above the surface.
+// Dewan's outer scale was fitted on kilometre-thick radiosonde layers: over
+// a 50 m ground layer an ordinary 15 km/h wind difference reads as a shear
+// that puts 10^2-10^4 into Cn² and a 100" estimate on the table. At 300 m
+// the ground layer is surface to 925 hPa (800 m) or higher at any site, and
+// the same cases come out at 1.2-1.3".
+const groundLayer = 300
 
 // fill stores s[i] in dst and reports whether it was present and finite.
 func fill(dst *float64, s []*float64, i int) bool {

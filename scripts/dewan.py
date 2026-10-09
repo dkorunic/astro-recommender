@@ -48,7 +48,8 @@ def seeing(lv, trop=None):
     integral = sum(cn2(a, b, i >= trop) * (b[1] - a[1]) for i, (a, b) in enumerate(zip(lv, lv[1:])) if b[1] - a[1] >= 50)
     k = 2 * math.pi / 500e-9
     r0 = (0.423 * k * k * integral) ** -0.6
-    return 0.98 * 500e-9 / r0 * 180 / math.pi * 3600
+    fwhm = 0.98 * 500e-9 / r0 * 180 / math.pi * 3600
+    return fwhm if math.isfinite(fwhm) and fwhm <= 30 else 0  # Seeing's maxSeeing
 
 
 def profile(sea_t, lapse, winds, dirs):
@@ -73,6 +74,8 @@ if __name__ == "__main__":
     polar = profile(0, 6.5, [20] * 12, west)
     polar = [(p, z, max(t, polar[6][2]), w, d) for p, z, t, w, d in polar]
     print(f"polar, tropopause at 400 {seeing(polar):.3f}\"  (0.6-0.75); at 200 {seeing(polar, 9):.3f}\"; all troposphere {seeing(polar, 99):.3f}\"")
+    wild = [(1000, 100, 10, 1000, 90), (925, 800, 5, 1000, 270), (300, 9200, -45, 50, 270)]
+    print(f"opposed 1000 km/h winds  {seeing(wild)}  (0: rejected)")
     a, b = (850, 1500, 8, 20, 270), (700, 3000, -4.5, 56, 270)
     print(f"cn2 850-700 hPa          {cn2(a, b, False):.3g} m^-2/3  (TestMutCn2 1.53e-17)")
     a, b = (250, 10400, -56.5, 100, 270), (200, 11800, -56.5, 136, 270)

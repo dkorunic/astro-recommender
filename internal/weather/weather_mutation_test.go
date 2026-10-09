@@ -190,8 +190,8 @@ func TestMutWeatherLevels(t *testing.T) {
 	if len(got) != 8 || got[0] != (Level{P: 980, Z: 2002, Wind: 0, Dir: 90}) || got[1].P != 700 || got[1].Wind != 10 || got[3].P != 400 || got[4].P != 250 {
 		t.Errorf("levels %+v", got)
 	}
-	if l := h.levels(math.NaN())[mutT0]; len(l) != 10 || l[0].P != 1000 {
-		t.Errorf("NaN elevation levels %+v", l)
+	if l, ok := h.levels(math.NaN())[mutT0]; ok {
+		t.Errorf("NaN elevation: hour kept as %+v", l)
 	}
 	if l := h.levels(1500)[mutT0]; len(l) != 8 || l[0].Z != 1502 || l[1].P != 700 {
 		t.Errorf("850 hPa at the surface's own height kept: %+v", l)
