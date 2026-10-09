@@ -134,7 +134,6 @@ func TestMissingSeeing(t *testing.T) {
 	end := start.Add(2 * time.Hour)
 	h0, h1 := start.Unix(), start.Add(time.Hour).Unix()
 	profile := weather.HourWeather{Seeing: 1.2}
-	low := weather.HourWeather{} // no estimate
 	astro := map[int64]weather.AstroBlock{weather.AstroKey(start): {}, weather.AstroKey(start.Add(time.Hour)): {}}
 	for name, c := range map[string]struct {
 		f               Forecast
@@ -142,7 +141,6 @@ func TestMissingSeeing(t *testing.T) {
 	}{
 		"no weather":                {Forecast{}, 0, 0},
 		"no levels":                 {Forecast{Weather: map[int64]weather.HourWeather{h0: {}, h1: {}}}, 2, 2},
-		"too few levels":            {Forecast{Weather: map[int64]weather.HourWeather{h0: low, h1: low}}, 2, 2},
 		"7Timer covers all":         {Forecast{Weather: map[int64]weather.HourWeather{h0: {}, h1: {}}, Astro: astro}, 0, 0},
 		"one hour with an estimate": {Forecast{Weather: map[int64]weather.HourWeather{h0: {}, h1: profile}}, 1, 2},
 		"both with an estimate":     {Forecast{Weather: map[int64]weather.HourWeather{h0: profile, h1: profile}}, 0, 2},

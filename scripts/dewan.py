@@ -38,7 +38,7 @@ def tropopause(lv):
         return (lv[i + 1][2] - lv[i][2]) / (lv[i + 1][1] - lv[i][1]) >= -2e-3
 
     for i in range(1, len(lv) - 1):  # never the ground layer
-        if (lv[i][0] + lv[i + 1][0]) / 2 > 500 or not readable(i) or not qualifies(i):
+        if lv[i][0] > 500 or not readable(i) or not qualifies(i):  # the base level, from 500 hPa up
             continue
         nxt = i + 1
         while nxt + 1 < len(lv) and not readable(nxt):

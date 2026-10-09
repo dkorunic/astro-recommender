@@ -439,7 +439,7 @@ func TestMutJSON(t *testing.T) {
 	h0 := s.Start.Truncate(time.Hour).Unix()
 	s.Weather = map[int64]weather.HourWeather{
 		h0:        {Cloud: 20, Temp: 5, DewPoint: 1, Precip: math.NaN()},
-		h0 + 3600: {Cloud: 30, Temp: 6, DewPoint: 1, Precip: 0.3},
+		h0 + 3600: {Cloud: 30, Temp: 6, DewPoint: 1, Precip: 0.3, Seeing: 1.2345},
 	}
 	res := mutResults(s)
 	slots := []plan.Slot{{Start: s.Grid[0], End: s.Grid[60], Result: &res[0], Score: 0.7, PeakAlt: 66, PeakAt: s.Grid[59]}, {Start: s.Grid[60], End: s.End}}
@@ -473,6 +473,13 @@ func TestMutJSON(t *testing.T) {
 	}
 	if p := fc[1].(map[string]any)["precipitation"]; p != 0.3 || fc[1].(map[string]any)["dewSpread"] != 5.0 {
 		t.Errorf("hour 2 %v", fc[1])
+	}
+	// The upper-air estimate is seeingArcsec, two decimals, left out when unknown.
+	if _, ok := fc[0].(map[string]any)["seeingArcsec"]; ok {
+		t.Error("unknown seeing emitted")
+	}
+	if v := fc[1].(map[string]any)["seeingArcsec"]; v != 1.23 {
+		t.Errorf("seeingArcsec %v, want 1.23", v)
 	}
 	pl := doc["plan"].([]any)
 	if pl[0].(map[string]any)["name"] != "M 31" || pl[0].(map[string]any)["peakAt"] == nil || pl[1].(map[string]any)["name"] != nil || pl[1].(map[string]any)["peakAt"] != nil {

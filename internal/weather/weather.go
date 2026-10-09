@@ -55,6 +55,11 @@ type Level struct{ P, Z, T, Wind, Dir float64 }
 // about 1037 hPa.
 var pressures = [...]int{925, 850, 700, 600, 500, 400, 300, 250, 200, 150, 100}
 
+// keyTemp2m and keyWind10m are the two surface series Forecast scores as
+// well: its request names them by these, so they cannot drift from the
+// table below.
+const keyTemp2m, keyWind10m = "temperature_2m", "wind_speed_10m"
+
 // surfaceSeries are the surface level's hourly variables and where they
 // decode: decodeHourly fills them (strictly: Forecast scores two of them),
 // Profile requests and checks them by this one table.
@@ -63,8 +68,8 @@ var surfaceSeries = [...]struct {
 	of  func(*hourly) *[]*float64
 }{
 	{"surface_pressure", func(h *hourly) *[]*float64 { return &h.SurfP }},
-	{"temperature_2m", func(h *hourly) *[]*float64 { return &h.Temp }},
-	{"wind_speed_10m", func(h *hourly) *[]*float64 { return &h.Wind }},
+	{keyTemp2m, func(h *hourly) *[]*float64 { return &h.Temp }},
+	{keyWind10m, func(h *hourly) *[]*float64 { return &h.Wind }},
 	{"wind_direction_10m", func(h *hourly) *[]*float64 { return &h.Dir }},
 }
 
@@ -98,7 +103,7 @@ type hourly struct {
 // the site elevation (NaN if missing), which the aerosol forecast also gives
 // but only over its shorter range.
 func Forecast(ctx context.Context, lat, lon float64, start, end time.Time) (map[int64]HourWeather, float64, error) {
-	vars := "cloud_cover_low,cloud_cover_mid,cloud_cover_high,temperature_2m,dew_point_2m,wind_speed_10m,wind_gusts_10m,precipitation"
+	vars := "cloud_cover_low,cloud_cover_mid,cloud_cover_high," + keyTemp2m + ",dew_point_2m," + keyWind10m + ",wind_gusts_10m,precipitation"
 	// 2 decimals (~1 km) is finer than the weather models and avoids sending an exact address.
 	url := fmt.Sprintf("https://api.open-meteo.com/v1/forecast?latitude=%.2f&longitude=%.2f&hourly=%s&timeformat=unixtime&timezone=UTC",
 		lat, lon, vars)
@@ -150,6 +155,9 @@ func Profile(ctx context.Context, lat, lon float64, start, end time.Time) (map[i
 	if err != nil {
 		return nil, err
 	}
+	if len(h.Time) == 0 { // an empty body has no elevation either; say the first thing
+		return nil, fmt.Errorf("%w: no upper-air data for %s", errOpenMeteo, start.UTC().Format(time.DateOnly))
+	}
 	if math.IsNaN(elev) { // the surface level, the ground layer's base, needs it
 		return nil, fmt.Errorf("%w: no site elevation", errOpenMeteo)
 	}
@@ -162,8 +170,8 @@ func Profile(ctx context.Context, lat, lon float64, start, end time.Time) (map[i
 		}
 	}
 	out := h.levels(elev)
-	if len(out) == 0 {
-		return nil, fmt.Errorf("%w: no upper-air data for %s", errOpenMeteo, start.UTC().Format(time.DateOnly))
+	if len(out) == 0 { // null (a day at the range's end) or inconsistent throughout: not a missing day
+		return nil, fmt.Errorf("%w: no usable hour of %d, null or inconsistent surface or levels", errOpenMeteo, len(h.Time))
 	}
 
 	return out, nil
@@ -304,8 +312,11 @@ next:
 // surface first) and where the hypsometric equation puts it for its
 // pressure, so a level reported under its neighbour or far too high, a
 // glitch, never reaches Seeing as a negative, diluted or steep layer (and
-// the real levels above a too-high one are not lost to it). The surface sits at
-// 2 m, where its temperature is read. An hour is left out without a surface
+// the real levels above a too-high one are not lost to it). The surface sits
+// at 2 m, where its temperature is read, and its pressure must fit the
+// elevation (barometric): it anchors the chain, and a wrong one would not
+// drop the hour but discard the real low levels and keep whatever high
+// level fell within the band. An hour is left out without a surface
 // level, since the ground layer is the estimate's largest term (the surface
 // fields come in the same request, so their absence means a broken hour;
 // Profile has checked elev, and a NaN fails plausible anyway), with fewer
@@ -320,19 +331,20 @@ next:
 func (h *hourly) levels(elev float64) map[int64][]Level {
 	out := map[int64][]Level{}
 	for i, t := range h.Time {
-		l := Level{Z: elev + 2}
-		if !(fill(&l.P, h.SurfP, i) && fill(&l.T, h.Temp, i) && fill(&l.Wind, h.Wind, i) && fill(&l.Dir, h.Dir, i) && plausible(l)) {
+		surf := Level{Z: elev + 2}
+		if !(fill(&surf.P, h.SurfP, i) && fill(&surf.T, h.Temp, i) && fill(&surf.Wind, h.Wind, i) && fill(&surf.Dir, h.Dir, i) &&
+			plausible(surf) && barometric(surf.P, elev, surf.T)) {
 			continue
 		}
-		levels, minZ := []Level{l}, l.Z+minLayer
+		levels := []Level{surf}
 		for k, p := range pressures {
-			l, s := Level{P: float64(p)}, h.Level[k]
+			l, s, below := Level{P: float64(p)}, h.Level[k], levels[len(levels)-1]
 			if fill(&l.Z, s.Z, i) && fill(&l.T, s.T, i) && fill(&l.Wind, s.Wind, i) && fill(&l.Dir, s.Dir, i) && plausible(l) &&
-				l.Z >= minZ && hypsometric(levels[len(levels)-1], l) {
-				levels, minZ = append(levels, l), l.Z+minLayer
+				l.Z >= below.Z+minLayer && hypsometric(below, l) {
+				levels = append(levels, l)
 			}
 		}
-		if len(levels) > minPressureLevels && levels[len(levels)-1].P <= 300 { // the surface plus the levels
+		if complete(levels) {
 			out[t] = levels
 		}
 	}
@@ -340,20 +352,46 @@ func (h *hourly) levels(elev float64) map[int64][]Level {
 	return out
 }
 
+// barometric reports whether a surface pressure p (hPa) fits the elevation
+// elev (m) at the surface temperature t (°C): within 12% of
+// 1013.25 exp(-elev/H), H = scaleHeightPerK times t in kelvin. Weather
+// moves sea-level pressure 5%, a typhoon 10%;
+// the Antarctic plateau in winter (641 hPa at the 2835 m South Pole) sits
+// 11% under a temperate column's 8400 m scale height, so the temperature
+// has to enter.
+func barometric(p, elev, t float64) bool {
+	want := 1013.25 * math.Exp(-elev/(scaleHeightPerK*(t+273.15)))
+
+	return p >= 0.88*want && p <= 1.12*want
+}
+
 // hypsometric reports whether b lies where its pressure puts it above a:
-// the layer's thickness is R/g times its mean temperature times the log of
-// the pressure ratio, 29.3 m/K, within 30% (humidity and the coarse mean
+// the layer's thickness is scaleHeightPerK times its mean temperature
+// times the log of the pressure ratio, within 30% (humidity and the coarse mean
 // temperature move it a few percent; a glitched height is off by far more).
 func hypsometric(a, b Level) bool {
-	want := 29.3 * ((a.T+b.T)/2 + 273.15) * math.Log(a.P/b.P)
+	want := scaleHeightPerK * ((a.T+b.T)/2 + 273.15) * math.Log(a.P/b.P)
 	dz := b.Z - a.Z
 
 	return dz >= 0.7*want && dz <= 1.3*want
 }
 
+// complete reports whether levels, the surface first, make a profile: more
+// than minPressureLevels levels in all and a top at 300 hPa or above, so
+// Seeing's integral always spans the jet. levels() keeps such hours and
+// Seeing accepts them.
+func complete(levels []Level) bool {
+	return len(levels) > minPressureLevels && levels[len(levels)-1].P <= 300
+}
+
 // minPressureLevels is the fewest pressure levels, above the surface, an
 // hour's profile needs.
 const minPressureLevels = 3
+
+// scaleHeightPerK is R/g, 29.3 m/K: the atmosphere's scale height per
+// kelvin of mean temperature, the one constant barometric and hypsometric
+// share.
+const scaleHeightPerK = 29.3
 
 // minLayer is the least thickness (m) of a layer the model reads: levels()
 // keeps each level that far above the one before, and Seeing and tropopause
@@ -362,7 +400,8 @@ const minPressureLevels = 3
 // 15 km/h wind difference reads as a shear that puts 10^2-10^4 into Cn² and
 // a 100" estimate on the table. At 300 m the ground layer is surface to
 // 925 hPa (800 m) or higher at any site, and the same cases come out at
-// 1.2-1.3"; adjacent pressure levels are never closer than 700 m.
+// 1.2-1.3"; adjacent pressure levels are 600 m (925-850 hPa in polar
+// winter air) to 700 m apart at the least.
 const minLayer = 300
 
 // fill stores s[i] in dst and reports whether it was present and finite.
@@ -375,18 +414,18 @@ func fill(dst *float64, s []*float64, i int) bool {
 
 // plausible reports whether a level's values are physical: a sentinel
 // (-9999) or an overflowing value would carry Inf, then NaN, through the
-// shear and the temperature gradient into Seeing.
+// shear and the temperature gradient into Seeing. Pressure is not checked:
+// the levels' is a constant, the surface's barometric bounds.
 func plausible(l Level) bool {
-	return l.P >= 50 && l.P <= 1100 && l.Z >= -1000 && l.Z <= 30000 && l.T >= -150 && l.T <= 60 &&
+	return l.Z >= -1000 && l.Z <= 30000 && l.T >= -150 && l.T <= 60 &&
 		l.Wind >= 0 && l.Wind <= 1000 && l.Dir >= 0 && l.Dir <= 360
 }
 
 // Seeing estimates the hour's seeing, the FWHM of a star image in
 // arcseconds at the zenith and 500 nm, from the upper-air levels as levels()
 // shapes them: the surface first, then the pressure levels. It is 0 without
-// a profile (fewer than the surface and minPressureLevels, or none at
-// 300 hPa or above, so the integral always spans the jet), the same gate
-// levels() keeps, repeated for direct callers. Each layer between adjacent levels, the surface
+// a complete profile (the gate levels() keeps, repeated for direct
+// callers). Each layer between adjacent levels, the surface
 // first when known, gets Dewan et al.'s (1993) Cn² (cn2) from its
 // temperature gradient and wind shear; the integral over height gives
 // Fried's r0 = (0.423 k² ∫Cn² dz)^(-3/5) and FWHM = 0.98 λ/r0. Outside
@@ -401,7 +440,7 @@ func plausible(l Level) bool {
 // gradient from 2 m to the first level above. Fine for ranking nights; an
 // observatory's Cn² profiler it is not.
 func Seeing(levels []Level) float64 {
-	if len(levels) <= minPressureLevels || levels[len(levels)-1].P > 300 {
+	if !complete(levels) {
 		return 0
 	}
 	integral, trop := 0.0, tropopause(levels)
@@ -452,11 +491,12 @@ func cn2(a, b Level, stratospheric bool) float64 {
 }
 
 // tropopause returns the index of the level at the tropopause, the WMO
-// definition read on the forecast levels: searched above 500 hPa, the base
-// of the lowest layer whose lapse rate is 2 K/km or less (cooling less than
-// that, or warming) and whose next layer, when there is one, qualifies too,
-// standing in for the rule's average over the next 2 km (the levels there
-// are 1.2-2.3 km apart). A pair thinner than minLayer has no readable
+// definition read on the forecast levels: searched from 500 hPa up (the
+// base level's pressure; a layer's mean would let 600-400 hPa in when 500
+// is missing), the base of the lowest layer whose lapse rate is 2 K/km or
+// less (cooling less than that, or warming) and whose next layer, when
+// there is one, qualifies too, standing in for the rule's average over the
+// next 2 km (the levels there are 1.2-2.3 km apart). A pair thinner than minLayer has no readable
 // gradient: Seeing skips it, and here it is looked past, so the next
 // readable layer confirms. The ground layer (from the first level, the
 // surface) is never a candidate: the rule is about the free atmosphere,
@@ -468,7 +508,7 @@ func tropopause(levels []Level) int {
 	readable := func(i int) bool { return levels[i+1].Z-levels[i].Z >= minLayer }
 	qualifies := func(i int) bool { return (levels[i+1].T-levels[i].T)/(levels[i+1].Z-levels[i].Z) >= -2e-3 }
 	for i := 1; i+1 < len(levels); i++ {
-		if (levels[i].P+levels[i+1].P)/2 > 500 || !readable(i) || !qualifies(i) {
+		if levels[i].P > 500 || !readable(i) || !qualifies(i) {
 			continue
 		}
 		next := i + 1

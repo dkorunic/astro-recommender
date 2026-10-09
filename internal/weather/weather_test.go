@@ -140,6 +140,10 @@ func TestTropopause(t *testing.T) {
 	thin[6].Z, thin[6].T = thin[5].Z+30, thin[5].T // 300 hPa 30 m above 400: no layer to judge
 	vetoed := slices.Clone(polar)
 	vetoed[7].Z, vetoed[7].T = vetoed[6].Z+30, vetoed[6].T // 250 hPa 30 m above 300: the next readable layer confirms 400
+	// With 500 hPa missing, the 600-400 hPa layer's mean is 500 exactly, but
+	// its base is at 600 hPa, 4.2 km: not a candidate.
+	missing := slices.Delete(slices.Clone(polar), 4, 5)
+	missing[3].T = polar[5].T // 600 hPa isothermal with 400 and above
 	// A 5500 m site: the ground layer's mean pressure is under 500 hPa and a
 	// nocturnal inversion makes it qualify, but the rule is about the free
 	// atmosphere; the isothermal column above puts the tropopause at 400 hPa.
@@ -164,6 +168,7 @@ func TestTropopause(t *testing.T) {
 		{"thin pair ignored", thin, 8},
 		{"thin confirming pair looked past", vetoed, 5},
 		{"ground layer never a candidate", high, 1},
+		{"600-400 hPa with 500 missing", missing, 4},
 		{"no levels", nil, -1},
 	} {
 		if got := tropopause(tc.levels); got != tc.want {
@@ -262,6 +267,13 @@ func TestLevels(t *testing.T) {
 		t.Errorf("top at 400 hPa: hour kept as %+v", got)
 	}
 	h.Level[7].T[0] = p(-50)
+	// A surface pressure that does not fit the elevation anchors the whole
+	// chain wrongly: sea-level pressure at a 2000 m site let 400 hPa pass as
+	// the first level above a 5 km "ground layer". No hour.
+	h.SurfP[0] = p(1013)
+	if got, ok := h.levels(2000)[3600]; ok {
+		t.Errorf("sea-level pressure at 2000 m: hour kept as %+v", got)
+	}
 	// Without a surface level the estimate would miss its dominant term: no hour.
 	h.SurfP[0] = nil
 	if got, ok := h.levels(120)[3600]; ok {
@@ -270,6 +282,33 @@ func TestLevels(t *testing.T) {
 	h.Time = nil
 	if got := h.levels(120); len(got) != 0 {
 		t.Errorf("no hours: %+v", got)
+	}
+}
+
+// barometric accepts a surface pressure within 12% of the elevation's at
+// the surface temperature: the cold Antarctic plateau sits well under a
+// temperate column's pressure.
+func TestBarometric(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		p, elev, t float64
+		want       bool
+	}{
+		{"sea level", 1013, 0, 15, true},
+		{"deep low", 960, 0, 15, true},
+		{"typhoon", 910, 0, 28, true},
+		{"strong high", 1050, 0, 15, true},
+		{"2000 m", 795, 2000, 10, true},
+		{"sea-level pressure at 2000 m", 1013, 2000, 10, false},
+		{"700 hPa at 120 m", 700, 120, 10, false},
+		{"5500 m", 505, 5500, 0, true},
+		{"South Pole winter", 641, 2835, -60, true},
+		{"Vostok", 600, 3488, -65, true},
+		{"Dome A", 556, 4093, -55, true},
+	} {
+		if got := barometric(tc.p, tc.elev, tc.t); got != tc.want {
+			t.Errorf("%s: barometric(%v hPa, %v m, %v °C) = %v", tc.name, tc.p, tc.elev, tc.t, got)
+		}
 	}
 }
 
@@ -304,10 +343,10 @@ func TestProfile(t *testing.T) {
 			return
 		}
 		_, _ = w.Write([]byte(`{"elevation":120,"hourly":{"time":[1791748800,1791752400,1791756000],
-			"surface_pressure":[998,998,998],"temperature_2m":[10,10,10],"wind_speed_10m":[10,10,10],"wind_direction_10m":[270,270,270],
+			"surface_pressure":[998,998,700],"temperature_2m":[10,10,10],"wind_speed_10m":[10,10,10],"wind_direction_10m":[270,270,270],
 			"geopotential_height_850hPa":[1500,1500,1500],"temperature_850hPa":[8,8,8],"wind_speed_850hPa":[20,20,20],"wind_direction_850hPa":[270,270,270],
 			"geopotential_height_500hPa":[5600,5600,5600],"temperature_500hPa":[-20,-20,-20],"wind_speed_500hPa":[40,40,40],"wind_direction_500hPa":[270,270,270],
-			"geopotential_height_300hPa":[9200,9200,9200],"temperature_300hPa":[-45,-45,-45],"wind_speed_300hPa":[80,80,80],"wind_direction_300hPa":[270,270,null]}}`))
+			"geopotential_height_300hPa":[9200,9200,9200],"temperature_300hPa":[-45,-45,-45],"wind_speed_300hPa":[80,80,80],"wind_direction_300hPa":[270,270,270]}}`))
 	})
 	start := time.Date(2026, 10, 12, 0, 0, 0, 0, time.UTC)
 	out, err := Profile(context.Background(), 45.8149, 15.9781, start, start.Add(2*time.Hour))
@@ -321,19 +360,24 @@ func TestProfile(t *testing.T) {
 		t.Errorf("seeing %v", s)
 	}
 	if l, ok := out[1791756000]; ok {
-		t.Errorf("null 300 hPa direction leaves two pressure levels: hour kept as %+v", l)
+		t.Errorf("700 hPa surface pressure at 120 m: hour kept as %+v", l)
 	}
 	q := m.reqs[0].Query()
 	if h := q.Get("hourly"); strings.Contains(h, "cloud_cover") || !strings.Contains(h, "wind_speed_300hPa") || !strings.Contains(h, "surface_pressure") || q.Get("latitude") != "45.81" {
 		t.Errorf("query %v", q)
 	}
+	if q.Get("start_date") != "2026-10-12" || q.Get("end_date") != "2026-10-12" || q.Get("models") != "ecmwf_ifs025" {
+		t.Errorf("range and model %v", q)
+	}
 	for body, want := range map[string]string{
-		`{"elevation":120,"hourly":{}}`:                                             "no upper-air data",
-		`{"elevation":120,"hourly":{"time":[1791748800],"surface_pressure":[998]}}`: "temperature_2m series has 0 of 1 hours",
-		`{"elevation":120,"hourly":{"time":[1791748800],"temperature_2m":[10],"wind_speed_10m":[10],"wind_direction_10m":[270],"geopotential_height_850hPa":[1500]}}`:           "surface_pressure series has 0 of 1 hours",
-		`{"elevation":120,"hourly":{"time":[1791748800,1791752400],"surface_pressure":[998],"temperature_2m":[10,10],"wind_speed_10m":[10,10],"wind_direction_10m":[270,270]}}`: "surface_pressure series has 1 of 2 hours",
-		`{"hourly":{"time":[1791748800],"surface_pressure":[998]}}`:                   "no site elevation",
-		`{"elevation":-9999,"hourly":{"time":[1791748800],"surface_pressure":[998]}}`: "no site elevation",
+		`{}`:                            "no upper-air data",
+		`{"elevation":120,"hourly":{}}`: "no upper-air data",
+		`{"elevation":120,"hourly":{"time":[1791748800],"surface_pressure":[998]}}`:                                                                                                 "temperature_2m series has 0 of 1 hours",
+		`{"elevation":120,"hourly":{"time":[1791748800],"temperature_2m":[10],"wind_speed_10m":[10],"wind_direction_10m":[270],"geopotential_height_850hPa":[1500]}}`:               "surface_pressure series has 0 of 1 hours",
+		`{"elevation":120,"hourly":{"time":[1791748800,1791752400],"surface_pressure":[998],"temperature_2m":[10,10],"wind_speed_10m":[10,10],"wind_direction_10m":[270,270]}}`:     "surface_pressure series has 1 of 2 hours",
+		`{"elevation":120,"hourly":{"time":[1791748800,1791752400],"surface_pressure":[700,700],"temperature_2m":[10,10],"wind_speed_10m":[10,10],"wind_direction_10m":[270,270]}}`: "no usable hour of 2",
+		`{"hourly":{"time":[1791748800],"surface_pressure":[998]}}`:                                                                                                                 "no site elevation",
+		`{"elevation":-9999,"hourly":{"time":[1791748800],"surface_pressure":[998]}}`:                                                                                               "no site elevation",
 	} {
 		mutServe(t, func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte(body)) })
 		if out, err := Profile(context.Background(), 1, 2, start, start); err == nil || !strings.Contains(err.Error(), want) {
