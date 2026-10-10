@@ -31,7 +31,8 @@ import (
 // OpenNGC, Dias et al. (2002, CDS B/ocl) and SIMBAD; PNnet is the
 // Planetary Nebulae.net catalogue (planetarynebulae.net, with permission); HASH is the HASH PN database (Parker, Bojicic &
 // Frew 2016, hashpn.space); Sharpless is Sharpless (1959, CDS VII/20)
-// cross-identified with Gary Imm's Deep Sky Compendium.
+// cross-identified with Gary Imm's Deep Sky Compendium; Caldwell is Moore's
+// Caldwell catalogue (1995) from the Compendium and OpenNGC.
 //
 // The binary embeds each list as the gob of what Load makes of its YAML
 // (sanitized, checked, positions in degrees, constellations looked up):
@@ -227,7 +228,7 @@ func (t Target) typicalBV(k kind) float64 {
 }
 
 // Lists are the embedded uptonight target lists selectable with -list.
-var Lists = []string{"GaryImm", "GaryImmFull", "Messier", "Herschel400", "Pensack500", "OpenNGC", "OpenIC", "LBN", "LDN", "MWSC", "Melotte", "Collinder", "PNnet", "HASH", "Sharpless"}
+var Lists = []string{"GaryImm", "GaryImmFull", "Messier", "Herschel400", "Pensack500", "OpenNGC", "OpenIC", "LBN", "LDN", "MWSC", "Melotte", "Collinder", "PNnet", "HASH", "Sharpless", "Caldwell"}
 
 var (
 	errList        = errors.New("unknown target list")
@@ -400,6 +401,9 @@ var emissionNames = map[string]bool{
 	"Cr 404": true, // NGC 6820
 	"Cr 439": true, // IC 1396
 	"Cr 452": true, // NGC 7380 Wizard
+	// Caldwell spellings
+	"C 50":  true, // NGC 2244 Rosette
+	"C 100": true, // Collinder 249 in IC 2944, Running Chicken
 }
 
 // EmissionLine reports whether a target shines mainly in Ha/OIII lines.

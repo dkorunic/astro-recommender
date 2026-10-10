@@ -185,6 +185,7 @@ func TestEmissionLineLists(t *testing.T) {
 		"HASH":        {"NGC 7293": true, "Sh 2-216": true},
 		"Sharpless":   {"Sh2-155": true, "Sh2-49": true, "Sh2-1": false},
 		"Collinder":   {"Cr 26": true, "Cr 375": true, "Cr 429": false, "Cr 399": false, "Cr 34": true, "Cr 63": true, "Cr 99": true, "Cr 362": true, "Cr 405": true},
+		"Caldwell":    {"C 9": true, "C 50": true, "C 100": true, "C 49": true, "C 14": false},
 	} {
 		targets, _, err := Load(list, "")
 		if err != nil {
