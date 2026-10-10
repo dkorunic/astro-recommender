@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<!-- SPDX-FileCopyrightText: 2026 Dinko Korunic <dinko.korunic@gmail.com> -->
+<!-- SPDX-License-Identifier: MIT -->
+<!-- A target's altitude arc over tonight's horizon, the pick at its peak. -->
+<defs>
+<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#0b1020"/><stop offset=".45" stop-color="#1d2850"/>
+<stop offset=".68" stop-color="#4a4f8a"/><stop offset=".8" stop-color="#c0683a"/>
+</linearGradient>
+<clipPath id="badge"><rect width="64" height="64" rx="14"/></clipPath>
+</defs>
+<g clip-path="url(#badge)">
+<rect width="64" height="64" fill="url(#sky)"/>
+<g fill="#e6eaf2"><circle cx="12" cy="12" r="1.1"/><circle cx="51" cy="9" r="1.3"/><circle cx="54" cy="27" r=".9"/><circle cx="9" cy="31" r=".9"/></g>
+<path d="M6 54Q32-6 58 54" fill="none" stroke="#9db1f5" stroke-width="3" stroke-linecap="round" opacity=".75"/>
+<path d="M0 50Q16 45 32 49T64 47V64H0Z" fill="#0b101c"/>
+<path fill="#e9b44c" d="M32 11c.6 5.3 3.8 9.3 10.5 10.5C35.8 22.7 32.6 26.7 32 32c-.6-5.3-3.8-9.3-10.5-10.5C28.2 20.3 31.4 16.3 32 11z"/>
+</g>
+</svg>

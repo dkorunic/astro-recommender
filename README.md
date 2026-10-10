@@ -1,3 +1,5 @@
+<img src="web/favicon.svg" alt="" width="96" align="right">
+
 # astro-recommender
 
 [![GitHub release](https://img.shields.io/github/v/release/dkorunic/astro-recommender)](https://github.com/dkorunic/astro-recommender/releases/latest)

@@ -6,6 +6,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google-site-verification" content="vaRVGuc2Ja0dws4KNEV7F17-i65OeIxj9Ul-ugS5Au0">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <title>Astro Recommender</title>
 <style>
 :root {
@@ -36,7 +37,7 @@ h1 {
   display: flex; align-items: center; gap: 12px; margin: 0 0 6px;
   font-size: clamp(1.7rem, 1.2rem + 1.6vw, 2.4rem); font-weight: 750; letter-spacing: -.03em; line-height: 1.1;
 }
-h1 .mark { flex: none; width: .9em; height: .9em; color: var(--accent); filter: drop-shadow(0 0 6px var(--accent-soft)); }
+h1 .mark { flex: none; width: 1.15em; height: 1.15em; filter: drop-shadow(0 0 6px var(--accent-soft)); }
 h1 .word { background: var(--title); -webkit-background-clip: text; background-clip: text; color: transparent; padding-right: .05em; }
 header p { margin: 0; color: var(--muted); max-width: 72ch; }
 form { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
@@ -118,7 +119,7 @@ footer a:hover { text-decoration: underline; }
 <body>
 <main>
   <header>
-    <h1><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 1.5c.6 5.3 3.8 9.3 10.5 10.5C15.8 13.2 12.6 17.2 12 22.5 11.4 17.2 8.2 13.2 1.5 12 8.2 10.8 11.4 6.8 12 1.5z"/></svg><span class="word">Astro Recommender</span></h1>
+    <h1><img class="mark" src="favicon.svg" alt=""><span class="word">Astro Recommender</span></h1>
     <p>Ranks deep sky objects for tonight at your location. Runs entirely in your browser; the only network requests go to the forecast, sky brightness, geocoding and comet services. Leave a field empty for its default.</p>
   </header>
   <form id="form">
