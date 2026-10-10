@@ -198,7 +198,7 @@ Another telescope and camera. **`-focal`, `-sensor` and `-pixel` describe the se
 astro-recommender -lat 45.815 -lon 15.982 -focal 400 -sensor 23.5x15.6 -pixel 3.76 -filter
 ```
 
-**Large objects as mosaics.** `-mosaic 6` keeps objects up to a 3 × 2 grid of frames overlapping by 10%, each scored on the grid that frames it best with the score divided among the panels, so a 2-panel North America Nebula ranks with a single frame half as good. With a rotatable camera, `-rotate` frames the major axis along the long side, so an edge-on galaxy or the Veil fits where a disc of the same length would not:
+**Large objects as mosaics.** `-mosaic 6` keeps objects that fit a grid of up to six frames (3 × 2, 1 × 6 and so on) overlapping by 10%, each scored on the grid that frames it best with the score divided among the panels, so a 2-panel mosaic scores like a single frame of half the quality. With a rotatable camera, `-rotate` frames the major axis along the long side, so an edge-on galaxy or the Veil fits where a disc of the same length would not:
 
 ```sh
 astro-recommender -lat 45.815 -lon 15.982 -focal 400 -sensor 23.5x15.6 -pixel 3.76 -mosaic 6 -rotate
@@ -309,7 +309,7 @@ All eight [uptonight target lists](https://github.com/mawinkler/uptonight/tree/m
 | `Messier` | 110 | The Messier catalogue |
 | `Herschel400` | 400 | The Astronomical League's Herschel 400 |
 | `Pensack500` | 502 | Don Pensack's 500 best deep sky objects |
-| `OpenNGC` | 8373 | The NGC, from [OpenNGC](https://github.com/mattiaverga/OpenNGC): V and B magnitudes and B-band surface brightness (`bsurfbr`) where known, Messier number, NGC/IC cross-identifications and common names in the description |
+| `OpenNGC` | 8373 | The NGC, from [OpenNGC](https://github.com/mattiaverga/OpenNGC): V and B magnitudes, B-band surface brightness (`bsurfbr`) and minor axis (`minor`) where known, Messier number, NGC/IC cross-identifications and common names in the description |
 | `OpenIC` | 5590 | The IC, from OpenNGC, described like `OpenNGC` |
 | `LBN` | 1116 | Lynds' Catalogue of Bright Nebulae |
 | `LDN` | 1764 | Lynds' Catalogue of Dark Nebulae |
