@@ -216,7 +216,7 @@ func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) int {
 		}
 		size := sizeText(r.Target, "%.0f'", r.Size)
 		// The minor axis only enters the frame fit with -rotate.
-		if major, minor := r.Axes(); cfg.Rotate && r.HasSize() && minor < major {
+		if major, minor := r.Axes(); cfg.Rotate && minor < major {
 			size = fmt.Sprintf("%.0fx%.0f'", major, minor)
 		}
 		ra, dec := position(r.Position())

@@ -166,12 +166,19 @@ func TestParseFrame(t *testing.T) {
 }
 
 // Mosaics lists every grid within -mosaic, fewest panels first, each side
-// growing by 90% of a frame per added panel.
+// growing by 90% of a frame per added panel; without -rotate only the
+// fewest-panelled grid of each short side, since the others cannot win.
 func TestMosaics(t *testing.T) {
-	cfg := Config{FOVLong: 100, FOVShort: 50, Mosaic: 4}
+	cfg := Config{FOVLong: 100, FOVShort: 50, Mosaic: 4, Rotate: true}
 	got := cfg.Mosaics()
 	if len(got) != 8 { // 1x1, 1x2, 2x1, 1x3, 3x1, 1x4, 2x2, 4x1
 		t.Fatalf("%d mosaics, want 8: %+v", len(got), got)
+	}
+	// Short sides: 1x1 50', 1x2 95', 1x3 100' (its 140' height passes the
+	// 100' width); the Nx1 grids repeat the frame's, 2x2 the 1x2's, 1x4 the 1x3's.
+	cfg.Rotate = false
+	if pruned := cfg.Mosaics(); len(pruned) != 3 || pruned[0].Panels() != 1 || pruned[1] != got[1] || pruned[2] != got[3] {
+		t.Errorf("without -rotate: %+v, want 1x1, 1x2, 1x3", pruned)
 	}
 	for i, m := range got {
 		if i > 0 && m.Panels() < got[i-1].Panels() {

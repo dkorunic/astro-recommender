@@ -311,7 +311,9 @@ func (m Mosaic) Panels() int { return m.Cols * m.Rows }
 
 // Mosaics returns every grid of at most -mosaic panels (at least the single
 // frame, so a hand-built Config without -mosaic frames as before), fewest
-// panels first.
+// panels first. Without Rotate the fit depends on a grid's short side alone,
+// so of the grids sharing one only the fewest-panelled, the first here, can
+// win, and the rest are left out.
 func (cfg *Config) Mosaics() []Mosaic {
 	var out []Mosaic
 	n := max(1, cfg.Mosaic)
@@ -325,8 +327,18 @@ func (cfg *Config) Mosaics() []Mosaic {
 		}
 	}
 	slices.SortStableFunc(out, func(a, b Mosaic) int { return cmp.Compare(a.Panels(), b.Panels()) })
+	if cfg.Rotate {
+		return out
+	}
+	seen := map[float64]bool{}
 
-	return out
+	return slices.DeleteFunc(out, func(m Mosaic) bool {
+		short := min(m.W, m.H)
+		dup := seen[short]
+		seen[short] = true
+
+		return dup
+	})
 }
 
 // MaxFramed returns the largest major axis in arc minutes that some mosaic
@@ -355,13 +367,13 @@ func (cfg *Config) FramePx() (float64, float64) {
 // defaults by -min-px up to the largest object a mosaic holds; explicit
 // -size-min/-size-max still win.
 func (cfg *Config) frameSizes(set map[string]bool, minPx float64) error {
+	if cfg.Mosaic < 1 || cfg.Mosaic > maxMosaic {
+		return fmt.Errorf("%w: -mosaic must be 1 to %d panels", errInvalidFlag, maxMosaic)
+	}
 	// Judged on the values, so an explicit default (-mosaic 1, -rotate=false,
 	// as the web form's shared links carry) asks for nothing.
 	if !cfg.Framing && (cfg.Mosaic > 1 || cfg.Rotate) {
 		return fmt.Errorf("%w: -mosaic and -rotate need framing (-origin, -fov, -scale or -focal)", errInvalidFlag)
-	}
-	if cfg.Mosaic < 1 || cfg.Mosaic > maxMosaic {
-		return fmt.Errorf("%w: -mosaic must be 1 to %d panels", errInvalidFlag, maxMosaic)
 	}
 	if !cfg.Framing {
 		return nil
@@ -375,7 +387,7 @@ func (cfg *Config) frameSizes(set map[string]bool, minPx float64) error {
 		cfg.SizeMax = maxSize
 	}
 	if cfg.SizeMax > maxSize {
-		return fmt.Errorf("%w: -size-max %.1f' exceeds the largest frame side an object can use, %.1f'; larger objects cannot be framed",
+		return fmt.Errorf("%w: -size-max %.1f' exceeds the largest frame side an object can use, %.1f'; larger objects cannot be framed, and with -rotate only an object with a known minor axis uses the long side",
 			errInvalidFlag, cfg.SizeMax, maxSize)
 	}
 
