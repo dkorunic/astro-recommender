@@ -138,7 +138,7 @@ footer a:hover { text-decoration: underline; }
   <pre id="out"></pre>
   <footer>
     <span>© 2026 Dinko Korunic</span>
-    <span>Code: <a rel="license" href="https://github.com/dkorunic/astro-recommender/blob/main/LICENSE">MIT</a> · <a href="https://github.com/dkorunic/astro-recommender/blob/main/README.md">README</a> · <a href="https://github.com/dkorunic/astro-recommender/">GitHub</a></span>
+    <span>Code: <a rel="license" href="https://github.com/dkorunic/astro-recommender/blob/main/LICENSE">MIT</a> · <a href="https://github.com/dkorunic/astro-recommender/blob/main/README.md">README</a> · <a href="https://github.com/dkorunic/astro-recommender/">GitHub</a><span id="version"></span></span>
   </footer>
 </main>
 <script src="wasm_exec.js"></script>
@@ -449,6 +449,17 @@ init().catch((ex) => {
   $("warn").textContent = String(ex);
   $("run").textContent = "Failed to load";
 });
+
+// The footer shows -version's tag and commit, the rest of it as a tooltip.
+run(["-version"]).then(({ out }) => {
+  const m = out.match(/^astro-recommender (\S+) \(commit ([0-9a-f]+)(\S*?),/);
+  if (!m) return;
+  const a = document.createElement("a");
+  a.href = `https://github.com/dkorunic/astro-recommender/commit/${m[2]}`;
+  a.textContent = `${m[1]} (${m[2]}${m[3]})`;
+  a.title = out.trim();
+  $("version").append(" · ", a);
+}).catch((ex) => console.warn("version:", ex));
 </script>
 </body>
 </html>
