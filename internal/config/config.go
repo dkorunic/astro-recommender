@@ -314,8 +314,9 @@ func (m Mosaic) Panels() int { return m.Cols * m.Rows }
 // panels first.
 func (cfg *Config) Mosaics() []Mosaic {
 	var out []Mosaic
-	for c := 1; c <= max(1, cfg.Mosaic); c++ {
-		for r := 1; c*r <= max(1, cfg.Mosaic); r++ {
+	n := max(1, cfg.Mosaic)
+	for c := 1; c <= n; c++ {
+		for r := 1; c*r <= n; r++ {
 			out = append(out, Mosaic{
 				Cols: c, Rows: r,
 				W: cfg.FOVLong * (float64(c) - float64(c-1)*mosaicOverlap),
@@ -354,7 +355,9 @@ func (cfg *Config) FramePx() (float64, float64) {
 // defaults by -min-px up to the largest object a mosaic holds; explicit
 // -size-min/-size-max still win.
 func (cfg *Config) frameSizes(set map[string]bool, minPx float64) error {
-	if !cfg.Framing && (set["mosaic"] || set["rotate"]) {
+	// Judged on the values, so an explicit default (-mosaic 1, -rotate=false,
+	// as the web form's shared links carry) asks for nothing.
+	if !cfg.Framing && (cfg.Mosaic > 1 || cfg.Rotate) {
 		return fmt.Errorf("%w: -mosaic and -rotate need framing (-origin, -fov, -scale or -focal)", errInvalidFlag)
 	}
 	if cfg.Mosaic < 1 || cfg.Mosaic > maxMosaic {

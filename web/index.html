@@ -259,9 +259,10 @@ function sky(html) {
   }).join("\n");
 }
 // The thumbnail shows once its own image has loaded, never the previous
-// name's image or an empty box.
+// name's image or an empty box: a load event the previous image queued before
+// the pointer moved on would otherwise show it under the new name.
 let thumbFor = null;
-$("thumb").addEventListener("load", (e) => { if (thumbFor) e.target.hidden = false; });
+$("thumb").addEventListener("load", (e) => { if (thumbFor && e.target.src === thumbFor.dataset.thumb) e.target.hidden = false; });
 $("out").addEventListener("mouseover", (e) => {
   const a = e.target.closest("a[data-thumb]"), img = $("thumb");
   if (a === thumbFor) return;

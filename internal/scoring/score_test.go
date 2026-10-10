@@ -125,6 +125,28 @@ func TestFrame(t *testing.T) {
 	}
 }
 
+// config.MaxFramed and frame encode the fit rule separately: the -size-max
+// limit must be exactly the largest major axis some mosaic holds (with a
+// known minor axis across under -rotate), a hair below it framed, a hair
+// above it not, so an accepted -size-max never admits what frame drops.
+func TestMaxFramed(t *testing.T) {
+	for _, cfg := range []*config.Config{
+		{FOVLong: 80, FOVShort: 45},
+		{FOVLong: 80, FOVShort: 45, Rotate: true},
+		{FOVLong: 80, FOVShort: 45, Mosaic: 4},
+		{FOVLong: 80, FOVShort: 45, Mosaic: 3, Rotate: true},
+		{FOVLong: 80, FOVShort: 45, Mosaic: 25, Rotate: true},
+	} {
+		lim := cfg.MaxFramed()
+		under, _ := frame(catalog.Target{Size: lim - 1e-3, Minor: 1}, cfg.Mosaics(), cfg.Rotate)
+		over, _ := frame(catalog.Target{Size: lim + 1e-3, Minor: 1}, cfg.Mosaics(), cfg.Rotate)
+		if under <= 0 || over != 0 {
+			t.Errorf("%vx%v' mosaic %d rotate %v: MaxFramed %v frames %v just under, %v just over",
+				cfg.FOVLong, cfg.FOVShort, cfg.Mosaic, cfg.Rotate, lim, under, over)
+		}
+	}
+}
+
 func TestSkyK(t *testing.T) {
 	pn := catalog.Target{Type: "Planetary Nebula"}
 	gx := catalog.Target{Type: "Galaxy"}

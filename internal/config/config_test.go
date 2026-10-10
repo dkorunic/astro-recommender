@@ -159,6 +159,10 @@ func TestParseFrame(t *testing.T) {
 	if cfg, err := parse(t); err != nil || cfg.Framing || cfg.SizeMin != 10 || cfg.SizeMax != 300 {
 		t.Errorf("no framing flags: %+v, %v", cfg, err)
 	}
+	// The explicit defaults, as a shared web link carries them, ask for nothing.
+	if cfg, err := parse(t, "-mosaic", "1", "-rotate=false"); err != nil || cfg.Framing {
+		t.Errorf("explicit default -mosaic/-rotate: %+v, %v", cfg, err)
+	}
 }
 
 // Mosaics lists every grid within -mosaic, fewest panels first, each side

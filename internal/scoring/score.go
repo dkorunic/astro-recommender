@@ -105,6 +105,15 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, mosaics []config
 	// that pass them (and for alt): the bulk of the minutes do not.
 	sinMin, sinMax := math.Sin(cfg.AltMin*deg), math.Sin(cfg.AltMax*deg)
 	r := Result{Target: tg, Frame: 1}
+	// Unknown sizes get no frame penalty. An object no mosaic holds cannot be
+	// framed whatever -size-max says (with -rotate the limit is the long side,
+	// which only a known minor axis lets an object use), so it skips the
+	// per-minute loop; the frame score only orders those that fit.
+	if cfg.Framing && tg.HasSize() {
+		if r.Frame, r.Mosaic = frame(tg, mosaics, cfg.Rotate); r.Frame == 0 {
+			return r, false
+		}
+	}
 	// The object's own surface brightness, in the sky's units; 0 when unknown,
 	// which scores it as sky-limited, as every target was before SB existed.
 	var objNL float64
@@ -199,14 +208,6 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, mosaics []config
 	r.Foto = float64(good) / float64(len(s.Grid))
 	r.MeanAlt = altSum / float64(good)
 	r.SkyMag = skySum / float64(good)
-	// Unknown sizes get no frame penalty.
-	if cfg.Framing && tg.HasSize() {
-		// An object no mosaic holds cannot be framed whatever -size-max says;
-		// the frame score only orders those that fit.
-		if r.Frame, r.Mosaic = frame(tg, mosaics, cfg.Rotate); r.Frame == 0 {
-			return r, false
-		}
-	}
 	r.Score = weighted / float64(len(s.Grid)) * r.Frame
 
 	return r, true

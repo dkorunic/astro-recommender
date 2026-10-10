@@ -131,13 +131,14 @@ func TestLoadAcceptsKnownAndUnknownNumbers(t *testing.T) {
 	}
 }
 
-// Axes falls back to a round object without a usable minor axis.
+// Axes falls back to a round object without a usable minor axis, and to 0
+// without a size, never the sentinel.
 func TestAxes(t *testing.T) {
-	for _, c := range []struct{ size, minor, wantMinor float64 }{
-		{10, 4, 4}, {10, 0, 10}, {10, -9999, 10}, {10, 10, 10},
+	for _, c := range []struct{ size, minor, wantMajor, wantMinor float64 }{
+		{10, 4, 10, 4}, {10, 0, 10, 10}, {10, -9999, 10, 10}, {10, 10, 10, 10}, {0, 4, 0, 0}, {-9999, 4, 0, 0},
 	} {
-		if major, minor := (Target{Size: c.size, Minor: c.minor}).Axes(); major != c.size || minor != c.wantMinor {
-			t.Errorf("Axes(%v, %v) = %v, %v; want %v, %v", c.size, c.minor, major, minor, c.size, c.wantMinor)
+		if major, minor := (Target{Size: c.size, Minor: c.minor}).Axes(); major != c.wantMajor || minor != c.wantMinor {
+			t.Errorf("Axes(%v, %v) = %v, %v; want %v, %v", c.size, c.minor, major, minor, c.wantMajor, c.wantMinor)
 		}
 	}
 }

@@ -70,10 +70,14 @@ type Target struct {
 // or negative size (-9999 in the lists, 0.0 in a few LDN entries) have none.
 func (t Target) HasSize() bool { return t.Size > 0 }
 
-// Axes returns the major and minor axes in arc minutes. The minor axis is the
-// major one when unknown: a round object, the frame fit's worst case.
+// Axes returns the major and minor axes in arc minutes, both 0 without a
+// size (never the -9999 sentinel). The minor axis is the major one when
+// unknown: a round object, the frame fit's worst case.
 func (t Target) Axes() (float64, float64) {
-	if t.Minor > 0 && t.Minor < t.Size {
+	switch {
+	case !t.HasSize():
+		return 0, 0
+	case t.Minor > 0 && t.Minor < t.Size:
 		return t.Size, t.Minor
 	}
 

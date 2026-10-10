@@ -329,7 +329,7 @@ scripts/openngc2yaml.py NGC.csv NGC > internal/catalog/targets/OpenNGC.yaml
 scripts/openngc2yaml.py NGC.csv IC > internal/catalog/targets/OpenIC.yaml
 ```
 
-`GaryImm.yaml`, `Messier.yaml`, `Herschel400.yaml` and `Pensack500.yaml` are uptonight's lists with the unknown magnitudes filled, and the `surfbr` (V band, from `GaryImmFull.yaml`) and `bsurfbr` (B band, from `OpenNGC.yaml`/`OpenIC.yaml`) surface brightness keys and the `minor` axis (the list's own size times OpenNGC's axis ratio, matched also by Messier number) added, by `scripts/fillmag.py` (Messier.yaml itself is a source for the others, so it goes first), matching by name or by the NGC/IC number in the description; the rest is unchanged. Rerun it after regenerating those:
+`GaryImm.yaml`, `Messier.yaml`, `Herschel400.yaml` and `Pensack500.yaml` are uptonight's lists with the unknown magnitudes filled, and the `surfbr` (V band, from `GaryImmFull.yaml`) and `bsurfbr` (B band, from `OpenNGC.yaml`/`OpenIC.yaml`) surface brightness keys and the `minor` axis (the list's own size times OpenNGC's axis ratio, matched also by Messier number; through a cross-ID only when it leads the description alone and the sizes agree within 2×, so a pair or complex gets none) added, by `scripts/fillmag.py` (Messier.yaml itself is a source for the others, so it goes first), matching by name or by the NGC/IC number in the description; the rest is unchanged. Rerun it after regenerating those:
 
 ```sh
 scripts/fillmag.py internal/catalog/targets/Messier.yaml > m.yaml && mv m.yaml internal/catalog/targets/Messier.yaml
@@ -380,7 +380,7 @@ curl -o cald.wiki 'https://en.wikipedia.org/w/index.php?title=Caldwell_catalogue
 scripts/caldwell2yaml.py IMM_Compendium_2026.xlsx cald.wiki > internal/catalog/targets/Caldwell.yaml
 ```
 
-The Compendium has one size per object, so the minor axes come from OpenNGC: `fillmag.py --minor-only` adds the list's size times OpenNGC's axis ratio and changes nothing else. Run it after each regeneration:
+The Compendium has one size per object, so the minor axes come from OpenNGC: `fillmag.py --minor-only` adds the list's size times OpenNGC's axis ratio and changes nothing else; the pairs and complexes (C 60, C 68, C 82) and the Western Veil arc (C 34, 75′ of the 210′ NGC 6960) get none, since one member's shape says nothing about the whole. Run it after each regeneration:
 
 ```sh
 scripts/fillmag.py --minor-only internal/catalog/targets/Caldwell.yaml > c.yaml && mv c.yaml internal/catalog/targets/Caldwell.yaml

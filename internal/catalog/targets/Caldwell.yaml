@@ -304,7 +304,6 @@
   name: "C 34"
   ra: "20 45 58.0"
   size: 75.0
-  minor: 57.14
   type: "Supernova Remnant"
 - constellation: ""
   bmag: 12.49
@@ -542,7 +541,6 @@
   ra: "12 01 53.0"
   size: 10.0
   surfbr: 20.99
-  minor: 6.97
   type: "Galaxy"
 - constellation: ""
   dec: "-18 53 10.0"
@@ -615,7 +613,6 @@
   name: "C 68"
   ra: "19 01 38.0"
   size: 30.0
-  minor: 23.33
   type: "Reflection Nebula"
 - constellation: ""
   dec: "-37 06 12.0"
@@ -734,7 +731,6 @@
   name: "C 82"
   ra: "16 40 05.0"
   size: 30.0
-  minor: 18.0
   type: "Emission Nebula"
 - constellation: ""
   dec: "-49 28 02.0"
