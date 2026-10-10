@@ -83,8 +83,15 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 	fmt.Printf("%s %s\n", label("Targets: "), targetsDesc)
 	if cfg.Framing {
 		pxLong, pxShort := cfg.FramePx()
-		fmt.Printf("%s %.2f° x %.2f°, %.2f\"/px (%.0f x %.0f px)\n", label("Frame:   "), cfg.FOVLong/60, cfg.FOVShort/60,
-			cfg.Scale, pxLong, pxShort)
+		extra := ""
+		if cfg.Mosaic > 1 {
+			extra += fmt.Sprintf(", mosaics of up to %d panels", cfg.Mosaic)
+		}
+		if cfg.Rotate {
+			extra += ", rotatable"
+		}
+		fmt.Printf("%s %.2f° x %.2f°, %.2f\"/px (%.0f x %.0f px)%s\n", label("Frame:   "), cfg.FOVLong/60, cfg.FOVShort/60,
+			cfg.Scale, pxLong, pxShort, extra)
 	}
 	if len(cfg.Horizon) > 0 {
 		fmt.Printf("%s %d points, %.0f° - %.0f°\n", label("Horizon: "), len(cfg.Horizon),
@@ -203,10 +210,18 @@ func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) int {
 		px := "-" // without framing there is no pixel scale to measure against
 		if cfg.Framing {
 			px = sizeText(r.Target, "%.0f", r.Size*60/cfg.Scale)
+			if m := r.Mosaic; m.Panels() > 1 {
+				px += fmt.Sprintf(" %dx%d", m.Cols, m.Rows)
+			}
+		}
+		size := sizeText(r.Target, "%.0f'", r.Size)
+		// The minor axis only enters the frame fit with -rotate.
+		if major, minor := r.Axes(); cfg.Rotate && r.HasSize() && minor < major {
+			size = fmt.Sprintf("%.0fx%.0f'", major, minor)
 		}
 		ra, dec := position(r.Position())
 		row(w, "", paint("39", strconv.Itoa(i+1)), paint("36", r.Name), paint("39", shortDesc(r.Description)), paint(typeColor(r.Target), r.Type),
-			paint("39", r.Constellation), paint("39", ra), paint("39", dec), paint("39", sizeText(r.Target, "%.0f'", r.Size)),
+			paint("39", r.Constellation), paint("39", ra), paint("39", dec), paint("39", size),
 			paint(scale(r.Foto, 0.66, 0.33), fmt.Sprintf("%.2f", r.Foto)),
 			paint(scale(r.Score, 0.66, 0.33), fmt.Sprintf("%.2f", r.Score)),
 			paint("39", runText(s, r)),
@@ -437,14 +452,14 @@ var resultColumns = []column{
 	{"CONSTELLATION", "IAU constellation, from the official boundaries"},
 	{"RA", "J2000 right ascension, hh mm.m (comets: mid-window position)"},
 	{"DEC", "J2000 declination, ±dd mm (comets: mid-window position)"},
-	{"SIZE", "major axis in arcminutes (- unknown or comet)"},
+	{"SIZE", "major axis in arcminutes, with -rotate major x minor where the minor axis is known (- unknown or comet)"},
 	{"FOTO", "fraction of the window within the altitude, horizon and Moon-distance limits"},
 	{"SCORE", "0-1 imaging quality: 1 = every minute observable under a perfect, pristine dark sky"},
 	{"OBSERVABLE", "longest stretch within the limits without a break (+ there are others)"},
 	{"MAX ALT", "highest altitude in the window, and when"},
 	{"SKY", "mean sky brightness at the object, mag/arcsec² (higher is darker; no filter)"},
 	{"SB", "the object's own surface brightness, mag/arcsec², set against the sky it sees: SKY, cut to k by -filter for emission-line objects or halved for star clusters without nebulosity, whose own brightness is then not used (~ estimated from the magnitude and size or from a B value and a typical colour; - unknown, scored as sky-limited)"},
-	{"PX", "size in pixels at the frame's pixel scale (- without framing)"},
+	{"PX", "size in pixels at the frame's pixel scale, and the mosaic (columns along the long side x rows) when more than one panel scores best (- without framing)"},
 }
 
 func names(cols []column) []string {

@@ -88,6 +88,12 @@ pre#out:empty { display: none; }
 .b { font-weight: 700; }
 .c31 { color: var(--c31); } .c32 { color: var(--c32); } .c33 { color: var(--c33); } .c34 { color: var(--c34); }
 .c35 { color: var(--c35); } .c36 { color: var(--c36); } .c90 { color: var(--c90); }
+pre#out a { color: inherit; text-decoration: underline dotted; text-underline-offset: 2px; }
+#thumb {
+  position: fixed; z-index: 10; width: 240px; height: 240px; pointer-events: none;
+  border: 1px solid var(--line); border-radius: 8px; background: var(--field); box-shadow: 0 6px 24px rgba(0, 0, 0, .4);
+}
+#thumb[hidden] { display: none; }
 footer {
   display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px;
   margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted);
@@ -122,7 +128,7 @@ footer a:hover { text-decoration: underline; }
 <main>
   <header>
     <h1><img class="mark" src="favicon.svg" alt=""><span class="word">Astro Recommender</span></h1>
-    <p>Ranks deep sky objects for tonight at your location. Runs entirely in your browser; the only network requests go to the forecast, sky brightness, geocoding and comet services. Leave a field empty for its default.</p>
+    <p>Ranks deep sky objects for tonight at your location. Runs entirely in your browser; the only network requests go to the forecast, sky brightness, geocoding and comet services, and to CDS for the DSS2 thumbnail when you point at a result. Leave a field empty for its default.</p>
   </header>
   <form id="form">
     <div class="grid" id="main"></div>
@@ -138,6 +144,7 @@ footer a:hover { text-decoration: underline; }
   </form>
   <div id="warn"></div>
   <pre id="out"></pre>
+  <img id="thumb" alt="" hidden>
   <footer>
     <span>© 2026 Dinko Korunic</span>
     <span>Code: <a rel="license" href="https://github.com/dkorunic/astro-recommender/blob/main/LICENSE">MIT</a> · <a href="https://github.com/dkorunic/astro-recommender/blob/main/README.md">README</a> · <a href="https://github.com/dkorunic/astro-recommender/">GitHub</a><span id="version"></span></span>
@@ -231,6 +238,44 @@ function ansi(s) {
   }
   return html + "</span>".repeat(depth);
 }
+
+// sky links each result's name to Aladin Lite at the row's RA/Dec, with a
+// DSS2 thumbnail (CDS hips2fits) shown on hover. Only result rows carry
+// "hh mm.m ±dd mm size'" cells; the plan table's names stay plain.
+const survey = "CDS%2FP%2FDSS2%2Fcolor";
+function sky(html) {
+  return html.split("\n").map((line) => {
+    const m = line.replace(/<[^>]+>/g, "")
+      .match(/ (\d\d) (\d\d\.\d)  +([+-])(\d\d) (\d\d)  +(?:(\d+)(?:x\d+)?'|-) /);
+    if (!m) return line;
+    const ra = (+m[1] + m[2] / 60) * 15, dec = (m[3] === "-" ? -1 : 1) * (+m[4] + m[5] / 60);
+    // Half again the object, within 0.1-5°; unknown sizes (comets) get 0.5°.
+    const fov = m[6] ? Math.min(5, Math.max(0.1, m[6] * 1.5 / 60)) : 0.5;
+    const href = `https://aladin.cds.unistra.fr/AladinLite/?target=${ra.toFixed(4)}%20${dec.toFixed(4)}&fov=${fov.toFixed(2)}&survey=${survey}`;
+    const thumb = `https://alasky.cds.unistra.fr/hips-image-services/hips2fits?hips=${survey}&width=240&height=240&projection=TAN` +
+      `&fov=${fov.toFixed(2)}&ra=${ra.toFixed(4)}&dec=${dec.toFixed(4)}&format=jpg`;
+    return line.replace(/<span class="c36">([^<]*)<\/span>/,
+      `<span class="c36"><a href="${href}" target="_blank" rel="noopener" data-thumb="${thumb}">$1</a></span>`);
+  }).join("\n");
+}
+// The thumbnail shows once its own image has loaded, never the previous
+// name's image or an empty box.
+let thumbFor = null;
+$("thumb").addEventListener("load", (e) => { if (thumbFor) e.target.hidden = false; });
+$("out").addEventListener("mouseover", (e) => {
+  const a = e.target.closest("a[data-thumb]"), img = $("thumb");
+  if (a === thumbFor) return;
+  thumbFor = a;
+  img.hidden = true;
+  if (!a) return;
+  const r = a.getBoundingClientRect();
+  img.style.left = `${Math.min(r.right + 12, innerWidth - 252)}px`;
+  img.style.top = `${Math.max(8, Math.min(r.top - 100, innerHeight - 248))}px`;
+  img.src = a.dataset.thumb;
+  // Back on the same name the src does not change and no load event fires.
+  if (img.complete && img.naturalWidth) img.hidden = false;
+});
+$("out").addEventListener("mouseleave", () => { thumbFor = null; $("thumb").hidden = true; });
 
 // parseUsage reads the flag list from -h, so the form follows the program.
 function parseUsage(text) {
@@ -390,7 +435,7 @@ $("form").addEventListener("submit", async (e) => {
   try {
     const a = await args();
     const { out, err, code } = await run(a);
-    $("out").innerHTML = ansi(out);
+    $("out").innerHTML = sky(ansi(out));
     $("warn").textContent = err.trim();
     $("warn").className = code ? "error" : "";
     $("status").textContent = code ? `exit status ${code}` : `done in ${((performance.now() - t0) / 1000).toFixed(1)} s`;

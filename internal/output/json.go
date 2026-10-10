@@ -68,9 +68,11 @@ type sky struct { // betteralign:ignore
 }
 
 type frame struct {
-	FOVLong  float64 `json:"fovLong"`  // arcminutes
-	FOVShort float64 `json:"fovShort"` // arcminutes
-	Scale    float64 `json:"scale"`    // arcseconds per pixel
+	FOVLong  float64 `json:"fovLong"`             // arcminutes
+	FOVShort float64 `json:"fovShort"`            // arcminutes
+	Scale    float64 `json:"scale"`               // arcseconds per pixel
+	Mosaic   int     `json:"maxPanels,omitempty"` // -mosaic, when above 1
+	Rotate   bool    `json:"rotate,omitempty"`
 }
 
 type slot struct { // betteralign:ignore
@@ -92,6 +94,7 @@ type target struct { // betteralign:ignore
 	RA            float64   `json:"ra"`
 	Dec           float64   `json:"dec"`
 	Size          *float64  `json:"size,omitempty"`
+	Minor         *float64  `json:"minor,omitempty"`
 	Foto          float64   `json:"foto"`
 	Score         float64   `json:"score"`
 	Frame         float64   `json:"frame"`
@@ -102,6 +105,12 @@ type target struct { // betteralign:ignore
 	SB            *float64  `json:"surfaceBrightness,omitempty"`
 	SBEstimated   bool      `json:"surfaceBrightnessEstimated,omitempty"`
 	Px            *float64  `json:"px,omitempty"`
+	Mosaic        *mosaic   `json:"mosaic,omitempty"` // more than one panel only
+}
+
+type mosaic struct { // betteralign:ignore
+	Cols int `json:"cols"`
+	Rows int `json:"rows"`
 }
 
 type run struct { // betteralign:ignore
@@ -131,7 +140,10 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 		r.Sky.FilterK = &cfg.FilterK
 	}
 	if cfg.Framing {
-		r.Frame = &frame{FOVLong: cfg.FOVLong, FOVShort: cfg.FOVShort, Scale: cfg.Scale}
+		r.Frame = &frame{FOVLong: cfg.FOVLong, FOVShort: cfg.FOVShort, Scale: cfg.Scale, Rotate: cfg.Rotate}
+		if cfg.Mosaic > 1 {
+			r.Frame.Mosaic = cfg.Mosaic
+		}
 	}
 	for t := s.Start.Truncate(time.Hour); forecastFetched(s) && t.Before(s.End); t = t.Add(time.Hour) {
 		hour := map[string]any{"hour": t.In(cfg.Loc), "extinction": s.ExtinctionAt(t, cfg.Extinction)}
@@ -167,10 +179,16 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 		}
 		if res.HasSize() {
 			tg.Size = &res.Size
+			if major, minor := res.Axes(); minor < major {
+				tg.Minor = &minor
+			}
 			if cfg.Framing {
 				px := res.Size * 60 / cfg.Scale
 				tg.Px = &px
 			}
+		}
+		if m := res.Mosaic; m.Panels() > 1 {
+			tg.Mosaic = &mosaic{Cols: m.Cols, Rows: m.Rows}
 		}
 		if sb, estimated := res.SurfaceBrightness(); sb > 0 {
 			tg.SB, tg.SBEstimated = &sb, estimated

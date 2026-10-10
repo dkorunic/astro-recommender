@@ -96,6 +96,9 @@ func TestLoadRejectsBadCoordinates(t *testing.T) {
 		"bsurfbr nan": `[{name: X, ra: "00 50 00", dec: "10 00 00", bsurfbr: .nan}]`,
 		"mag 40":      `[{name: X, ra: "00 50 00", dec: "10 00 00", mag: 40}]`, // nothing in a target list is that faint
 		"surfbr 99":   `[{name: X, ra: "00 50 00", dec: "10 00 00", surfbr: 99}]`,
+		"minor nan":   `[{name: X, ra: "00 50 00", dec: "10 00 00", size: 10, minor: .nan}]`,
+		"minor>size":  `[{name: X, ra: "00 50 00", dec: "10 00 00", size: 10, minor: 12}]`,
+		"minor alone": `[{name: X, ra: "00 50 00", dec: "10 00 00", minor: 5}]`, // no major axis to sit under
 	} {
 		f := filepath.Join(t.TempDir(), "t.yaml")
 		if err := os.WriteFile(f, []byte(yml), 0o600); err != nil {
@@ -118,12 +121,24 @@ func TestLoadRejectsBadCoordinates(t *testing.T) {
 // Unknown (-9999) and ordinary values pass the range check.
 func TestLoadAcceptsKnownAndUnknownNumbers(t *testing.T) {
 	f := filepath.Join(t.TempDir(), "t.yaml")
-	yml := `[{name: X, ra: "00 50 00", dec: "10 00 00", size: -9999, mag: -9999, bmag: 3.4, surfbr: 22.0, bsurfbr: 34.9}]`
+	yml := `[{name: X, ra: "00 50 00", dec: "10 00 00", size: -9999, minor: -9999, mag: -9999, bmag: 3.4, surfbr: 22.0, bsurfbr: 34.9},
+	         {name: Y, ra: "00 50 00", dec: "10 00 00", size: 10, minor: 10}]`
 	if err := os.WriteFile(f, []byte(yml), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if _, _, err := Load("", f); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// Axes falls back to a round object without a usable minor axis.
+func TestAxes(t *testing.T) {
+	for _, c := range []struct{ size, minor, wantMinor float64 }{
+		{10, 4, 4}, {10, 0, 10}, {10, -9999, 10}, {10, 10, 10},
+	} {
+		if major, minor := (Target{Size: c.size, Minor: c.minor}).Axes(); major != c.size || minor != c.wantMinor {
+			t.Errorf("Axes(%v, %v) = %v, %v; want %v, %v", c.size, c.minor, major, minor, c.size, c.wantMinor)
+		}
 	}
 }
 

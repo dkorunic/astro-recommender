@@ -248,6 +248,7 @@
   name: IC 1396
   ra: 21 38 58
   size: 60.0
+  minor: 17.14
   type: Dark Nebula
 - constellation: Cassiopeia
   dec: 62 02 39
@@ -272,6 +273,7 @@
   name: IC 1848
   ra: 02 51 18
   size: 90.0
+  minor: 22.5
   type: Emission Nebula
 - constellation: Eridanus
   dec: -07 15 00
@@ -296,6 +298,7 @@
   name: IC 405
   ra: 05 16 29
   size: 60.0
+  minor: 36.0
   type: Emission Nebula
 - constellation: Auriga
   dec: 33 25 00
@@ -304,6 +307,7 @@
   name: IC 410
   ra: 05 22 44
   size: 40.0
+  minor: 30.0
   type: Emission Nebula
 - constellation: Auriga
   dec: +34 25 24
@@ -312,6 +316,7 @@
   name: IC 417
   ra: 05 28 06
   size: 50.0
+  minor: 38.46
   type: Emission Nebula
 - constellation: Orion
   dec: -02 27 12
@@ -320,6 +325,7 @@
   name: IC 434
   ra: 05 41 00
   size: 30.0
+  minor: 10.0
   type: Dark Nebula
 - constellation: Gemini
   dec: +22 31 00
@@ -328,6 +334,7 @@
   name: IC 443
   ra: 06 16 36
   size: 60.0
+  minor: 48.0
   type: Supernova Remnant
 - constellation: Scorpius
   dec: -19 27 24
@@ -336,6 +343,7 @@
   name: IC 4592
   ra: 16 11 59
   size: 120.0
+  minor: 80.0
   type: Reflection Nebula
 - constellation: Scorpius
   dec: -40 27 24
@@ -344,6 +352,7 @@
   name: IC 4628
   ra: 16 56 58
   size: 30.0
+  minor: 19.82
   type: Emission Nebula
 - constellation: Cygnus
   dec: 44 24 05
@@ -352,6 +361,7 @@
   name: IC 5070
   ra: 20 51 01
   size: 80.0
+  minor: 66.67
   type: Emission Nebula
 - constellation: Cygnus
   dec: +47 16 01
@@ -376,6 +386,7 @@
   name: IC 63
   ra: 00 59 29
   size: 20.0
+  minor: 6.0
   type: Emission Nebula
 - constellation: Lynx
   dec: +53 25 00
@@ -457,6 +468,7 @@
   name: M 1
   ra: 05 34 32
   size: 6.0
+  minor: 3.0
   type: Supernova Remnant
 - constellation: Ursa Major
   dec: +54 20 56
@@ -467,6 +479,7 @@
   size: 29.0
   surfbr: 23.79
   bsurfbr: 23.97
+  minor: 27.89
   type: Galaxy
 - constellation: Virgo
   dec: -11 37 23
@@ -477,6 +490,7 @@
   size: 9.0
   surfbr: 20.49
   bsurfbr: 22.26
+  minor: 5.23
   type: Galaxy
 - constellation: Canes Venatici
   dec: +47 18 16
@@ -487,6 +501,7 @@
   size: 17.0
   surfbr: 22.49
   bsurfbr: 23.36
+  minor: 7.25
   type: Galaxy
 - constellation: Ursa Major
   dec: 55 40 26
@@ -497,6 +512,7 @@
   size: 9.0
   surfbr: 21.99
   bsurfbr: 21.70
+  minor: 3.75
   type: Galaxy
 - constellation: Scutum
   dec: -06 16 12
@@ -521,6 +537,7 @@
   name: M 16
   ra: 18 18 48
   size: 35.0
+  minor: 7.29
   type: Emission Nebula
 - constellation: Sagittarius
   dec: -16 10 18
@@ -571,6 +588,7 @@
   size: 189.0
   surfbr: 22.39
   bsurfbr: 23.63
+  minor: 74.04
   type: Galaxy
 - constellation: Tri
   dec: 30 39 37
@@ -581,6 +599,7 @@
   size: 70.0
   surfbr: 23.09
   bsurfbr: 23.61
+  minor: 41.41
   type: Galaxy
 - constellation: Orion
   dec: -05 23 25
@@ -589,6 +608,7 @@
   name: M 42
   ra: 05 35 16
   size: 66.0
+  minor: 44.0
   type: Emission Nebula
 - constellation: Taurus
   dec: 24 07 00
@@ -615,6 +635,7 @@
   size: 11.0
   surfbr: 21.79
   bsurfbr: 22.90
+  minor: 9.36
   type: Galaxy
 - constellation: Sagittarius
   dec: -30 57 44
@@ -641,6 +662,7 @@
   size: 13.0
   surfbr: 22.19
   bsurfbr: 23.04
+  minor: 7.87
   type: Galaxy
 - constellation: Coma Berenices
   dec: 21 40 58
@@ -651,6 +673,7 @@
   size: 10.0
   surfbr: 21.59
   bsurfbr: 22.68
+  minor: 5.07
   type: Galaxy
 - constellation: Leo
   dec: +13 05 31
@@ -661,6 +684,7 @@
   size: 35.0
   surfbr: 21.69
   bsurfbr: 22.73
+  minor: 9.02
   type: Galaxy
 - constellation: Perseus
   dec: +51 34 15
@@ -685,6 +709,7 @@
   name: M 8
   ra: 18 03 41
   size: 100.0
+  minor: 66.67
   type: Emission Nebula
 - constellation: Ursa Major
   dec: 69 03 56
@@ -695,6 +720,7 @@
   size: 27.0
   surfbr: 22.09
   bsurfbr: 22.78
+  minor: 14.04
   type: Galaxy
 - constellation: Ursa Major
   dec: 69 40 50
@@ -705,6 +731,7 @@
   size: 10.0
   surfbr: 21.39
   bsurfbr: 22.22
+  minor: 4.65
   type: Galaxy
 - constellation: Hydra
   dec: -29 51 51
@@ -715,6 +742,7 @@
   size: 13.0
   surfbr: 21.69
   bsurfbr: 22.20
+  minor: 12.62
   type: Galaxy
 - constellation: Virgo
   dec: +12 56 46
@@ -725,6 +753,7 @@
   size: 60.0
   surfbr: 22.09
   bsurfbr: 23.90
+  minor: 43.87
   type: Galaxy
 - constellation: Canes Venatici
   dec: 41 07 12
@@ -735,6 +764,7 @@
   size: 11.0
   surfbr: 21.99
   bsurfbr: 21.79
+  minor: 9.49
   type: Galaxy
 - constellation: Ursa Major
   dec: +55 01 08
@@ -753,6 +783,7 @@
   size: 5.0
   surfbr: 22.19
   bsurfbr: 22.60
+  minor: 4.7
   type: Galaxy
 - constellation: Virgo
   dec: 12 56 46
@@ -771,6 +802,7 @@
   size: 9.3
   surfbr: 22.69
   bsurfbr: 23.63
+  minor: 5.67
   type: Galaxy
 - constellation: Perseus
   dec: 31 24 56
@@ -795,6 +827,7 @@
   name: NGC 1491
   ra: 04 03 14
   size: 12.0
+  minor: 8.0
   type: Emission Nebula
 - constellation: Perseus
   dec: +36 22 00
@@ -803,6 +836,7 @@
   name: NGC 1499
   ra: 04 03 14
   size: 145.0
+  minor: 36.25
   type: Emission Nebula
 - constellation: Camelopardalis
   dec: 60 55 14
@@ -829,6 +863,7 @@
   size: 13.0
   surfbr: 22.69
   bsurfbr: 23.78
+  minor: 3.56
   type: Galaxy
 - constellation: Taurus
   dec: 19 32 03
@@ -837,6 +872,7 @@
   name: NGC 1555
   ra: 04 21 57
   size: 60.0
+  minor: 44.51
   type: Reflection Nebula
 - constellation: Eridanus
   dec: -11 07 08
@@ -846,6 +882,7 @@
   ra: 04 59 17
   size: 30.0
   bsurfbr: 23.52
+  minor: 15.76
   type: Galaxy Group
 - constellation: Orion
   dec: -03 20 27
@@ -888,6 +925,7 @@
   size: 5.4
   surfbr: 22.69
   bsurfbr: 23.58
+  minor: 3.27
   type: Galaxy
 - constellation: Camelopardalis
   dec: 78 21 22
@@ -898,6 +936,7 @@
   size: 6.0
   surfbr: 22.99
   bsurfbr: 22.76
+  minor: 4.88
   type: Galaxy
 - constellation: Orion
   dec: 13 57 54
@@ -922,6 +961,7 @@
   name: NGC 2174
   ra: 06 09 24
   size: 40.0
+  minor: 30.0
   type: Emission Nebula
 - constellation: Monoceros
   dec: 05 03 00
@@ -930,6 +970,7 @@
   name: NGC 2237
   ra: 06 30 54
   size: 80.0
+  minor: 50.0
   type: Emission Nebula
 - constellation: Monoceros
   dec: 10 09 24
@@ -946,6 +987,7 @@
   name: NGC 2261
   ra: 06 39 10
   size: 2.0
+  minor: 1.0
   type: Reflection Nebula
 - constellation: Monoceros
   dec: 09 53 42
@@ -970,6 +1012,7 @@
   name: NGC 2359
   ra: 07 18 30
   size: 40.0
+  minor: 20.0
   type: Wolf-Rayet Nebula
 - constellation: Gemini
   dec: 29 29 17
@@ -978,6 +1021,7 @@
   name: NGC 2371
   ra: 07 25 34
   size: 2.1
+  minor: 0.92
   type: Planetary Nebula
 - constellation: Gemini
   dec: 20 54 42
@@ -1012,6 +1056,7 @@
   size: 25.0
   surfbr: 21.59
   bsurfbr: 22.42
+  minor: 4.27
   type: Galaxy
 - constellation: Vela
   dec: -45 56 54
@@ -1020,6 +1065,7 @@
   name: NGC 2736
   ra: 09 00 16
   size: 40.0
+  minor: 9.33
   type: Supernova Remnant
 - constellation: Cassiopeia
   dec: 56 37 29
@@ -1028,6 +1074,7 @@
   name: NGC 281
   ra: 00 52 54
   size: 35.0
+  minor: 30.0
   type: Emission Nebula
 - constellation: Vela
   dec: -40 26 11
@@ -1054,6 +1101,7 @@
   size: 11.0
   surfbr: 22.09
   bsurfbr: 22.75
+  minor: 5.91
   type: Galaxy
 - constellation: Leo
   dec: +13 35 19
@@ -1064,6 +1112,7 @@
   size: 15.0
   surfbr: 22.29
   bsurfbr: 23.13
+  minor: 4.67
   type: Galaxy
 - constellation: Ursa Major
   dec: 53 04 04
@@ -1073,6 +1122,7 @@
   ra: 11 32 35
   size: 8.7
   bsurfbr: 23.29
+  minor: 4.33
   type: Galaxy
 - constellation: Cepheus
   dec: 72 31 19
@@ -1099,6 +1149,7 @@
   size: 40.0
   surfbr: 21.99
   bsurfbr: 22.44
+  minor: 6.09
   type: Galaxy
 - constellation: Coma Berenices
   dec: +25 30 03
@@ -1109,6 +1160,7 @@
   size: 11.0
   surfbr: 22.89
   bsurfbr: 23.39
+  minor: 8.04
   type: Galaxy
 - constellation: Canes Venatici
   dec: 36 35 38
@@ -1119,6 +1171,7 @@
   size: 11.0
   surfbr: 23.29
   bsurfbr: 23.78
+  minor: 5.12
   type: Galaxy
 - constellation: Centaurus
   dec: -43 01 08
@@ -1129,6 +1182,7 @@
   size: 18.0
   surfbr: 22.39
   bsurfbr: 23.59
+  minor: 13.75
   type: Galaxy
 - constellation: Centaurus
   dec: -47 28 53
@@ -1155,6 +1209,7 @@
   size: 12.0
   surfbr: 22.19
   bsurfbr: 23.60
+  minor: 1.86
   type: Galaxy
 - constellation: Draco
   dec: 59 21 21
@@ -1164,6 +1219,7 @@
   ra: 15 38 40
   size: 2.9
   bsurfbr: 23.26
+  minor: 1.89
   type: Galaxy
 - constellation: Ara
   dec: -48 39 42
@@ -1172,6 +1228,7 @@
   name: NGC 6188
   ra: 16 40 05
   size: 30.0
+  minor: 18.0
   type: Emission Nebula
 - constellation: Scorpius
   dec: -37 06 12
@@ -1230,6 +1287,7 @@
   size: 9.1
   surfbr: 23.39
   bsurfbr: 23.50
+  minor: 3.37
   type: Galaxy
 - constellation: Corona Australis
   dec: -36 53 30
@@ -1238,6 +1296,7 @@
   name: NGC 6726
   ra: 19 01 38
   size: 9.0
+  minor: 7.0
   type: Reflection Nebula
 - constellation: Aquila
   dec: 06 32 20
@@ -1270,6 +1329,7 @@
   name: NGC 6888
   ra: 20 12 06
   size: 20.0
+  minor: 10.0
   type: Wolf-Rayet Nebula
 - constellation: Cygnus
   dec: 40 46 42
@@ -1288,6 +1348,7 @@
   size: 11.0
   surfbr: 22.69
   bsurfbr: 23.73
+  minor: 10.46
   type: Galaxy
 - constellation: Cygnus
   dec: 30 35 42
@@ -1296,6 +1357,7 @@
   name: NGC 6960
   ra: 20 45 58
   size: 70.0
+  minor: 53.33
   type: Supernova Remnant
 - constellation: Cygnus
   dec: 32 01 36
@@ -1304,6 +1366,7 @@
   name: NGC 6979
   ra: 20 50 28
   size: 60.0
+  minor: 25.71
   type: Supernova Remnant
 - constellation: Cygnus
   dec: 31 44 36
@@ -1312,6 +1375,7 @@
   name: NGC 6992
   ra: 20 56 19
   size: 60.0
+  minor: 8.0
   type: Supernova Remnant
 - constellation: Cygnus
   dec: 44 31 00
@@ -1320,6 +1384,7 @@
   name: NGC 7000
   ra: 20 59 17
   size: 120.0
+  minor: 30.0
   type: Emission Nebula
 - constellation: Cygnus
   dec: +54 32 35
@@ -1336,6 +1401,7 @@
   name: NGC 7009
   ra: 21 04 11
   size: 1.7
+  minor: 1.26
   type: Planetary Nebula
 - constellation: Cepheus
   dec: 68 10 10
@@ -1344,6 +1410,7 @@
   name: NGC 7023
   ra: 21 01 36
   size: 60.0
+  minor: 48.0
   type: Reflection Nebula
 - constellation: Aquarius
   dec: -20 50 13
@@ -1362,6 +1429,7 @@
   size: 25.0
   surfbr: 22.19
   bsurfbr: 23.08
+  minor: 10.14
   type: Galaxy
 - constellation: Cepheus
   dec: 58 07 54
@@ -1370,6 +1438,7 @@
   name: NGC 7380
   ra: 22 47 21
   size: 25.0
+  minor: 20.0
   type: Emission Nebula
 - constellation: Aquila
   dec: -08 29 09
@@ -1380,6 +1449,7 @@
   size: 5.8
   surfbr: 22.09
   bsurfbr: 23.81
+  minor: 4.93
   type: Galaxy
 - constellation: Cassiopeia
   dec: 61 12 42
@@ -1388,6 +1458,7 @@
   name: NGC 7635
   ra: 23 20 45
   size: 15.0
+  minor: 8.0
   type: Emission Nebula
 - constellation: Aries
   dec: 19 00 29
@@ -1398,6 +1469,7 @@
   size: 7.0
   surfbr: 22.79
   bsurfbr: 22.32
+  minor: 3.86
   type: Galaxy
 - constellation: Cassiopeia
   dec: 56 42 30
@@ -1414,6 +1486,7 @@
   name: NGC 7822
   ra: 00 03 36
   size: 60.0
+  minor: 12.0
   type: Emission Nebula
 - constellation: Perseus
   dec: +57 07 42
@@ -1432,6 +1505,7 @@
   size: 14.0
   surfbr: 22.49
   bsurfbr: 24.17
+  minor: 3.26
   type: Galaxy
 - constellation: Cepheus
   dec: 59 57 01

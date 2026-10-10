@@ -59,6 +59,7 @@ type Target struct {
 	RADeg   float64 `yaml:"-"`
 	DecDeg  float64 `yaml:"-"`
 	Size    float64 `yaml:"size"`    // major axis in arc minutes; 0 or negative (-9999) means unknown
+	Minor   float64 `yaml:"minor"`   // minor axis in arc minutes (OpenNGC/OpenIC, and the lists fillmag.py fills); 0 or negative means unknown
 	Mag     float64 `yaml:"mag"`     // integrated V magnitude; 0 or negative (-9999) means unknown
 	BMag    float64 `yaml:"bmag"`    // integrated B magnitude (OpenNGC/OpenIC); 0 or negative means unknown
 	SurfBr  float64 `yaml:"surfbr"`  // V surface brightness in mag/arcsec² (GaryImmFull galaxies); 0 or negative means unknown
@@ -68,6 +69,16 @@ type Target struct {
 // HasSize reports whether the size is known: comets and entries with a zero
 // or negative size (-9999 in the lists, 0.0 in a few LDN entries) have none.
 func (t Target) HasSize() bool { return t.Size > 0 }
+
+// Axes returns the major and minor axes in arc minutes. The minor axis is the
+// major one when unknown: a round object, the frame fit's worst case.
+func (t Target) Axes() (float64, float64) {
+	if t.Minor > 0 && t.Minor < t.Size {
+		return t.Size, t.Minor
+	}
+
+	return t.Size, t.Size
+}
 
 // HasMag reports whether the magnitude is known. No deep sky object is
 // brighter than 0, so like Size the sentinel is 0 or negative (-9999 in the
@@ -300,6 +311,7 @@ func Load(listName, file string) ([]Target, string, error) {
 			lo, hi float64
 		}{
 			{"size", tg.Size, 0, 180 * 60}, // arcminutes; nothing spans more than the sky
+			{"minor", tg.Minor, 0, 180 * 60},
 			{"mag", tg.Mag, 0, maxNumber},
 			{"bmag", tg.BMag, 0, maxNumber},
 			{"surfbr", tg.SurfBr, minSB, maxNumber},
@@ -308,6 +320,10 @@ func Load(listName, file string) ([]Target, string, error) {
 			if !num.Finite(f.v) || (f.v > 0 && (f.v < f.lo || f.v > f.hi)) {
 				return nil, "", fmt.Errorf("%w for %s: %s %v", errNumber, tg.Name, f.name, f.v)
 			}
+		}
+		// A minor axis is a size too, so it needs a known major axis to sit under.
+		if tg.Minor > 0 && tg.Minor > tg.Size {
+			return nil, "", fmt.Errorf("%w for %s: minor %v exceeds size %v", errNumber, tg.Name, tg.Minor, tg.Size)
 		}
 		tg.RADeg, tg.DecDeg = ra*15, dec // hours -> degrees
 		tg.Constellation = constellation.Of(tg.RADeg, tg.DecDeg)

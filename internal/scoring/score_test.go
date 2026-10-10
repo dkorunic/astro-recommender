@@ -96,6 +96,35 @@ func TestFrameFill(t *testing.T) {
 	}
 }
 
+// frame is frameFill of the major axis over the short side for one frame
+// without -rotate, as before mosaics; -rotate lets a known minor axis lie
+// across, and a mosaic shares the score among its panels.
+func TestFrame(t *testing.T) {
+	single := []config.Mosaic{{Cols: 1, Rows: 1, W: 80, H: 45}}
+	mosaics := (&config.Config{FOVLong: 80, FOVShort: 45, Mosaic: 4}).Mosaics()
+	edgeOn := catalog.Target{Size: 60, Minor: 10}
+	for _, c := range []struct {
+		name    string
+		tg      catalog.Target
+		mosaics []config.Mosaic
+		rotate  bool
+		want    float64
+		panels  int
+	}{
+		{"fits short side", catalog.Target{Size: 20}, single, false, frameFill(20.0 / 45), 1},
+		{"edge-on, unknown angle", edgeOn, single, false, 0, 0},
+		{"edge-on, rotated", edgeOn, single, true, frameFill(60.0 / 80), 1},
+		{"round, rotated", catalog.Target{Size: 60}, single, true, 0, 0},                // minor unknown: a 60' disc
+		{"mosaic", catalog.Target{Size: 60}, mosaics, false, frameFill(60.0/80) / 2, 2}, // 1x2: 80x85.5'
+		{"too big", catalog.Target{Size: 200}, mosaics, false, 0, 0},
+	} {
+		got, m := frame(c.tg, c.mosaics, c.rotate)
+		if math.Abs(got-c.want) > 1e-9 || m.Panels() != c.panels {
+			t.Errorf("%s: %v on %d panels, want %v on %d", c.name, got, m.Panels(), c.want, c.panels)
+		}
+	}
+}
+
 func TestSkyK(t *testing.T) {
 	pn := catalog.Target{Type: "Planetary Nebula"}
 	gx := catalog.Target{Type: "Galaxy"}

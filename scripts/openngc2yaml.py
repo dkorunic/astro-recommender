@@ -4,15 +4,18 @@
 """Convert the OpenNGC database (Mattia Verga, CC BY-SA 4.0) to the OpenNGC
 and OpenIC uptonight target lists.
 
-    curl -O https://raw.githubusercontent.com/mattiaverga/OpenNGC/master/database_files/NGC.csv
+    curl -O https://raw.githubusercontent.com/mattiaverga/OpenNGC/75ca7ff0/database_files/NGC.csv
     scripts/openngc2yaml.py NGC.csv NGC > internal/catalog/targets/OpenNGC.yaml
     scripts/openngc2yaml.py NGC.csv IC > internal/catalog/targets/OpenIC.yaml
 
-Standard library only. Names, types, positions and sizes follow uptonight's
+The embedded lists come from upstream commit 75ca7ff0 (September 2026);
+master changes values, so move to it as a deliberate refresh. Standard
+library only. Names, types, positions and sizes follow uptonight's
 own conversion (type abbreviations it did not expand stay as OpenNGC spells
 them); mag is the V magnitude, bmag the B magnitude and bsurfbr the mean
 B-band surface brightness within the 25 mag isophote (mag/arcsec^2; V-band
-surfbr is the Compendium's), each left out when OpenNGC has none. Where
+surfbr is the Compendium's), and minor the minor axis in arcminutes (only
+when below the major axis); each is left out when OpenNGC has none. Where
 OpenNGC has no V magnitude, GaryImmFull.yaml's (the Compendium's, also V)
 is used, and its V-band surface brightness is added as surfbr, so regenerate
 GaryImmFull first. The description is the Messier number, the
@@ -89,6 +92,8 @@ def main():
         print(f"  description: {q(desc)}")
         n = name(cat, r["Name"])
         print(f"  mag: {r['V-Mag'] or vmag.get(n, -9999)}")
+        if r["MinAx"] and r["MajAx"] and float(r["MinAx"]) < float(r["MajAx"]):
+            print(f"  minor: {r['MinAx']}")
         print(f"  name: {q(n)}")
         print(f"  ra: {q(sexagesimal(r['RA']))}")
         print(f"  size: {r['MajAx'] or -9999}")

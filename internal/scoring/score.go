@@ -24,13 +24,14 @@ type Result struct { // betteralign:ignore (embedded target first, per embeddeds
 	MaxAt   time.Time
 	RunFrom time.Time // longest continuous observable stretch, [RunFrom, RunTo)
 	RunTo   time.Time
-	Alt     []float64 // per grid minute; only from Score with perMinute, for plan.Make
-	Weight  []float64 // per grid minute, 0 when not observable; as Alt
-	Runs    int       // continuous observable stretches
-	Foto    float64   // fraction of time observable
-	Score   float64   // foto weighted by clouds, moonlight and framing
-	Frame   float64   // framing factor (1 without framing)
-	SkyMag  float64   // mean sky brightness at the target while observable, mag/arcsec²
+	Alt     []float64     // per grid minute; only from Score with perMinute, for plan.Make
+	Weight  []float64     // per grid minute, 0 when not observable; as Alt
+	Runs    int           // continuous observable stretches
+	Foto    float64       // fraction of time observable
+	Score   float64       // foto weighted by clouds, moonlight and framing
+	Frame   float64       // framing factor (1 without framing), divided among the mosaic's panels
+	Mosaic  config.Mosaic // the grid Frame was scored on; zero without framing
+	SkyMag  float64       // mean sky brightness at the target while observable, mag/arcsec²
 	MeanAlt float64
 	MaxAlt  float64
 }
@@ -47,6 +48,7 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 	if perMinute {
 		alt = make([]float64, len(s.Grid))
 	}
+	mosaics := cfg.Mosaics()
 	for _, tg := range targets {
 		// Comet comae have no catalog size, so size limits do not apply.
 		// An unknown size counts as 0, so -size-min 0 keeps it.
@@ -60,7 +62,7 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 		if !cfg.Near(tg.Position()) || cfg.Skip[catalog.NameKey(tg.Name)] {
 			continue
 		}
-		if r, ok := scoreTarget(cfg, s, tg, alt, weight); ok {
+		if r, ok := scoreTarget(cfg, s, tg, mosaics, alt, weight); ok {
 			if perMinute {
 				r.Alt, r.Weight = slices.Clone(alt), slices.Clone(weight)
 			}
@@ -78,7 +80,7 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 
 // scoreTarget fills weight (len(s.Grid), overwritten) with the target's
 // per-minute weight, and alt with its altitude when alt is not nil.
-func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, alt, weight []float64) (Result, bool) {
+func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, mosaics []config.Mosaic, alt, weight []float64) (Result, bool) {
 	var ra, dec float64
 	if tg.Track == nil {
 		// Catalogs are J2000; the hour angle comes from sidereal time of date.
@@ -197,23 +199,45 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, alt, weight []fl
 	r.Foto = float64(good) / float64(len(s.Grid))
 	r.MeanAlt = altSum / float64(good)
 	r.SkyMag = skySum / float64(good)
-	// The size is the major axis and its position angle is unknown, so it
-	// must fit the short side. Unknown sizes get no frame penalty.
+	// Unknown sizes get no frame penalty.
 	if cfg.Framing && tg.HasSize() {
-		// An object as large as the short side cannot be framed whatever
-		// -size-max says; the frame score only orders those that fit.
-		if tg.Size >= cfg.FOVShort {
+		// An object no mosaic holds cannot be framed whatever -size-max says;
+		// the frame score only orders those that fit.
+		if r.Frame, r.Mosaic = frame(tg, mosaics, cfg.Rotate); r.Frame == 0 {
 			return r, false
 		}
-		r.Frame = frameFill(tg.Size / cfg.FOVShort)
 	}
 	r.Score = weighted / float64(len(s.Grid)) * r.Frame
 
 	return r, true
 }
 
-// frameFill scores how well an object filling fill (0..1) of the short FOV side
-// frames: 1 between 25% and 80%, falling off linearly outside.
+// frame returns the best frame score over the mosaics, each one's frameFill
+// divided by its panels (the night's time is shared among them), and the
+// mosaic that gave it; 0 when none holds the object. The fewest panels win a
+// tie.
+func frame(tg catalog.Target, mosaics []config.Mosaic, rotate bool) (float64, config.Mosaic) {
+	major, minor := tg.Axes()
+	best, at := 0.0, config.Mosaic{}
+	for _, m := range mosaics {
+		// Without -rotate the position angle in the frame is unknown, so the
+		// major axis must fit the short side; with it the major axis lies
+		// along whichever side gives the better fit and the minor axis
+		// across, which only differs from that when the minor axis is known.
+		fill := major / min(m.W, m.H)
+		if rotate {
+			fill = min(max(major/m.W, minor/m.H), max(major/m.H, minor/m.W))
+		}
+		if f := frameFill(fill) / float64(m.Panels()); f > best {
+			best, at = f, m
+		}
+	}
+
+	return best, at
+}
+
+// frameFill scores how well an object filling fill (0..1) of the frame
+// frames: 1 between 25% and 80%, falling off linearly outside; 0 from 1 up.
 func frameFill(fill float64) float64 {
 	switch {
 	case fill < 0.25:

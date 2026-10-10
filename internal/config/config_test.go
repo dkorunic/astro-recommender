@@ -130,6 +130,15 @@ func TestParseFrame(t *testing.T) {
 		"focal NaN":        {[]string{"-focal", "NaN", "-sensor", "23.5x15.6"}, "-focal must be a finite", frame{}},
 		"sensor junk":      {[]string{"-focal", "400", "-sensor", "23.5"}, "-sensor must be WxH in mm", frame{}},
 		"sensor negative":  {[]string{"-focal", "400", "-sensor", "-1x15"}, "-sensor sides must be above 0", frame{}},
+		// A 2x2 mosaic of 10x7° with 10% overlap is 19x13.3°, and its short side the limit.
+		"mosaic":          {[]string{"-fov", "10x7", "-mosaic", "4"}, "", frame{600, 420, originScale, 200 * originScale / 60, 420 * 1.9}},
+		"rotate":          {[]string{"-fov", "10x7", "-rotate"}, "", frame{600, 420, originScale, 200 * originScale / 60, 600}},
+		"mosaic rotate":   {[]string{"-fov", "10x7", "-mosaic", "3", "-rotate"}, "", frame{600, 420, originScale, 200 * originScale / 60, 600 * 2.8}},
+		"mosaic size-max": {[]string{"-fov", "10x7", "-mosaic", "4", "-size-max", "800"}, "cannot be framed", frame{}},
+		"mosaic 0":        {[]string{"-origin", "-mosaic", "0"}, "-mosaic must be 1 to", frame{}},
+		"mosaic 26":       {[]string{"-origin", "-mosaic", "26"}, "-mosaic must be 1 to", frame{}},
+		"mosaic alone":    {[]string{"-mosaic", "4"}, "need framing", frame{}},
+		"rotate alone":    {[]string{"-rotate"}, "need framing", frame{}},
 	} {
 		cfg, err := parse(t, c.args...)
 		switch {
@@ -142,13 +151,34 @@ func TestParseFrame(t *testing.T) {
 		case c.want == "":
 			got := frame{cfg.FOVLong, cfg.FOVShort, cfg.Scale, cfg.SizeMin, cfg.SizeMax}
 			if !cfg.Framing || math.Abs(got.long-c.cfg.long) > 1e-9 || math.Abs(got.short-c.cfg.short) > 1e-9 ||
-				math.Abs(got.scale-c.cfg.scale) > 1e-9 || math.Abs(got.sizeMin-c.cfg.sizeMin) > 1e-9 || got.sizeMax != c.cfg.sizeMax {
+				math.Abs(got.scale-c.cfg.scale) > 1e-9 || math.Abs(got.sizeMin-c.cfg.sizeMin) > 1e-9 || math.Abs(got.sizeMax-c.cfg.sizeMax) > 1e-9 {
 				t.Errorf("%s: frame %+v, want %+v (framing %v)", name, got, c.cfg, cfg.Framing)
 			}
 		}
 	}
 	if cfg, err := parse(t); err != nil || cfg.Framing || cfg.SizeMin != 10 || cfg.SizeMax != 300 {
 		t.Errorf("no framing flags: %+v, %v", cfg, err)
+	}
+}
+
+// Mosaics lists every grid within -mosaic, fewest panels first, each side
+// growing by 90% of a frame per added panel.
+func TestMosaics(t *testing.T) {
+	cfg := Config{FOVLong: 100, FOVShort: 50, Mosaic: 4}
+	got := cfg.Mosaics()
+	if len(got) != 8 { // 1x1, 1x2, 2x1, 1x3, 3x1, 1x4, 2x2, 4x1
+		t.Fatalf("%d mosaics, want 8: %+v", len(got), got)
+	}
+	for i, m := range got {
+		if i > 0 && m.Panels() < got[i-1].Panels() {
+			t.Errorf("%+v before %+v: not fewest panels first", got[i-1], m)
+		}
+		if w, h := 100*(0.9*float64(m.Cols)+0.1), 50*(0.9*float64(m.Rows)+0.1); math.Abs(m.W-w) > 1e-9 || math.Abs(m.H-h) > 1e-9 {
+			t.Errorf("%dx%d is %vx%v, want %vx%v", m.Cols, m.Rows, m.W, m.H, w, h)
+		}
+	}
+	if one := (&Config{FOVLong: 100, FOVShort: 50}).Mosaics(); len(one) != 1 || one[0] != (Mosaic{1, 1, 100, 50}) {
+		t.Errorf("unset -mosaic: %+v, want the single frame", one)
 	}
 }
 

@@ -5,11 +5,13 @@
 package config
 
 import (
+	"cmp"
 	"errors"
 	"flag"
 	"fmt"
 	"math"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -47,6 +49,13 @@ const maxSensorPx = 20000
 // ~100"/px for wide camera lenses, with margin either side.
 const minScale, maxScale = 0.01, 1000.0
 
+// maxMosaic bounds -mosaic; mosaicOverlap is the fraction of a frame side
+// shared with the next panel, for registration.
+const (
+	maxMosaic     = 25
+	mosaicOverlap = 0.1
+)
+
 type Config struct {
 	Day            time.Time
 	Loc            *time.Location
@@ -72,6 +81,7 @@ type Config struct {
 	FOVShort       float64 // arc minutes
 	Scale          float64 // arc seconds per pixel
 	Top            int
+	Mosaic         int // -mosaic: most panels per object, 1 = single frame
 	Bortle         int
 	SQM            float64 // measured zenith sky brightness, mag/arcsec²; 0 = unset
 	CometMag       float64
@@ -82,6 +92,7 @@ type Config struct {
 	SkySet         bool // -sqm or -bortle given, even as 0: skip the DarkSkySites lookup
 	RASet, DecSet  bool // -ra/-dec given: keep only targets within Tol of them
 	Framing        bool // -origin, -fov, -scale or -focal with -sensor/-pixel: fit and score objects against the frame
+	Rotate         bool // -rotate: the camera turns to put an object's major axis along the frame's long side
 	Filter         bool
 	NoWeather      bool
 	NoGeocode      bool
@@ -125,6 +136,8 @@ func Parse() (Config, error) {
 	flag.Float64Var(&cfg.Scale, "scale", 0, "frame for another telescope: pixel scale in arc seconds per pixel, 0.01-1000 (Origin default 1.23; -fov optional)")
 	flag.Float64Var(&pixel, "pixel", 0, "frame for another telescope: camera pixel size in µm; with -focal, sets the pixel scale instead of -scale")
 	flag.Float64Var(&minPx, "min-px", 200, "with framing, minimum object size in pixels; 0 or more")
+	flag.IntVar(&cfg.Mosaic, "mosaic", 1, "with framing, most mosaic panels per object, 1-25; an object's score is divided among its panels")
+	flag.BoolVar(&cfg.Rotate, "rotate", false, "with framing, the camera can be rotated to frame the major axis along the long side, so the minor axis counts (not the Origin)")
 	flag.BoolVar(&cfg.Filter, "filter", false, "dual-band nebula filter in use: emission nebulae tolerate moonlight")
 	flag.Float64Var(&cfg.FilterK, "filter-k", 0.25, "with -filter, fraction of moonlight/light pollution passing the filter (~0.15 for <=4nm, ~0.4 for wide bands)")
 	flag.IntVar(&cfg.Bortle, "bortle", 0, "Bortle class 1-9 of the site, sets the zenith sky brightness (0 = dark sky)")
@@ -186,19 +199,8 @@ func Parse() (Config, error) {
 	if px, _ := cfg.FramePx(); fovSet && scaleSet && !(px <= maxSensorPx) {
 		return Config{}, fmt.Errorf("%w: frame of %.0f px across is not a sensor; -fov is in degrees, -scale in arcsec/px", errInvalidFlag, px)
 	}
-	if cfg.Framing {
-		if !set["size-min"] {
-			cfg.SizeMin = minPx * cfg.Scale / 60
-		}
-		if !set["size-max"] {
-			cfg.SizeMax = cfg.FOVShort
-		}
-		// The major axis must fit the short side whatever its orientation, so a
-		// larger -size-max would only admit objects that are then never listed.
-		if cfg.SizeMax > cfg.FOVShort {
-			return Config{}, fmt.Errorf("%w: -size-max %.1f' exceeds the frame's short side %.1f'; larger objects cannot be framed",
-				errInvalidFlag, cfg.SizeMax, cfg.FOVShort)
-		}
+	if err := cfg.frameSizes(set, minPx); err != nil {
+		return Config{}, err
 	}
 
 	cfg.Twilight = strings.ToLower(strings.TrimSpace(cfg.Twilight))
@@ -296,10 +298,85 @@ func visited() (map[string]bool, []string) {
 	return set, nonFinite
 }
 
+// Mosaic is a grid of frames, Cols along the frame's long side and Rows
+// along its short one, overlapping by mosaicOverlap; W and H are its extent
+// in arc minutes. A single frame is a 1x1 mosaic.
+type Mosaic struct {
+	Cols, Rows int
+	W, H       float64
+}
+
+// Panels returns the frame count.
+func (m Mosaic) Panels() int { return m.Cols * m.Rows }
+
+// Mosaics returns every grid of at most -mosaic panels (at least the single
+// frame, so a hand-built Config without -mosaic frames as before), fewest
+// panels first.
+func (cfg *Config) Mosaics() []Mosaic {
+	var out []Mosaic
+	for c := 1; c <= max(1, cfg.Mosaic); c++ {
+		for r := 1; c*r <= max(1, cfg.Mosaic); r++ {
+			out = append(out, Mosaic{
+				Cols: c, Rows: r,
+				W: cfg.FOVLong * (float64(c) - float64(c-1)*mosaicOverlap),
+				H: cfg.FOVShort * (float64(r) - float64(r-1)*mosaicOverlap),
+			})
+		}
+	}
+	slices.SortStableFunc(out, func(a, b Mosaic) int { return cmp.Compare(a.Panels(), b.Panels()) })
+
+	return out
+}
+
+// MaxFramed returns the largest major axis in arc minutes that some mosaic
+// can hold: its longest side with -rotate, else its shortest, since an
+// object's orientation in the frame is then unknown.
+func (cfg *Config) MaxFramed() float64 {
+	var size float64
+	for _, m := range cfg.Mosaics() {
+		if cfg.Rotate {
+			size = max(size, m.W, m.H)
+		} else {
+			size = max(size, min(m.W, m.H))
+		}
+	}
+
+	return size
+}
+
 // FramePx returns the frame's long and short sides in pixels. Parse
 // guarantees Scale > 0; a zero-value Config returns NaN (0/0).
 func (cfg *Config) FramePx() (float64, float64) {
 	return cfg.FOVLong * 60 / cfg.Scale, cfg.FOVShort * 60 / cfg.Scale
+}
+
+// frameSizes checks -mosaic and -rotate, and with framing replaces the size
+// defaults by -min-px up to the largest object a mosaic holds; explicit
+// -size-min/-size-max still win.
+func (cfg *Config) frameSizes(set map[string]bool, minPx float64) error {
+	if !cfg.Framing && (set["mosaic"] || set["rotate"]) {
+		return fmt.Errorf("%w: -mosaic and -rotate need framing (-origin, -fov, -scale or -focal)", errInvalidFlag)
+	}
+	if cfg.Mosaic < 1 || cfg.Mosaic > maxMosaic {
+		return fmt.Errorf("%w: -mosaic must be 1 to %d panels", errInvalidFlag, maxMosaic)
+	}
+	if !cfg.Framing {
+		return nil
+	}
+	if !set["size-min"] {
+		cfg.SizeMin = minPx * cfg.Scale / 60
+	}
+	// A larger -size-max would only admit objects that are then never listed.
+	maxSize := cfg.MaxFramed()
+	if !set["size-max"] {
+		cfg.SizeMax = maxSize
+	}
+	if cfg.SizeMax > maxSize {
+		return fmt.Errorf("%w: -size-max %.1f' exceeds the largest frame side an object can use, %.1f'; larger objects cannot be framed",
+			errInvalidFlag, cfg.SizeMax, maxSize)
+	}
+
+	return nil
 }
 
 // loadFiles reads the -horizon and -skip files that were given.
