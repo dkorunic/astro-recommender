@@ -24,6 +24,7 @@
   ra: "12 16 43.0"
   size: 20.0
   surfbr: 23.89
+  minor: 5.83
   type: "Galaxy"
 - constellation: ""
   dec: "+68 10 10.0"
@@ -32,6 +33,7 @@
   name: "C 4"
   ra: "21 01 36.0"
   size: 20.0
+  minor: 16.0
   type: "Reflection Nebula"
 - constellation: ""
   dec: "+68 05 46.0"
@@ -41,6 +43,7 @@
   ra: "03 46 49.0"
   size: 20.0
   surfbr: 23.79
+  minor: 19.01
   type: "Galaxy"
 - constellation: ""
   dec: "+66 37 59.0"
@@ -58,6 +61,7 @@
   ra: "07 36 51.0"
   size: 20.0
   surfbr: 23.29
+  minor: 10.1
   type: "Galaxy"
 - constellation: ""
   dec: "+63 18 24.0"
@@ -90,6 +94,7 @@
   name: "C 11"
   ra: "23 20 45.0"
   size: 15.0
+  minor: 8.0
   type: "Wolf-Rayet Nebula"
 - constellation: ""
   dec: "+60 09 14.0"
@@ -99,6 +104,7 @@
   ra: "20 34 52.0"
   size: 11.0
   surfbr: 22.69
+  minor: 10.46
   type: "Galaxy"
 - constellation: ""
   dec: "+58 17 12.0"
@@ -140,6 +146,7 @@
   ra: "00 33 12.0"
   size: 14.0
   surfbr: 23.39
+  minor: 8.06
   type: "Galaxy"
 - constellation: ""
   dec: "+48 20 14.0"
@@ -149,6 +156,7 @@
   ra: "00 38 58.0"
   size: 12.0
   surfbr: 23.29
+  minor: 9.98
   type: "Galaxy"
 - constellation: ""
   dec: "+47 16 01.0"
@@ -165,6 +173,7 @@
   name: "C 20"
   ra: "20 59 17.0"
   size: 120.0
+  minor: 30.0
   type: "Emission Nebula"
 - constellation: ""
   dec: "+44 05 38.0"
@@ -174,6 +183,7 @@
   ra: "12 28 11.0"
   size: 5.0
   surfbr: 21.89
+  minor: 2.91
   type: "Galaxy"
 - constellation: ""
   dec: "+42 32 06.0"
@@ -191,6 +201,7 @@
   ra: "02 22 33.0"
   size: 12.0
   surfbr: 22.49
+  minor: 2.79
   type: "Galaxy"
 - constellation: ""
   bmag: 12.61
@@ -201,6 +212,7 @@
   name: "C 24"
   ra: "03 19 48.16"
   size: 2.16
+  minor: 1.45
   type: "Galaxy"
 - constellation: ""
   dec: "+38 52 54.0"
@@ -218,6 +230,7 @@
   ra: "12 17 30.0"
   size: 17.0
   surfbr: 22.89
+  minor: 7.59
   type: "Galaxy"
 - constellation: ""
   dec: "+38 21 17.0"
@@ -226,6 +239,7 @@
   name: "C 27"
   ra: "20 12 06.0"
   size: 18.0
+  minor: 9.0
   type: "Wolf-Rayet Nebula"
 - constellation: ""
   dec: "+37 47 06.0"
@@ -243,6 +257,7 @@
   ra: "13 10 56.0"
   size: 5.0
   surfbr: 21.49
+  minor: 1.58
   type: "Galaxy"
 - constellation: ""
   dec: "+34 24 57.0"
@@ -252,6 +267,7 @@
   ra: "22 37 04.0"
   size: 10.0
   surfbr: 22.19
+  minor: 4.06
   type: "Galaxy"
 - constellation: ""
   dec: "+34 21 24.0"
@@ -260,6 +276,7 @@
   name: "C 31"
   ra: "05 16 29.0"
   size: 60.0
+  minor: 36.0
   type: "Emission Nebula"
 - constellation: ""
   dec: "+32 34 00.0"
@@ -269,6 +286,7 @@
   ra: "12 41 59.0"
   size: 17.0
   surfbr: 21.99
+  minor: 2.59
   type: "Galaxy"
 - constellation: ""
   dec: "+31 44 36.0"
@@ -277,6 +295,7 @@
   name: "C 33"
   ra: "20 56 19.0"
   size: 90.0
+  minor: 12.0
   type: "Supernova Remnant"
 - constellation: ""
   dec: "+30 35 42.0"
@@ -285,6 +304,7 @@
   name: "C 34"
   ra: "20 45 58.0"
   size: 75.0
+  minor: 57.14
   type: "Supernova Remnant"
 - constellation: ""
   bmag: 12.49
@@ -295,6 +315,7 @@
   name: "C 35"
   ra: "13 00 08.13"
   size: 2.59
+  minor: 1.68
   type: "Galaxy"
 - constellation: ""
   dec: "+27 57 35.0"
@@ -304,6 +325,7 @@
   ra: "12 35 58.0"
   size: 10.0
   surfbr: 22.99
+  minor: 4.56
   type: "Galaxy"
 - constellation: ""
   dec: "+26 29 00.0"
@@ -321,6 +343,7 @@
   ra: "12 36 21.0"
   size: 15.0
   surfbr: 22.19
+  minor: 2.59
   type: "Galaxy"
 - constellation: ""
   dec: "+20 54 42.0"
@@ -338,6 +361,7 @@
   ra: "11 20 04.0"
   size: 3.0
   surfbr: 21.49
+  minor: 1.98
   type: "Galaxy"
 - constellation: ""
   dec: "+16 00 00.0"
@@ -363,6 +387,7 @@
   ra: "00 03 15.0"
   size: 7.0
   surfbr: 22.09
+  minor: 3.01
   type: "Galaxy"
 - constellation: ""
   dec: "+12 19 20.0"
@@ -372,6 +397,7 @@
   ra: "23 04 57.0"
   size: 3.0
   surfbr: 22.39
+  minor: 2.24
   type: "Galaxy"
 - constellation: ""
   dec: "+08 53 08.0"
@@ -381,6 +407,7 @@
   ra: "13 37 32.0"
   size: 6.0
   surfbr: 22.69
+  minor: 3.51
   type: "Galaxy"
 - constellation: ""
   dec: "+08 44 40.0"
@@ -389,6 +416,7 @@
   name: "C 46"
   ra: "06 39 10.0"
   size: 2.0
+  minor: 1.0
   type: "Reflection Nebula"
 - constellation: ""
   dec: "+07 24 17.0"
@@ -406,6 +434,7 @@
   ra: "09 10 20.0"
   size: 5.0
   surfbr: 21.79
+  minor: 3.95
   type: "Galaxy"
 - constellation: ""
   dec: "+05 03 00.0"
@@ -414,6 +443,7 @@
   name: "C 49"
   ra: "06 30 54.0"
   size: 100.0
+  minor: 62.5
   type: "Emission Nebula"
 - constellation: ""
   dec: "+04 54 50.0"
@@ -431,6 +461,7 @@
   ra: "01 04 47.0"
   size: 13.0
   surfbr: 23.89
+  minor: 12.16
   type: "Galaxy"
 - constellation: ""
   dec: "-05 48 02.0"
@@ -440,6 +471,7 @@
   ra: "12 48 36.0"
   size: 4.0
   surfbr: 21.89
+  minor: 2.33
   type: "Galaxy"
 - constellation: ""
   dec: "-07 43 08.0"
@@ -449,6 +481,7 @@
   ra: "10 05 14.0"
   size: 9.0
   surfbr: 20.79
+  minor: 3.82
   type: "Galaxy"
 - constellation: ""
   dec: "-10 46 12.0"
@@ -465,6 +498,7 @@
   name: "C 55"
   ra: "21 04 11.0"
   size: 0.7
+  minor: 0.52
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-11 52 19.0"
@@ -482,6 +516,7 @@
   ra: "19 44 57.0"
   size: 10.0
   surfbr: 23.29
+  minor: 9.64
   type: "Galaxy"
 - constellation: ""
   dec: "-15 38 30.0"
@@ -507,6 +542,7 @@
   ra: "12 01 53.0"
   size: 10.0
   surfbr: 20.99
+  minor: 6.97
   type: "Galaxy"
 - constellation: ""
   dec: "-18 53 10.0"
@@ -516,6 +552,7 @@
   ra: "12 01 54.0"
   size: 3.0
   surfbr: 20.99
+  minor: 1.53
   type: "Galaxy"
 - constellation: ""
   dec: "-20 45 35.0"
@@ -525,6 +562,7 @@
   ra: "00 47 08.0"
   size: 20.0
   surfbr: 23.29
+  minor: 5.64
   type: "Galaxy"
 - constellation: ""
   dec: "-20 50 13.0"
@@ -550,6 +588,7 @@
   ra: "00 47 33.0"
   size: 25.0
   surfbr: 21.59
+  minor: 4.27
   type: "Galaxy"
 - constellation: ""
   dec: "-26 32 18.0"
@@ -567,6 +606,7 @@
   ra: "02 46 19.0"
   size: 9.3
   surfbr: 22.69
+  minor: 5.67
   type: "Galaxy"
 - constellation: ""
   dec: "-36 53 30.0"
@@ -575,6 +615,7 @@
   name: "C 68"
   ra: "19 01 38.0"
   size: 30.0
+  minor: 23.33
   type: "Reflection Nebula"
 - constellation: ""
   dec: "-37 06 12.0"
@@ -592,6 +633,7 @@
   ra: "00 54 53.0"
   size: 22.0
   surfbr: 23.19
+  minor: 14.8
   type: "Galaxy"
 - constellation: ""
   dec: "-38 31 48.0"
@@ -609,6 +651,7 @@
   ra: "00 15 08.0"
   size: 32.0
   surfbr: 22.29
+  minor: 3.27
   type: "Galaxy"
 - constellation: ""
   dec: "-40 02 46.0"
@@ -650,6 +693,7 @@
   ra: "13 25 28.0"
   size: 17.0
   surfbr: 22.39
+  minor: 12.99
   type: "Galaxy"
 - constellation: ""
   dec: "-43 42 57.0"
@@ -690,6 +734,7 @@
   name: "C 82"
   ra: "16 40 05.0"
   size: 30.0
+  minor: 18.0
   type: "Emission Nebula"
 - constellation: ""
   dec: "-49 28 02.0"
@@ -699,6 +744,7 @@
   ra: "13 05 27.0"
   size: 16.0
   surfbr: 21.79
+  minor: 2.76
   type: "Galaxy"
 - constellation: ""
   dec: "-51 22 30.0"
@@ -844,6 +890,7 @@
   ra: "19 09 48.0"
   size: 20.0
   surfbr: 23.29
+  minor: 12.44
   type: "Galaxy"
 - constellation: ""
   dec: "-64 24 00.0"

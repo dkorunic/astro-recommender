@@ -46,7 +46,7 @@ It started as a port of the deep sky part of [uptonight](https://github.com/mawi
 - **Target-type sensitivity to sky glow**: clusters count half of it, and with `-filter` emission-line targets (emission and planetary nebulae, supernova remnants, Wolf-Rayet nebulae, plus known mislabelled ones) count only `-filter-k` of it, which also relaxes their Moon-distance limit.
 - **Extinction per hour** from the site's elevation and the CAMS aerosol forecast (dust, smoke, haze), or a fixed `-extinction`; shown in the forecast table.
 - **Weather**: Open-Meteo cloud cover by layer (thin high cloud counts half), rain, dew-point spread and wind gusts, and 7Timer transparency and seeing (with a seeing estimate from the ECMWF upper-air profile for hours 7Timer does not cover), in an hourly table and folded into the score minute by minute. Hours a forecast does not cover get the covered hours' mean; a source missing entirely counts as perfect sky. Both warn, never silently.
-- **Framing for the Celestron Origin** (`-origin`) or any telescope (`-fov`/`-scale`, or `-focal` with `-sensor`/`-pixel`): keeps only objects that fit the frame's short side and are at least `-min-px` across, scores how well they fill it, and shows their size in pixels. `-mosaic 4` also keeps objects too large for one frame, on the grid of up to that many panels that frames them best, with the score shared among the panels; `-rotate` (a camera you can turn, not the Origin) lays the major axis along the long side, so the minor axis known for about 10,700 objects counts.
+- **Framing for the Celestron Origin** (`-origin`) or any telescope (`-fov`/`-scale`, or `-focal` with `-sensor`/`-pixel`): keeps only objects that fit the frame's short side and are at least `-min-px` across, scores how well they fill it, and shows their size in pixels. `-mosaic 4` also keeps objects too large for one frame, on the grid of up to that many panels that frames them best, with the score shared among the panels; `-rotate` (a camera you can turn, not the Origin) lays the major axis along the long side, so the minor axis known for about 12,200 objects counts.
 - **Comets** from the Minor Planet Center's daily elements, cached locally: two-body positions every minute (elliptic, parabolic and hyperbolic orbits), kept when brighter than `-comet-mag`, ranked like any other target.
 - **Night plan** (`-plan 2h`): one target per time block, chosen by a greedy pass followed by a local search that swaps and moves targets between blocks.
 - **Sixteen built-in target lists** (about 30,000 objects: Gary Imm's selection and full Compendium, Messier, Caldwell, Herschel 400, Pensack 500, NGC, IC, LBN, LDN, Sharpless, MWSC, Melotte, Collinder and two planetary nebula databases) or your own uptonight-format YAML, with every object's constellation computed from the IAU boundaries; a `-skip` file leaves out the ones you have already imaged.
@@ -278,7 +278,7 @@ astro-recommender -lat 45.815 -lon 15.982 -no-weather -no-geocode -no-sqm -no-co
 | `-focal`, `-sensor`, `-pixel` | off | Describe the camera instead: focal length in mm, sensor size `WxH` in mm and pixel size in µm (e.g. `-focal 400 -sensor 23.5x15.6 -pixel 3.76`). `-sensor` sets the field of view (`2·atan(side / 2·focal)` per side) in place of `-fov`; `-pixel` sets the pixel scale (`206.265 · pixel / focal`) in place of `-scale`. Both need `-focal`, `-focal` needs at least one of them, and the pair they replace cannot be given with them. The 20,000 px check applies whenever both the field and the scale are given, by either route |
 | `-min-px` | `200` | With framing: minimum object size in pixels (≈4.1′ on the Origin); must be 0 or more even when framing is off |
 | `-mosaic` | `1` | With framing: most mosaic panels per object, 1–25. Every grid of at most that many frames, overlapping by 10%, is tried and the one with the best fill divided by its panel count kept, since the night's time is shared among the panels; objects too large for one frame then stay in the list |
-| `-rotate` | off | With framing: the camera can be rotated, so the major axis lies along the frame's long side and a known minor axis across (OpenNGC's, about 10,700 objects; nebula axes there are rough). Without it the orientation is unknown and the major axis must fit the short side. Not the Origin, whose camera cannot turn |
+| `-rotate` | off | With framing: the camera can be rotated, so the major axis lies along the frame's long side and a known minor axis across (about 12,200 objects: OpenNGC's, carried to the lists built on it, and Lynds' for LBN; nebula axes are rough). Without it the orientation is unknown and the major axis must fit the short side. Not the Origin, whose camera cannot turn |
 | `-filter` | off | A dual- or tri-band nebula filter is in use |
 | `-filter-k` | `0.25` | Fraction of sky glow the filter passes: ~0.15 for ≤4 nm bands, ~0.4 for wide ones |
 | `-bortle` | `0` (dark) | Bortle class (1–9) of the site, which sets its zenith sky brightness |
@@ -311,7 +311,7 @@ All eight [uptonight target lists](https://github.com/mawinkler/uptonight/tree/m
 | `Pensack500` | 502 | Don Pensack's 500 best deep sky objects |
 | `OpenNGC` | 8373 | The NGC, from [OpenNGC](https://github.com/mattiaverga/OpenNGC): V and B magnitudes, B-band surface brightness (`bsurfbr`) and minor axis (`minor`) where known, Messier number, NGC/IC cross-identifications and common names in the description |
 | `OpenIC` | 5590 | The IC, from OpenNGC, described like `OpenNGC` |
-| `LBN` | 1116 | Lynds' Catalogue of Bright Nebulae |
+| `LBN` | 1116 | Lynds' Catalogue of Bright Nebulae, with the minor axis from Lynds' smallest dimension |
 | `LDN` | 1764 | Lynds' Catalogue of Dark Nebulae |
 | `MWSC` | 3006 | Milky Way Star Clusters (Kharchenko et al. 2013): open and globular clusters, associations and moving groups (typed `Open Cluster`, noted in the description); size is the diameter of the central part (r1); the 56 Messier clusters carry their M number and common name |
 | `Melotte` | 245 | Melotte's 1915 catalogue of star clusters, named `Mel N` with the NGC/IC number, Messier number and common name in the description |
@@ -378,6 +378,19 @@ scripts/sharpless2yaml.py sh2.tsv sh2.wiki IMM_Compendium_2026.xlsx > internal/c
 ```sh
 curl -o cald.wiki 'https://en.wikipedia.org/w/index.php?title=Caldwell_catalogue&action=raw'
 scripts/caldwell2yaml.py IMM_Compendium_2026.xlsx cald.wiki > internal/catalog/targets/Caldwell.yaml
+```
+
+The Compendium has one size per object, so the minor axes come from OpenNGC: `fillmag.py --minor-only` adds the list's size times OpenNGC's axis ratio and changes nothing else. Run it after each regeneration:
+
+```sh
+scripts/fillmag.py --minor-only internal/catalog/targets/Caldwell.yaml > c.yaml && mv c.yaml internal/catalog/targets/Caldwell.yaml
+```
+
+`LBN.yaml`'s minor axes are the smaller of the two dimensions in Lynds' catalogue (CDS [VII/9](https://cdsarc.cds.unistra.fr/viz-bin/cat/VII/9)), added by `scripts/lbnminor.py`, matched by LBN number:
+
+```sh
+curl -O https://cdsarc.cds.unistra.fr/ftp/cats/VII/9/catalog.dat
+scripts/lbnminor.py catalog.dat internal/catalog/targets/LBN.yaml > l.yaml && mv l.yaml internal/catalog/targets/LBN.yaml
 ```
 
 `PNnet.yaml` is fetched from the live [Planetary Nebulae.net](https://planetarynebulae.net/) database by `scripts/pnnet2yaml.py` (two requests; objects the site classifies as something other than a PN or candidate are dropped):
@@ -600,6 +613,7 @@ The program calls three free services, none of which need an API key: Open-Meteo
 - `HASH.yaml`: This research has made use of the HASH PN database at [hashpn.space](https://hashpn.space/) (Parker, Bojičić & Frew 2016, J. Phys. Conf. Ser. 728, 032008).
 - `Sharpless.yaml`: Sharpless (1959), ApJS 4, 257, from CDS/VizieR catalog [VII/20](https://cdsarc.cds.unistra.fr/viz-bin/cat/VII/20); common names from Wikipedia's [Sharpless catalog](https://en.wikipedia.org/wiki/Sharpless_catalog) (CC BY-SA 4.0); positions, types and magnitudes from Gary Imm's Deep Sky Compendium (2026), data © Gary Imm.
 - `Caldwell.yaml`: Moore (1995), *The Caldwell Catalogue*, Sky & Telescope 90, 38; positions, sizes, types and magnitudes from Gary Imm's Deep Sky Compendium (2026), data © Gary Imm, and for C 24 and C 35 from OpenNGC (CC BY-SA 4.0); designations and common names from Wikipedia's [Caldwell catalogue](https://en.wikipedia.org/wiki/Caldwell_catalogue) (CC BY-SA 4.0).
+- `LBN.yaml` minor axes: Lynds (1965), ApJS 12, 163, from CDS/VizieR catalog [VII/9](https://cdsarc.cds.unistra.fr/viz-bin/cat/VII/9).
 - Comet orbital elements: [IAU Minor Planet Center](https://www.minorplanetcenter.net/).
 - Mosaic grids and sky images for results, ideas from [Skywarden](https://skywarden.app/) (formerly Astro Planner) by Frank Adler. The browser's thumbnails come from the CDS [hips2fits](https://alasky.cds.unistra.fr/hips-image-services/hips2fits) service and its links open [Aladin Lite](https://aladin.cds.unistra.fr/AladinLite/) (Bonnarel et al. 2000, A&AS 143, 33; Boch & Fernique 2014, ASPC 485, 277), showing the Digitized Sky Survey (DSS2), based on photographic data obtained using the Oschin Schmidt Telescope and the UK Schmidt Telescope.
 - Constellation boundaries and lookup from [astrogo](https://github.com/TuSKan/astrogo) (MIT), transcribing the IAU boundaries (Delporte 1930) from CDS/VizieR catalog [VI/49](https://vizier.cfa.harvard.edu/viz-bin/VizieR?-source=VI/49) (Davenhall & Leggett 1989).

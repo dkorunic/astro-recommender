@@ -12,6 +12,10 @@ lists' sizes are not always OpenNGC's, so its minor axis could exceed
 theirs); everything else is left byte for byte.
 
     scripts/fillmag.py internal/catalog/targets/Messier.yaml > /tmp/m.yaml && mv /tmp/m.yaml internal/catalog/targets/Messier.yaml
+    scripts/fillmag.py --minor-only internal/catalog/targets/Caldwell.yaml > /tmp/c.yaml && mv /tmp/c.yaml internal/catalog/targets/Caldwell.yaml
+
+--minor-only adds just the minor axis and leaves every other key as the
+list's generator wrote it (Caldwell's come from caldwell2yaml.py).
 
 Standard library only. Run after regenerating OpenNGC/OpenIC, and on
 Messier.yaml before the lists that borrow from it.
@@ -24,13 +28,14 @@ from mwsc2yaml import entries, lookup
 
 
 def main():
-    tables = {field: lookup(field) for field in ("mag", "surfbr", "bsurfbr")}
+    minor_only = sys.argv[1] == "--minor-only"
+    tables = {} if minor_only else {field: lookup(field) for field in ("mag", "surfbr", "bsurfbr")}
     ratio = {}
     for f in (f for name in ("OpenIC.yaml", "OpenNGC.yaml") for f in entries(name) if "minor" in f):
         # OpenNGC's description starts with the Messier number, which GaryImm's M 31 goes by.
         for k in [f["name"]] + re.findall(r"^M \d+\b", f.get("description", "")):
             ratio[k] = float(f["minor"]) / float(f["size"])
-    chunks = open(sys.argv[1], encoding="utf-8").read().split("\n- ")
+    chunks = open(sys.argv[-1], encoding="utf-8").read().split("\n- ")
     for i, chunk in enumerate(chunks):
         f = dict(re.findall(r"^\s*-?\s*(\w+): ?(.*)$", chunk, re.M))
         keys = [f.get("name", "")] + re.findall(r"(?:NGC|IC) \d+", f.get("description", ""))[:1]
