@@ -252,7 +252,7 @@ function sky(html) {
     // Half again the object, within 0.1-5°; unknown sizes (comets) get 0.5°.
     const fov = m[6] ? Math.min(5, Math.max(0.1, m[6] * 1.5 / 60)) : 0.5;
     const href = `https://aladin.cds.unistra.fr/AladinLite/?target=${ra.toFixed(4)}%20${dec.toFixed(4)}&fov=${fov.toFixed(2)}&survey=${survey}`;
-    const thumb = `https://alasky.cds.unistra.fr/hips-image-services/hips2fits?hips=${survey}&width=240&height=240&projection=TAN` +
+    const thumb = `https://alaskybis.cds.unistra.fr/hips-image-services/hips2fits?hips=${survey}&width=240&height=240&projection=TAN` +
       `&fov=${fov.toFixed(2)}&ra=${ra.toFixed(4)}&dec=${dec.toFixed(4)}&format=jpg`;
     return line.replace(/<span class="c36">([^<]*)<\/span>/,
       `<span class="c36"><a href="${href}" target="_blank" rel="noopener" data-thumb="${thumb}">$1</a></span>`);
