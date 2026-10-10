@@ -97,7 +97,7 @@ What works there:
 - every flag, built from the program's own `-h`; fields left empty keep their defaults
 - `-targets`, `-horizon` and `-skip` take an uploaded file
 - "Use my location" asks the browser for your position, and the location's time zone shows in the empty `-tz` field
-- the address bar carries the form after each run (files excepted), so the URL can be bookmarked or shared; opening such a link fills the form and runs it
+- the address bar carries the form after each run (files excepted), so the URL can be bookmarked or shared (the Copy link button copies it); opening such a link fills the form and runs it
 - weather, transparency and seeing, aerosols, geocoding and comets, as on the command line
 - the DarkSkySites sky-brightness lookup, without a key of your own (the page's key is shared; `-no-sqm` skips it)
 - light or dark theme following the browser, with a Theme button to override it (remembered by the browser)
@@ -430,7 +430,7 @@ To measure it, stand where the telescope sits and use a compass and an inclinome
    - **dew risk**: when temperature minus dew point drops from 4 °C to 1 °C, weight goes from ×1.0 down to ×0.7
    - **wind gusts**: from 20 to 40 km/h, weight goes from ×1.0 down to ×0.5
    - **rain**: from 0 to 0.1 mm in the hour, weight goes from ×1.0 down to ×0, whatever the cloud layers say (the table shows the amount beside the cloud cover from 0.05 mm). Like cloud cover, weather only weighs the score: FOTO and the OBSERVABLE run are geometric, so a rained-out hour still counts as observable
-   - **seeing** is shown for reference only; it matters little at the Origin's 1.23″/px. 7Timer's is a star FWHM range; for hours 7Timer does not cover, the table shows `~1.3"`, a FWHM estimated from the ECMWF IFS upper-air profile (Open-Meteo, 15 days ahead): each layer between the forecast levels, from the surface and 925 to 100 hPa, gets its refractive index structure constant Cn² from the temperature gradient and the wind shear after Dewan et al. (1993), the AFGL radiosonde model (with the tropopause found on the profile by the WMO lapse-rate rule, since the stratosphere's outer scale differs), and the integral gives Fried's r0 and the FWHM 0.98 λ/r0 at 500 nm, at the zenith. The levels are 0.7 to 2 km apart, so thin turbulent layers are missed and the ground layer is one gradient from 2 m to the first level at least 300 m up, so each layer's Cn² is scaled by a factor fitted once against two years of ESO's public DIMM seeing at Paranal and La Silla (0.2 for the ground layer, which Dewan overestimates, 1.45 above it): against the DIMM the estimate then has a bias of +0.03″ and an RMSE of 0.33″, the band published turbulence forecasts for Paranal reach
+   - **seeing** is shown for reference only; it matters little at the Origin's 1.23″/px. 7Timer's is a star FWHM range; for hours 7Timer does not cover, the table shows `~1.3"`, a FWHM estimated from the ECMWF IFS upper-air profile (Open-Meteo, 15 days ahead): each layer between the forecast levels, from the surface and 925 to 100 hPa, gets its refractive index structure constant Cn² from the temperature gradient and the wind shear after Dewan et al. (1993), the AFGL radiosonde model (with the tropopause found on the profile by the WMO lapse-rate rule, since the stratosphere's outer scale differs), and the integral gives Fried's r0 and the FWHM 0.98 λ/r0 at 500 nm, at the zenith. The levels are 0.7 to 2 km apart, so thin turbulent layers are missed and the ground layer is one gradient from 2 m to the first level at least 300 m up, so each layer's Cn² is scaled by a factor fitted once against two years of ESO's public DIMM seeing at Paranal and La Silla (0.2 for the ground layer, which Dewan overestimates, 1.45 above it): against the DIMM the estimate then has a bias of +0.03″ and an RMSE of 0.33″, the band published turbulence forecasts for Paranal reach (Cuevas et al. 2024; Osborn & Sarazin 2018; see [Formulas and references](#formulas-and-references)).
 
    Open-Meteo covers about 3 months back to 2 weeks ahead, and 7Timer about 3 days ahead. Entirely outside those ranges, or if a service is down (a rate limit or server error is retried once after a second), the program warns and assumes perfect conditions. A forecast that ends partway through the night (7Timer's often does for a `-date` two or three days ahead) gives the remaining hours the mean of the covered ones, with a warning.
 5. **Extinction**: the target's light dims by `10^(−0.4 · k · (airmass − 1))`, using Pickering's (2002) airmass formula. With k = 0.2, that is about ×0.83 at 30° altitude and ×1.0 near the zenith. Unless `-extinction` is set, k is estimated for each hour as
@@ -474,46 +474,90 @@ Everything below is implemented directly in Go from the cited source; no astrono
 
 | Quantity | Formula | Source |
 |---|---|---|
-| Sun RA/Dec | Mean longitude and anomaly, equation of centre to 2 terms, apparent ecliptic longitude | *The Astronomical Almanac*, "Low-precision formulas for the Sun's coordinates" (section C) |
-| Moon RA/Dec | Ecliptic longitude (6 periodic terms) and latitude (4 terms), geocentric | *The Astronomical Almanac*, low-precision Moon formulas (section D) |
-| Obliquity of the ecliptic | `23.439° − 0.0000004 n` (n = days since J2000) | *The Astronomical Almanac*, section C |
-| Ecliptic → equatorial | Rotation by the obliquity | Standard (Meeus, *Astronomical Algorithms*, ch. 13) |
-| Greenwich sidereal time | `280.46061837° + 360.98564736629° · n`, the linear terms of IAU 1982 GMST | Aoki et al. (1982), A&A 105, 359, as given by Meeus eq. 12.4 |
-| Precession J2000 → date | IAU 1976 angles ζ, z, θ and the three-rotation formula | Lieske et al. (1977), A&A 58, 1; Meeus eqs. 21.2–21.4 |
-| Altitude and azimuth | Spherical triangle from hour angle, declination and latitude | Meeus eqs. 13.5–13.6 |
-| Angular separation | Spherical law of cosines | Meeus eq. 17.1 |
-| Moon illumination | `(1 − cos ψ)/2` from the Sun–Moon elongation ψ; phase angle ≈ 180° − ψ | Meeus ch. 48 |
-| Topocentric Moon | Geocentric vector at the distance given by the horizontal parallax (4 periodic terms), minus the observer's position on a spherical Earth rotated by local sidereal time | *The Astronomical Almanac*, low-precision Moon formulas (section D); Meeus ch. 40 |
-| Astronomical twilight | Sun's geometric centre below −18° | Standard definition (USNO) |
-| Earth heliocentric position (for comets) | Negated Sun vector, with general precession (1.3970°/century) removed to return to the J2000 frame | Almanac Sun formula; Lieske et al. (1977) precession rate |
+| Sun RA/Dec | Mean longitude and anomaly, equation of centre to 2 terms, apparent ecliptic longitude | *The Astronomical Almanac*, ["Low-precision formulas for the Sun's coordinates"][aa-sun] (section C) |
+| Moon RA/Dec | Ecliptic longitude (6 periodic terms) and latitude (4 terms), geocentric | [*The Astronomical Almanac*][aa], low-precision Moon formulas (section D) |
+| Obliquity of the ecliptic | `23.439° − 0.0000004 n` (n = days since J2000) | [*The Astronomical Almanac*][aa-sun], section C |
+| Ecliptic → equatorial | Rotation by the obliquity | Standard ([Meeus, *Astronomical Algorithms*][meeus], ch. 13) |
+| Greenwich sidereal time | `280.46061837° + 360.98564736629° · n`, the linear terms of IAU 1982 GMST | [Aoki et al. (1982)][aoki], A&A 105, 359, as given by [Meeus][meeus] eq. 12.4 |
+| Precession J2000 → date | IAU 1976 angles ζ, z, θ and the three-rotation formula | [Lieske et al. (1977)][lieske], A&A 58, 1; [Meeus][meeus] eqs. 21.2–21.4 |
+| Altitude and azimuth | Spherical triangle from hour angle, declination and latitude | [Meeus][meeus] eqs. 13.5–13.6 |
+| Angular separation | Spherical law of cosines | [Meeus][meeus] eq. 17.1 |
+| Moon illumination | `(1 − cos ψ)/2` from the Sun–Moon elongation ψ; phase angle ≈ 180° − ψ | [Meeus][meeus] ch. 48 |
+| Topocentric Moon | Geocentric vector at the distance given by the horizontal parallax (4 periodic terms), minus the observer's position on a spherical Earth rotated by local sidereal time | [*The Astronomical Almanac*][aa], low-precision Moon formulas (section D); [Meeus][meeus] ch. 40 |
+| Night window | Sun's geometric centre below −18° (astronomical twilight), or −12° with `-twilight nautical` | Standard definitions ([USNO][usno-twilight]) |
+| Earth heliocentric position (for comets) | Negated Sun vector, with general precession (1.3970°/century) removed to return to the J2000 frame | [Almanac Sun formula][aa-sun]; [Lieske et al. (1977)][lieske] precession rate |
 
 **Comets** (`internal/comets`)
 
 | Quantity | Formula | Source |
 |---|---|---|
-| Elliptic orbits | Kepler's equation `E − e sin E = M` by Newton–Raphson | Standard (Meeus ch. 30) |
-| Parabolic orbits | Barker's equation, closed form via the cubic | Meeus ch. 34 |
+| Elliptic orbits | Kepler's equation `E − e sin E = M` by Newton–Raphson | Standard ([Meeus][meeus] ch. 30) |
+| Parabolic orbits | Barker's equation, closed form via the cubic | [Meeus][meeus] ch. 34 |
 | Hyperbolic orbits | `e sinh H − H = M` by Newton–Raphson | Standard |
-| Orbit → ecliptic → equatorial | Rotation by ω, Ω, i, then by the J2000 obliquity 23.4392911° | Meeus ch. 33; MPC elements are J2000 ecliptic |
+| Orbit → ecliptic → equatorial | Rotation by ω, Ω, i, then by the J2000 obliquity 23.4392911° | [Meeus][meeus] ch. 33; [MPC elements][mpc-format] are J2000 ecliptic |
 | Gaussian gravitational constant | `k = 0.01720209895` rad/day | Gauss (1809), IAU 1976 system of constants |
-| Total magnitude | `m₁ = H + 5 log₁₀ Δ + 2.5 K log₁₀ r` | Minor Planet Center magnitude parameters (K = 2.5 n) |
+| Total magnitude | `m₁ = H + 5 log₁₀ Δ + 2.5 K log₁₀ r` | [Minor Planet Center magnitude parameters][mpc-format] (K = 2.5 n) |
 
 **Atmosphere and sky** (`internal/atmos`)
 
 | Quantity | Formula | Source |
 |---|---|---|
-| Airmass | `X = 1 / sin(h + 244 / (165 + 47 h^1.1))` | Pickering (2002), DIO 12, 1, §A |
+| Airmass | `X = 1 / sin(h + 244 / (165 + 47 h^1.1))` | [Pickering (2002)][pickering], "The Southern Limit of the Ancient Star Catalog", DIO 12, 1, §A |
 | Extinction | Transmission `10^(−0.4 k (X − 1))` relative to the zenith | Standard |
-| Extinction coefficient `k` | Rayleigh `0.1066 · e^(−h / 7996 m)` (τ = 0.098 at 550 nm, 8 km scale height) + ozone Chappuis band 0.029 (300 DU) + aerosols `1.086 · AOD₅₅₀` | Rayleigh after Hayes & Latham (1975), ApJ 197, 593, consistent with Bucholtz (1995); ozone from the Chappuis cross-section; AOD from CAMS via Open-Meteo. `1.086 = 2.5 log₁₀ e` |
-| Surface brightness units | `B[nL] = 34.08 · e^(20.7233 − 0.92104 V)` and its inverse | Krisciunas & Schaefer (1991), PASP 103, 1033 |
-| Dark-sky brightness vs altitude | Zenith brightness × `10^(−0.4 k (X − 1)) · X` with the scattering airmass `X = (1 − 0.96 sin² Z)^−½` | Krisciunas & Schaefer (1991) |
-| Scattered moonlight | Scattering function `f(ρ) = 10^5.36 (1.06 + cos² ρ) + 10^(6.15 − ρ/40)`, Moon brightness `10^(−0.4 (3.84 + 0.026 α + 4·10⁻⁹ α⁴))`, scaled by `(60.27 / distance in Earth radii)²` and, within 7° of full, by the opposition surge `1.35 − 0.05 α`; attenuated by the Moon's airmass and scaled by `1 − 10^(−0.4 k X)` | Krisciunas & Schaefer (1991); the surge as in Thorstensen's skycalc |
-| Bortle class ↔ zenith brightness | Mid-points of the SQM ranges usually quoted per class (21.9 … 17.3 mag/arcsec²) | Bortle (2001), *Sky & Telescope*, Feb 2001, with the common SQM mapping |
-| Sky-limited SNR weight | `min(1, √(B_dark / (k · B)))`, `B_dark` = 22.0 mag/arcsec² | Sky-limited imaging: SNR ∝ 1/√B |
+| Extinction coefficient `k` | Rayleigh `0.1066 · e^(−h / 7996 m)` (τ = 0.098 at 550 nm, 8 km scale height) + ozone Chappuis band 0.029 (300 DU) + aerosols `1.086 · AOD₅₅₀` | Rayleigh after [Hayes & Latham (1975)][hayes], ApJ 197, 593, consistent with [Bucholtz (1995)][bucholtz], Appl. Opt. 34, 2765; ozone from the Chappuis cross-section; AOD from [CAMS][cams] via Open-Meteo. `1.086 = 2.5 log₁₀ e` |
+| Surface brightness units | `B[nL] = 34.08 · e^(20.7233 − 0.92104 V)` and its inverse | [Krisciunas & Schaefer (1991)][ks], PASP 103, 1033 |
+| Dark-sky brightness vs altitude | Zenith brightness × `10^(−0.4 k (X − 1)) · X` with the scattering airmass `X = (1 − 0.96 sin² Z)^−½` | [Krisciunas & Schaefer (1991)][ks] |
+| Scattered moonlight | Scattering function `f(ρ) = 10^5.36 (1.06 + cos² ρ) + 10^(6.15 − ρ/40)`, Moon brightness `10^(−0.4 (3.84 + 0.026 α + 4·10⁻⁹ α⁴))`, scaled by `(60.27 / distance in Earth radii)²` and, within 7° of full, by the opposition surge `1.35 − 0.05 α`; attenuated by the Moon's airmass and scaled by `1 − 10^(−0.4 k X)` | [Krisciunas & Schaefer (1991)][ks]; the surge as in Thorstensen's skycalc ([thorsky][thorsky]) |
+| Bortle class ↔ zenith brightness | Mid-points of the SQM ranges usually quoted per class (21.9 … 17.3 mag/arcsec²) | [Bortle (2001)][bortle], *Sky & Telescope*, Feb 2001, with the common SQM mapping |
+| SNR weight | `min(1, √((S + B_dark) / (S + k · B)))`, `S` the object's surface brightness, `B_dark` = 22.0 mag/arcsec², all in nL | SNR ∝ `S / √(S + B)` in a fixed exposure; sky-limited (`S ≪ B`) it is `√(B_dark / (k · B))` |
 
-**Heuristics** (this project's own; see "How objects are ranked"): the weather ramps for cloud, transparency, dew spread and gusts; the sky-glow fractions `k` for clusters and filtered emission targets; the frame-fill curve (full credit at 25–80% of the short side); and the Moon-distance rule from uptonight.
+**Object surface brightness** (`internal/catalog`)
 
-**Constellations** (`internal/constellation`): IAU boundaries (Delporte 1930) at B1875.0 from CDS/VizieR [VI/49](https://vizier.cfa.harvard.edu/viz-bin/VizieR?-source=VI/49) (Davenhall & Leggett 1989); the target is precessed to B1875.0 with the IAU 1976 formula and tested by ray casting, following Roman (1987), PASP 99, 695, with the table and test taken from [astrogo](https://github.com/TuSKan/astrogo).
+| Quantity | Formula | Source |
+|---|---|---|
+| Measured | V mean surface brightness, else B within the 25 mag/arcsec² isophote minus B−V | V: Gary Imm's Deep Sky Compendium; B: [OpenNGC][openngc] |
+| B−V colour | The object's own `B − V` when within −0.3…1.5, else 0.8 for galaxies and groups, 0 for emission-line objects, 0.5 for the rest | Typical colours; OpenNGC pairs inconsistent B and V for ~100 objects |
+| Derived (galaxies and nebulae only, marked `~`) | `SB = m + 2.5 log₁₀(π/4 · (60 · size)²)`: the integrated magnitude over a uniform disc of the major axis, in arcseconds | Standard mean surface brightness ([SkEye][skeye]) |
+
+**Seeing estimate** (`internal/weather`, display only)
+
+| Quantity | Formula | Source |
+|---|---|---|
+| Optical turbulence per layer | `Cn² = 2.8 M² L0^(4/3)`, `M = −79·10⁻⁶ P/T² (dT/dz + 9.8 K/km)`, `L0^(4/3) = 0.1^(4/3) · 10^Y`, `Y = 1.64 + 42 S` (troposphere) or `0.506 + 50 S` (stratosphere), `S` the vector wind shear in 1/s | [Dewan et al. (1993)][dewan], *A model for Cn² (optical turbulence) profiles using radiosonde data*, PL-TR-93-2043 |
+| Tropopause | Lowest level from 500 hPa up whose layer cools at 2 K/km or less, and the next layer too (standing in for the 2 km average) | WMO (1957) lapse-rate definition ([AMS Glossary][ams-tropopause]) |
+| Level consistency checks | Hypsometric thickness `Δz = (R/g) · T̄ · ln(p₁/p₂)`, `R/g` = 29.3 m/K, within 30%; the surface pressure within 12% of `1013.25 · e^(−z/H)`, `H = 29.3 m/K · T̄` | [Hypsometric equation][ams-hypsometric] |
+| Fried parameter and FWHM | `r0 = (0.423 k² ∫ Cn² dz)^(−3/5)`, `k = 2π/λ`, FWHM `= 0.98 λ / r0` at λ = 500 nm, zenith | [Fried (1966)][fried], JOSA 56, 1372; [Roddier (1981)][roddier], Progress in Optics 19, 281 |
+| Calibration | Cn² × 0.2 in the ground layer, × 1.45 above, least-squares fit against ESO DIMM seeing at Paranal and La Silla: bias +0.03″, RMSE 0.33″ | Dewan overestimates the boundary layer ([Cuevas et al. (2024)][cuevas], MNRAS 529, 2208, whose calibrated 1 km WRF reaches 0.30″ RMSE); [Osborn & Sarazin (2018)][osborn], MNRAS 480, 1278, ECMWF model levels at Paranal (0.31″) |
+
+**Heuristics** (this project's own; see "How objects are ranked"): the weather ramps for cloud, rain, transparency, dew spread and gusts; the sky-glow fractions `k` for clusters and filtered emission targets; the frame-fill curve (full credit at 25–80% of the short side); and the Moon-distance rule from [uptonight][uptonight].
+
+**Constellations** (`internal/constellation`): IAU boundaries (Delporte 1930) at B1875.0 from CDS/VizieR [VI/49](https://vizier.cfa.harvard.edu/viz-bin/VizieR?-source=VI/49) (Davenhall & Leggett 1989); the target is precessed to B1875.0 with the IAU 1976 formula and tested by ray casting, following [Roman (1987)][roman], PASP 99, 695, with the table and test taken from [astrogo](https://github.com/TuSKan/astrogo).
+
+[aa]: https://aa.usno.navy.mil/publications/asa
+[aa-sun]: https://aa.usno.navy.mil/faq/sun_approx
+[usno-twilight]: https://aa.usno.navy.mil/faq/RST_defs
+[meeus]: https://ui.adsabs.harvard.edu/abs/1998aalg.book.....M
+[aoki]: https://ui.adsabs.harvard.edu/abs/1982A%26A...105..359A
+[lieske]: https://ui.adsabs.harvard.edu/abs/1977A%26A....58....1L
+[mpc-format]: https://minorplanetcenter.net/iau/info/CometOrbitFormat.html
+[pickering]: http://www.dioi.org/vols/wc0.pdf
+[hayes]: https://doi.org/10.1086/153548
+[bucholtz]: https://doi.org/10.1364/AO.34.002765
+[cams]: https://atmosphere.copernicus.eu/
+[ks]: https://doi.org/10.1086/132921
+[thorsky]: https://github.com/jrthorstensen/thorsky
+[bortle]: https://skyandtelescope.org/astronomy-resources/light-pollution-and-astronomy-the-bortle-dark-sky-scale/
+[openngc]: https://github.com/mattiaverga/OpenNGC
+[skeye]: https://skeye.rocks/apps/skeye/book/explanations/visibilitymeasures
+[dewan]: https://apps.dtic.mil/sti/pdfs/ADA279399.pdf
+[ams-tropopause]: https://glossary.ametsoc.org/wiki/Tropopause
+[ams-hypsometric]: https://glossary.ametsoc.org/wiki/Hypsometric_equation
+[fried]: https://doi.org/10.1364/JOSA.56.001372
+[roddier]: https://doi.org/10.1016/S0079-6638(08)70204-X
+[cuevas]: https://doi.org/10.1093/mnras/stae630
+[osborn]: https://doi.org/10.1093/mnras/sty1898
+[uptonight]: https://github.com/mawinkler/uptonight
+[roman]: https://doi.org/10.1086/132034
 
 ## Privacy
 
