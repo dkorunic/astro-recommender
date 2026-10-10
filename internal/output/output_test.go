@@ -5,6 +5,7 @@ package output
 
 import (
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -89,6 +90,25 @@ func TestMoon(t *testing.T) {
 		}
 		if got := moonUp(s); !slices.Equal(got, c.up) {
 			t.Errorf("moonUp(%v) = %v, want %v", c.alt, got, c.up)
+		}
+	}
+}
+
+func TestShortDesc(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]string{
+		"":         "",
+		"NGC 6960": "NGC 6960",
+		"NGC 6960, Western Veil, Witch's Broom, Finger of God, Lacework Nebula": "NGC 6960, Western Veil, Witch's Broom…",
+		"NGC 457, ET Cluster, Owl Cluster, Dragonfly Cluster, E.T. Cluster":     "NGC 457, ET Cluster, Owl Cluster…",
+		"NGC 869, NGC 884, Double Cluster, h & χ Persei":                        "NGC 869, NGC 884, Double Cluster…",
+		"NGC 869, NGC 884, h & χ Persei":                                        "NGC 869, NGC 884, h & χ Persei",
+		strings.Repeat("χ", 50):                                                 strings.Repeat("χ", 40) + "…",
+	}
+	for in, want := range tests {
+		if got := shortDesc(in); got != want {
+			t.Errorf("shortDesc(%q) = %q, want %q", in, got, want)
 		}
 	}
 }

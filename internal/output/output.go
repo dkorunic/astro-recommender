@@ -180,7 +180,7 @@ func Plan(s *scoring.Sky, slots []plan.Slot) {
 
 			continue
 		}
-		row(w, "", when, paint("36", p.Result.Name), paint("39", p.Result.Description), paint(typeColor(p.Result.Target), p.Result.Type),
+		row(w, "", when, paint("36", p.Result.Name), paint("39", shortDesc(p.Result.Description)), paint(typeColor(p.Result.Target), p.Result.Type),
 			paint(scale(p.Score, 0.66, 0.33), fmt.Sprintf("%.2f", p.Score)),
 			paint("39", fmt.Sprintf("%.0f° @ %s", p.PeakAlt, clock(s, p.PeakAt))))
 	}
@@ -205,7 +205,7 @@ func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) int {
 			px = sizeText(r.Target, "%.0f", r.Size*60/cfg.Scale)
 		}
 		ra, dec := position(r.Position())
-		row(w, "", paint("39", strconv.Itoa(i+1)), paint("36", r.Name), paint("39", r.Description), paint(typeColor(r.Target), r.Type),
+		row(w, "", paint("39", strconv.Itoa(i+1)), paint("36", r.Name), paint("39", shortDesc(r.Description)), paint(typeColor(r.Target), r.Type),
 			paint("39", r.Constellation), paint("39", ra), paint("39", dec), paint("39", sizeText(r.Target, "%.0f'", r.Size)),
 			paint(scale(r.Foto, 0.66, 0.33), fmt.Sprintf("%.2f", r.Foto)),
 			paint(scale(r.Score, 0.66, 0.33), fmt.Sprintf("%.2f", r.Score)),
@@ -267,6 +267,26 @@ func moonText(s *scoring.Sky) string {
 // sbText is the SB column: the object's surface brightness, ~ when estimated
 // (from its magnitude and size, or a B value moved to V by a typical colour),
 // - when unknown.
+// descWidth caps the DESCRIPTION cell: tabwriter makes the column as wide as
+// the longest description shown, and Caldwell's alias lists run past 100
+// characters, 192-column rows. 40 holds every GaryImm description (37), so
+// the default list prints unchanged; -json keeps the full text.
+const descWidth = 40
+
+// shortDesc truncates a description to descWidth runes with an ellipsis, at
+// the last comma-separated name that fits when there is one.
+func shortDesc(s string) string {
+	if utf8.RuneCountInString(s) <= descWidth {
+		return s
+	}
+	prefix := string([]rune(s)[:descWidth])
+	if cut := strings.LastIndex(prefix, ", "); cut > 0 {
+		prefix = prefix[:cut]
+	}
+
+	return prefix + "…"
+}
+
 func sbText(r scoring.Result) string {
 	sb, estimated := r.SurfaceBrightness()
 	switch {
@@ -412,7 +432,7 @@ var planColumns = []column{
 var resultColumns = []column{
 	{"#", "rank by SCORE"},
 	{"NAME", "catalog designation"},
-	{"DESCRIPTION", "common name; comets: magnitude, Sun distance r, Earth distance Δ"},
+	{"DESCRIPTION", "common name, long lists cut with …; comets: magnitude, Sun distance r, Earth distance Δ"},
 	{"TYPE", "object type"},
 	{"CONSTELLATION", "IAU constellation, from the official boundaries"},
 	{"RA", "J2000 right ascension, hh mm.m (comets: mid-window position)"},
