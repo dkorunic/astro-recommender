@@ -26,6 +26,22 @@
   --c31: #c0392b; --c32: #1f8a4c; --c33: #a8690f; --c34: #1f6fd0; --c35: #9b3fc4; --c36: #0f7f8c; --c90: #7a8294;
   --title: linear-gradient(90deg, #22305e 0%, #4a4f8a 45%, #a8690f 100%);
 }
+/* Night vision: dim pure red on black, nothing blue or white to spoil dark
+   adaptation. The colour codes become brightness: good bright, fair medium,
+   poor dim. */
+:root[data-theme="night"] {
+  color-scheme: dark;
+  --bg: #000; --panel: #0a0101; --field: #050000; --fg: #c8281d; --muted: #7a1810; --line: #2e0805;
+  --accent: #d93225; --accent-fg: #000; --accent-soft: rgba(217, 50, 37, .16); --focus: #f04434;
+  --c31: #6a140d; --c32: #ff4d3d; --c33: #b8281d; --c34: #a52418; --c35: #a52418; --c36: #e03a2c; --c90: #5c120c;
+  --dusk: linear-gradient(90deg, #200403 0%, #5c0f09 50%, #a52418 100%);
+  --title: linear-gradient(90deg, #7a1810 0%, #d93225 100%);
+}
+/* Images and native widgets, tinted red. The WebKit-only date icon gets a
+   rule of its own: an unknown selector (Firefox) drops its whole rule. */
+:root[data-theme="night"] :is(h1 .mark, #thumb, input[type=checkbox]) { filter: grayscale(1) sepia(1) saturate(10) hue-rotate(-40deg) brightness(.55); }
+:root[data-theme="night"] ::-webkit-calendar-picker-indicator { filter: grayscale(1) sepia(1) saturate(10) hue-rotate(-40deg) brightness(.55); }
+:root[data-theme="night"] * { scrollbar-color: var(--line) var(--bg); }
 * { box-sizing: border-box; }
 html { background: var(--bg); }
 body {
@@ -138,7 +154,7 @@ footer a:hover { text-decoration: underline; }
       <button type="button" class="ghost" id="here">Use my location</button>
       <button type="button" class="ghost" id="link" title="Copy a link that fills this form and runs it">Copy link</button>
       <button type="button" class="ghost" id="clear">Reset</button>
-      <button type="button" class="ghost" id="theme" title="Switch between the browser's theme, light and dark"></button>
+      <button type="button" class="ghost" id="theme" title="Switch between the browser's theme, light, dark and red night vision"></button>
       <span id="status"></span>
     </div>
   </form>
@@ -459,14 +475,14 @@ $("here").addEventListener("click", () => {
   }, (ex) => { $("status").textContent = ex.message; });
 });
 
-// The theme button cycles auto (the browser's choice) -> light -> dark.
+// The theme button cycles auto (the browser's choice) -> light -> dark -> night.
 const THEME = "astro-recommender-theme";
 function themeLabel() {
   const choice = document.documentElement.dataset.themeChoice;
   $("theme").textContent = choice === "auto" ? `Theme: auto (${document.documentElement.dataset.theme})` : `Theme: ${choice}`;
 }
 $("theme").addEventListener("click", () => {
-  const next = { auto: "light", light: "dark", dark: null }[document.documentElement.dataset.themeChoice];
+  const next = { auto: "light", light: "dark", dark: "night", night: null }[document.documentElement.dataset.themeChoice];
   try { next ? localStorage.setItem(THEME, next) : localStorage.removeItem(THEME); } catch {}
   applyTheme();
   themeLabel();

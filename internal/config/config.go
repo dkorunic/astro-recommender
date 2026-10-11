@@ -66,6 +66,7 @@ type Config struct {
 	SQMSource      string          // where SQM was looked up; empty when given with -sqm
 	SkipFile       string          // -skip: file of names to leave out, shown in the header
 	Skip           map[string]bool // its names as catalog.NameKey
+	Types          []string        // -type: catalog.Classes to keep, nil = all
 	Horizon        horizon.Horizon
 	Plan           time.Duration
 	MinRun         time.Duration // -min-run: shortest continuous observable stretch a target needs; 0 = any
@@ -108,7 +109,7 @@ func Parse() (Config, error) {
 	var fov, sensor string
 	var focal, pixel float64
 	var horizonFile string
-	var ra, dec string
+	var ra, dec, types string
 	flag.Float64Var(&cfg.Lat, "lat", 0, "latitude in degrees, north positive (required)")
 	flag.Float64Var(&cfg.Lon, "lon", 0, "longitude in degrees, east positive (required)")
 	flag.StringVar(&date, "date", "", "date of the evening, YYYY-MM-DD (default tonight; during the night, the rest of the night in progress)")
@@ -129,6 +130,7 @@ func Parse() (Config, error) {
 	flag.StringVar(&cfg.ListName, "list", "GaryImm", "built-in target list: "+strings.Join(catalog.Lists, ", "))
 	flag.StringVar(&cfg.TargetsFile, "targets", "", "custom uptonight-style targets YAML file (overrides -list)")
 	flag.StringVar(&cfg.SkipFile, "skip", "", "file of target names to leave out, one per line (e.g. already imaged), # comments; case and spaces do not matter")
+	flag.StringVar(&types, "type", "", "keep only these object classes, comma-separated: "+strings.Join(catalog.Classes, ", ")+" (emission: what -filter helps; default all)")
 	flag.BoolVar(&origin, "origin", false, "frame for the Celestron Origin (IMX678 at 335 mm: 1.32x0.75°, 1.23\"/px): fit the FOV, at least -min-px across")
 	flag.StringVar(&fov, "fov", "", "frame for another telescope: field of view WxH in degrees up to 180, e.g. 2.1x1.4 (default Origin; -scale optional)")
 	flag.Float64Var(&focal, "focal", 0, "frame for another telescope: focal length in mm; with -sensor sets the field of view (instead of -fov), with -pixel the pixel scale (instead of -scale)")
@@ -157,6 +159,7 @@ func Parse() (Config, error) {
 		return Config{Version: true}, nil
 	}
 
+	var err error
 	set, nonFinite := visited()
 	if len(nonFinite) > 0 {
 		return Config{}, fmt.Errorf("%w: -%s must be a finite number", errInvalidFlag, strings.Join(nonFinite, ", -"))
@@ -173,6 +176,13 @@ func Parse() (Config, error) {
 	if err := cfg.parseRegion(set, ra, dec); err != nil {
 		return Config{}, err
 	}
+	if cfg.Types, err = parseTypes(types); err != nil {
+		return Config{}, err
+	}
+	// Comets are fetched only when they can be kept.
+	if cfg.Types != nil && !slices.Contains(cfg.Types, "comet") {
+		cfg.NoComets = true
+	}
 
 	// Framing (-origin, -fov or -focal/-sensor, -scale or -focal/-pixel)
 	// replaces the size defaults; explicit -size-min/-size-max still win.
@@ -180,7 +190,6 @@ func Parse() (Config, error) {
 	// -pixel without -focal, and -focal without either.
 	fovSet, scaleSet := set["fov"] || set["sensor"], set["scale"] || set["pixel"]
 	cfg.Framing = origin || fovSet || scaleSet
-	var err error
 	if cfg.FOVLong, cfg.FOVShort, err = frameFOV(set, fov, sensor, focal); err != nil {
 		return Config{}, err
 	}
@@ -268,6 +277,30 @@ func (cfg *Config) SunAlt() float64 {
 	}
 
 	return astro.Astronomical
+}
+
+// parseTypes reads -type: comma-separated catalog.Classes, any case, each
+// once; empty means all (nil).
+func parseTypes(s string) ([]string, error) {
+	var out []string
+	for c := range strings.SplitSeq(s, ",") {
+		c = strings.ToLower(strings.TrimSpace(c))
+		switch {
+		case c == "":
+		case !slices.Contains(catalog.Classes, c):
+			return nil, fmt.Errorf("%w: -type %q, want %s", errInvalidFlag, c, strings.Join(catalog.Classes, ", "))
+		case !slices.Contains(out, c):
+			out = append(out, c)
+		}
+	}
+
+	return out, nil
+}
+
+// Wanted reports whether a target is of a -type class; without -type every
+// target is.
+func (cfg *Config) Wanted(tg catalog.Target) bool {
+	return cfg.Types == nil || slices.ContainsFunc(cfg.Types, tg.Is)
 }
 
 // Near reports whether a position (J2000 degrees) is within Tol of the -ra

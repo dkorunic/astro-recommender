@@ -32,7 +32,10 @@ import (
 // Planetary Nebulae.net catalogue (planetarynebulae.net, with permission); HASH is the HASH PN database (Parker, Bojicic &
 // Frew 2016, hashpn.space); Sharpless is Sharpless (1959, CDS VII/20)
 // cross-identified with Gary Imm's Deep Sky Compendium; Caldwell is Moore's
-// Caldwell catalogue (1995) from the Compendium and OpenNGC.
+// Caldwell catalogue (1995) from the Compendium and OpenNGC; RCW is Rodgers,
+// Campbell & Whiteoak (1960, CDS VII/216) and SNR the optically detected
+// remnants of Green's catalogue (2024 October version, CDS VII/297), both
+// cross-identified with the Compendium.
 //
 // The binary embeds each list as the gob of what Load makes of its YAML
 // (sanitized, checked, positions in degrees, constellations looked up):
@@ -102,6 +105,42 @@ const maxNumber, minSB = 35, 10
 // Cluster reports whether the object is an open or globular cluster without
 // nebulosity: light in point sources that sky glow hardly hurts.
 func (t Target) Cluster() bool { return t.kind() == kindCluster }
+
+// Classes are the object classes -type selects, in help order.
+var Classes = []string{classGalaxy, classCluster, classNebula, classEmission, classComet, classOther}
+
+const (
+	classGalaxy   = "galaxy"
+	classCluster  = "cluster"
+	classNebula   = "nebula"
+	classEmission = "emission"
+	classComet    = "comet"
+	classOther    = "other"
+)
+
+// Is reports whether the target belongs to class c (one of Classes): a
+// galaxy group is a galaxy, a cluster with nebulosity both a cluster and a
+// nebula, emission is EmissionLine and other the stars, asterisms and
+// unknown types.
+func (t Target) Is(c string) bool {
+	k := t.kind()
+	switch c {
+	case classGalaxy:
+		return k == kindGalaxy || k == kindGroup
+	case classCluster:
+		return k == kindCluster || k == kindClusterNebula
+	case classNebula:
+		return k == kindNebula || k == kindClusterNebula
+	case classEmission:
+		return EmissionLine(t)
+	case classComet:
+		return t.Track != nil
+	case classOther:
+		return k == kindOther && t.Track == nil
+	}
+
+	return false
+}
 
 // SurfaceBrightness returns the object's V surface brightness in mag/arcsec²,
 // the visibility measure for extended objects (it compares directly with the
@@ -243,7 +282,7 @@ func (t Target) typicalBV(k kind) float64 {
 }
 
 // Lists are the embedded uptonight target lists selectable with -list.
-var Lists = []string{"GaryImm", "GaryImmFull", "Messier", "Herschel400", "Pensack500", "OpenNGC", "OpenIC", "LBN", "LDN", "MWSC", "Melotte", "Collinder", "PNnet", "HASH", "Sharpless", "Caldwell"}
+var Lists = []string{"GaryImm", "GaryImmFull", "Messier", "Herschel400", "Pensack500", "OpenNGC", "OpenIC", "LBN", "LDN", "MWSC", "Melotte", "Collinder", "PNnet", "HASH", "Sharpless", "Caldwell", "RCW", "SNR"}
 
 var (
 	errList        = errors.New("unknown target list")

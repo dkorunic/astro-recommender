@@ -270,3 +270,28 @@ func TestLoadSkip(t *testing.T) {
 		t.Error("missing file accepted")
 	}
 }
+
+// -type takes catalog.Classes in any case, each once; it keeps a target of
+// any class given and turns the comet fetch off unless comets are wanted.
+func TestParseTypes(t *testing.T) {
+	cfg, err := parse(t, "-type", " Galaxy,nebula,galaxy,, ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Join(cfg.Types, ",") != "galaxy,nebula" || !cfg.NoComets {
+		t.Errorf("Types = %q, NoComets = %v", cfg.Types, cfg.NoComets)
+	}
+	galaxy, open := catalog.Target{Type: "Spiral Galaxy"}, catalog.Target{Type: "Open Cluster"}
+	if !cfg.Wanted(galaxy) || cfg.Wanted(open) {
+		t.Error("Wanted: want the galaxy, not the open cluster")
+	}
+	if cfg, err = parse(t, "-type", "comet"); err != nil || cfg.NoComets {
+		t.Errorf("-type comet: NoComets = %v, err %v", cfg.NoComets, err)
+	}
+	if cfg, err = parse(t); err != nil || cfg.Types != nil || !cfg.Wanted(open) {
+		t.Errorf("no -type: Types = %q, err %v", cfg.Types, err)
+	}
+	if _, err := parse(t, "-type", "galaxies"); err == nil {
+		t.Error("-type galaxies accepted")
+	}
+}

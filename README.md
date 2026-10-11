@@ -8,7 +8,7 @@
 [![Pages](https://img.shields.io/github/actions/workflow/status/dkorunic/astro-recommender/pages.yml?label=web)](https://github.com/dkorunic/astro-recommender/actions/workflows/pages.yml)
 [![Website](https://img.shields.io/website?url=https%3A%2F%2Fastrorecommender.org%2F&label=astrorecommender.org)](https://astrorecommender.org/)
 
-A single-binary Go CLI that tells you what to image **tonight** from a given location. It ranks deep sky objects and bright comets over the whole astronomical night, from dusk to dawn (Sun below −18°), by how long each one stands high enough, far enough from the Moon and above your local horizon, and by how good the sky is while it does: the hourly cloud, transparency, dew and wind forecast, scattered moonlight, light pollution and atmospheric extinction all weigh in, minute by minute. The catalogues (about 30,000 objects in 16 lists) and the time-zone data are built in, no API keys are needed, and the astronomy is hand-rolled and checked against IAU SOFA. It also runs [in the browser](https://astrorecommender.org/), nothing to install.
+A single-binary Go CLI that tells you what to image **tonight** from a given location. It ranks deep sky objects and bright comets over the whole astronomical night, from dusk to dawn (Sun below −18°), by how long each one stands high enough, far enough from the Moon and above your local horizon, and by how good the sky is while it does: the hourly cloud, transparency, dew and wind forecast, scattered moonlight, light pollution and atmospheric extinction all weigh in, minute by minute. The catalogues (about 30,000 objects in 18 lists) and the time-zone data are built in, no API keys are needed, and the astronomy is hand-rolled and checked against IAU SOFA. It also runs [in the browser](https://astrorecommender.org/), nothing to install.
 
 It started as a port of the deep sky part of [uptonight](https://github.com/mawinkler/uptonight) and adds, among other things:
 
@@ -49,7 +49,7 @@ It started as a port of the deep sky part of [uptonight](https://github.com/mawi
 - **Framing for the Celestron Origin** (`-origin`) or any telescope (`-fov`/`-scale`, or `-focal` with `-sensor`/`-pixel`): keeps only objects that fit the frame's short side and are at least `-min-px` across, scores how well they fill it, and shows their size in pixels. `-mosaic 4` also keeps objects too large for one frame, on the grid of up to that many panels that frames them best, with the score shared among the panels; `-rotate` (a camera you can turn, not the Origin) lays the major axis along the long side, so the minor axis known for about 12,200 objects counts.
 - **Comets** from the Minor Planet Center's daily elements, cached locally: two-body positions every minute (elliptic, parabolic and hyperbolic orbits), kept when brighter than `-comet-mag`, ranked like any other target.
 - **Night plan** (`-plan 2h`): one target per time block, chosen by a greedy pass followed by a local search that swaps and moves targets between blocks.
-- **Sixteen built-in target lists** (about 30,000 objects: Gary Imm's selection and full Compendium, Messier, Caldwell, Herschel 400, Pensack 500, NGC, IC, LBN, LDN, Sharpless, MWSC, Melotte, Collinder and two planetary nebula databases) or your own uptonight-format YAML, with every object's constellation computed from the IAU boundaries; a `-skip` file leaves out the ones you have already imaged.
+- **Eighteen built-in target lists** (about 30,000 objects: Gary Imm's selection and full Compendium, Messier, Caldwell, Herschel 400, Pensack 500, NGC, IC, LBN, LDN, Sharpless, RCW, MWSC, Melotte, Collinder, Green's supernova remnants and two planetary nebula databases) or your own uptonight-format YAML, with every object's constellation computed from the IAU boundaries; a `-skip` file leaves out the ones you have already imaged.
 - **Location handling**: offline IANA time-zone lookup from the coordinates, reverse geocoding of the site name, coordinates rounded to about 1 km before any request, and a fully offline mode.
 - **Terminal output**: aligned, colour-coded tables with a legend; honours `NO_COLOR`, `CLICOLOR_FORCE` and `TERM=dumb`. Text from the network or from target files is stripped of control characters so it cannot inject terminal escape sequences. `-json` prints the same report as one JSON document for scripts.
 - **Verified astronomy**: the hand-rolled Sun, Moon, sidereal-time, precession and altitude formulas are checked against IAU SOFA in the test suite (see [Accuracy](#accuracy)); a single static binary with no API keys.
@@ -104,7 +104,7 @@ What works there:
 - the DarkSkySites sky-brightness lookup, without a key of your own (the page's key is shared; `-no-sqm` skips it)
 - every result's name links to [Aladin Lite](https://aladin.cds.unistra.fr/AladinLite/) at its position, and pointing at it shows a DSS2 colour thumbnail from CDS
 - the form is remembered by the browser between visits, and the Reset button clears it back to the defaults
-- light or dark theme following the browser, with a Theme button to override it (remembered by the browser)
+- light or dark theme following the browser, with a Theme button to override it, which also offers a red night-vision theme (dim red on black, the colour codes turned into brightness) that keeps your eyes dark-adapted at the telescope (remembered by the browser)
 
 What does not:
 
@@ -292,6 +292,7 @@ astro-recommender -lat 45.815 -lon 15.982 -no-weather -no-geocode -no-sqm -no-co
 | `-list` | `GaryImm` | Built-in target list (see below) |
 | `-targets` | none | Your own uptonight-format targets YAML file; overrides `-list` |
 | `-skip` | none | A file of names to leave out, one per line with `#` comments, e.g. the objects you have already imaged. Case and spaces do not matter (`ngc7789` is `NGC 7789`); comets can be named too |
+| `-type` | all | Keep only these object classes, comma-separated: `galaxy` (galaxy groups too), `cluster`, `nebula` (a cluster with nebulosity counts as both), `emission` (the emission-line objects `-filter` helps), `comet` and `other` (stars, asterisms). Comets are not fetched unless `comet` is among them |
 | `-comet-mag` | `12` | Include comets brighter than this total visual magnitude |
 | `-no-comets` | off | Skip comets |
 | `-no-weather` | off | Skip the Open-Meteo and 7Timer forecasts |
@@ -301,7 +302,7 @@ astro-recommender -lat 45.815 -lon 15.982 -no-weather -no-geocode -no-sqm -no-co
 
 ### Target lists
 
-All eight [uptonight target lists](https://github.com/mawinkler/uptonight/tree/main/targets) are built in, plus the full Gary Imm compendium, the Milky Way Star Clusters catalogue, the Melotte and Collinder catalogues, the Planetary Nebulae.net discoveries, the HASH planetary nebula database, the Sharpless catalogue of H II regions and the Caldwell catalogue. Pick one with `-list`; names aren't case-sensitive:
+All eight [uptonight target lists](https://github.com/mawinkler/uptonight/tree/main/targets) are built in, plus the full Gary Imm compendium, the Milky Way Star Clusters catalogue, the Melotte and Collinder catalogues, the Planetary Nebulae.net discoveries, the HASH planetary nebula database, the Sharpless catalogue of H II regions, the Caldwell catalogue, the RCW catalogue of southern Hα regions and Green's supernova remnants. Pick one with `-list`; names aren't case-sensitive:
 
 | List | Objects | Contents |
 |------|---------|----------|
@@ -320,6 +321,8 @@ All eight [uptonight target lists](https://github.com/mawinkler/uptonight/tree/m
 | `PNnet` | 1015 | Planetary nebulae found by the [Planetary Nebulae.net](https://planetarynebulae.net/) amateur group: 354 true, likely and possible PNe and 661 candidates, status and PN G designation in the description |
 | `HASH` | 3994 | Galactic planetary nebulae from the [HASH PN database](https://hashpn.space/) (true, likely and possible), status, PN G designation and morphology in the description; size is the largest measured major diameter; V magnitude from Gary Imm's Compendium for the planetaries it lists |
 | `Sharpless` | 313 | Sharpless' 1959 catalogue of H II regions, named `Sh2-N`; position, size, type, magnitude and common name from Gary Imm's Compendium where it lists the object, else Sharpless' own position and diameter |
+| `RCW` | 181 | Rodgers, Campbell & Whiteoak's 1960 catalogue of southern Hα emission regions, named `RCW N`; NGC/IC/Gum cross-identifications in the description; position, size, type, magnitude and common name from Gary Imm's Compendium where it lists the region itself, else RCW's own position and axes |
+| `SNR` | 98 | The optically detected supernova remnants of Green's 2024 catalogue, named `SNR Glll.l±bb.b`; Green's position and axes, other names and the Compendium's parts (the Cygnus Loop's NGC 6960, NGC 6992, ...) in the description, magnitude and common name from the Compendium |
 | `Caldwell` | 109 | Patrick Moore's Caldwell catalogue, named `C N`; position, size, type, magnitude and common names from Gary Imm's Compendium, C 24 (NGC 1275) and C 35 (NGC 4889) from OpenNGC; Caldwell's own designation in the description where the Compendium row is a larger complex (C 68, C 82) or a pair (C 14, C 60) |
 
 `OpenNGC.yaml` and `OpenIC.yaml` are generated by `scripts/openngc2yaml.py` from the OpenNGC database (Python standard library only); names, types, positions and sizes follow uptonight's conversion, and `mag` (V), `bmag` (B) and `bsurfbr` (mean B-band surface brightness within the 25 mag isophote, mag/arcsec²) are added where OpenNGC has them, and `minor`, the minor axis in arcminutes, where it is below the major one. Where OpenNGC has no V magnitude, `GaryImmFull.yaml`'s (also V) is used, and its V-band surface brightness is added as `surfbr`, so regenerate `GaryImmFull.yaml` first. The lists come from OpenNGC commit `75ca7ff0`; upstream has revised values since, so moving to a newer one is a refresh of its own:
@@ -385,6 +388,21 @@ The Compendium has one size per object, so the minor axes come from OpenNGC: `fi
 
 ```sh
 scripts/fillmag.py --minor-only internal/catalog/targets/Caldwell.yaml > c.yaml && mv c.yaml internal/catalog/targets/Caldwell.yaml
+```
+
+`RCW.yaml` is generated by `scripts/rcw2yaml.py` from Rodgers, Campbell & Whiteoak (1960) in machine-readable form (CDS [VII/216](https://cdsarc.cds.unistra.fr/viz-bin/cat/VII/216); RCW 116 is not in it), cross-identified with the Compendium spreadsheet like `Sharpless.yaml`: every Compendium row carrying `RCW N` (as its name, an alternative ID or in its RCW column) within 20′ (or half the major axis) is named in the description, beside RCW's own NGC, IC and Gum cross-identifications (its uncertain, parenthesised ones left out). A row that is the region itself (named or alternative-ID'd `RCW N`) gives the position, which corrects RCW's B1950 positions given to 0.1 min and 1′, the type (four planetary nebulae such as NGC 6302, Wolf-Rayet nebulae, RCW 86 and RCW 103), the magnitude and common name, and its size unless more than 4× off RCW's major axis. The minor axis is RCW's axis ratio times the size, kept only when the size is within 2× of RCW's major axis. Other regions are typed by the rows they hold when those agree, else `Emission Nebula`. Rows farther away are ignored with a warning (fourteen, such as Gum 64a–c at 8.5° from RCW 113, or the planetary NGC 2452, which the Compendium files under RCW 16, 97′ off). RCW's v/b/m/f brightness class is not a magnitude and is left out:
+
+```sh
+curl -o rcw.tsv 'https://vizier.cds.unistra.fr/viz-bin/asu-tsv?-source=VII/216/rcw&-out.all&-out.max=400&-out.add=_RAJ,_DEJ&-oc.form=dec'
+scripts/rcw2yaml.py rcw.tsv IMM_Compendium_2026.xlsx > internal/catalog/targets/RCW.yaml
+```
+
+`SNR.yaml` is generated by `scripts/snr2yaml.py` from Green's *A Catalogue of Galactic Supernova Remnants* (2024 October version, 310 remnants; CDS [VII/297](https://cdsarc.cds.unistra.fr/viz-bin/cat/VII/297)) and its detailed listings, whose `Optical:` notes say which remnants have been seen in visible light. Most lie behind the Galactic dust and are radio or X-ray only, so only the 98 with such a note are kept. Position (J2000, to 1 s and 1′), axes and other names are Green's. The Compendium's supernova remnants within 10′ (or half the major axis) are named in the description, so the Cygnus Loop lists NGC 6960, NGC 6992, NGC 6995 and Pickering's Triangle; the nearest one sized within 2× of Green's major axis is the remnant itself and adds its magnitude and common name. The listings were at `www.mrao.cam.ac.uk/surveys/snrs/`, which no longer resolves; the Wayback Machine keeps 2025 copies of all 310, some of them gzip-compressed:
+
+```sh
+curl -o snr.tsv 'https://vizier.cds.unistra.fr/viz-bin/asu-tsv?-source=VII/297/snrs&-out.all&-out.max=1000&-oc.form=dec'
+mkdir snrs  # snrs.G*.html, e.g. from https://web.archive.org/web/2025id_/https://www.mrao.cam.ac.uk/surveys/snrs/snrs.G65.3+5.7.html
+scripts/snr2yaml.py snr.tsv snrs IMM_Compendium_2026.xlsx > internal/catalog/targets/SNR.yaml
 ```
 
 `LBN.yaml`'s minor axes are the smaller of the two dimensions in Lynds' catalogue (CDS [VII/9](https://cdsarc.cds.unistra.fr/viz-bin/cat/VII/9)), added by `scripts/lbnminor.py`, matched by LBN number:
@@ -525,6 +543,8 @@ The program calls three free services, none of which need an API key: Open-Meteo
 - `HASH.yaml`: This research has made use of the HASH PN database at [hashpn.space](https://hashpn.space/) (Parker, Bojičić & Frew 2016, J. Phys. Conf. Ser. 728, 032008).
 - `Sharpless.yaml`: Sharpless (1959), ApJS 4, 257, from CDS/VizieR catalog [VII/20](https://cdsarc.cds.unistra.fr/viz-bin/cat/VII/20); common names from Wikipedia's [Sharpless catalog](https://en.wikipedia.org/wiki/Sharpless_catalog) (CC BY-SA 4.0); positions, types and magnitudes from Gary Imm's Deep Sky Compendium (2026), data © Gary Imm.
 - `Caldwell.yaml`: Moore (1995), *The Caldwell Catalogue*, Sky & Telescope 90, 38; positions, sizes, types and magnitudes from Gary Imm's Deep Sky Compendium (2026), data © Gary Imm, and for C 24 and C 35 from OpenNGC (CC BY-SA 4.0); designations and common names from Wikipedia's [Caldwell catalogue](https://en.wikipedia.org/wiki/Caldwell_catalogue) (CC BY-SA 4.0).
+- `RCW.yaml`: Rodgers, Campbell & Whiteoak (1960), MNRAS 121, 103, from CDS/VizieR catalog [VII/216](https://cdsarc.cds.unistra.fr/viz-bin/cat/VII/216); positions, types and magnitudes from Gary Imm's Deep Sky Compendium (2026), data © Gary Imm.
+- `SNR.yaml`: Green (2025), J. Astrophys. Astr. 46, 14, *A Catalogue of Galactic Supernova Remnants* (2024 October version), from CDS/VizieR catalog [VII/297](https://cdsarc.cds.unistra.fr/viz-bin/cat/VII/297) and the optical notes of its [detailed listings](https://www.mrao.cam.ac.uk/surveys/snrs/); magnitudes and common names from Gary Imm's Deep Sky Compendium (2026), data © Gary Imm.
 - `LBN.yaml` minor axes: Lynds (1965), ApJS 12, 163, from CDS/VizieR catalog [VII/9](https://cdsarc.cds.unistra.fr/viz-bin/cat/VII/9).
 - Comet orbital elements: [IAU Minor Planet Center](https://www.minorplanetcenter.net/).
 - Mosaic grids and sky images for results, ideas from [Skywarden](https://skywarden.app/) (formerly Astro Planner) by Frank Adler. The browser's thumbnails come from the CDS [hips2fits](https://alasky.cds.unistra.fr/hips-image-services/hips2fits) service and its links open [Aladin Lite](https://aladin.cds.unistra.fr/AladinLite/) (Bonnarel et al. 2000, A&AS 143, 33; Boch & Fernique 2014, ASPC 485, 277), showing the Digitized Sky Survey (DSS2), based on photographic data obtained using the Oschin Schmidt Telescope and the UK Schmidt Telescope.

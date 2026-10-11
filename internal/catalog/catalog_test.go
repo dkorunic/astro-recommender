@@ -202,6 +202,8 @@ func TestEmissionLineLists(t *testing.T) {
 		"Sharpless":   {"Sh2-155": true, "Sh2-49": true, "Sh2-1": false},
 		"Collinder":   {"Cr 26": true, "Cr 375": true, "Cr 429": false, "Cr 399": false, "Cr 34": true, "Cr 63": true, "Cr 99": true, "Cr 362": true, "Cr 405": true},
 		"Caldwell":    {"C 9": true, "C 50": true, "C 100": true, "C 49": true, "C 14": false},
+		"RCW":         {"RCW 2": true, "RCW 124": true, "RCW 86": true},
+		"SNR":         {"SNR G074.0-08.5": true, "SNR G184.6-05.8": true},
 	} {
 		targets, _, err := Load(list, "")
 		if err != nil {
@@ -311,5 +313,38 @@ func TestKindLists(t *testing.T) {
 				t.Errorf("%s: type %q: kind = %v, want %v", list, tg.Type, got, want)
 			}
 		}
+	}
+}
+
+// Is sorts each kind into the -type classes: a group is a galaxy, a cluster
+// with nebulosity both a cluster and a nebula, a comet only a comet.
+func TestIs(t *testing.T) {
+	for _, c := range []struct {
+		tg   Target
+		want string
+	}{
+		{Target{Type: "Spiral Galaxy"}, "galaxy"},
+		{Target{Type: "Galaxy Group"}, "galaxy"},
+		{Target{Type: "Open Cluster"}, "cluster"},
+		{Target{Type: "Cluster Nebulosity"}, "cluster nebula"},
+		{Target{Name: "M 16", Type: "Open Cluster"}, "cluster nebula emission"},
+		{Target{Type: "Dark Nebula"}, "nebula"},
+		{Target{Type: "HII Region"}, "nebula emission"},
+		{Target{Type: "Supernova Remnant"}, "nebula emission"},
+		{Target{Type: "Double Star"}, "other"},
+		{Target{Type: "Comet", Track: [][2]float64{{0, 0}}}, "comet"},
+	} {
+		var got []string
+		for _, class := range Classes {
+			if c.tg.Is(class) {
+				got = append(got, class)
+			}
+		}
+		if strings.Join(got, " ") != c.want {
+			t.Errorf("%s %q: classes %q, want %q", c.tg.Name, c.tg.Type, got, c.want)
+		}
+	}
+	if (Target{Type: "Spiral Galaxy"}).Is("galaxies") {
+		t.Error("an unknown class matched")
 	}
 }

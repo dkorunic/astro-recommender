@@ -77,6 +77,9 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 	default:
 		targetsDesc += fmt.Sprintf(", %d comets brighter than mag %.1f", s.Comets, cfg.CometMag)
 	}
+	if cfg.Types != nil {
+		targetsDesc += ", only " + strings.Join(cfg.Types, ", ")
+	}
 	if cfg.SkipFile != "" {
 		targetsDesc += fmt.Sprintf(", skipping %d names from %s", len(cfg.Skip), cfg.SkipFile)
 	}

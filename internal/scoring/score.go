@@ -59,7 +59,7 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 		if tg.Track == nil && (size < cfg.SizeMin || size > cfg.SizeMax) {
 			continue
 		}
-		if !cfg.Near(tg.Position()) || cfg.Skip[catalog.NameKey(tg.Name)] {
+		if !cfg.Near(tg.Position()) || cfg.Skip[catalog.NameKey(tg.Name)] || !cfg.Wanted(tg) {
 			continue
 		}
 		if r, ok := scoreTarget(cfg, s, tg, mosaics, alt, weight); ok {
