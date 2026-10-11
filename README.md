@@ -1,6 +1,6 @@
-<img src="web/favicon.svg" alt="" width="96" align="right">
-
 # astro-recommender
+
+<img src="web/favicon.svg" alt="" width="96" align="right">
 
 [![GitHub release](https://img.shields.io/github/v/release/dkorunic/astro-recommender)](https://github.com/dkorunic/astro-recommender/releases/latest)
 [![Go version](https://img.shields.io/github/go-mod/go-version/dkorunic/astro-recommender)](go.mod)
@@ -8,7 +8,7 @@
 [![Pages](https://img.shields.io/github/actions/workflow/status/dkorunic/astro-recommender/pages.yml?label=web)](https://github.com/dkorunic/astro-recommender/actions/workflows/pages.yml)
 [![Website](https://img.shields.io/website?url=https%3A%2F%2Fastrorecommender.org%2F&label=astrorecommender.org)](https://astrorecommender.org/)
 
-A single-binary Go CLI that tells you what to image **tonight** from a given location. It ranks deep sky objects and bright comets over the whole astronomical night, from dusk to dawn (Sun below −18°), by how long each one stands high enough, far enough from the Moon and above your local horizon, and by how good the sky is while it does: the hourly cloud, transparency, dew and wind forecast, scattered moonlight, light pollution and atmospheric extinction all weigh in, minute by minute. The catalogues (about 30,000 objects in 14 lists) and the time-zone data are built in, no API keys are needed, and the astronomy is hand-rolled and checked against IAU SOFA. It also runs [in the browser](https://astrorecommender.org/), nothing to install.
+A single-binary Go CLI that tells you what to image **tonight** from a given location. It ranks deep sky objects and bright comets over the whole astronomical night, from dusk to dawn (Sun below −18°), by how long each one stands high enough, far enough from the Moon and above your local horizon, and by how good the sky is while it does: the hourly cloud, transparency, dew and wind forecast, scattered moonlight, light pollution and atmospheric extinction all weigh in, minute by minute. The catalogues (about 30,000 objects in 16 lists) and the time-zone data are built in, no API keys are needed, and the astronomy is hand-rolled and checked against IAU SOFA. It also runs [in the browser](https://astrorecommender.org/), nothing to install.
 
 It started as a port of the deep sky part of [uptonight](https://github.com/mawinkler/uptonight) and adds, among other things:
 
@@ -103,6 +103,7 @@ What works there:
 - weather, transparency and seeing, aerosols, geocoding and comets, as on the command line
 - the DarkSkySites sky-brightness lookup, without a key of your own (the page's key is shared; `-no-sqm` skips it)
 - every result's name links to [Aladin Lite](https://aladin.cds.unistra.fr/AladinLite/) at its position, and pointing at it shows a DSS2 colour thumbnail from CDS
+- the form is remembered by the browser between visits, and the Reset button clears it back to the defaults
 - light or dark theme following the browser, with a Theme button to override it (remembered by the browser)
 
 What does not:
@@ -118,7 +119,7 @@ astro-recommender -lat 45.815 -lon 15.982 -origin -filter -bortle 6 -n 5 -date 2
 ```
 Location: 45.8150, 15.9820 (Mjesni odbor Zrinjevac, Gradska četvrt Donji grad, Zagreb, Grad Zagreb, Hrvatska), Europe/Zagreb
 Window:   2026-10-07 20:04 - 2026-10-08 05:25 (9h21m0s)
-Moon:     8% illuminated, min separation 8°, sets 20:48
+Moon:     8% illuminated, min separation 8°, rises 04:30
 Size:     4.1' - 44.7'
 Targets:  GaryImm, 1 comets brighter than mag 12.0
 Frame:    1.32° x 0.75°, 1.23"/px (3856 x 2180 px)
@@ -152,13 +153,13 @@ The output ends with a legend explaining every column of the tables shown and th
 - **OBSERVABLE**: the longest stretch during which the object meets the limits without a break; a trailing `+` means there are other, shorter stretches (the Moon rising, a tree in the horizon profile, a pass through the zenith above `-alt-max`). `-min-run` filters on this length.
 - **MAX ALT**: the object's highest altitude in the window, and when it occurs.
 - **SKY**: the average sky brightness at the object while it is observable, in V mag/arcsec². Higher is darker: about 22 is pristine and 18–19 is a suburb or a bright Moon. The filter isn't included.
-- **SB**: the object's own surface brightness in the same units, which the score sets against the sky the object sees: SKY, cut to a quarter by `-filter` for emission-line objects or halved for star clusters without nebulosity, whose own surface brightness is then not used. `~` marks an estimate (derived from the magnitude and size, or a B value moved to V by a typical colour) rather than a measurement, `-` an object with no brightness data, which is scored as if far fainter than the sky.
+- **SB**: the object's own surface brightness in the same units, which the score sets against the sky the object sees: SKY, cut to `-filter-k` (a quarter by default) by `-filter` for emission-line objects or halved for star clusters without nebulosity, whose own surface brightness is then not used. `~` marks an estimate (derived from the magnitude and size, or a B value moved to V by a typical colour) rather than a measurement, `-` an object with no brightness data, which is scored as if far fainter than the sky.
 - **SIZE**: the major axis in arcminutes; with `-rotate`, `major x minor` where the minor axis is known.
 - **PX**: the object's size in pixels at the frame's pixel scale; `-` without framing (`-origin`, `-fov`, `-scale`, `-focal`), since there is no frame to measure against. With `-mosaic`, a grid such as `2x1` (columns along the frame's long side × rows) follows when more than one panel scores best.
 
 On a colour-capable terminal the output is colour-coded green/yellow/red. Colours are turned off when output is piped, when `NO_COLOR` is set or when `TERM=dumb`. `CLICOLOR_FORCE=1` turns them on regardless.
 
-`-json` replaces the tables with one JSON document holding the same report: `location`, `window` (RFC 3339 times in `-tz`), `moon` (illumination 0–1 and when it is up), `sky`, `frame` (with framing), `forecast` per hour (its `seeing` is 7Timer's range and `seeingArcsec` the upper-air estimate, which replaced the `seeingClass` of versions up to 0.9), `plan` (with `-plan`) and `targets` (RA/Dec in J2000 degrees, size and `minor` axis in arcminutes, `observable` as the longest run and the number of runs, `mosaic` as `cols` and `rows` when more than one panel scored best; `frame` adds `maxPanels` and `rotate` when set). Unknown values are left out rather than written as null. A night with nothing to plan (no night at that twilight, or a window already past) gives `{"message": "…", "targets": []}`. Warnings still go to stderr.
+`-json` replaces the tables with one JSON document holding the same report: `location`, `window` (RFC 3339 times in `-tz`), `moon` (illumination 0–1 and when it is up), `sky`, `frame` (with framing), `forecast` per hour (its `seeing` is 7Timer's range and `seeingArcsec` the upper-air estimate, which replaced the `seeingClass` of versions up to 0.9), `plan` (with `-plan`) and `targets` (RA/Dec in J2000 degrees, size and `minor` axis in arcminutes, `surfaceBrightness` in mag/arcsec² with `surfaceBrightnessEstimated` for the `~` values, `frame` as the framing factor, `observable` as the longest run and the number of runs, `mosaic` as `cols` and `rows` when more than one panel scored best; `frame` adds `maxPanels` and `rotate` when set). Unknown values are left out rather than written as null. A night with nothing to plan (no night at that twilight, or a window already past) gives `{"message": "…", "targets": []}`. Warnings still go to stderr.
 
 ### Examples
 
@@ -403,7 +404,7 @@ The binary embeds a pre-decoded copy of each list (`internal/catalog/targets/*.g
 
 Objects with unknown size (`-9999` in the list, or `0.0` in a few LDN entries) count as size 0: they are dropped by the default `-size-min`, and `-size-min 0` keeps them (with no framing penalty, since there is nothing to judge).
 
-The CONSTELLATION column is computed from the official IAU boundaries for every target, comets included, rather than taken from the list. Across the ~18,000 entries of the lists that carry a constellation (the generated lists don't) the two agree except for spelling variants ("Ophiucus", "Se1") and five objects. Three of those are list errors, such as R Aquarii listed in Aquila; the other two sit right on a boundary.
+The CONSTELLATION column is computed from the official IAU boundaries for every target, comets included, rather than taken from the list. Across the ~18,000 entries of the lists that carry a constellation (the hand-made lists and OpenNGC/OpenIC; the other generated lists have none, and the Compendium's labels are too unreliable to compare) the two agree except for spelling variants ("Ophiucus", "Se1") and five objects. Three of those are list errors, such as R Aquarii listed in Aquila; the other two sit right on a boundary.
 
 ### Comets
 
@@ -448,7 +449,7 @@ To measure it, stand where the telescope sits and use a compass and an inclinome
 
 1. **Time window.** Each minute from astronomical dusk to astronomical dawn (or nautical, with `-twilight nautical`) is checked. The search runs for 24 hours from the site's solar noon, worked out from its longitude, so polar night is capped at 24 hours and the time zone can't cut the night short. Without `-date`, a run during the night (after dusk, before dawn) plans only what's left of the night in progress; otherwise it plans the coming evening. If full night never happens (for example at high latitudes in summer), the program says so and lists nothing; `-twilight nautical` may still find a window there. `-from`/`-to` narrow this to part of the night, but never extend it past dusk or dawn. A window that falls entirely outside the night is an error. Moon illumination is taken at the middle of the window.
 2. **Observable minutes**, following uptonight's rules:
-   - the object is between 30° and 80° altitude (≥ 30° also covers uptonight's airmass ≤ 2 limit), and above the `-horizon` profile if given
+   - the object is between `-alt-min` and `-alt-max` altitude, 30° and 80° by default (≥ 30° also covers uptonight's airmass ≤ 2 limit), and above the `-horizon` profile if given
    - it is at least *Moon illumination %* degrees from the Moon, e.g. 25% lit means 25° away
    - unlike uptonight, the Moon-distance rule is skipped while the Moon is below the horizon
 3. **Sky glow sensitivity** (`k`) is the fraction of sky glow that counts against a target:
@@ -463,20 +464,20 @@ To measure it, stand where the telescope sits and use a compass and an inclinome
    - **dew risk**: when temperature minus dew point drops from 4 °C to 1 °C, weight goes from ×1.0 down to ×0.7
    - **wind gusts**: from 20 to 40 km/h, weight goes from ×1.0 down to ×0.5
    - **rain**: from 0 to 0.1 mm in the hour, weight goes from ×1.0 down to ×0, whatever the cloud layers say (the table shows the amount beside the cloud cover from 0.05 mm). Like cloud cover, weather only weighs the score: FOTO and the OBSERVABLE run are geometric, so a rained-out hour still counts as observable
-   - **seeing** is shown for reference only; it matters little at the Origin's 1.23″/px. 7Timer's is a star FWHM range; for hours 7Timer does not cover, the table shows `~1.3"`, a FWHM estimated from the ECMWF IFS upper-air profile (Open-Meteo, 15 days ahead): each layer between the forecast levels, from the surface and 925 to 100 hPa, gets its refractive index structure constant Cn² from the temperature gradient and the wind shear after Dewan et al. (1993), the AFGL radiosonde model (with the tropopause found on the profile by the WMO lapse-rate rule, since the stratosphere's outer scale differs), and the integral gives Fried's r0 and the FWHM 0.98 λ/r0 at 500 nm, at the zenith. The levels are 0.7 to 2 km apart, so thin turbulent layers are missed and the ground layer is one gradient from 2 m to the first level at least 300 m up, so each layer's Cn² is scaled by a factor fitted once against two years of ESO's public DIMM seeing at Paranal and La Silla (0.2 for the ground layer, which Dewan overestimates, 1.45 above it): against the DIMM the estimate then has a bias of +0.03″ and an RMSE of 0.33″, the band published turbulence forecasts for Paranal reach (Cuevas et al. 2024; Osborn & Sarazin 2018; see [Formulas and references](#formulas-and-references)).
+   - **seeing** is shown for reference only; it matters little at the Origin's 1.23″/px. 7Timer's is a star FWHM range; for hours 7Timer does not cover, the table shows `~1.3"`, a FWHM estimated from the ECMWF IFS upper-air profile (Open-Meteo, 15 days ahead): each layer between the forecast levels, from the surface and 925 to 100 hPa, gets its refractive index structure constant Cn² from the temperature gradient and the wind shear after Dewan et al. (1993), the AFGL radiosonde model (with the tropopause found on the profile by the WMO lapse-rate rule, since the stratosphere's outer scale differs), and the integral gives Fried's r0 and the FWHM 0.98 λ/r0 at 500 nm, at the zenith. The levels are 0.7 to 2 km apart, so thin turbulent layers are missed and the ground layer is one gradient from 2 m to the first level at least 300 m up, so each layer's Cn² is scaled by a factor fitted once against two years of ESO's public DIMM seeing at Paranal and La Silla (0.2 for the ground layer, which Dewan overestimates, 1.45 above it): against the DIMM the estimate then has a bias of +0.03″ and an RMSE of 0.33″, the band published turbulence forecasts for Paranal reach (Cuevas et al. 2024; Osborn & Sarazin 2018; see [MODELS.md](MODELS.md#seeing-estimate)).
 
    Open-Meteo covers about 3 months back to 2 weeks ahead, and 7Timer about 3 days ahead. Entirely outside those ranges, or if a service is down (a rate limit or server error is retried once after a second), the program warns and assumes perfect conditions. A forecast that ends partway through the night (7Timer's often does for a `-date` two or three days ahead) gives the remaining hours the mean of the covered ones, with a warning.
-5. **Extinction**: the target's light dims by `10^(−0.4 · k · (airmass − 1))`, using Pickering's (2002) airmass formula. With k = 0.2, that is about ×0.83 at 30° altitude and ×1.0 near the zenith. Unless `-extinction` is set, k is estimated for each hour as
+5. **Extinction**: the target's light dims by `10^(−0.4 · κ · (airmass − 1))`, using Pickering's (2002) airmass formula, where κ is the extinction coefficient in magnitudes per airmass (not the sky-glow `k` above). With κ = 0.2, that is about ×0.83 at 30° altitude and ×1.0 near the zenith. Unless `-extinction` is set, κ is estimated for each hour as
    `0.1066 · e^(−elevation / 7996 m)` (scattering by air molecules at 550 nm, less at higher sites) `+ 0.029` (ozone) `+ 1.086 · AOD₅₅₀` (aerosols: haze, dust, smoke).
-   The aerosol optical depth (AOD) comes from the [Open-Meteo Air Quality API](https://open-meteo.com/en/docs/air-quality-api), which relays the CAMS forecast up to about 5 days ahead; hours beyond that use a typical 0.1. The forecast table's `EXT` column shows k per hour. A dusty or smoky night pushes it up sharply, penalising low targets and spreading moonlight more widely.
+   The aerosol optical depth (AOD) comes from the [Open-Meteo Air Quality API](https://open-meteo.com/en/docs/air-quality-api), which relays the CAMS forecast up to about 5 days ahead; hours beyond that use a typical 0.1. The forecast table's `EXT` column shows κ per hour. A dusty or smoky night pushes it up sharply, penalising low targets and spreading moonlight more widely.
 6. **Sky brightness**: the sky brightness at the target is computed each minute with the Krisciunas & Schaefer (1991) model:
-   - the site's moonless zenith brightness: from `-sqm`, else the typical value for `-bortle`, else 22.0 mag/arcsec²
+   - the site's moonless zenith brightness: from `-sqm`, else the typical value for `-bortle`, else the DarkSkySites lookup (with an API key), else 22.0 mag/arcsec²
    - brightening towards the horizon
    - moonlight scattered towards the target, depending on Moon phase (with the extra brightening near full Moon), its distance, Moon altitude, target altitude and the angle between Moon and target
 
    The signal-to-noise ratio in a fixed exposure scales as `signal / √(signal + sky)`. The weight compares the object under tonight's sky with the same object under a pristine one: `min(1, √((S + B_dark) / (S + k · B)))`, where `S` is the object's own surface brightness (the `SB` column) and `B_dark` a pristine 22.0 mag/arcsec² sky, all in linear units. An object much brighter than the sky loses nothing; a faint one is sky-limited, `√(B_dark / (k · B))`, and so is any object whose brightness is unknown. A faint galaxy 30° from a bright Moon therefore scores much lower than one 120° away, and with a filter, emission targets keep most of their score.
 
-   The object's surface brightness is the measured V value where a list has one (the Compendium's galaxies), else the measured B value moved to V by the object's own B−V colour when plausible, or a typical one for its type (galaxies and galaxy groups 0.8, emission-line objects 0, others 0.5) (OpenNGC; marked `~`), else, also marked `~`, for galaxies and nebulae the integrated V (or colour-corrected B) magnitude spread over a disc of the object's major axis, which leans faint for elongated objects. Galaxy groups and clusters derive none, since their magnitude is one member's and their size the group's; star clusters get none at all, since their light sits in points that sky glow hardly hurts, which the cluster factor already allows for; clusters with nebulosity derive none, since their integrated magnitude is the stars', not the glow's, so without a measurement they are scored as sky-limited like a nebula without data. The SkEye [visibility measures](https://skeye.rocks/apps/skeye/book/explanations/visibilitymeasures) page explains why surface brightness, not magnitude, is the measure that matters for extended objects.
+   The object's surface brightness is the measured V value where a list has one (the Compendium's galaxies), else OpenNGC's measured B value moved to V by the object's own B−V colour when plausible, or else by a typical one for its type (galaxies and galaxy groups 0.8, emission-line objects 0, others 0.5; marked `~`), else, also marked `~`, for galaxies and nebulae the integrated V (or colour-corrected B) magnitude spread over a disc of the object's major axis, which leans faint for elongated objects. Galaxy groups and clusters derive none, since their magnitude is one member's and their size the group's; star clusters get none at all, since their light sits in points that sky glow hardly hurts, which the cluster factor already allows for; clusters with nebulosity derive none, since their integrated magnitude is the stars', not the glow's, so without a measurement they are scored as sky-limited like a nebula without data. The SkEye [visibility measures](https://skeye.rocks/apps/skeye/book/explanations/visibilitymeasures) page explains why surface brightness, not magnitude, is the measure that matters for extended objects.
 7. **Score** = the sum over observable minutes of weather × extinction × sky weight, divided by the window length.
 8. **Framing** (`-origin`, `-fov`, `-scale`, or `-focal` with `-sensor`/`-pixel`): objects filling 25–80% of the frame's short side score in full (11–36′ on the Origin). Smaller or tighter-fitting objects score less, and an object as large as the short side cannot be framed and is not listed. With `-rotate` the fill is the larger of major axis ÷ long side and minor axis ÷ short side (or the other way round, whichever fits better). With `-mosaic` every grid of up to that many panels, overlapping by 10%, is a larger frame, its fill score is divided by its panel count, and the best grid counts.
 9. Results are sorted by score; mean altitude breaks ties.
@@ -501,96 +502,7 @@ The Moon's position, for both its altitude and the separation rule, is topocentr
 
 ### Formulas and references
 
-Everything below is implemented directly in Go from the cited source; no astronomy library is used at run time.
-
-**Positions and time** (`internal/astro`)
-
-| Quantity | Formula | Source |
-|---|---|---|
-| Sun RA/Dec | Mean longitude and anomaly, equation of centre to 2 terms, apparent ecliptic longitude | *The Astronomical Almanac*, ["Low-precision formulas for the Sun's coordinates"][aa-sun] (section C) |
-| Moon RA/Dec | Ecliptic longitude (6 periodic terms) and latitude (4 terms), geocentric | [*The Astronomical Almanac*][aa], low-precision Moon formulas (section D) |
-| Obliquity of the ecliptic | `23.439° − 0.0000004 n` (n = days since J2000) | [*The Astronomical Almanac*][aa-sun], section C |
-| Ecliptic → equatorial | Rotation by the obliquity | Standard ([Meeus, *Astronomical Algorithms*][meeus], ch. 13) |
-| Greenwich sidereal time | `280.46061837° + 360.98564736629° · n`, the linear terms of IAU 1982 GMST | [Aoki et al. (1982)][aoki], A&A 105, 359, as given by [Meeus][meeus] eq. 12.4 |
-| Precession J2000 → date | IAU 1976 angles ζ, z, θ and the three-rotation formula | [Lieske et al. (1977)][lieske], A&A 58, 1; [Meeus][meeus] eqs. 21.2–21.4 |
-| Altitude and azimuth | Spherical triangle from hour angle, declination and latitude | [Meeus][meeus] eqs. 13.5–13.6 |
-| Angular separation | Spherical law of cosines | [Meeus][meeus] eq. 17.1 |
-| Moon illumination | `(1 − cos ψ)/2` from the Sun–Moon elongation ψ; phase angle ≈ 180° − ψ | [Meeus][meeus] ch. 48 |
-| Topocentric Moon | Geocentric vector at the distance given by the horizontal parallax (4 periodic terms), minus the observer's position on a spherical Earth rotated by local sidereal time | [*The Astronomical Almanac*][aa], low-precision Moon formulas (section D); [Meeus][meeus] ch. 40 |
-| Night window | Sun's geometric centre below −18° (astronomical twilight), or −12° with `-twilight nautical` | Standard definitions ([USNO][usno-twilight]) |
-| Earth heliocentric position (for comets) | Negated Sun vector, with general precession (1.3970°/century) removed to return to the J2000 frame | [Almanac Sun formula][aa-sun]; [Lieske et al. (1977)][lieske] precession rate |
-
-**Comets** (`internal/comets`)
-
-| Quantity | Formula | Source |
-|---|---|---|
-| Elliptic orbits | Kepler's equation `E − e sin E = M` by Newton–Raphson | Standard ([Meeus][meeus] ch. 30) |
-| Parabolic orbits | Barker's equation, closed form via the cubic | [Meeus][meeus] ch. 34 |
-| Hyperbolic orbits | `e sinh H − H = M` by Newton–Raphson | Standard |
-| Orbit → ecliptic → equatorial | Rotation by ω, Ω, i, then by the J2000 obliquity 23.4392911° | [Meeus][meeus] ch. 33; [MPC elements][mpc-format] are J2000 ecliptic |
-| Gaussian gravitational constant | `k = 0.01720209895` rad/day | Gauss (1809), IAU 1976 system of constants |
-| Total magnitude | `m₁ = H + 5 log₁₀ Δ + 2.5 K log₁₀ r` | [Minor Planet Center magnitude parameters][mpc-format] (K = 2.5 n) |
-
-**Atmosphere and sky** (`internal/atmos`)
-
-| Quantity | Formula | Source |
-|---|---|---|
-| Airmass | `X = 1 / sin(h + 244 / (165 + 47 h^1.1))` | [Pickering (2002)][pickering], "The Southern Limit of the Ancient Star Catalog", DIO 12, 1, §A |
-| Extinction | Transmission `10^(−0.4 k (X − 1))` relative to the zenith | Standard |
-| Extinction coefficient `k` | Rayleigh `0.1066 · e^(−h / 7996 m)` (τ = 0.098 at 550 nm, 8 km scale height) + ozone Chappuis band 0.029 (300 DU) + aerosols `1.086 · AOD₅₅₀` | Rayleigh after [Hayes & Latham (1975)][hayes], ApJ 197, 593, consistent with [Bucholtz (1995)][bucholtz], Appl. Opt. 34, 2765; ozone from the Chappuis cross-section; AOD from [CAMS][cams] via Open-Meteo. `1.086 = 2.5 log₁₀ e` |
-| Surface brightness units | `B[nL] = 34.08 · e^(20.7233 − 0.92104 V)` and its inverse | [Krisciunas & Schaefer (1991)][ks], PASP 103, 1033 |
-| Dark-sky brightness vs altitude | Zenith brightness × `10^(−0.4 k (X − 1)) · X` with the scattering airmass `X = (1 − 0.96 sin² Z)^−½` | [Krisciunas & Schaefer (1991)][ks] |
-| Scattered moonlight | Scattering function `f(ρ) = 10^5.36 (1.06 + cos² ρ) + 10^(6.15 − ρ/40)`, Moon brightness `10^(−0.4 (3.84 + 0.026 α + 4·10⁻⁹ α⁴))`, scaled by `(60.27 / distance in Earth radii)²` and, within 7° of full, by the opposition surge `1.35 − 0.05 α`; attenuated by the Moon's airmass and scaled by `1 − 10^(−0.4 k X)` | [Krisciunas & Schaefer (1991)][ks]; the surge as in Thorstensen's skycalc ([thorsky][thorsky]) |
-| Bortle class ↔ zenith brightness | Mid-points of the SQM ranges usually quoted per class (21.9 … 17.3 mag/arcsec²) | [Bortle (2001)][bortle], *Sky & Telescope*, Feb 2001, with the common SQM mapping |
-| SNR weight | `min(1, √((S + B_dark) / (S + k · B)))`, `S` the object's surface brightness, `B_dark` = 22.0 mag/arcsec², all in nL | SNR ∝ `S / √(S + B)` in a fixed exposure; sky-limited (`S ≪ B`) it is `√(B_dark / (k · B))` |
-
-**Object surface brightness** (`internal/catalog`)
-
-| Quantity | Formula | Source |
-|---|---|---|
-| Measured | V mean surface brightness, else B within the 25 mag/arcsec² isophote minus B−V | V: Gary Imm's Deep Sky Compendium; B: [OpenNGC][openngc] |
-| B−V colour | The object's own `B − V` when within −0.3…1.5, else 0.8 for galaxies and groups, 0 for emission-line objects, 0.5 for the rest | Typical colours; OpenNGC pairs inconsistent B and V for ~100 objects |
-| Derived (galaxies and nebulae only, marked `~`) | `SB = m + 2.5 log₁₀(π/4 · (60 · size)²)`: the integrated magnitude over a uniform disc of the major axis, in arcseconds | Standard mean surface brightness ([SkEye][skeye]) |
-
-**Seeing estimate** (`internal/weather`, display only)
-
-| Quantity | Formula | Source |
-|---|---|---|
-| Optical turbulence per layer | `Cn² = 2.8 M² L0^(4/3)`, `M = −79·10⁻⁶ P/T² (dT/dz + 9.8 K/km)`, `L0^(4/3) = 0.1^(4/3) · 10^Y`, `Y = 1.64 + 42 S` (troposphere) or `0.506 + 50 S` (stratosphere), `S` the vector wind shear in 1/s | [Dewan et al. (1993)][dewan], *A model for Cn² (optical turbulence) profiles using radiosonde data*, PL-TR-93-2043 |
-| Tropopause | Lowest level from 500 hPa up whose layer cools at 2 K/km or less, and the next layer too (standing in for the 2 km average) | WMO (1957) lapse-rate definition ([AMS Glossary][ams-tropopause]) |
-| Level consistency checks | Hypsometric thickness `Δz = (R/g) · T̄ · ln(p₁/p₂)`, `R/g` = 29.3 m/K, within 30%; the surface pressure within 12% of `1013.25 · e^(−z/H)`, `H = 29.3 m/K · T̄` | [Hypsometric equation][ams-hypsometric] |
-| Fried parameter and FWHM | `r0 = (0.423 k² ∫ Cn² dz)^(−3/5)`, `k = 2π/λ`, FWHM `= 0.98 λ / r0` at λ = 500 nm, zenith | [Fried (1966)][fried], JOSA 56, 1372; [Roddier (1981)][roddier], Progress in Optics 19, 281 |
-| Calibration | Cn² × 0.2 in the ground layer, × 1.45 above, least-squares fit against ESO DIMM seeing at Paranal and La Silla: bias +0.03″, RMSE 0.33″ | Dewan overestimates the boundary layer ([Cuevas et al. (2024)][cuevas], MNRAS 529, 2208, whose calibrated 1 km WRF reaches 0.30″ RMSE); [Osborn & Sarazin (2018)][osborn], MNRAS 480, 1278, ECMWF model levels at Paranal (0.31″) |
-
-**Heuristics** (this project's own; see "How objects are ranked"): the weather ramps for cloud, rain, transparency, dew spread and gusts; the sky-glow fractions `k` for clusters and filtered emission targets; the frame-fill curve (full credit at 25–80% of the short side) and the mosaic's 10% overlap and score shared equally among panels; and the Moon-distance rule from [uptonight][uptonight].
-
-**Constellations** (`internal/constellation`): IAU boundaries (Delporte 1930) at B1875.0 from CDS/VizieR [VI/49](https://vizier.cfa.harvard.edu/viz-bin/VizieR?-source=VI/49) (Davenhall & Leggett 1989); the target is precessed to B1875.0 with the IAU 1976 formula and tested by ray casting, following [Roman (1987)][roman], PASP 99, 695, with the table and test taken from [astrogo](https://github.com/TuSKan/astrogo).
-
-[aa]: https://aa.usno.navy.mil/publications/asa
-[aa-sun]: https://aa.usno.navy.mil/faq/sun_approx
-[usno-twilight]: https://aa.usno.navy.mil/faq/RST_defs
-[meeus]: https://ui.adsabs.harvard.edu/abs/1998aalg.book.....M
-[aoki]: https://ui.adsabs.harvard.edu/abs/1982A%26A...105..359A
-[lieske]: https://ui.adsabs.harvard.edu/abs/1977A%26A....58....1L
-[mpc-format]: https://minorplanetcenter.net/iau/info/CometOrbitFormat.html
-[pickering]: http://www.dioi.org/vols/wc0.pdf
-[hayes]: https://doi.org/10.1086/153548
-[bucholtz]: https://doi.org/10.1364/AO.34.002765
-[cams]: https://atmosphere.copernicus.eu/
-[ks]: https://doi.org/10.1086/132921
-[thorsky]: https://github.com/jrthorstensen/thorsky
-[bortle]: https://skyandtelescope.org/astronomy-resources/light-pollution-and-astronomy-the-bortle-dark-sky-scale/
-[openngc]: https://github.com/mattiaverga/OpenNGC
-[skeye]: https://skeye.rocks/apps/skeye/book/explanations/visibilitymeasures
-[dewan]: https://apps.dtic.mil/sti/pdfs/ADA279399.pdf
-[ams-tropopause]: https://glossary.ametsoc.org/wiki/Tropopause
-[ams-hypsometric]: https://glossary.ametsoc.org/wiki/Hypsometric_equation
-[fried]: https://doi.org/10.1364/JOSA.56.001372
-[roddier]: https://doi.org/10.1016/S0079-6638(08)70204-X
-[cuevas]: https://doi.org/10.1093/mnras/stae630
-[osborn]: https://doi.org/10.1093/mnras/sty1898
-[uptonight]: https://github.com/mawinkler/uptonight
-[roman]: https://doi.org/10.1086/132034
+[MODELS.md](MODELS.md) explains every model the ranking uses, topic by topic, with its formulas and sources. It covers positions and time, the night window, the Moon, comets, atmosphere and sky brightness, object surface brightness, weather, scoring, framing, the seeing estimate, the night plan, constellations and the heuristics. Everything is implemented directly in Go from the cited sources; no astronomy library is used at run time.
 
 ## Privacy
 
