@@ -229,6 +229,22 @@ func TestEmissionLineLists(t *testing.T) {
 	}
 }
 
+// A -targets file may spell an emissionNames object without its space or in
+// another case, as -skip allows: it must still be emission-line and, as a
+// cluster, one with nebulosity.
+func TestEmissionNameKey(t *testing.T) {
+	for _, name := range []string{"M 16", "M16", "m16", " M 16 "} {
+		tg := Target{Name: name, Type: "Open Cluster"}
+		if !EmissionLine(tg) || tg.kind() != kindClusterNebula || tg.Cluster() {
+			t.Errorf("%q: EmissionLine %v, kind %v, Cluster %v; want true, cluster+nebula, false",
+				name, EmissionLine(tg), tg.kind(), tg.Cluster())
+		}
+	}
+	if tg := (Target{Name: "M 166", Type: "Open Cluster"}); EmissionLine(tg) || !tg.Cluster() {
+		t.Error("M 166 matched M 16")
+	}
+}
+
 func TestSurfaceBrightness(t *testing.T) {
 	// A 10' uniform disc: 2.5 log10(pi/4 * 600"^2) = 13.63 mag fainter than the integrated magnitude.
 	disc := 2.5 * math.Log10(math.Pi/4*600*600)

@@ -111,7 +111,7 @@ func TestMutEmissionNameKeyPosition(t *testing.T) {
 		{Target{Type: "Supernova Remnant"}, true},
 		{Target{Type: "EMN"}, true},
 		{Target{Name: "IC 434", Type: "Dark Nebula"}, true},
-		{Target{Name: "ic 434", Type: "Dark Nebula"}, false},
+		{Target{Name: "ic 434", Type: "Dark Nebula"}, true}, // names match as NameKey, as -skip does
 		{Target{Name: "M 78", Type: "Diffuse Nebula"}, false},
 		{Target{Type: "Reflection Nebula"}, false},
 	} {

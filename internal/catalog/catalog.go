@@ -299,7 +299,7 @@ func (t Target) kind() kind {
 			}
 		}
 	}
-	if k == kindCluster && emissionNames[t.Name] {
+	if k == kindCluster && emissionName(t.Name) {
 		return kindClusterNebula
 	}
 
@@ -401,7 +401,7 @@ func Load(listName, file string) ([]Target, string, error) {
 	for i := range targets {
 		tg := &targets[i]
 		tg.Name, tg.Description = strings.TrimSpace(sanitize.Text(tg.Name)), sanitize.Text(tg.Description)
-		tg.Type = strings.TrimSpace(sanitize.Text(tg.Type)) // emissionNames and kindTypes match exactly
+		tg.Type = strings.TrimSpace(sanitize.Text(tg.Type)) // kindTypes and emissionTypes match exactly
 		// The IAU boundaries beat the lists' own field, which has wrong
 		// entries (R Aquarii "Aquila") and spellings ("Ophiucus", "Se1").
 		ra, err1 := astro.Sexagesimal(tg.RA)
@@ -512,6 +512,8 @@ var emissionTypes = map[string]bool{
 // emission with reflection or a cluster (Messier "Diffuse Nebula", Pensack
 // "N+CL"/"BN+OC", Herschel "Cluster Nebulosity"), where only the
 // emission-dominated objects are listed (not M 78, NGC 1977, 1980 or 2362).
+// Names match as NameKey (emissionName), so Pensack's "IC1805" or a
+// -targets "M16" needs no entry of its own; a different designation does.
 var emissionNames = map[string]bool{
 	"IC 1396":       true, // Elephant's Trunk, inside the IC 1396 HII region
 	"Sh2-155":       true, // Cave Nebula
@@ -527,7 +529,6 @@ var emissionNames = map[string]bool{
 	"M 43":          true, // De Mairan's
 	"NGC 1931":      true, // Fly
 	"NGC 281":       true, // PacMan
-	"IC1805":        true, // Heart (Pensack's spelling)
 	"NGC 2264":      true, // Cone / Christmas Tree
 	"Mel 49":        true, // NGC 2264 (Melotte)
 	"NGC 1976":      true, // M 42
@@ -575,8 +576,22 @@ var emissionNames = map[string]bool{
 
 // EmissionLine reports whether a target shines mainly in Ha/OIII lines.
 func EmissionLine(tg Target) bool {
-	return emissionTypes[strings.ToLower(tg.Type)] || emissionNames[tg.Name]
+	return emissionTypes[strings.ToLower(tg.Type)] || emissionName(tg.Name)
 }
+
+// emissionKeys is emissionNames keyed by NameKey.
+var emissionKeys = func() map[string]bool {
+	keys := make(map[string]bool, len(emissionNames))
+	for name := range emissionNames {
+		keys[NameKey(name)] = true
+	}
+
+	return keys
+}()
+
+// emissionName reports whether name is in emissionNames, case and spaces
+// aside, as -skip matches names.
+func emissionName(name string) bool { return emissionKeys[NameKey(name)] }
 
 // NameKey normalizes a designation for matching names typed by hand against
 // the lists': case and spaces do not count, so "ngc7789" is "NGC 7789".
