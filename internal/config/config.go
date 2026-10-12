@@ -140,7 +140,7 @@ func Parse() (Config, error) {
 	flag.Float64Var(&minPx, "min-px", 200, "with framing, minimum object size in pixels; 0 or more")
 	flag.IntVar(&cfg.Mosaic, "mosaic", 1, "with framing, most mosaic panels per object, 1-25; an object's score is divided among its panels")
 	flag.BoolVar(&cfg.Rotate, "rotate", false, "with framing, the camera can be rotated to frame the major axis along the long side, so the minor axis counts (not the Origin)")
-	flag.StringVar(&cfg.Filter, "filter", "", "nebula filter for emission-line targets: dual (Ha + OIII at once), ha, oiii or sii; each target is scored with it or without, whichever is better (default none)")
+	flag.StringVar(&cfg.Filter, "filter", "", "nebula filter for emission-line targets: dual (Ha + OIII at once), tri (+ Hb), quad (+ Hb and SII), ha, oiii or sii; each target is scored with it or without, whichever is better (default none)")
 	flag.Float64Var(&cfg.FilterNM, "filter-nm", 7, "with -filter, the width of each band in nm, 1-30")
 	flag.IntVar(&cfg.Bortle, "bortle", 0, "Bortle class 1-9 of the site, sets the zenith sky brightness (0 = dark sky)")
 	flag.Float64Var(&cfg.SQM, "sqm", 0, "measured zenith sky brightness in mag/arcsec² (SQM meter or light pollution map); overrides -bortle; default: looked up on DarkSkySites when a key is available (CLI: $DARKSKYSITES_API_KEY; browser: always) and -bortle is not")
@@ -271,10 +271,12 @@ func loadSkip(file string) (map[string]bool, error) {
 	return skip, nil
 }
 
-// Filters are the -filter choices and the lines each passes; a dual-band
-// filter passes both at once, onto the same frame.
+// Filters are the -filter choices and the lines each passes; a multi-band
+// filter passes its lines at once, onto the same frame.
 var Filters = map[string][]catalog.Line{
 	"dual": {catalog.Ha, catalog.OIII},
+	"tri":  {catalog.Ha, catalog.Hb, catalog.OIII},
+	"quad": {catalog.Ha, catalog.Hb, catalog.OIII, catalog.SII},
 	"ha":   {catalog.Ha},
 	"oiii": {catalog.OIII},
 	"sii":  {catalog.SII},
@@ -599,7 +601,7 @@ func parseWxH(name, unit, example, s string) (float64, float64, error) {
 func (cfg *Config) validateSky() error {
 	switch {
 	case cfg.Filter != "" && Filters[cfg.Filter] == nil:
-		return fmt.Errorf("%w: -filter must be dual, ha, oiii or sii", errInvalidFlag)
+		return fmt.Errorf("%w: -filter must be dual, tri, quad, ha, oiii or sii", errInvalidFlag)
 	case cfg.Filter != "" && (cfg.FilterNM < 1 || cfg.FilterNM > 30):
 		return fmt.Errorf("%w: -filter-nm must be 1 to 30 nm", errInvalidFlag)
 	case cfg.Bortle < 0 || cfg.Bortle > 9:

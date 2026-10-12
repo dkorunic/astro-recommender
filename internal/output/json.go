@@ -68,7 +68,7 @@ type sky struct { // betteralign:ignore
 }
 
 type filter struct { // betteralign:ignore
-	Mode      string  `json:"mode"`      // dual, ha, oiii or sii
+	Mode      string  `json:"mode"`      // dual, tri, quad, ha, oiii or sii
 	Bandwidth float64 `json:"bandwidth"` // nm, each band
 }
 

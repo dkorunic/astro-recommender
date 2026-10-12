@@ -208,10 +208,15 @@ const (
 	Ha   Line = iota // Hα 656.3 nm
 	OIII             // [O III] 500.7 nm
 	SII              // [S II] 671.6/673.1 nm, one band
+	Hb               // Hβ 486.1 nm
 )
 
 // LineNM are the lines' wavelengths in nm (the [S II] doublet's mean).
-var LineNM = [...]float64{Ha: 656.3, OIII: 500.7, SII: 672.4}
+var LineNM = [...]float64{Ha: 656.3, OIII: 500.7, SII: 672.4, Hb: 486.1}
+
+// balmer is the Hα/Hβ flux ratio of case-B recombination at 10⁴ K
+// (Osterbrock & Ferland 2006), the same for every type; dust raises it.
+const balmer = 2.86
 
 // lineRatios are typical [O III] 500.7 and [S II] fluxes relative to Hα by
 // object type. H II regions: [S II]/Hα 0.12 on average (0.1-0.3), [O III]
@@ -232,11 +237,12 @@ var lineRatios = []struct {
 
 // Lines returns the shares of an emission-line target's light in Hα, [O III]
 // and [S II] (summing to 1), from its type's typical ratios (lineRatios; H II
-// regions, and the dark nebulae and clusters emissionNames lists, otherwise);
-// all 0 when it is not EmissionLine.
-func (t Target) Lines() [3]float64 {
+// regions, and the dark nebulae and clusters emissionNames lists, otherwise),
+// and Hβ on top at Hα/balmer, outside the sum so that adding it left the
+// other filters' scores unchanged; all 0 when it is not EmissionLine.
+func (t Target) Lines() [4]float64 {
 	if !EmissionLine(t) {
-		return [3]float64{}
+		return [4]float64{}
 	}
 	r := [3]float64{Ha: 1, OIII: 0.3, SII: 0.12}
 	typ := strings.ToLower(t.Type)
@@ -249,7 +255,7 @@ func (t Target) Lines() [3]float64 {
 	}
 	sum := r[Ha] + r[OIII] + r[SII]
 
-	return [3]float64{r[Ha] / sum, r[OIII] / sum, r[SII] / sum}
+	return [4]float64{r[Ha] / sum, r[OIII] / sum, r[SII] / sum, r[Ha] / sum / balmer}
 }
 
 // kind is the class of object the scoring rules act on. The lists spell

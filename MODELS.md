@@ -435,7 +435,7 @@ A faint galaxy 30° from a bright Moon therefore scores much lower than one 120�
 
 ### Nebula filters
 
-`-filter dual|ha|oiii|sii` (`scoring.passes`, `atmos.SkyParts`, `atmos.BandSky`, `catalog.Target.Lines`) scores the emission-line targets through a filter: emission, planetary and Wolf-Rayet nebulae, supernova remnants, and a few named objects whose catalogue type hides their Hα, such as IC 1396. A dual-band filter passes Hα and [O III] onto one frame; the others pass one line. Each band is `-filter-nm` wide (7 nm by default).
+`-filter dual|tri|quad|ha|oiii|sii` (`scoring.passes`, `atmos.SkyParts`, `atmos.BandSky`, `catalog.Target.Lines`) scores the emission-line targets through a filter: emission, planetary and Wolf-Rayet nebulae, supernova remnants, and a few named objects whose catalogue type hides their Hα, such as IC 1396. A dual-band filter passes Hα and [O III] onto one frame, a tri-band one Hβ too, a quad-band one Hβ and [S II] too; the others pass one line. Every band is the same width, so a commercial multi-band filter with one wide band (the L-eNhance's 24 nm over Hβ and [O III]) is only approximated. Each band is `-filter-nm` wide (7 nm by default).
 
 **The sky in a band.** The K&S sky splits into three parts with different spectra:
 
@@ -451,7 +451,7 @@ f_{\text{R}} = \frac{\Delta\lambda}{88}\Big(\frac{\lambda}{551}\Big)^{-4},\qquad
 f_{\text{M}} = \frac{\Delta\lambda}{88}\Big(\frac{\lambda}{551}\Big)^{-1.3}
 ```
 
-so per nm the [O III] band (500.7 nm) gets 2.9 times the Rayleigh moonlight of the Hα one (656.3 nm). Moonlight is taken as flat per nm before scattering: the Moon is 0.25 mag redder than the Sun in B−V ([Thejll et al. 2014][moon-colour]), which roughly offsets the Sun's own fall from 500 to 670 nm. The glow is taken as flat too: its spectrum depends on the site's lamps (sodium, white LEDs), which nothing here knows. A dual-band filter's fractions are the sums over its two bands.
+so per nm the [O III] band (500.7 nm) gets 2.9 times the Rayleigh moonlight of the Hα one (656.3 nm). Moonlight is taken as flat per nm before scattering: the Moon is 0.25 mag redder than the Sun in B−V ([Thejll et al. 2014][moon-colour]), which roughly offsets the Sun's own fall from 500 to 670 nm. The glow is taken as flat too: its spectrum depends on the site's lamps (sodium, white LEDs), which nothing here knows. A multi-band filter's fractions are the sums over its bands.
 
 **The target's light in the bands.** No catalogue gives line fluxes, so each type gets typical ratios to Hα (`catalog.Target.Lines`), normalised to shares:
 
@@ -462,7 +462,11 @@ so per nm the [O III] band (500.7 nm) gets 2.9 times the Rayleigh moonlight of t
 | supernova remnant | 1 | 0.5 | 0.6 | [S II]/Hα > 0.4 defines them ([Mathewson & Clarke 1973][mathewson]); [O III] varies |
 | Wolf-Rayet nebula | 1 | 1 | 0.2 | [O III]-bright shells |
 
-The share in the filter's bands is w (an H II region: 0.70 through Hα, 0.92 through dual-band; a planetary: 0.73 through [O III]). [N II] 654.8/658.3, inside most Hα bands, is left out.
+Hβ (486.1 nm) is Hα/2.86 for every type, the case-B recombination ratio at 10⁴ K ([Osterbrock & Ferland 2006][agn2]; dust only raises it). It is added on top of the shares rather than normalised into them, so w can exceed 1 through `tri` or `quad`; the reference light is Hα + [O III] + [S II], and adding Hβ left the other filters' scores unchanged.
+
+The share in the filter's bands is w (an H II region: 0.70 through Hα, 0.92 through dual-band, 1.16 tri-band, 1.25 quad-band; a planetary: 0.73 through [O III]). [N II] 654.8/658.3, inside most Hα bands, is left out.
+
+Each extra band also passes its share of the sky, so the multi-band filters score close to `dual`: sky-limited under the glow alone (w²/f_glow, against 1 for broadband) an H II region gets 0.42 through `dual`, 0.45 `tri`, 0.39 `quad`; a planetary 0.49, 0.39, 0.30; a remnant, for its [S II], 0.26, 0.26, 0.34. Their use is colour on a one-shot-colour camera, which no score here measures.
 
 **The weight.** The target's signal through the filter is w·S, the sky the bands' share of each part. Against the same pristine-sky reference as broadband:
 
@@ -474,12 +478,12 @@ With w = 1 and every f equal to k this is the broadband weight. Each minute take
 
 **The Moon limit.** Away from the Moon its light is mostly Rayleigh-scattered, so the filter's sky-limited gain against moonlight is `f_R / w²`. That, at most 1, replaces k in the Moon-distance rule. At full Moon (100°) through 7 nm bands:
 
-| Target | `ha` | `oiii` | `sii` | `dual` |
-|---|---|---|---|---|
-| H II region | 8° | 100° (no gain) | 100° | 19° |
-| planetary nebula | 59° | 22° | 100° | 16° |
-| supernova remnant | 17° | 100° | 44° | 31° |
-| Wolf-Rayet nebula | 19° | 56° | 100° | 19° |
+| Target | `ha` | `oiii` | `sii` | `dual` | `tri` | `quad` |
+|---|---|---|---|---|---|---|
+| H II region | 8° | 100° (no gain) | 100° | 19° | 21° | 21° |
+| planetary nebula | 59° | 22° | 100° | 16° | 25° | 27° |
+| supernova remnant | 17° | 100° | 44° | 31° | 37° | 24° |
+| Wolf-Rayet nebula | 19° | 56° | 100° | 19° | 25° | 24° |
 
 The filtered limits run well below [Telescopius][telescopius]' Lorentzian Moon avoidance (60° for Hα and [S II], 90° for [O III], 120° for broadband, at full Moon), which is a scheduling rule of thumb rather than a model; here the sky weight already prices the moonlight near the limit.
 
@@ -682,7 +686,7 @@ Treat SCORE as a way to order tonight's options, not as an absolute measure of q
 | Aerosols | [CAMS][cams] via Open-Meteo |
 | Sky brightness and moonlight | [Krisciunas & Schaefer (1991)][ks], PASP 103, 1033; opposition surge after [thorsky][thorsky] |
 | Filter bands | V band: [Bessell (1990)][bessell], PASP 102, 1181; Ångström exponent: [Ångström (1929)][angstrom]; Moon colour: [Thejll et al. (2014)][moon-colour], A&A 563, A38 |
-| Emission line ratios | SNR criterion: [Mathewson & Clarke (1973)][mathewson], ApJ 180, 725; Magellanic Cloud PN [O III]/Hβ: [Stanghellini et al. (2003)][stanghellini], ApJ 596, 997; the criterion against H II regions: [Kopsacheili et al. (2020)][kopsacheili], MNRAS 491, 889 |
+| Emission line ratios | SNR criterion: [Mathewson & Clarke (1973)][mathewson], ApJ 180, 725; Magellanic Cloud PN [O III]/Hβ: [Stanghellini et al. (2003)][stanghellini], ApJ 596, 997; the criterion against H II regions: [Kopsacheili et al. (2020)][kopsacheili], MNRAS 491, 889; case-B Hα/Hβ: [Osterbrock & Ferland (2006)][agn2], *Astrophysics of Gaseous Nebulae and AGN*, 2nd ed. |
 | Per-filter Moon avoidance (comparison) | [Telescopius][telescopius]; the BAIT Lorentzian as in ACP |
 | Bortle scale | [Bortle (2001)][bortle], *Sky & Telescope* |
 | Surface brightness | [OpenNGC][openngc]; Gary Imm's Deep Sky Compendium; [SkEye][skeye] |
@@ -722,6 +726,7 @@ Treat SCORE as a way to order tonight's options, not as an absolute measure of q
 [angstrom]: https://doi.org/10.1080/20014422.1929.11880498
 [moon-colour]: https://arxiv.org/abs/1401.1994
 [mathewson]: https://doi.org/10.1086/151999
+[agn2]: https://ui.adsabs.harvard.edu/abs/2006agna.book.....O
 [stanghellini]: https://arxiv.org/abs/astro-ph/0307351
 [kopsacheili]: https://arxiv.org/abs/1909.05879
 [telescopius]: https://telescopius.com/

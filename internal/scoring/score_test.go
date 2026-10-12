@@ -327,7 +327,7 @@ func TestScoreFilter(t *testing.T) {
 	}{
 		{"HII Region", []string{"ha", "dual", ""}, map[string]bool{"oiii": true}},
 		{"Planetary Nebula", []string{"oiii", ""}, map[string]bool{"ha": true}},
-		{"Spiral Galaxy", []string{""}, map[string]bool{"ha": true, "oiii": true, "sii": true, "dual": true}},
+		{"Spiral Galaxy", []string{""}, map[string]bool{"ha": true, "oiii": true, "sii": true, "dual": true, "tri": true, "quad": true}},
 	} {
 		for i := 1; i < len(c.order); i++ {
 			if a, b := score(c.order[i-1], c.typ), score(c.order[i], c.typ); a <= b {
@@ -335,8 +335,12 @@ func TestScoreFilter(t *testing.T) {
 			}
 		}
 		none := score("", c.typ)
-		if c.typ != "Spiral Galaxy" && score("dual", c.typ) <= none {
-			t.Errorf("%s: dual-band does not beat no filter", c.typ)
+		if c.typ != "Spiral Galaxy" {
+			for _, f := range []string{"dual", "tri", "quad"} {
+				if score(f, c.typ) <= none {
+					t.Errorf("%s: %s-band does not beat no filter", c.typ, f)
+				}
+			}
 		}
 		for f := range c.equal {
 			if got := score(f, c.typ); got != none {
