@@ -27,6 +27,9 @@ jobs:
         with:
           go-version-file: go.mod
       - uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2.2.0 (third party: pinned)
+      # Fail on a stale embedded list, as the GoReleaser hook does: task web
+      # runs task lists, which would regenerate it and deploy uncommitted data.
+      - run: go test -count=1 -run '^TestEmbeddedLists$' ./internal/catalog
       - run: task web
       - uses: actions/upload-pages-artifact@v5
         with:

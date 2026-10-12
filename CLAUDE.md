@@ -13,7 +13,7 @@ Single-binary Go CLI that ranks deep sky objects for a location for tonight's wi
 
 ```sh
 task build                          # fmt (gci, gofumpt, go fix, betteralign) + task lists + static PGO binary (default.pgo)
-task lists                          # regenerate the embedded internal/catalog/targets/*.gob from their YAML (TestEmbeddedLists -update); task build and task web run it, skipped while the YAML and internal/**/*.go are unchanged (.task/ checksums); TestEmbeddedLists fails on a stale gob, and so does the GoReleaser before hook, so commit the regenerated files
+task lists                          # regenerate the embedded internal/catalog/targets/*.gob from their YAML (TestEmbeddedLists -update); task build and task web run it, skipped while the YAML and internal/**/*.go are unchanged (.task/ checksums); TestEmbeddedLists fails on a stale gob, and so do the GoReleaser before hook and the Pages workflow (before `task web`, which would regenerate it), so commit the regenerated files
 task pgo                            # regenerate default.pgo from BenchmarkPipeline (internal/scoring); redo after hot-path changes
 scripts/calibrate_seeing.py [--site lasilla]   # refit weather's groundFactor/freeFactor against the ESO DIMM archive (network; ~2 min cold, then cached under ~/.cache/astro-recommender/calibrate); redo after changes to Seeing, cn2, levels() or pressures, never on a schedule
 task lint                           # fmt + golangci-lint (.golangci.yml: default all, some disabled); keep at 0 issues
