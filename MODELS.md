@@ -55,6 +55,7 @@ N is the number of minutes in the window. Each factor lies between 0 and 1, so a
 | B | sky brightness at the target (light pollution + moonlight) | [Atmosphere and sky](#atmosphere-and-sky) |
 | S | the object's own surface brightness | [Object surface brightness](#object-surface-brightness) |
 | k | fraction of sky glow that counts against the target | [Scoring a target](#scoring-a-target) |
+| w, f | through a `-filter`: the target's share of light in its bands, and the bands' share of each part of the sky (replacing k) | [Nebula filters](#nebula-filters) |
 | F_frame | how well the object fills the camera frame | [Framing and mosaics](#framing-and-mosaics) |
 
 ## Time and positions
@@ -390,7 +391,7 @@ The ramps are heuristics: the thresholds are judgment, not measurement (see [Heu
 
 ### Which targets are scored
 
-Before any minute is evaluated, a target is dropped when its major axis is outside `-size-min`…`-size-max` (an unknown size counts as 0; comets are exempt), when it is outside the `-ra`/`-dec` region, or when `-skip` names it. The region is a box of ±`-tol` degrees on each axis around the J2000 position, with RA counted at 15° per hour and wrapping at 24h, not scaled by cos δ.
+Before any minute is evaluated, a target is dropped when its major axis is outside `-size-min`…`-size-max` (an unknown size counts as 0; comets are exempt), when it is outside the `-ra`/`-dec` region, when `-skip` names it, or when it is of no `-type` class (`catalog.Target.Is`: a galaxy group counts as a galaxy, a cluster with nebulosity as both cluster and nebula, `emission` is the emission-line targets below). The region is a box of ±`-tol` degrees on each axis around the J2000 position, with RA counted at 15° per hour and wrapping at 24h, not scaled by cos δ.
 
 ### Is this minute observable?
 
@@ -398,7 +399,7 @@ A minute counts when all of these hold (the rules come from [uptonight][uptonigh
 
 1. `-alt-min ≤ h ≤ -alt-max`, 30°–80° by default. Being above 30° also guarantees an airmass ≤ 2.
 2. h is above the local horizon profile at the target's azimuth, when `-horizon` is given.
-3. **The Moon-distance rule**: while the Moon is above the horizon, the target is at least `k × (illumination in %)` degrees from it. For example, a 60%-lit Moon keeps a broadband target 60° away and a filtered emission nebula (k = 0.25) 15° away. Unlike uptonight, the rule is skipped while the Moon is down.
+3. **The Moon-distance rule**: while the Moon is above the horizon, the target is at least `k × (illumination in %)` degrees from it. For example, a 60%-lit Moon keeps a broadband target 60° away and a cluster 30° away; through a filter, an emission-line target's limit shrinks by how much moonlight the filter's bands pass against its own light in them ([Nebula filters](#nebula-filters)): 11° for an H II region through a 7 nm dual-band filter, 5° through Hα alone. Unlike uptonight, the rule is skipped while the Moon is down.
 
 The longest unbroken stretch of observable minutes is reported as OBSERVABLE. A target whose longest stretch is shorter than `-min-run` is dropped.
 
@@ -410,9 +411,8 @@ Not every target suffers equally from a bright sky, so a fraction k of the sky g
 |---|---|---|
 | galaxies, reflection and dark nebulae, everything else | 1 | faint broadband light, fully exposed to the sky |
 | open and globular clusters (without nebulosity) | 0.5 | bright point sources stand out of the glow |
-| emission-line targets with `-filter` | `-filter-k` (0.25) | a narrowband filter passes the emission lines but blocks most of the sky |
 
-The emission-line targets are emission, planetary and Wolf-Rayet nebulae, supernova remnants, and a few named objects whose catalogue type hides their Hα, such as IC 1396. k scales both the Moon-distance rule and the sky term below.
+k scales both the Moon-distance rule and the sky term below. A `-filter` replaces it for emission-line targets with the bands' share of each part of the sky ([Nebula filters](#nebula-filters)).
 
 ### The sky-glow weight
 
@@ -432,6 +432,56 @@ W_{\text{sky}} = \min\!\Bigg(1,\ \sqrt{\frac{S + B_{\text{ref}}}{S + k\,B}}\Bigg
 - **A faint object** (S ≪ B) is *sky-limited*: `W ≈ √(B_ref / (k B))`. Every target with unknown surface brightness (S = 0) falls in this case.
 
 A faint galaxy 30° from a bright Moon therefore scores much lower than one 120° away, while a filtered emission nebula keeps most of its score.
+
+### Nebula filters
+
+`-filter dual|ha|oiii|sii` (`scoring.passes`, `atmos.SkyParts`, `atmos.BandSky`, `catalog.Target.Lines`) scores the emission-line targets through a filter: emission, planetary and Wolf-Rayet nebulae, supernova remnants, and a few named objects whose catalogue type hides their Hα, such as IC 1396. A dual-band filter passes Hα and [O III] onto one frame; the others pass one line. Each band is `-filter-nm` wide (7 nm by default).
+
+**The sky in a band.** The K&S sky splits into three parts with different spectra:
+
+- the **glow** (airglow and light pollution, the dark-sky term),
+- moonlight scattered by **molecules** (Rayleigh, the 10^5.36 (1.06 + cos²ρ) term), going as λ⁻⁴,
+- moonlight scattered by **aerosols** (Mie, the 10^(6.15 − ρ/40) term), going as λ^−1.3 ([Ångström][angstrom]).
+
+K&S give them in the V band, centred at 551 nm and 88 nm wide ([Bessell 1990][bessell]). A band Δλ wide at λ passes the fractions
+
+```math
+f_{\text{glow}} = \frac{\Delta\lambda}{88},\qquad
+f_{\text{R}} = \frac{\Delta\lambda}{88}\Big(\frac{\lambda}{551}\Big)^{-4},\qquad
+f_{\text{M}} = \frac{\Delta\lambda}{88}\Big(\frac{\lambda}{551}\Big)^{-1.3}
+```
+
+so per nm the [O III] band (500.7 nm) gets 2.9 times the Rayleigh moonlight of the Hα one (656.3 nm). Moonlight is taken as flat per nm before scattering: the Moon is 0.25 mag redder than the Sun in B−V ([Thejll et al. 2014][moon-colour]), which roughly offsets the Sun's own fall from 500 to 670 nm. The glow is taken as flat too: its spectrum depends on the site's lamps (sodium, white LEDs), which nothing here knows. A dual-band filter's fractions are the sums over its two bands.
+
+**The target's light in the bands.** No catalogue gives line fluxes, so each type gets typical ratios to Hα (`catalog.Target.Lines`), normalised to shares:
+
+| Type | Hα | [O III] 500.7 | [S II] 671.6/673.1 | Basis |
+|---|---|---|---|---|
+| H II region (and every other emission-line target) | 1 | 0.3 | 0.12 | [S II]/Hα ≈ 0.12 on average; [O III] weak outside bright cores |
+| planetary nebula | 1 | 2.8 | 0.05 | [O III]/Hβ 6–9 (Magellanic Cloud averages), Hα = 2.86 Hβ |
+| supernova remnant | 1 | 0.5 | 0.6 | [S II]/Hα > 0.4 defines them ([Mathewson & Clarke 1973][mathewson]); [O III] varies |
+| Wolf-Rayet nebula | 1 | 1 | 0.2 | [O III]-bright shells |
+
+The share in the filter's bands is w (an H II region: 0.70 through Hα, 0.92 through dual-band; a planetary: 0.73 through [O III]). [N II] 654.8/658.3, inside most Hα bands, is left out.
+
+**The weight.** The target's signal through the filter is w·S, the sky the bands' share of each part. Against the same pristine-sky reference as broadband:
+
+```math
+W_{\text{filter}} = \min\!\Bigg(1,\ \sqrt{\frac{w^2\,(S + B_{\text{ref}})}{w\,S + f_{\text{glow}}B_{\text{glow}} + f_{\text{R}}B_{\text{R}} + f_{\text{M}}B_{\text{M}}}}\Bigg)
+```
+
+With w = 1 and every f equal to k this is the broadband weight. Each minute takes the better of `W_filter` and the broadband `W_sky`: an imager would not shoot an H II region through [O III] if broadband did better.
+
+**The Moon limit.** Away from the Moon its light is mostly Rayleigh-scattered, so the filter's sky-limited gain against moonlight is `f_R / w²`. That, at most 1, replaces k in the Moon-distance rule. At full Moon (100°) through 7 nm bands:
+
+| Target | `ha` | `oiii` | `sii` | `dual` |
+|---|---|---|---|---|
+| H II region | 8° | 100° (no gain) | 100° | 19° |
+| planetary nebula | 59° | 22° | 100° | 16° |
+| supernova remnant | 17° | 100° | 44° | 31° |
+| Wolf-Rayet nebula | 19° | 56° | 100° | 19° |
+
+The filtered limits run well below [Telescopius][telescopius]' Lorentzian Moon avoidance (60° for Hα and [S II], 90° for [O III], 120° for broadband, at full Moon), which is a scheduling rule of thumb rather than a model; here the sky weight already prices the moonlight near the limit.
 
 ### Putting it together
 
@@ -593,10 +643,11 @@ The models above come from the literature. The following are this project's own 
 
 | Heuristic | Value | Reasoning |
 |---|---|---|
-| Moon-distance rule | ≥ illumination % in degrees, × k | uptonight's rule; skipped with the Moon down |
+| Moon-distance rule | ≥ illumination % in degrees, × k (filtered: × f_R/w²) | uptonight's rule; skipped with the Moon down |
 | Altitude window | 30°–80° | uptonight's limits; ≥ 30° keeps the airmass ≤ 2 |
 | Cluster sky fraction | k = 0.5 | point sources stand out of the glow |
-| Filter sky fraction | k = 0.25 (`-filter-k`) | ~0.15 for ≤ 4 nm filters, ~0.4 for wide dual-band ones |
+| Emission line ratios | one set per type ([Nebula filters](#nebula-filters)) | single objects scatter by factors of a few; no list has line fluxes |
+| Night-sky spectrum | flat per nm, Moon before scattering and glow | the lamp mix is unknown; the Moon's redness offsets the Sun's fall |
 | High cloud weight | ½ | thin cirrus dims rather than blocks |
 | Dew ramp | spread 4 → 1 °C, × 1 → 0.7 | dew on optics ends sessions |
 | Gust ramp | 20 → 40 km/h, × 1 → 0.5 | shaken frames get discarded |
@@ -622,6 +673,9 @@ Treat SCORE as a way to order tonight's options, not as an absolute measure of q
 | Rayleigh extinction | [Hayes & Latham (1975)][hayes], ApJ 197, 593; [Bucholtz (1995)][bucholtz], Appl. Opt. 34, 2765 |
 | Aerosols | [CAMS][cams] via Open-Meteo |
 | Sky brightness and moonlight | [Krisciunas & Schaefer (1991)][ks], PASP 103, 1033; opposition surge after [thorsky][thorsky] |
+| Filter bands | V band: [Bessell (1990)][bessell], PASP 102, 1181; Ångström exponent: [Ångström (1929)][angstrom]; Moon colour: [Thejll et al. (2014)][moon-colour], A&A 563, A38 |
+| Emission line ratios | SNR criterion: [Mathewson & Clarke (1973)][mathewson], ApJ 180, 725; Magellanic Cloud PN [O III]/Hβ: [Stanghellini et al. (2003)][stanghellini], ApJ 596, 997; the criterion against H II regions: [Kopsacheili et al. (2020)][kopsacheili], MNRAS 491, 889 |
+| Per-filter Moon avoidance (comparison) | [Telescopius][telescopius]; the BAIT Lorentzian as in ACP |
 | Bortle scale | [Bortle (2001)][bortle], *Sky & Telescope* |
 | Surface brightness | [OpenNGC][openngc]; Gary Imm's Deep Sky Compendium; [SkEye][skeye] |
 | Optical turbulence | [Dewan et al. (1993)][dewan], PL-TR-93-2043 |
@@ -656,5 +710,12 @@ Treat SCORE as a way to order tonight's options, not as an absolute measure of q
 [cuevas]: https://doi.org/10.1093/mnras/stae630
 [osborn]: https://doi.org/10.1093/mnras/sty1898
 [uptonight]: https://github.com/mawinkler/uptonight
+[bessell]: https://doi.org/10.1086/132749
+[angstrom]: https://doi.org/10.1080/20014422.1929.11880498
+[moon-colour]: https://arxiv.org/abs/1401.1994
+[mathewson]: https://doi.org/10.1086/151999
+[stanghellini]: https://arxiv.org/abs/astro-ph/0307351
+[kopsacheili]: https://arxiv.org/abs/1909.05879
+[telescopius]: https://telescopius.com/
 [roman]: https://doi.org/10.1086/132034
 [vi49]: https://vizier.cfa.harvard.edu/viz-bin/VizieR?-source=VI/49

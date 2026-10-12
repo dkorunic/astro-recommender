@@ -126,3 +126,44 @@ func SkyBrightnessLit(zenithNL, k, alt, rho, moonLight float64) float64 {
 
 	return b
 }
+
+// SkyParts is SkyBrightnessLit split by spectrum: the glow (airglow and light
+// pollution, the dark-sky term) and the moonlight K&S scatter by molecules
+// (Rayleigh, the 10^5.36 (1.06 + cos²ρ) term) and by aerosols (Mie, the
+// 10^(6.15 − ρ/40) one). Their sum is SkyBrightnessLit to rounding; BandSky
+// says how much of each a filter passes.
+func SkyParts(zenithNL, k, alt, rho, moonLight float64) (float64, float64, float64) {
+	x := ks(alt)
+	glow := zenithNL * exp10(-0.4*k*(x-1)) * x
+	if moonLight <= 0 {
+		return glow, 0, 0
+	}
+	c := math.Cos(rho * deg)
+	lit := moonLight * (1 - exp10(-0.4*k*x))
+
+	return glow, 2.2908677e5 * (1.06 + c*c) * lit, exp10(6.15-rho/40) * lit
+}
+
+// vCenter and vWidth are the V band's effective wavelength and FWHM in nm
+// (Bessell 1990), the band every sky brightness here is measured in.
+const vCenter, vWidth = 551.0, 88.0
+
+// angstrom is the aerosol scattering's Ångström exponent: aerosol optical
+// depth goes as λ^-1.3 for typical continental aerosol.
+const angstrom = 1.3
+
+// BandSky returns the fractions of SkyParts' glow, Rayleigh and Mie
+// brightness that a filter band width nm wide at center nm passes: its share
+// of the V band's width, with the moonlight scattered as λ⁻⁴ (Rayleigh) and
+// λ^-angstrom (Mie) relative to V, so a band at [O III] 500.7 nm passes 2.9
+// times the Rayleigh moonlight per nm that one at Hα 656.3 nm does.
+// ponytail: moonlight is taken as flat per nm before scattering: the Moon is
+// 0.25 mag redder in B−V than the Sun, which roughly cancels the Sun's fall
+// from 500 to 670 nm (within ~7%). The glow is flat too: airglow and the
+// lamps' mix (sodium, white LEDs) vary by site, unknown here; a per-site
+// spectrum would replace the first return.
+func BandSky(center, width float64) (float64, float64, float64) {
+	f, x := width/vWidth, center/vCenter
+
+	return f, f * math.Pow(x, -4), f * math.Pow(x, -angstrom)
+}

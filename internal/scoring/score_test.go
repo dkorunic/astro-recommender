@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/dkorunic/astro-recommender/internal/astro"
+	"github.com/dkorunic/astro-recommender/internal/atmos"
 	"github.com/dkorunic/astro-recommender/internal/catalog"
 	"github.com/dkorunic/astro-recommender/internal/config"
 )
@@ -153,13 +154,13 @@ func TestSkyK(t *testing.T) {
 	if !catalog.EmissionLine(pn) || catalog.EmissionLine(gx) || !catalog.EmissionLine(catalog.Target{Name: "IC 1396", Type: "Dark Nebula"}) {
 		t.Error("emissionLine misclassifies")
 	}
-	if skyK(pn, true, 0.2) != 0.2 || skyK(pn, false, 0.2) != 1 || skyK(gx, true, 0.2) != 1 {
-		t.Error("skyK misapplies the filter")
+	if skyK(pn) != 1 || skyK(gx) != 1 {
+		t.Error("skyK discounts a broadband target")
 	}
-	if skyK(catalog.Target{Type: "Open cluster"}, false, 0.2) != 0.5 {
+	if skyK(catalog.Target{Type: "Open cluster"}) != 0.5 {
 		t.Error("skyK misses LBN's \"Open cluster\" spelling")
 	}
-	if skyK(catalog.Target{Type: "Cluster Nebulosity"}, false, 0.2) != 1 || skyK(catalog.Target{Name: "M 16", Type: "Open Cluster"}, false, 0.2) != 1 {
+	if skyK(catalog.Target{Type: "Cluster Nebulosity"}) != 1 || skyK(catalog.Target{Name: "M 16", Type: "Open Cluster"}) != 1 {
 		t.Error("skyK halves the sky for a cluster with nebulosity, which is imaged for the glow")
 	}
 }
@@ -174,7 +175,7 @@ func BenchmarkPipeline(b *testing.B) {
 	}
 	cfg := &config.Config{
 		Lat: 45.8, Lon: 16, AltMin: 30, AltMax: 80, SizeMax: 300, NoWeather: true,
-		ExtinctionSet: true, Extinction: 0.2, FilterK: 0.25, Filter: true,
+		ExtinctionSet: true, Extinction: 0.2, Filter: "dual", FilterNM: 7,
 	}
 	start := time.Date(2026, 10, 5, 18, 8, 0, 0, time.UTC)
 	end := start.Add(9*time.Hour + 14*time.Minute)
@@ -194,7 +195,7 @@ func BenchmarkPipelineMoon(b *testing.B) {
 	}
 	cfg := &config.Config{
 		Lat: 45.8, Lon: 16, AltMin: 30, AltMax: 80, SizeMax: 300, NoWeather: true,
-		ExtinctionSet: true, Extinction: 0.2, FilterK: 0.25, Filter: true,
+		ExtinctionSet: true, Extinction: 0.2, Filter: "dual", FilterNM: 7,
 	}
 	start, end, ok := astro.Window(time.Date(2026, 1, 3, 12, 0, 0, 0, time.UTC), cfg.Lat, cfg.Lon, astro.Astronomical)
 	if !ok {
@@ -295,5 +296,70 @@ func TestScoreRuns(t *testing.T) {
 	cfg.MinRun = 0
 	if res = Score(cfg, &short, []catalog.Target{polaris}, false); len(res) != 1 || !res[0].RunTo.Equal(short.End) {
 		t.Errorf("30 s window: %v, want Polaris with the run ending at the window's end", res)
+	}
+}
+
+// Through a filter an emission-line target scores by the share of its light
+// in the bands against the bands' share of each part of the sky, or as
+// without it when that is better. Under the first-quarter Moon of 26 January
+// 2026 from a Bortle 6 site, a target in Ursa Major: an H II region gains most from Hα (and less from dual-band,
+// whose [O III] half lets in three times the moonlight per nm for a fifth of
+// its light), nothing from [O III]; a planetary gains from [O III] and
+// dual-band (which of the two more depends on the sky: Hα adds a quarter of
+// its light and a band of sky), nothing from Hα; a galaxy is never filtered.
+func TestScoreFilter(t *testing.T) {
+	cfg := &config.Config{Lat: 45.8, Lon: 16, AltMin: 30, AltMax: 80, SizeMax: 300, NoWeather: true, ExtinctionSet: true, Extinction: 0.2, Bortle: 6, FilterNM: 7}
+	start, end, _ := astro.Window(time.Date(2026, 1, 26, 12, 0, 0, 0, time.UTC), cfg.Lat, cfg.Lon, astro.Astronomical)
+	s := BuildSky(cfg, NoForecast(), start, end)
+	score := func(filter, typ string) float64 {
+		cfg.Filter = filter
+		r := Score(cfg, &s, []catalog.Target{{Name: "T", Type: typ, RADeg: 150, DecDeg: 60, Size: 60}}, false)
+		if len(r) != 1 {
+			t.Fatalf("%s through %q: not observable", typ, filter)
+		}
+
+		return r[0].Score
+	}
+	for _, c := range []struct {
+		typ   string
+		order []string        // strictly best first
+		equal map[string]bool // filters that score as none
+	}{
+		{"HII Region", []string{"ha", "dual", ""}, map[string]bool{"oiii": true}},
+		{"Planetary Nebula", []string{"oiii", ""}, map[string]bool{"ha": true}},
+		{"Spiral Galaxy", []string{""}, map[string]bool{"ha": true, "oiii": true, "sii": true, "dual": true}},
+	} {
+		for i := 1; i < len(c.order); i++ {
+			if a, b := score(c.order[i-1], c.typ), score(c.order[i], c.typ); a <= b {
+				t.Errorf("%s: %q scores %v, not above %q's %v", c.typ, c.order[i-1], a, c.order[i], b)
+			}
+		}
+		none := score("", c.typ)
+		if c.typ != "Spiral Galaxy" && score("dual", c.typ) <= none {
+			t.Errorf("%s: dual-band does not beat no filter", c.typ)
+		}
+		for f := range c.equal {
+			if got := score(f, c.typ); got != none {
+				t.Errorf("%s through %q: %v, want the unfiltered %v", c.typ, f, got, none)
+			}
+		}
+	}
+	// With every part of the sky cut to k and all the light passed, the
+	// filtered weight is the broadband one at that k.
+	fp := filterPass{w: 1, glow: 0.3, rayleigh: 0.3, mie: 0.3}
+	objNL, objRef := atmos.NanoLamberts(21), atmos.NanoLamberts(21)+s.RefNL
+	if got, want := fp.weight(objNL, objRef, 400, 500, 100), math.Sqrt(objRef/(objNL+0.3*1000)); math.Abs(got-want) > 1e-12 {
+		t.Errorf("weight = %v, want the broadband %v", got, want)
+	}
+	// The Moon limit: Hα beats the Moon best on an H II region, [O III]
+	// not at all.
+	cfg.Filter = "ha"
+	ha := passes(cfg, catalog.Target{Type: "HII Region"}).moonK()
+	cfg.Filter = "dual"
+	dual := passes(cfg, catalog.Target{Type: "HII Region"}).moonK()
+	cfg.Filter = "oiii"
+	o3 := passes(cfg, catalog.Target{Type: "HII Region"}).moonK()
+	if !(ha < dual && dual < 1 && o3 == 1) {
+		t.Errorf("moonK H II: ha %v, dual %v, oiii %v", ha, dual, o3)
 	}
 }

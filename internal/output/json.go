@@ -64,7 +64,12 @@ type sky struct { // betteralign:ignore
 	SQM        float64    `json:"sqm,omitempty"`
 	SQMSource  string     `json:"sqmSource,omitempty"`
 	Extinction [2]float64 `json:"extinction"` // min and max over the window, mag per airmass
-	FilterK    *float64   `json:"filterK,omitempty"`
+	Filter     *filter    `json:"filter,omitempty"`
+}
+
+type filter struct { // betteralign:ignore
+	Mode      string  `json:"mode"`      // dual, ha, oiii or sii
+	Bandwidth float64 `json:"bandwidth"` // nm, each band
 }
 
 type frame struct {
@@ -136,8 +141,8 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 	} else {
 		r.Sky.Bortle = cfg.Bortle
 	}
-	if cfg.Filter {
-		r.Sky.FilterK = &cfg.FilterK
+	if cfg.Filter != "" {
+		r.Sky.Filter = &filter{Mode: cfg.Filter, Bandwidth: cfg.FilterNM}
 	}
 	if cfg.Framing {
 		r.Frame = &frame{FOVLong: cfg.FOVLong, FOVShort: cfg.FOVShort, Scale: cfg.Scale, Rotate: cfg.Rotate}

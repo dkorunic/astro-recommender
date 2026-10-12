@@ -57,3 +57,31 @@ func TestBortleClass(t *testing.T) {
 		}
 	}
 }
+
+// SkyParts splits SkyBrightnessLit without changing it, and BandSky passes a
+// band's share of the V width, Rayleigh moonlight going as λ⁻⁴: an [O III]
+// band 2.9 times what an Hα one does.
+func TestSkyPartsBandSky(t *testing.T) {
+	dark := NanoLamberts(19)
+	for _, c := range []struct{ alt, rho, light float64 }{{60, 90, 0}, {40, 20, 1e-6}, {75, 120, 3e-7}} {
+		glow, rayleigh, mie := SkyParts(dark, 0.2, c.alt, c.rho, c.light)
+		if total := SkyBrightnessLit(dark, 0.2, c.alt, c.rho, c.light); math.Abs(glow+rayleigh+mie-total) > 1e-12*total {
+			t.Errorf("%+v: parts %v + %v + %v, total %v", c, glow, rayleigh, mie, total)
+		}
+		if c.light == 0 && (rayleigh != 0 || mie != 0) {
+			t.Errorf("moonlight without a Moon: %v %v", rayleigh, mie)
+		}
+	}
+	glow, rayleigh, mie := BandSky(vCenter, 8.8)
+	if glow != 0.1 || math.Abs(rayleigh-0.1) > 1e-15 || math.Abs(mie-0.1) > 1e-15 {
+		t.Errorf("BandSky at V = %v %v %v, want 0.1 each", glow, rayleigh, mie)
+	}
+	_, ha, haMie := BandSky(656.3, 7)
+	_, o3, o3Mie := BandSky(500.7, 7)
+	if r := o3 / ha; math.Abs(r-math.Pow(656.3/500.7, 4)) > 1e-12 || r < 2.9 || r > 3 {
+		t.Errorf("Rayleigh [O III]/Hα = %v", r)
+	}
+	if r := o3Mie / haMie; math.Abs(r-math.Pow(656.3/500.7, angstrom)) > 1e-12 {
+		t.Errorf("Mie [O III]/Hα = %v", r)
+	}
+}

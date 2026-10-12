@@ -35,7 +35,7 @@ func TestParseFOV(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {
-	ok := Config{Lat: 45.8, Lon: 16, FilterK: 0.25, Extinction: 0.2, Top: 20, AltMin: 30, AltMax: 80, SizeMin: 10, SizeMax: 300}
+	ok := Config{Lat: 45.8, Lon: 16, Extinction: 0.2, Top: 20, AltMin: 30, AltMax: 80, SizeMin: 10, SizeMax: 300}
 	if err := ok.validate(); err != nil {
 		t.Fatalf("valid config rejected: %v", err)
 	}

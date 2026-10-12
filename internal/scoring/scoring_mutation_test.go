@@ -45,7 +45,7 @@ func mutSky(n int) *Sky {
 }
 
 func mutCfg() *config.Config {
-	return &config.Config{Lat: 0, Lon: 0, AltMin: 30, AltMax: 80, SizeMin: 0, SizeMax: 300, Top: 20, FilterK: 0.25}
+	return &config.Config{Lat: 0, Lon: 0, AltMin: 30, AltMax: 80, SizeMin: 0, SizeMax: 300, Top: 20, FilterNM: 7}
 }
 
 func mutTarget(name string, ra, dec float64) catalog.Target {
@@ -198,12 +198,12 @@ func TestMutMoonSeparation(t *testing.T) {
 	if _, ok := mutOne(t, cfg, s, catalog.Target{Name: "C", Type: "Open Cluster", RADeg: 90.5, DecDeg: 40, Size: 20}, false); !ok {
 		t.Error("cluster 40° from a half Moon dropped")
 	}
-	// Emission nebula: with the filter k = 0.25 → 12.5°; without, 50°.
+	// Emission nebula: with a 7 nm dual-band filter moonK is 0.19 → 9°; without, 50°.
 	neb := catalog.Target{Name: "N", Type: "Emission Nebula", RADeg: 90.5, DecDeg: 20, Size: 20}
 	if _, ok := mutOne(t, cfg, s, neb, false); ok {
 		t.Error("nebula 20° from the Moon kept without a filter")
 	}
-	cfg.Filter = true
+	cfg.Filter = "dual"
 	if _, ok := mutOne(t, cfg, s, neb, false); !ok {
 		t.Error("nebula 20° from the Moon dropped with a filter")
 	}
@@ -211,7 +211,7 @@ func TestMutMoonSeparation(t *testing.T) {
 		t.Error("filter helped a galaxy")
 	}
 	// Moon below the horizon: no separation rule.
-	cfg.Filter = false
+	cfg.Filter = ""
 	for i := range s.Grid {
 		s.MoonAlt[i] = -1
 	}
@@ -334,20 +334,16 @@ func TestMutFraming(t *testing.T) {
 
 func TestMutSkyK(t *testing.T) {
 	for _, c := range []struct {
-		tg     catalog.Target
-		filter bool
-		want   float64
+		tg   catalog.Target
+		want float64
 	}{
-		{catalog.Target{Type: "Galaxy"}, true, 1},
-		{catalog.Target{Type: "Open Cluster"}, false, 0.5},
-		{catalog.Target{Type: "Open Cluster"}, true, 0.5},
-		{catalog.Target{Name: "M 16", Type: "Open Cluster"}, false, 1},
-		{catalog.Target{Name: "M 16", Type: "Open Cluster"}, true, 0.3},
-		{catalog.Target{Type: "Emission Nebula"}, true, 0.3},
-		{catalog.Target{Type: "Emission Nebula"}, false, 1},
+		{catalog.Target{Type: "Galaxy"}, 1},
+		{catalog.Target{Type: "Open Cluster"}, 0.5},
+		{catalog.Target{Name: "M 16", Type: "Open Cluster"}, 1},
+		{catalog.Target{Type: "Emission Nebula"}, 1},
 	} {
-		if got := skyK(c.tg, c.filter, 0.3); got != c.want {
-			t.Errorf("skyK(%+v, %v) = %v, want %v", c.tg, c.filter, got, c.want)
+		if got := skyK(c.tg); got != c.want {
+			t.Errorf("skyK(%+v) = %v, want %v", c.tg, got, c.want)
 		}
 	}
 }

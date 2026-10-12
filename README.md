@@ -13,7 +13,7 @@ A single-binary Go CLI that tells you what to image **tonight** from a given loc
 It started as a port of the deep sky part of [uptonight](https://github.com/mawinkler/uptonight) and adds, among other things:
 
 - **framing** for the **Celestron Origin** smart telescope (`-origin`) or any telescope and camera (`-fov`/`-scale`, or `-focal` with `-sensor`/`-pixel`): only objects that fit the frame and are large enough in pixels, scored by how well they fill it
-- a sky-brightness model that weights every target by moonlight and light pollution, with optional narrowband `-filter` support that favours emission nebulae
+- a sky-brightness model that weights every target by moonlight and light pollution, with optional nebula `-filter` support (dual-band, Hα, [O III] or [S II]) that scores emission nebulae by the light each filter passes
 - weather folded into the score, not just shown
 - comets from the Minor Planet Center, a **night plan** (`-plan`) with one target per time block, a measured local horizon (`-horizon`) and many more catalogues
 
@@ -43,7 +43,7 @@ It started as a port of the deep sky part of [uptonight](https://github.com/mawi
 - **Observability per minute**, following uptonight's rules: altitude between `-alt-min` and `-alt-max`, Moon separation of at least the illumination percentage in degrees (skipped while the Moon is below the horizon), and optionally above your measured **local horizon** profile (`-horizon`). Each object's longest unbroken observable stretch is listed, and `-min-run 1h` drops those without one that long.
 - **Ranking** by an imaging score that sums, over every observable minute, the forecast sky quality × atmospheric extinction × a sky weight that sets the object's own surface brightness against the sky's, so a bright-surface object shrugs off moonlight and light pollution that a faint smudge does not, with uptonight's observable fraction (FOTO) shown alongside. Mean altitude breaks ties.
 - **Sky brightness and moonlight**: the Krisciunas & Schaefer model of the moonless sky from `-bortle` or a measured `-sqm` value, brightened towards the horizon, plus scattered moonlight from the Moon's phase, altitude and distance to the target. Targets are weighted by sky-limited signal-to-noise.
-- **Target-type sensitivity to sky glow**: clusters count half of it, and with `-filter` emission-line targets (emission and planetary nebulae, supernova remnants, Wolf-Rayet nebulae, plus known mislabelled ones) count only `-filter-k` of it, which also relaxes their Moon-distance limit.
+- **Target-type sensitivity to sky glow**: clusters count half of it. With `-filter dual|ha|oiii|sii`, emission-line targets (emission and planetary nebulae, supernova remnants, Wolf-Rayet nebulae, plus known mislabelled ones) are scored through the filter: the share of their light in its bands (Hα for H II regions, [O III] for planetaries, more [S II] for remnants) against the share of the sky it passes, where moonlight, being blue, gets through an [O III] band three times as much as an Hα one. That also relaxes their Moon-distance limit, most for Hα.
 - **Extinction per hour** from the site's elevation and the CAMS aerosol forecast (dust, smoke, haze), or a fixed `-extinction`; shown in the forecast table.
 - **Weather**: Open-Meteo cloud cover by layer (thin high cloud counts half), rain, dew-point spread and wind gusts, and 7Timer transparency and seeing (with a seeing estimate from the ECMWF upper-air profile for hours 7Timer does not cover), in an hourly table and folded into the score minute by minute. Hours a forecast does not cover get the covered hours' mean; a source missing entirely counts as perfect sky. Both warn, never silently.
 - **Framing for the Celestron Origin** (`-origin`) or any telescope (`-fov`/`-scale`, or `-focal` with `-sensor`/`-pixel`): keeps only objects that fit the frame's short side and are at least `-min-px` across, scores how well they fill it, and shows their size in pixels. `-mosaic 4` also keeps objects too large for one frame, on the grid of up to that many panels that frames them best, with the score shared among the panels; `-rotate` (a camera you can turn, not the Origin) lays the major axis along the long side, so the minor axis known for about 12,200 objects counts.
@@ -113,7 +113,7 @@ What does not:
 ## Usage
 
 ```sh
-astro-recommender -lat 45.815 -lon 15.982 -origin -filter -bortle 6 -n 5 -date 2026-10-07
+astro-recommender -lat 45.815 -lon 15.982 -origin -filter dual -bortle 6 -n 5 -date 2026-10-07
 ```
 
 ```
@@ -123,7 +123,7 @@ Moon:     8% illuminated, min separation 8°, rises 04:30
 Size:     4.1' - 44.7'
 Targets:  GaryImm, 1 comets brighter than mag 12.0
 Frame:    1.32° x 0.75°, 1.23"/px (3856 x 2180 px)
-Sky:      Bortle 6 (zenith 18.80 mag/arcsec²), extinction 0.29-0.33 (elevation 126 m, aerosols) mag/airmass, filter k=0.25
+Sky:      Bortle 6 (zenith 18.80 mag/arcsec²), extinction 0.29-0.33 (elevation 126 m, aerosols) mag/airmass, filter dual 7 nm
 
 HOUR   CLOUD  LOW/MID/HIGH  TRANSP  EXT   SEEING     DEW SPREAD  WIND/GUST
 20:00  55%    8/40/38%      3/8     0.33  1.25-1.5"  5.8°C       4/12 km/h
@@ -153,7 +153,7 @@ The output ends with a legend explaining every column of the tables shown and th
 - **OBSERVABLE**: the longest stretch during which the object meets the limits without a break; a trailing `+` means there are other, shorter stretches (the Moon rising, a tree in the horizon profile, a pass through the zenith above `-alt-max`). `-min-run` filters on this length.
 - **MAX ALT**: the object's highest altitude in the window, and when it occurs.
 - **SKY**: the average sky brightness at the object while it is observable, in V mag/arcsec². Higher is darker: about 22 is pristine and 18–19 is a suburb or a bright Moon. The filter isn't included.
-- **SB**: the object's own surface brightness in the same units, which the score sets against the sky the object sees: SKY, cut to `-filter-k` (a quarter by default) by `-filter` for emission-line objects or halved for star clusters without nebulosity, whose own surface brightness is then not used. `~` marks an estimate (derived from the magnitude and size, or a B value moved to V by a typical colour) rather than a measurement, `-` an object with no brightness data, which is scored as if far fainter than the sky.
+- **SB**: the object's own surface brightness in the same units, which the score sets against the sky the object sees: SKY, cut by `-filter` to its bands' share for emission-line objects (when that scores better than without it) or halved for star clusters without nebulosity, whose own surface brightness is then not used. `~` marks an estimate (derived from the magnitude and size, or a B value moved to V by a typical colour) rather than a measurement, `-` an object with no brightness data, which is scored as if far fainter than the sky.
 - **SIZE**: the major axis in arcminutes; with `-rotate`, `major x minor` where the minor axis is known.
 - **PX**: the object's size in pixels at the frame's pixel scale; `-` without framing (`-origin`, `-fov`, `-scale`, `-focal`), since there is no frame to measure against. With `-mosaic`, a grid such as `2x1` (columns along the frame's long side × rows) follows when more than one panel scores best.
 
@@ -172,7 +172,7 @@ astro-recommender -lat 45.815 -lon 15.982
 The same from a suburban garden with the Celestron Origin and a dual-band filter. **`-origin` keeps only objects that fit the 1.32° × 0.75° frame and are at least 200 px across, and scores how well they fill it**; `-bortle 6` brightens the sky model, which **`-filter` then discounts for emission nebulae and supernova remnants**, so they climb above galaxies and reflection nebulae:
 
 ```sh
-astro-recommender -lat 45.815 -lon 15.982 -origin -filter -bortle 6
+astro-recommender -lat 45.815 -lon 15.982 -origin -filter dual -bortle 6
 ```
 
 **A measured sky instead of a Bortle guess.** `-sqm` takes the zenith reading of an SQM meter or the *World Atlas 2015* value from lightpollutionmap.info and is more precise than the class; the header shows the Bortle class it corresponds to:
@@ -190,13 +190,13 @@ astro-recommender -lat 45.815 -lon 15.982 -origin -date 2026-10-10 -from 22:00 -
 A schedule for the night. **`-plan 2h` adds a table with one target per 2-hour block** (plus a shorter last block), picked greedily and then improved by swapping until no change helps. **The planner considers every ranked target, not just the `-n` printed**:
 
 ```sh
-astro-recommender -lat 45.815 -lon 15.982 -origin -filter -plan 2h
+astro-recommender -lat 45.815 -lon 15.982 -origin -filter dual -plan 2h
 ```
 
 Another telescope and camera. **`-focal`, `-sensor` and `-pixel` describe the setup and replace the Origin's frame**: here a 400 mm refractor with an APS-C sensor (23.5 × 15.6 mm, 3.76 µm pixels) gives a 3.37° × 2.23° field at 1.94″/px. **The header's `Frame:` line shows the result**; check it when the numbers look surprising:
 
 ```sh
-astro-recommender -lat 45.815 -lon 15.982 -focal 400 -sensor 23.5x15.6 -pixel 3.76 -filter
+astro-recommender -lat 45.815 -lon 15.982 -focal 400 -sensor 23.5x15.6 -pixel 3.76 -filter dual
 ```
 
 **Large objects as mosaics.** `-mosaic 6` keeps objects that fit a grid of up to six frames (3 × 2, 1 × 6 and so on) overlapping by 10%, each scored on the grid that frames it best with the score divided among the panels, so a 2-panel mosaic scores like a single frame of half the quality. With a rotatable camera, `-rotate` frames the major axis along the long side, so an edge-on galaxy or the Veil fits where a disc of the same length would not:
@@ -223,10 +223,10 @@ One region of the sky. **`-ra` and/or `-dec` keep only objects within `-tol` deg
 astro-recommender -lat 45.815 -lon 15.982 -list OpenNGC -size-min 0 -ra "20 30" -dec 40 -tol 15
 ```
 
-**Planetary nebulae are small, so the Origin's default 200 px floor would leave almost nothing**: `-min-px 30` admits the ones at least 30 px across, and `-filter` applies the narrowband discount to them:
+**Planetary nebulae are small, so the Origin's default 200 px floor would leave almost nothing**: `-min-px 30` admits the ones at least 30 px across, and `-filter dual` scores them through the filter, mostly on their [O III] light:
 
 ```sh
-astro-recommender -lat 45.815 -lon 15.982 -origin -filter -list HASH -min-px 30 -n 30
+astro-recommender -lat 45.815 -lon 15.982 -origin -filter dual -list HASH -min-px 30 -n 30
 ```
 
 Your own targets. **`-targets` takes any uptonight-format YAML**, such as a hand-written shortlist, **and overrides `-list`**:
@@ -280,8 +280,8 @@ astro-recommender -lat 45.815 -lon 15.982 -no-weather -no-geocode -no-sqm -no-co
 | `-min-px` | `200` | With framing: minimum object size in pixels (≈4.1′ on the Origin); must be 0 or more even when framing is off |
 | `-mosaic` | `1` | With framing: most mosaic panels per object, 1–25. Every grid of at most that many frames, overlapping by 10%, is tried and the one with the best fill divided by its panel count kept, since the night's time is shared among the panels; objects too large for one frame then stay in the list |
 | `-rotate` | off | With framing: the camera can be rotated, so the major axis lies along the frame's long side and a known minor axis across (about 12,200 objects: OpenNGC's, carried to the lists built on it, and Lynds' for LBN; nebula axes are rough). Without it the orientation is unknown and the major axis must fit the short side. Not the Origin, whose camera cannot turn |
-| `-filter` | off | A dual- or tri-band nebula filter is in use |
-| `-filter-k` | `0.25` | Fraction of sky glow the filter passes: ~0.15 for ≤4 nm bands, ~0.4 for wide ones |
+| `-filter` | none | Nebula filter for emission-line targets: `dual` (Hα and [O III] at once, as on a colour camera), `ha`, `oiii` or `sii`. Each target is scored with it or without, whichever is better |
+| `-filter-nm` | `7` | With `-filter`, each band's width in nm, 1–30 (3 nm for narrow mono filters, 10–12 nm for wide dual-band ones) |
 | `-bortle` | `0` (dark) | Bortle class (1–9) of the site, which sets its zenith sky brightness |
 | `-sqm` | unset | Measured zenith sky brightness in mag/arcsec², from an SQM meter or the *World Atlas 2015* layer on [lightpollutionmap.info](https://www.lightpollutionmap.info). More precise than `-bortle`, which it overrides; the header shows the matching Bortle class. When neither is given and `DARKSKYSITES_API_KEY` is set, it is looked up on [DarkSkySites](https://www.darkskysites.com/api-access); a free API key can be requested at [darkskysites.com](https://www.darkskysites.com/api-access#apply) |
 | `-extinction` | auto | Atmospheric extinction in magnitudes per airmass. By default it is estimated per hour from the site's elevation and the CAMS aerosol forecast. Setting it fixes the value; `0.2` is used when no estimate is available |
@@ -292,7 +292,7 @@ astro-recommender -lat 45.815 -lon 15.982 -no-weather -no-geocode -no-sqm -no-co
 | `-list` | `GaryImm` | Built-in target list (see below) |
 | `-targets` | none | Your own uptonight-format targets YAML file; overrides `-list` |
 | `-skip` | none | A file of names to leave out, one per line with `#` comments, e.g. the objects you have already imaged. Case and spaces do not matter (`ngc7789` is `NGC 7789`); comets can be named too |
-| `-type` | all | Keep only these object classes, comma-separated: `galaxy` (galaxy groups too), `cluster`, `nebula` (a cluster with nebulosity counts as both), `emission` (the emission-line objects `-filter` helps), `comet` and `other` (stars, asterisms). Comets are not fetched unless `comet` is among them |
+| `-type` | all | Keep only these object classes, comma-separated: `galaxy` (galaxy groups too), `cluster`, `nebula` (a cluster with nebulosity counts as both), `emission` (the emission-line objects `-filter` helps), `comet` and `other` (stars, asterisms). Comets are not fetched unless `comet` is among them, and `-type comet` with `-no-comets` is an error |
 | `-comet-mag` | `12` | Include comets brighter than this total visual magnitude |
 | `-no-comets` | off | Skip comets |
 | `-no-weather` | off | Skip the Open-Meteo and 7Timer forecasts |
@@ -465,7 +465,7 @@ To measure it, stand where the telescope sits and use a compass and an inclinome
 
 ## How objects are ranked
 
-1. **Time window.** Each minute from astronomical dusk to astronomical dawn (or nautical, with `-twilight nautical`) is checked. The search runs for 24 hours from the site's solar noon, worked out from its longitude, so polar night is capped at 24 hours and the time zone can't cut the night short. Without `-date`, a run during the night (after dusk, before dawn) plans only what's left of the night in progress; otherwise it plans the coming evening. If full night never happens (for example at high latitudes in summer), the program says so and lists nothing; `-twilight nautical` may still find a window there. `-from`/`-to` narrow this to part of the night, but never extend it past dusk or dawn. A window that falls entirely outside the night is an error. Moon illumination is taken at the middle of the window.
+1. **Time window.** Each minute from astronomical dusk to astronomical dawn (or nautical, with `-twilight nautical`) is checked. The search runs for 24 hours from the site's solar noon, worked out from its longitude, so polar night is capped at 24 hours and the time zone can't cut the night short. Without `-date`, a run during the night (after dusk, before dawn) plans only what's left of the night in progress; otherwise it plans the coming evening. A polar night runs from noon to noon, so one in progress carries on into the next day's darkness, up to 24 hours from the run, instead of ending at the next noon; a night that is already dark at noon and lasts past midnight (the last day of a polar night) counts as tonight's. If full night never happens (for example at high latitudes in summer), the program says so and lists nothing; `-twilight nautical` may still find a window there. `-from`/`-to` narrow this to part of the night, but never extend it past dusk or dawn. A window that falls entirely outside the night is an error. Moon illumination is taken at the middle of the window.
 2. **Observable minutes**, following uptonight's rules:
    - the object is between `-alt-min` and `-alt-max` altitude, 30° and 80° by default (≥ 30° also covers uptonight's airmass ≤ 2 limit), and above the `-horizon` profile if given
    - it is at least *Moon illumination %* degrees from the Moon, e.g. 25% lit means 25° away
@@ -473,7 +473,7 @@ To measure it, stand where the telescope sits and use a compass and an inclinome
 3. **Sky glow sensitivity** (`k`) is the fraction of sky glow that counts against a target:
    - galaxies, reflection nebulae and dark nebulae get `k = 1`
    - open and globular clusters are bright and compact: `k = 0.5`
-   - with `-filter`, emission-line targets get `k = -filter-k`. These are emission nebulae, planetary nebulae, supernova remnants and Wolf-Rayet nebulae, plus a few hydrogen-emitting objects the catalogue mislabels, such as IC 1396 and the Cave Nebula.
+   - with `-filter`, emission-line targets are scored through the filter (step 6). These are emission nebulae, planetary nebulae, supernova remnants and Wolf-Rayet nebulae, plus a few hydrogen-emitting objects the catalogue mislabels, such as IC 1396 and the Cave Nebula.
 
    `k` also scales the Moon-distance limit.
 4. **Weather**, per minute:
@@ -494,6 +494,8 @@ To measure it, stand where the telescope sits and use a compass and an inclinome
    - moonlight scattered towards the target, depending on Moon phase (with the extra brightening near full Moon), its distance, Moon altitude, target altitude and the angle between Moon and target
 
    The signal-to-noise ratio in a fixed exposure scales as `signal / √(signal + sky)`. The weight compares the object under tonight's sky with the same object under a pristine one: `min(1, √((S + B_dark) / (S + k · B)))`, where `S` is the object's own surface brightness (the `SB` column) and `B_dark` a pristine 22.0 mag/arcsec² sky, all in linear units. An object much brighter than the sky loses nothing; a faint one is sky-limited, `√(B_dark / (k · B))`, and so is any object whose brightness is unknown. A faint galaxy 30° from a bright Moon therefore scores much lower than one 120° away, and with a filter, emission targets keep most of their score.
+
+   **Through a `-filter`**, the sky splits into the glow (airglow and light pollution) and the moonlight scattered by air molecules (as λ⁻⁴) and by aerosols (as λ⁻¹·³). A band `-filter-nm` wide passes its share of the V band's 88 nm of each, so an [O III] band (501 nm) lets in about three times the moonlight of an Hα one (656 nm), while the glow, whose spectrum depends on the local lamps, is taken as flat. The target's light is split by typical line ratios for its type (an H II region about 70% Hα, a planetary about 70% [O III], a supernova remnant with more [S II]), and the weight is `min(1, √(w² (S + B_dark) / (w S + sky in the bands)))` for the share `w` of its light in the filter's bands. Each minute takes the better of that and the unfiltered weight, and the Moon-distance limit shrinks by the bands' Rayleigh moonlight over `w²`: at full Moon, 8° for an H II region through Hα, 19° through dual-band. [MODELS.md](MODELS.md#nebula-filters) has the details.
 
    The object's surface brightness is the measured V value where a list has one (the Compendium's galaxies), else OpenNGC's measured B value moved to V by the object's own B−V colour when plausible, or else by a typical one for its type (galaxies and galaxy groups 0.8, emission-line objects 0, others 0.5; marked `~`), else, also marked `~`, for galaxies and nebulae the integrated V (or colour-corrected B) magnitude spread over a disc of the object's major axis, which leans faint for elongated objects. Galaxy groups and clusters derive none, since their magnitude is one member's and their size the group's; star clusters get none at all, since their light sits in points that sky glow hardly hurts, which the cluster factor already allows for; clusters with nebulosity derive none, since their integrated magnitude is the stars', not the glow's, so without a measurement they are scored as sky-limited like a nebula without data. The SkEye [visibility measures](https://skeye.rocks/apps/skeye/book/explanations/visibilitymeasures) page explains why surface brightness, not magnitude, is the measure that matters for extended objects.
 7. **Score** = the sum over observable minutes of weather × extinction × sky weight, divided by the window length.

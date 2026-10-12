@@ -8,7 +8,7 @@
 # network for the weather, aerosol and geocoding lookups. Lines wrap at 170
 # columns, as in a real terminal; the legend already wraps to the table.
 #
-# The default run is the Markovac site with -filter and its measured SQM, not
+# The default run is the Markovac site with -filter dual and its measured SQM, not
 # the README's Zagreb transcript. Any arguments replace that whole flag set,
 # so give -lat and -lon again:
 #
@@ -19,7 +19,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 command -v freeze >/dev/null || { echo "install freeze: go install github.com/charmbracelet/freeze@latest" >&2; exit 1; }
 
-args=(-filter -lat 45.58587022468967 -lon 17.312918864814147 -sqm 21.60)
+args=(-filter dual -lat 45.58587022468967 -lon 17.312918864814147 -sqm 21.60)
 [ $# -gt 0 ] && args=("$@")
 
 tmp=$(mktemp -d)

@@ -8,6 +8,7 @@ import (
 	"io"
 	"math"
 	"os"
+	"reflect"
 	"regexp"
 	"strings"
 	"testing"
@@ -399,7 +400,7 @@ func TestMutHeader(t *testing.T) {
 	}
 	s.Ext[10] = 0.204
 	cfg.SQM, cfg.SQMSource, cfg.ExtinctionSet, cfg.Twilight = 21.6, "DSS", true, "nautical"
-	cfg.Filter, cfg.FilterK, cfg.NoComets = true, 0.25, true
+	cfg.Filter, cfg.FilterNM, cfg.NoComets = "dual", 7, true
 	cfg.RASet, cfg.RA, cfg.Tol = true, 187.5, 5
 	cfg.MinRun = time.Hour
 	out = mutCapture(t, func() { Header(cfg, s, "") })
@@ -407,7 +408,7 @@ func TestMutHeader(t *testing.T) {
 		"Location: 45.8100, 15.9800, Europe/Zagreb",
 		"(2h0m0s, nautical night)",
 		"SQM 21.60 mag/arcsec² (DSS, ≈ Bortle 2)",
-		"extinction 0.20 (set) mag/airmass, filter k=0.25",
+		"extinction 0.20 (set) mag/airmass, filter dual 7 nm",
 		"GaryImm, comets off",
 		"Region:   within 5° of RA 12 30.0",
 		"Min run:  at least 1h0m0s",
@@ -499,13 +500,13 @@ func TestMutJSON(t *testing.T) {
 	if obs := t0["observable"].(map[string]any); obs["runs"] != 1.0 || obs["from"] == nil {
 		t.Errorf("observable %v", obs)
 	}
-	// Comets are flagged; Bortle without SQM is the flag's; filterK with -filter.
-	cfg.Top, cfg.SQM, cfg.Bortle, cfg.Filter, cfg.FilterK, cfg.Framing = 3, 0, 5, true, 0.3, false
+	// Comets are flagged; Bortle without SQM is the flag's; the filter with -filter.
+	cfg.Top, cfg.SQM, cfg.Bortle, cfg.Filter, cfg.FilterNM, cfg.Framing = 3, 0, 5, "oiii", 3, false
 	out = mutCapture(t, func() { _ = JSON(cfg, s, "", nil, res) })
 	doc = nil
 	_ = json.Unmarshal([]byte(out), &doc)
 	skyJ = doc["sky"].(map[string]any)
-	if skyJ["bortle"] != 5.0 || skyJ["filterK"] != 0.3 || skyJ["zenithMag"] != 19.75 {
+	if skyJ["bortle"] != 5.0 || !reflect.DeepEqual(skyJ["filter"], map[string]any{"mode": "oiii", "bandwidth": 3.0}) || skyJ["zenithMag"] != 19.75 {
 		t.Errorf("sky %v", skyJ)
 	}
 	if _, ok := doc["frame"]; ok {

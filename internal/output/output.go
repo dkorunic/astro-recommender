@@ -133,8 +133,8 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 		extDesc += fmt.Sprintf(" (elevation %.0f m, aerosols)", s.Elevation)
 	}
 	skyDesc += ", extinction " + paint(scale(hi, 0.25, 0.4), extDesc) + " mag/airmass"
-	if cfg.Filter {
-		skyDesc += fmt.Sprintf(", filter k=%.2f", cfg.FilterK)
+	if cfg.Filter != "" {
+		skyDesc += fmt.Sprintf(", filter %s %g nm", cfg.Filter, cfg.FilterNM)
 	}
 	fmt.Printf("%s %s\n\n", label("Sky:     "), skyDesc)
 }
@@ -461,7 +461,7 @@ var resultColumns = []column{
 	{"OBSERVABLE", "longest stretch within the limits without a break (+ there are others)"},
 	{"MAX ALT", "highest altitude in the window, and when"},
 	{"SKY", "mean sky brightness at the object, mag/arcsec² (higher is darker; no filter)"},
-	{"SB", "the object's own surface brightness, mag/arcsec², set against the sky it sees: SKY, cut to k by -filter for emission-line objects or halved for star clusters without nebulosity, whose own brightness is then not used (~ estimated from the magnitude and size or from a B value and a typical colour; - unknown, scored as sky-limited)"},
+	{"SB", "the object's own surface brightness, mag/arcsec², set against the sky it sees: SKY, cut by -filter to its bands' share for emission-line objects when that scores better, or halved for star clusters without nebulosity, whose own brightness is then not used (~ estimated from the magnitude and size or from a B value and a typical colour; - unknown, scored as sky-limited)"},
 	{"PX", "size in pixels at the frame's pixel scale, and the mosaic (columns along the long side x rows) when more than one panel scores best (- without framing)"},
 }
 

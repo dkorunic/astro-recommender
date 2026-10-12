@@ -92,14 +92,16 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, mosaics []config
 	sinRA, cosRA := math.Sincos(ra * deg)
 
 	// Fraction of sky glow (moonlight, light pollution) that counts against
-	// this target; also scales its Moon separation limit.
-	k := skyK(tg, cfg.Filter, cfg.FilterK)
+	// this target unfiltered; with what a -filter passes, it scales the Moon
+	// separation limit.
+	k := skyK(tg)
+	fp := passes(cfg, tg)
 	// The Moon separation is the Acos of a dot product of unit vectors, and a
 	// minute closer than the limit (at most 100°, where the cosine still
 	// falls) is rejected on the cosine alone. On a moonlit night with low
 	// altitude limits Separation's trigonometry was 40% of scoring.
 	unit := astro.Unit(ra, dec) // a comet's is redone per minute
-	cosMoonSep := math.Cos(k * s.MoonSep * deg)
+	cosMoonSep := math.Cos(min(k, fp.moonK()) * s.MoonSep * deg)
 
 	// The limits compare as sines, so the Asin runs only for the minutes
 	// that pass them (and for alt): the bulk of the minutes do not.
@@ -170,13 +172,21 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, mosaics []config
 			}
 			rho = math.Acos(c) / deg
 		}
-		sb := atmos.SkyBrightnessLit(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i])
 		// SNR in a fixed time goes as signal/sqrt(signal+sky), relative to the
 		// same object under a pristine dark sky: an object much brighter than
 		// the sky loses nothing, a faint or unknown one (objNL = 0) is
-		// sky-limited, sqrt(RefNL/(k·sky)). A filter cuts the sky the target
-		// sees to k; the emission-line signal that passes it is unchanged.
-		skyW := min(1, math.Sqrt(objRef/(objNL+k*sb)))
+		// sky-limited, sqrt(RefNL/(k·sky)). Through a filter, the better of
+		// that and the filtered weight; the sky is then the sum of its parts
+		// (SkyBrightnessLit's to rounding), not computed twice.
+		var sb, skyW float64
+		if fp.w > 0 {
+			glow, rayleigh, mie := atmos.SkyParts(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i])
+			sb = glow + rayleigh + mie
+			skyW = max(min(1, math.Sqrt(objRef/(objNL+k*sb))), fp.weight(objNL, objRef, glow, rayleigh, mie))
+		} else {
+			sb = atmos.SkyBrightnessLit(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i])
+			skyW = min(1, math.Sqrt(objRef/(objNL+k*sb)))
+		}
 		if i != prev+1 {
 			runStart = i
 			r.Runs++
@@ -250,14 +260,60 @@ func frameFill(fill float64) float64 {
 	return 1
 }
 
-// skyK returns the fraction of sky glow (moonlight, light pollution) that
-// counts against a target: 1 for faint broadband targets, 0.5 for clusters
-// (point sources; a cluster with nebulosity is imaged for the glow and is not
-// a catalog.Target.Cluster), and filterK for emission-line targets shot through a narrowband filter.
-func skyK(tg catalog.Target, filter bool, filterK float64) float64 {
-	if filter && catalog.EmissionLine(tg) {
-		return filterK
+// filterPass is what -filter passes for one target: w, its share of the
+// target's light (the lines in the filter's bands, catalog.Target.Lines), and
+// glow, rayleigh and mie, the shares of atmos.SkyParts' parts (atmos.BandSky,
+// summed over the bands, which a dual-band filter takes onto one frame). w is
+// 0 without a filter or for a target without lines.
+type filterPass struct{ w, glow, rayleigh, mie float64 }
+
+// passes returns what cfg's -filter passes for tg.
+func passes(cfg *config.Config, tg catalog.Target) filterPass {
+	var fp filterPass
+	if cfg.Filter == "" {
+		return fp
 	}
+	lines := tg.Lines()
+	for _, l := range config.Filters[cfg.Filter] {
+		glow, rayleigh, mie := atmos.BandSky(catalog.LineNM[l], cfg.FilterNM)
+		fp.w += lines[l]
+		fp.glow += glow
+		fp.rayleigh += rayleigh
+		fp.mie += mie
+	}
+
+	return fp
+}
+
+// weight is the sky weight through the filter, the counterpart of the
+// broadband min(1, √(objRef/(objNL + k·sky))): the target's signal is w of
+// it, the sky the bands' share of each part, so SNR² goes as
+// (w·S)²/(w·S + sky in the bands) against S²/(S + RefNL) for the reference.
+func (fp filterPass) weight(objNL, objRef, glow, rayleigh, mie float64) float64 {
+	sky := fp.glow*glow + fp.rayleigh*rayleigh + fp.mie*mie
+
+	return min(1, math.Sqrt(fp.w*fp.w*objRef/(fp.w*objNL+sky)))
+}
+
+// moonK is the fraction of the moonlight, against the target's own share of
+// light passed, that the filter lets count: rayleigh/w², the sky-limited
+// weight's ratio to broadband under a Moon well away (where Rayleigh
+// scattering dominates K&S's), so it scales the Moon separation limit as k
+// does. 1 without a filter, and at most 1: a filter that does not beat the
+// Moon leaves the target to the broadband limit.
+func (fp filterPass) moonK() float64 {
+	if fp.w == 0 {
+		return 1
+	}
+
+	return min(1, fp.rayleigh/(fp.w*fp.w))
+}
+
+// skyK returns the fraction of sky glow (moonlight, light pollution) that
+// counts against a target imaged without a filter: 1 for faint targets, 0.5
+// for clusters (point sources; a cluster with nebulosity is imaged for the
+// glow and is not a catalog.Target.Cluster).
+func skyK(tg catalog.Target) float64 {
 	if tg.Cluster() {
 		return 0.5
 	}

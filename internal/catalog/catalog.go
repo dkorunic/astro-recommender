@@ -196,6 +196,57 @@ func (t Target) Position() (float64, float64) {
 	return t.RADeg, t.DecDeg
 }
 
+// Line is an emission line nebula filters isolate.
+type Line int
+
+const (
+	Ha   Line = iota // Hα 656.3 nm
+	OIII             // [O III] 500.7 nm
+	SII              // [S II] 671.6/673.1 nm, one band
+)
+
+// LineNM are the lines' wavelengths in nm (the [S II] doublet's mean).
+var LineNM = [...]float64{Ha: 656.3, OIII: 500.7, SII: 672.4}
+
+// lineRatios are typical [O III] 500.7 and [S II] fluxes relative to Hα by
+// object type. H II regions: [S II]/Hα 0.12 on average (0.1-0.3), [O III]
+// weak outside the bright cores. Planetary nebulae: [O III]/Hβ 6-9 (Magellanic
+// Cloud averages), so 2.8 Hα, [S II] faint. Supernova remnants: [S II]/Hα
+// above 0.4 is their defining criterion (Mathewson & Clarke 1973), [O III]
+// varies (strong in the Veil). Wolf-Rayet shells are [O III]-bright.
+// ponytail: one ratio per type where single objects scatter by factors of a
+// few, and [N II] 654.8/658.3, inside most Hα bands, is left out.
+var lineRatios = []struct {
+	word   string // in the type, lower case
+	ratios [3]float64
+}{
+	{"planetary", [3]float64{Ha: 1, OIII: 2.8, SII: 0.05}},
+	{"supernova", [3]float64{Ha: 1, OIII: 0.5, SII: 0.6}},
+	{"wolf", [3]float64{Ha: 1, OIII: 1, SII: 0.2}},
+}
+
+// Lines returns the shares of an emission-line target's light in Hα, [O III]
+// and [S II] (summing to 1), from its type's typical ratios (lineRatios; H II
+// regions, and the dark nebulae and clusters emissionNames lists, otherwise);
+// all 0 when it is not EmissionLine.
+func (t Target) Lines() [3]float64 {
+	if !EmissionLine(t) {
+		return [3]float64{}
+	}
+	r := [3]float64{Ha: 1, OIII: 0.3, SII: 0.12}
+	typ := strings.ToLower(t.Type)
+	for _, l := range lineRatios {
+		if strings.Contains(typ, l.word) {
+			r = l.ratios
+
+			break
+		}
+	}
+	sum := r[Ha] + r[OIII] + r[SII]
+
+	return [3]float64{r[Ha] / sum, r[OIII] / sum, r[SII] / sum}
+}
+
 // kind is the class of object the scoring rules act on. The lists spell
 // types many ways, so every rule asks kind() rather than the type text;
 // TestKindLists fails on a spelling none of the rules know.

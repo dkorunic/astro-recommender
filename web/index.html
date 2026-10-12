@@ -351,6 +351,8 @@ function restore() {
   try { v = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch {}
   for (const el of $("form").elements) {
     if (!(el.name in v) || el.name === "date") continue; // older saves kept it
+    // A flag whose kind changed (-filter was a checkbox) keeps nothing stale.
+    if (typeof v[el.name] !== (el.type === "checkbox" ? "boolean" : "string")) continue;
     if (el.type === "checkbox") el.checked = v[el.name]; else el.value = v[el.name];
   }
 }
