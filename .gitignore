@@ -38,6 +38,9 @@ cmake-build-debug/
 *.sh
 !scripts/*.sh
 
+### Generated -horizon files (scripts/terrain2horizon.py) ###
+*-horizon.txt
+
 ## Usual macOS cruft ###
 .DS_Store
 
