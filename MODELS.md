@@ -647,7 +647,17 @@ Two points at the same azimuth make a vertical step. A minute counts only when t
 h_\text{hor}(A) = \max_d \arctan\frac{z(d) - z_0 - d^2 (1 - k) / 2R}{d}
 ```
 
-z₀ is the site's model elevation (or `--elevation`) plus a 2 m eye height. A ridge must rise about 580 m per km to reach the default 30° floor, so the file matters mostly with a lower `-alt-min` in the mountains. Trees and buildings are not in the model.
+z₀ is the site's model elevation (or `--elevation`) plus a 2 m eye height. A ridge must rise about 580 m per km to reach the default 30° floor, so the terrain matters mostly with a lower `-alt-min` in the mountains. Trees and buildings are not in the elevation model.
+
+By default (`--no-osm` turns it off) the script adds OpenStreetMap's buildings (outlines), and with `--no-canopy` its single trees (3 m crowns, tree rows as trees every 6 m) and woods (outlines), within `--osm-radius` (300 m), fetched from the Overpass API. Each has its `height` tag, else `building:levels` × 3 m + 2 m of roof, else a default: 8 m for a building, 12 m for a tree, 20 m for a wood. Along each azimuth every crossing of an outline or crown at distance d gives
+
+```math
+h_\text{obs}(A) = \max \arctan\frac{z(d) - z_\text{site} + h - 2\ \text{m}}{d}
+```
+
+with the obstacle standing on the terrain model's ground z(d), measured from the model's ground at the site, so an `--elevation` override moves the eye only. The horizon is the higher of the terrain's and the obstacles'. An outline holding the site (the house you stand by, a wood you stand in) is left out, and so are inner rings, since a ray's steepest crossing is the outer edge it meets first. The roof is flat at h, so a pitched roof's ridge seen end-on is overstated. An obstacle blocks the default 30° floor when its top is more than 0.58 d above the eye: an 8 m house within 10 m, a 20 m wood edge within 30 m.
+
+By default (`--no-canopy` turns it off) the trees come from the Meta/WRI canopy height map instead of OSM ([Tolan et al. 2024][chm]): 1.19 m Web Mercator pixels (0.84 m at 45°), heights in whole metres, estimated from 2009–2020 Maxar imagery with a mean absolute error of about 2.8 m against airborne lidar. The script reads only the rows around the site from the Cloud-Optimized GeoTIFF tiles (zoom-9 quadkeys, 65536 px square, BigTIFF, Deflate with the horizontal predictor, one row a strip) by HTTP range requests, and marches each azimuth every half pixel from `--canopy-near` (3 m, past a tree you stand under) to `--canopy-radius` (300 m), with the same angle as above for any pixel at least 1 m tall (lower is the map's noise over open ground). OSM then gives the buildings only. Near Zagreb's Maksimir wood, 91% of the pixels inside OSM's wood outlines are at least 5 m tall against 17% outside, and a mirrored or 60 m shifted grid agrees far worse, which checks its registration.
 
 ## Heuristics
 
@@ -661,6 +671,8 @@ The models above come from the literature. The following are this project's own 
 | Emission line ratios | one set per type ([Nebula filters](#nebula-filters)) | single objects scatter by factors of a few; no list has line fluxes |
 | Hβ | Hα/2.86 for every type | case-B recombination; dust raises the ratio, so dusty H II regions' Hβ is overstated |
 | Filter band width | every band `-filter-nm` wide | real tri- and quad-band filters mix widths (the L-eNhance's 24 nm over Hβ and [O III]); one width keeps the flag simple |
+| OSM obstacle heights | building 8 m (else 3 m a level + 2 m), tree 12 m, wood 20 m | typical two-storey house, mature broadleaf, temperate forest canopy; OSM tags few heights |
+| Canopy floor | trees under 1 m ignored | the canopy map reads a metre or so over open ground |
 | Night-sky spectrum | flat per nm, Moon before scattering and glow | the lamp mix is unknown; the Moon's redness offsets the Sun's fall |
 | High cloud weight | ½ | thin cirrus dims rather than blocks |
 | Dew ramp | spread 4 → 1 °C, × 1 → 0.7 | dew on optics ends sessions |
@@ -728,6 +740,7 @@ Treat SCORE as a way to order tonight's options, not as an absolute measure of q
 [angstrom]: https://doi.org/10.1080/20014422.1929.11880498
 [moon-colour]: https://arxiv.org/abs/1401.1994
 [mathewson]: https://doi.org/10.1086/151999
+[chm]: https://doi.org/10.1016/j.rse.2023.113888
 [agn2]: https://ui.adsabs.harvard.edu/abs/2006agna.book.....O
 [stanghellini]: https://arxiv.org/abs/astro-ph/0307351
 [kopsacheili]: https://arxiv.org/abs/1909.05879
