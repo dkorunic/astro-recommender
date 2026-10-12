@@ -344,7 +344,7 @@ func (t Target) typicalBV(k kind) float64 {
 }
 
 // Lists are the embedded uptonight target lists selectable with -list.
-var Lists = []string{"GaryImm", "GaryImmFull", "Messier", "Herschel400", "Pensack500", "OpenNGC", "OpenIC", "LBN", "LDN", "MWSC", "Melotte", "Collinder", "PNnet", "HASH", "Sharpless", "Caldwell", "RCW", "SNR", "Barnard", "vdB", "vdBH", "Arp", "HCG"}
+var Lists = []string{"GaryImm", "GaryImmFull", "Messier", "Herschel400", "Pensack500", "OpenNGC", "OpenIC", "LBN", "LDN", "MWSC", "Melotte", "Collinder", "PNnet", "HASH", "Sharpless", "Caldwell", "RCW", "SNR", "Barnard", "vdB", "vdBH", "Arp", "HCG", "Ced", "Gum", "CG", "ACO"}
 
 var (
 	errList        = errors.New("unknown target list")

@@ -209,6 +209,10 @@ func TestEmissionLineLists(t *testing.T) {
 		"vdBH":        {"vdBH 1": false},
 		"Arp":         {"Arp 244": false},
 		"HCG":         {"HCG 92": false},
+		"Ced":         {"Ced 7": true, "Ced 3": true, "Ced 16": false, "Ced 19g": false},
+		"Gum":         {"Gum 4": true, "Gum 27": true, "Gum 28": true, "Gum 30": true},
+		"CG":          {"CG 4": false, "CG 22": false},
+		"ACO":         {"ACO 1656": false},
 	} {
 		targets, _, err := Load(list, "")
 		if err != nil {
