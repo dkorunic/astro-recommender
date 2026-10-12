@@ -449,6 +449,49 @@ def obstacle_horizon(outlines, trees, azimuths, rise):
     return out
 
 
+LEGEND = {"T": "terrain", "B": "OSM building", "O": "OSM building, tree or wood", "t": "canopy-map tree"}
+
+
+def plot(points, sources, floor=30.0, width=72):
+    """A panorama of the horizon as text: altitude against azimuth from north
+    through east, 5° a row (10° above 50°) in eighth-row blocks, the -alt-min
+    floor dotted, and under each column the source that sets it (LEGEND)
+    where the horizon is above 0°, then the legend of those shown."""
+    cols = [-90.0] * width
+    src = [" "] * width
+    for (az, alt), s in zip(points, sources):
+        c = int(az % 360 / 360 * width)
+        if alt > cols[c]:
+            cols[c], src[c] = alt, s
+    top = min(90, math.ceil(max(floor, max(cols)) / 10) * 10)
+    step = 5 if top <= 50 else 10
+    rows = top // step
+    lines = []
+    for r in range(rows, 0, -1):
+        lo = (r - 1) * step  # the row spans lo..lo+step
+        cells = []
+        for alt in cols:
+            eighths = round((alt - lo) / step * 8)
+            if eighths >= 8:
+                cells.append("█")
+            elif eighths > 0:
+                cells.append(" ▁▂▃▄▅▆▇"[eighths])
+            else:
+                cells.append("·" if lo < floor <= lo + step and r > 1 else " ")
+        label = f"{lo + step:3.0f}°" if (lo + step) % 10 == 0 else "    "
+        lines.append(f"{label}│{''.join(cells)}")
+    lines.append("    └" + "─" * width)
+    axis = [" "] * width
+    for i, name in enumerate("NESW"):
+        axis[i * width // 4] = name
+    lines.append("     " + "".join(axis))
+    shown = "".join(s if c > 0 else " " for s, c in zip(src, cols))
+    lines.append("     " + shown)
+    used = ", ".join(f"{k} {v}" for k, v in LEGEND.items() if k in shown)
+    lines.append(f"     {used}{'; ' if used else ''}dots: -alt-min {floor:g}°")
+    return "\n".join(lines)
+
+
 def selftest():
     # Flat ground from 2 m: the dip peaks where 2/d = d(1-k)/2R, about 7.7 km out.
     flat = horizon(lambda la, lo: 0.0, 45, 16, 2, 90, 100, 20000, 50)
@@ -516,6 +559,13 @@ def selftest():
     alts = canopy_horizon(lambda x, y: 15 if 20 <= x <= 24 and abs(y) < 2 else 0, (90, 270), lambda az, d: -2.0, 2, 300, 0.5)
     assert abs(alts[0] - math.degrees(math.atan2(13, 20))) < 0.01 and alts[1] == -90.0, alts
     assert quadkey(3, 5, 3) == "213", quadkey(3, 5, 3)
+    # The plot: a 40° building wall east, 10° terrain elsewhere.
+    pts = [(az, 40.0 if 80 <= az <= 100 else 10.0) for az in range(0, 360, 2)]
+    text = plot(pts, ["B" if alt == 40 else "T" for _, alt in pts]).split("\n")
+    east = 90 * 72 // 360 + 5
+    assert len(text) == 12 and text[0].startswith(" 40°") and text[0][east] == "█" and text[0][5] == " " and text[-3][5:].startswith("N"), text
+    assert text[-2][east] == "B" and text[-2][5] == "T" and text[2].startswith(" 30°│··"), text
+    assert text[-1] == "     T terrain, B OSM building; dots: -alt-min 30°", text[-1]
     print("selftest ok")
 
 
@@ -555,6 +605,7 @@ def main():
     ground = elev(args.lat, args.lon) if args.elevation is None else args.elevation
     spacing = 2 * math.pi * R_EARTH * math.cos(math.radians(args.lat)) / (TILE << args.zoom)  # one pixel
     points = horizon(elev, args.lat, args.lon, ground + args.height, args.step, args.near, args.radius * 1000, spacing)
+    sources = ["T"] * len(points)
     notes = []
     # Obstacles stand on the terrain, relative to the site's model ground,
     # so an --elevation override shifts the eye, not their footing.
@@ -576,6 +627,9 @@ def main():
         tops = obstacle_horizon(outlines, trees, [az for az, _ in points], rise)
         raised = sum(top > alt for top, (_, alt) in zip(tops, points))
         print(f"osm: obstacles above the terrain at {raised} of {len(points)} azimuths", file=sys.stderr)
+        # Which obstacle won is not tracked: with the canopy on, OSM gives buildings only.
+        mark = "B" if args.canopy else "O"
+        sources = [mark if top > alt else src for top, (_, alt), src in zip(tops, points, sources)]
         points = [(az, max(alt, top)) for (az, alt), top in zip(points, tops)]
         guessed = "" if args.canopy else f", trees {args.tree_height:g} m, woods {args.wood_height:g} m"
         notes.append(f"OpenStreetMap buildings ({args.building_height:g} m{guessed} unless tagged) within {args.osm_radius:g} m, "
@@ -588,6 +642,7 @@ def main():
         tops = canopy_horizon(height, [az for az, _ in points], rise, args.canopy_near, args.canopy_radius, mpp / 2)
         raised = sum(top > alt for top, (_, alt) in zip(tops, points))
         print(f"canopy: trees above the rest at {raised} of {len(points)} azimuths", file=sys.stderr)
+        sources = ["t" if top > alt else src for top, (_, alt), src in zip(tops, points, sources)]
         points = [(az, max(alt, top)) for (az, alt), top in zip(points, tops)]
         notes.append(f"trees within {args.canopy_radius:g} m from the Meta/WRI canopy height map (Tolan et al. 2024; 2009-2020 imagery), CC BY 4.0")
     print(f"# terrain horizon, {args.radius:g} km at zoom {args.zoom}, ground {ground:.0f} m + {args.height:g} m")
@@ -597,6 +652,7 @@ def main():
     print("# azimuth altitude")
     for az, alt in points:
         print(f"{az:g} {alt:.1f}")
+    print(plot(points, sources), file=sys.stderr)
     return None
 
 
