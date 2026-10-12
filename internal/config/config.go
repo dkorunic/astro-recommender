@@ -67,7 +67,7 @@ type Config struct {
 	SkipFile       string          // -skip: file of names to leave out, shown in the header
 	Skip           map[string]bool // its names as catalog.NameKey
 	Types          []string        // -type: catalog.Classes to keep, nil = all
-	Filter         string          // -filter: a Filters key, "" = none
+	Filter         string          // -filter: comma-separated Filters keys, lowercased, without repeats; "" = none
 	Horizon        horizon.Horizon
 	Plan           time.Duration
 	MinRun         time.Duration // -min-run: shortest continuous observable stretch a target needs; 0 = any
@@ -90,6 +90,7 @@ type Config struct {
 	DateSet        bool // -date given; otherwise Day is now
 	Version        bool // -version: print the version and exit; nothing else is set
 	JSON           bool // -json: one JSON document instead of the tables
+	CSV            bool // -csv: the targets as CSV that N.I.N.A. imports, instead of the tables
 	ExtinctionSet  bool // -extinction given: skip the aerosol-based estimate
 	SkySet         bool // -sqm or -bortle given, even as 0: skip the DarkSkySites lookup
 	RASet, DecSet  bool // -ra/-dec given: keep only targets within Tol of them
@@ -126,6 +127,7 @@ func Parse() (Config, error) {
 	flag.Float64Var(&cfg.Tol, "tol", 10, "with -ra/-dec, how near in degrees, above 0 and at most 180; RA counts 15° per hour")
 	flag.IntVar(&cfg.Top, "n", 20, "number of objects to list")
 	flag.BoolVar(&cfg.JSON, "json", false, "print the report as JSON instead of tables")
+	flag.BoolVar(&cfg.CSV, "csv", false, "print the targets (with -plan, the planned ones in order) as CSV in Telescopius's format, which N.I.N.A. imports, instead of tables")
 	// web/index.html builds its select from the ": name, name" part of this help.
 	flag.StringVar(&cfg.ListName, "list", "GaryImm", "built-in target list: "+strings.Join(catalog.Lists, ", "))
 	flag.StringVar(&cfg.TargetsFile, "targets", "", "custom uptonight-style targets YAML file (overrides -list)")
@@ -140,7 +142,7 @@ func Parse() (Config, error) {
 	flag.Float64Var(&minPx, "min-px", 200, "with framing, minimum object size in pixels; 0 or more")
 	flag.IntVar(&cfg.Mosaic, "mosaic", 1, "with framing, most mosaic panels per object, 1-25; an object's score is divided among its panels")
 	flag.BoolVar(&cfg.Rotate, "rotate", false, "with framing, the camera can be rotated to frame the major axis along the long side, so the minor axis counts (not the Origin)")
-	flag.StringVar(&cfg.Filter, "filter", "", "nebula filter for emission-line targets: dual (Ha + OIII at once), tri (+ Hb), quad (+ Hb and SII), ha, oiii or sii; each target is scored with it or without, whichever is better (default none)")
+	flag.StringVar(&cfg.Filter, "filter", "", "nebula filters you own for emission-line targets, comma-separated: dual (Ha + OIII at once), tri (+ Hb), quad (+ Hb and SII), ha, oiii, sii; each target is scored with each and without, the best shown in FILTER (default none)")
 	flag.Float64Var(&cfg.FilterNM, "filter-nm", 7, "with -filter, the width of each band in nm, 1-30")
 	flag.IntVar(&cfg.Bortle, "bortle", 0, "Bortle class 1-9 of the site, sets the zenith sky brightness (0 = dark sky)")
 	flag.Float64Var(&cfg.SQM, "sqm", 0, "measured zenith sky brightness in mag/arcsec² (SQM meter or light pollution map); overrides -bortle; default: looked up on DarkSkySites when a key is available (CLI: $DARKSKYSITES_API_KEY; browser: always) and -bortle is not")
@@ -280,6 +282,15 @@ var Filters = map[string][]catalog.Line{
 	"ha":   {catalog.Ha},
 	"oiii": {catalog.OIII},
 	"sii":  {catalog.SII},
+}
+
+// FilterNames returns the -filter choices in their order; nil for none.
+func (cfg *Config) FilterNames() []string {
+	if cfg.Filter == "" {
+		return nil
+	}
+
+	return strings.Split(cfg.Filter, ",")
 }
 
 // SunAlt returns the Sun altitude (degrees) below which -twilight counts as night.
@@ -600,8 +611,8 @@ func parseWxH(name, unit, example, s string) (float64, float64, error) {
 // validateSky checks the sky flags: brightness, extinction, filter and twilight.
 func (cfg *Config) validateSky() error {
 	switch {
-	case cfg.Filter != "" && Filters[cfg.Filter] == nil:
-		return fmt.Errorf("%w: -filter must be dual, tri, quad, ha, oiii or sii", errInvalidFlag)
+	case cfg.Filter != "" && slices.ContainsFunc(cfg.FilterNames(), func(f string) bool { return Filters[f] == nil }):
+		return fmt.Errorf("%w: -filter must be dual, tri, quad, ha, oiii or sii, or a comma-separated list of them", errInvalidFlag)
 	case cfg.Filter != "" && (cfg.FilterNM < 1 || cfg.FilterNM > 30):
 		return fmt.Errorf("%w: -filter-nm must be 1 to 30 nm", errInvalidFlag)
 	case cfg.Bortle < 0 || cfg.Bortle > 9:
@@ -622,7 +633,13 @@ func (cfg *Config) validateSky() error {
 // -filter-nm without -filter, and validates the result.
 func (cfg *Config) validateFlags(set map[string]bool) error {
 	cfg.Twilight = strings.ToLower(strings.TrimSpace(cfg.Twilight))
-	cfg.Filter = strings.ToLower(strings.TrimSpace(cfg.Filter))
+	var filters []string
+	for f := range strings.SplitSeq(strings.ToLower(cfg.Filter), ",") {
+		if f = strings.TrimSpace(f); !slices.Contains(filters, f) {
+			filters = append(filters, f)
+		}
+	}
+	cfg.Filter = strings.Join(filters, ",") // "" stays "", and an empty item is an unknown filter
 	if set["filter-nm"] && cfg.Filter == "" {
 		return fmt.Errorf("%w: -filter-nm needs -filter", errInvalidFlag)
 	}
@@ -647,6 +664,8 @@ func (cfg *Config) validate() error {
 		return fmt.Errorf("%w: -min-run must be 0 or more", errInvalidFlag)
 	case cfg.Top < 1:
 		return fmt.Errorf("%w: -n must be at least 1", errInvalidFlag)
+	case cfg.JSON && cfg.CSV:
+		return fmt.Errorf("%w: -json and -csv cannot be combined", errInvalidFlag)
 	// Scoring compares the limits as sines, which only orders altitudes within ±90°.
 	case math.Abs(cfg.AltMin) > 90 || math.Abs(cfg.AltMax) > 90:
 		return fmt.Errorf("%w: -alt-min and -alt-max must be between -90 and 90", errInvalidFlag)

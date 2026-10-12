@@ -9,6 +9,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -188,6 +189,9 @@ func TestMutValidate(t *testing.T) {
 		{"-size-min", "-1"},
 		{"-size-max", "-1", "-size-min", "-2"},
 		{"-filter", "penta"},
+		{"-filter", "dual,penta"},
+		{"-filter", "dual,"},
+		{"-filter", ",ha"},
 		{"-filter", "dual", "-filter-nm", "0.9"},
 		{"-filter", "ha", "-filter-nm", "31"},
 		{"-filter-nm", "7"},
@@ -216,6 +220,7 @@ func TestMutValidate(t *testing.T) {
 		{"-filter", "dual", "-filter-nm", "1"},
 		{"-filter", "sii", "-filter-nm", "30"},
 		{"-filter", "quad"},
+		{"-filter", "dual,ha,oiii,sii,tri,quad"},
 		{"-bortle", "9"},
 		{"-sqm", "15"},
 		{"-sqm", "23"},
@@ -226,6 +231,20 @@ func TestMutValidate(t *testing.T) {
 		if _, err := mutParse(t, mutBase(args...)...); err != nil {
 			t.Errorf("%v rejected: %v", args, err)
 		}
+	}
+}
+
+// A -filter list is lowercased and trimmed, keeps its order and drops repeats.
+func TestMutFilterList(t *testing.T) {
+	cfg, err := mutParse(t, mutBase("-filter", " Dual, HA ,dual,oiii")...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Filter != "dual,ha,oiii" || !slices.Equal(cfg.FilterNames(), []string{"dual", "ha", "oiii"}) {
+		t.Errorf("-filter %q, names %q", cfg.Filter, cfg.FilterNames())
+	}
+	if cfg, _ = mutParse(t, mutBase()...); cfg.FilterNames() != nil {
+		t.Errorf("no -filter: names %q", cfg.FilterNames())
 	}
 }
 

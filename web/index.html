@@ -110,6 +110,11 @@ pre#out a { color: inherit; text-decoration: underline dotted; text-underline-of
   border: 1px solid var(--line); border-radius: 8px; background: var(--field); box-shadow: 0 6px 24px rgba(0, 0, 0, .4);
 }
 #thumb[hidden] { display: none; }
+#alt {
+  position: fixed; z-index: 10; width: 240px; height: 96px; pointer-events: none;
+  border: 1px solid var(--line); border-radius: 8px; background: var(--field); box-shadow: 0 6px 24px rgba(0, 0, 0, .4);
+}
+#alt[hidden] { display: none; }
 footer {
   display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px;
   margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted);
@@ -161,6 +166,7 @@ footer a:hover { text-decoration: underline; }
   <div id="warn"></div>
   <pre id="out"></pre>
   <img id="thumb" alt="" hidden>
+  <canvas id="alt" width="240" height="96" hidden></canvas>
   <footer>
     <span>© 2026 Dinko Korunic</span>
     <span>Code: <a rel="license" href="https://github.com/dkorunic/astro-recommender/blob/main/LICENSE">MIT</a> · <a href="https://github.com/dkorunic/astro-recommender/blob/main/README.md">README</a> · <a href="https://github.com/dkorunic/astro-recommender/">GitHub</a><span id="version"></span></span>
@@ -177,11 +183,14 @@ const HIDDEN = ["version"]; // nothing to show
 const KEY = "astro-recommender-form";
 const $ = (id) => document.getElementById(id);
 
-// fs shim: fd 1/2 to the current run's sinks, uploaded files read-only.
+// fs shim: fd 1/2 to the current run's sinks, and so is ALT, the fd of the
+// write-only /altitudes, main_js.go's altitude curves; uploaded files
+// read-only.
 // The Go runtime prints panics through writeSync, not write.
 const files = new Map(); // path -> Uint8Array
 const open = new Map();  // fd -> {data, pos}
 let nextFD = 100, sink = null;
+const ALT = 3;
 const enoent = () => Object.assign(new Error("no such file"), { code: "ENOENT" });
 Object.assign(globalThis.fs, {
   writeSync(fd, buf) {
@@ -192,6 +201,7 @@ Object.assign(globalThis.fs, {
     cb(null, this.writeSync(fd, buf.subarray(offset, offset + length)));
   },
   open(path, flags, mode, cb) {
+    if (path === "/altitudes" && flags !== 0) return cb(null, ALT);
     const data = files.get(path);
     if (!data || flags !== 0) return cb(enoent());
     open.set(nextFD, { data, pos: 0 });
@@ -228,8 +238,8 @@ function run(args, argv0 = "astro-recommender") {
   return p;
 }
 async function runNow(args, argv0) {
-  const dec = { 1: new TextDecoder(), 2: new TextDecoder() };
-  const text = { 1: "", 2: "" };
+  const dec = { 1: new TextDecoder(), 2: new TextDecoder(), [ALT]: new TextDecoder() };
+  const text = { 1: "", 2: "", [ALT]: "" };
   sink = (fd, bytes) => { if (dec[fd]) text[fd] += dec[fd].decode(bytes, { stream: true }); };
   const go = new Go();
   let code = 0;
@@ -239,7 +249,7 @@ async function runNow(args, argv0) {
   const inst = await WebAssembly.instantiate(await modulePromise, go.importObject);
   await go.run(inst);
   sink = null;
-  return { out: text[1] + dec[1].decode(), err: text[2] + dec[2].decode(), code };
+  return { out: text[1] + dec[1].decode(), err: text[2] + dec[2].decode(), alt: text[ALT] + dec[ALT].decode(), code };
 }
 
 // ansi turns the SGR codes paint() writes into spans; codes may nest.
@@ -256,14 +266,16 @@ function ansi(s) {
 }
 
 // sky links each result's name to Aladin Lite at the row's RA/Dec, with a
-// DSS2 thumbnail (CDS hips2fits) shown on hover. Only result rows carry
-// "hh mm.m ±dd mm size'" cells; the plan table's names stay plain.
+// DSS2 thumbnail (CDS hips2fits) and the altitude curve of its rank shown on
+// hover. Only result rows carry "hh mm.m ±dd mm size'" cells; the plan
+// table's names stay plain.
 const survey = "CDS%2FP%2FDSS2%2Fcolor";
 function sky(html) {
   return html.split("\n").map((line) => {
     const m = line.replace(/<[^>]+>/g, "")
       .match(/ (\d\d) (\d\d\.\d)  +([+-])(\d\d) (\d\d)  +(?:(\d+)(?:x\d+)?'|-) /);
     if (!m) return line;
+    const rank = line.replace(/<[^>]+>/g, "").match(/^\s*(\d+) /)?.[1] ?? "";
     const ra = (+m[1] + m[2] / 60) * 15, dec = (m[3] === "-" ? -1 : 1) * (+m[4] + m[5] / 60);
     // Half again the object, within 0.1-5°; unknown sizes (comets) get 0.5°.
     const fov = m[6] ? Math.min(5, Math.max(0.1, m[6] * 1.5 / 60)) : 0.5;
@@ -271,28 +283,74 @@ function sky(html) {
     const thumb = `https://alaskybis.cds.unistra.fr/hips-image-services/hips2fits?hips=${survey}&width=240&height=240&projection=TAN` +
       `&fov=${fov.toFixed(2)}&ra=${ra.toFixed(4)}&dec=${dec.toFixed(4)}&format=jpg`;
     return line.replace(/<span class="c36">([^<]*)<\/span>/,
-      `<span class="c36"><a href="${href}" target="_blank" rel="noopener" data-thumb="${thumb}">$1</a></span>`);
+      `<span class="c36"><a href="${href}" target="_blank" rel="noopener" data-thumb="${thumb}" data-rank="${rank}">$1</a></span>`);
   }).join("\n");
 }
 // The thumbnail shows once its own image has loaded, never the previous
 // name's image or an empty box: a load event the previous image queued before
 // the pointer moved on would otherwise show it under the new name.
-let thumbFor = null;
+let thumbFor = null, curves = null;
 $("thumb").addEventListener("load", (e) => { if (thumbFor && e.target.src === thumbFor.dataset.thumb) e.target.hidden = false; });
 $("out").addEventListener("mouseover", (e) => {
   const a = e.target.closest("a[data-thumb]"), img = $("thumb");
   if (a === thumbFor) return;
   thumbFor = a;
-  img.hidden = true;
+  img.hidden = $("alt").hidden = true;
   if (!a) return;
-  const r = a.getBoundingClientRect();
-  img.style.left = `${Math.min(r.right + 12, innerWidth - 252)}px`;
-  img.style.top = `${Math.max(8, Math.min(r.top - 100, innerHeight - 248))}px`;
+  const r = a.getBoundingClientRect(), left = Math.min(r.right + 12, innerWidth - 252);
+  const top = Math.max(8, Math.min(r.top - 100, innerHeight - 352));
+  img.style.left = `${left}px`;
+  img.style.top = `${top}px`;
+  drawAlt(curves?.alt?.[a.dataset.rank - 1], left, top + 248);
   img.src = a.dataset.thumb;
   // Back on the same name the src does not change and no load event fires.
   if (img.complete && img.naturalWidth) img.hidden = false;
 });
-$("out").addEventListener("mouseleave", () => { thumbFor = null; $("thumb").hidden = true; });
+$("out").addEventListener("mouseleave", () => { thumbFor = null; $("thumb").hidden = $("alt").hidden = true; });
+
+// drawAlt plots one altitude curve (degrees every curves.step seconds
+// from curves.start) from 0° to 90°, the -alt-min/-alt-max band shaded and
+// the curve drawn bold within it, with the window's ends and the peak in
+// curves.zone.
+function drawAlt(alt, left, top) {
+  const c = $("alt");
+  if (!alt?.length) return;
+  const css = getComputedStyle(document.documentElement), v = (n) => css.getPropertyValue(n).trim();
+  const dpr = devicePixelRatio || 1, W = 240, H = 96, P = 6, T = 16;
+  c.width = W * dpr; c.height = H * dpr;
+  const g = c.getContext("2d");
+  g.scale(dpr, dpr);
+  const x = (i) => P + (W - 2 * P) * i / Math.max(1, alt.length - 1);
+  const y = (d) => H - T - (H - T - P) * Math.max(0, Math.min(90, d)) / 90;
+  g.fillStyle = v("--accent-soft");
+  g.fillRect(P, y(curves.max), W - 2 * P, y(curves.min) - y(curves.max));
+  g.strokeStyle = v("--line"); g.lineWidth = 1;
+  g.beginPath(); g.moveTo(P, y(0)); g.lineTo(W - P, y(0)); g.stroke();
+  for (const within of [false, true]) {
+    g.strokeStyle = within ? v("--accent") : v("--muted");
+    g.lineWidth = within ? 2 : 1;
+    g.beginPath();
+    alt.forEach((d, i) => {
+      const ok = d >= curves.min && d <= curves.max;
+      const prev = i > 0 && (!within || (alt[i - 1] >= curves.min && alt[i - 1] <= curves.max));
+      if (within && !ok) return;
+      prev ? g.lineTo(x(i), y(d)) : g.moveTo(x(i), y(d));
+    });
+    g.stroke();
+  }
+  const clock = (i) => new Date((curves.start + i * curves.step) * 1000)
+    .toLocaleTimeString([], { timeZone: curves.zone, hour: "2-digit", minute: "2-digit", hour12: false });
+  // The middle of the top: near the meridian a high-declination object holds
+  // its altitude to 0.1° for half an hour.
+  const hi = Math.max(...alt), peak = Math.round((alt.indexOf(hi) + alt.lastIndexOf(hi)) / 2);
+  g.fillStyle = v("--muted"); g.font = "10px ui-monospace, Menlo, monospace"; g.textBaseline = "alphabetic";
+  g.textAlign = "left"; g.fillText(clock(0), P, H - 4);
+  g.textAlign = "right"; g.fillText(clock(alt.length - 1), W - P, H - 4);
+  g.textAlign = "center"; g.fillText(`${Math.round(alt[peak])}° @ ${clock(peak)}`, W / 2, H - 4);
+  c.style.left = `${left}px`;
+  c.style.top = `${top}px`;
+  c.hidden = false;
+}
 
 // parseUsage reads the flag list from -h, so the form follows the program.
 function parseUsage(text) {
@@ -453,7 +511,8 @@ $("form").addEventListener("submit", async (e) => {
   const t0 = performance.now();
   try {
     const a = await args();
-    const { out, err, code } = await run(a);
+    const { out, err, alt, code } = await run(a);
+    try { curves = alt ? JSON.parse(alt) : null; } catch { curves = null; }
     $("out").innerHTML = sky(ansi(out));
     $("warn").textContent = err.trim();
     $("warn").className = code ? "error" : "";

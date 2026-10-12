@@ -68,7 +68,7 @@ type sky struct { // betteralign:ignore
 }
 
 type filter struct { // betteralign:ignore
-	Mode      string  `json:"mode"`      // dual, tri, quad, ha, oiii or sii
+	Mode      string  `json:"mode"`      // the -filter list: dual, tri, quad, ha, oiii, sii, comma-separated
 	Bandwidth float64 `json:"bandwidth"` // nm, each band
 }
 
@@ -87,6 +87,7 @@ type slot struct { // betteralign:ignore
 	Score   float64   `json:"score,omitempty"`
 	PeakAlt float64   `json:"peakAlt,omitempty"`
 	PeakAt  time.Time `json:"peakAt,omitzero"`
+	Filter  string    `json:"filter,omitempty"` // the target's FILTER
 }
 
 type target struct { // betteralign:ignore
@@ -111,6 +112,7 @@ type target struct { // betteralign:ignore
 	SBEstimated   bool      `json:"surfaceBrightnessEstimated,omitempty"`
 	Px            *float64  `json:"px,omitempty"`
 	Mosaic        *mosaic   `json:"mosaic,omitempty"` // more than one panel only
+	Filter        string    `json:"filter,omitempty"` // the -filter choice that scored best; none helped when absent
 }
 
 type mosaic struct { // betteralign:ignore
@@ -170,7 +172,7 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 	for _, p := range slots {
 		sl := slot{span: span{p.Start, p.End}}
 		if p.Result != nil {
-			sl.Name, sl.Score, sl.PeakAlt, sl.PeakAt = p.Result.Name, p.Score, p.PeakAlt, p.PeakAt
+			sl.Name, sl.Score, sl.PeakAlt, sl.PeakAt, sl.Filter = p.Result.Name, p.Score, p.PeakAlt, p.PeakAt, p.Result.Filter
 		}
 		r.Plan = append(r.Plan, sl)
 	}
@@ -179,7 +181,7 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 		tg := target{
 			Rank: i + 1, Name: res.Name, Description: res.Description, Type: res.Type, Constellation: res.Constellation,
 			RA: ra, Dec: dec, Foto: res.Foto, Score: res.Score, Frame: res.Frame, MaxAlt: res.MaxAlt, MaxAt: res.MaxAt,
-			SkyMag: res.SkyMag, Comet: res.Track != nil,
+			SkyMag: res.SkyMag, Comet: res.Track != nil, Filter: res.Filter,
 			Observable: run{Runs: res.Runs, span: span{res.RunFrom, res.RunTo}},
 		}
 		if res.HasSize() {

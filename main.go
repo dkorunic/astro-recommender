@@ -131,18 +131,35 @@ func main() {
 
 		return
 	}
+	if cfg.CSV {
+		if err := output.CSV(&cfg, &s, slots, results); err != nil {
+			fatal(err.Error())
+		}
+
+		return
+	}
 	output.UseColor = output.ColorTerminal()
 	output.Header(&cfg, &s, place)
 	output.Weather(&cfg, &s)
 	if cfg.Plan > 0 {
-		output.Plan(&s, slots)
+		output.Plan(&cfg, &s, slots)
 	}
-	output.Legend(&s, cfg.Plan > 0, output.Results(&cfg, &s, results))
+	output.Legend(&cfg, &s, output.Results(&cfg, &s, results))
+	altitudes(&cfg, &s, results)
 }
 
-// nothing reports a night with nothing to plan: as text, or with -json as a
-// document a consumer can still parse.
+// nothing reports a night with nothing to plan: as text, or with -json or
+// -csv as a document a consumer can still parse (the CSV's header alone, the
+// message on stderr).
 func nothing(cfg *config.Config, msg string) {
+	if cfg.CSV {
+		fmt.Fprintln(os.Stderr, msg)
+		if err := output.CSV(cfg, nil, nil, nil); err != nil {
+			fatal(err.Error())
+		}
+
+		return
+	}
 	if cfg.JSON {
 		fmt.Printf("{\n  \"message\": %q,\n  \"targets\": []\n}\n", msg)
 

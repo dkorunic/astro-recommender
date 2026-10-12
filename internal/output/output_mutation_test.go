@@ -13,6 +13,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	"github.com/dkorunic/astro-recommender/internal/atmos"
 	"github.com/dkorunic/astro-recommender/internal/catalog"
@@ -281,6 +282,9 @@ func mutResults(s *scoring.Sky) []scoring.Result {
 
 func mutStrip(s string) string { return sgr.ReplaceAllString(s, "") }
 
+// mutCol is the screen column of byte offset i in line: "°" is two bytes.
+func mutCol(line string, i int) int { return utf8.RuneCountInString(line[:i]) }
+
 // Colors must not move columns: stripped of escapes the colored table is
 // the plain one.
 func TestMutResultsAlignment(t *testing.T) {
@@ -327,6 +331,24 @@ func TestMutResultsAlignment(t *testing.T) {
 	if !strings.Contains(lines[2], " -  ") || !strings.HasSuffix(strings.TrimRight(lines[3], " "), "-") {
 		t.Errorf("unknown size / comet rows:\n%s", plain)
 	}
+	// With -filter, FILTER sits before PX: the choice, or "-", aligned and
+	// as many escapes per cell when colored.
+	cfg.Filter, res[0].Filter = "dual,ha", "dual"
+	mutColor(t, false)
+	plain = mutCapture(t, func() { Results(cfg, s, res) })
+	mutColor(t, true)
+	if colored := mutCapture(t, func() { Results(cfg, s, res) }); mutStrip(colored) != plain {
+		t.Errorf("colored table with FILTER misaligned:\n%s\nvs\n%s", mutStrip(colored), plain)
+	}
+	lines = strings.Split(strings.TrimRight(plain, "\n"), "\n")
+	h, f0, f1 := strings.Fields(lines[0]), strings.Fields(lines[1]), strings.Fields(lines[2])
+	if h[len(h)-2] != "FILTER" || f0[len(f0)-2] != "dual" || f1[len(f1)-2] != "-" {
+		t.Errorf("FILTER cells:\n%s", plain)
+	}
+	if col := mutCol(lines[0], strings.Index(lines[0], "FILTER")); mutCol(lines[1], strings.Index(lines[1], "dual")) != col || []rune(lines[2])[col] != '-' {
+		t.Errorf("FILTER column not aligned:\n%s", plain)
+	}
+	cfg.Filter = ""
 	cfg.Top = 2
 	if out := mutCapture(t, func() { Results(cfg, s, res) }); strings.Count(out, "\n") != 3 {
 		t.Errorf("-n 2 printed:\n%s", out)
@@ -371,20 +393,39 @@ func TestMutWeatherTable(t *testing.T) {
 }
 
 func TestMutPlanTable(t *testing.T) {
-	_, s := mutSky(t)
+	cfg, s := mutSky(t)
 	res := mutResults(s)
 	slots := []plan.Slot{
 		{Start: s.Grid[0], End: s.Grid[60], Result: &res[0], Score: 0.7, PeakAlt: 66, PeakAt: s.Grid[59]},
 		{Start: s.Grid[60], End: s.End},
 	}
 	mutColor(t, false)
-	out := mutCapture(t, func() { Plan(s, slots) })
+	out := mutCapture(t, func() { Plan(cfg, s, slots) })
 	if !strings.Contains(out, "20:00-21:00") || !strings.Contains(out, "0.70") || !strings.Contains(out, "66° @ 20:59") || !strings.Contains(out, "no target") {
 		t.Errorf("plan:\n%s", out)
 	}
 	mutColor(t, true)
-	if colored := mutCapture(t, func() { Plan(s, slots) }); mutStrip(colored) != out {
+	if colored := mutCapture(t, func() { Plan(cfg, s, slots) }); mutStrip(colored) != out {
 		t.Errorf("colored plan misaligned:\n%s", mutStrip(colored))
+	}
+	if strings.Contains(out, "FILTER") {
+		t.Errorf("FILTER without -filter:\n%s", out)
+	}
+	// With -filter, FILTER closes each row: the target's choice, "-" for an
+	// empty block, still aligned when colored.
+	cfg.Filter, res[0].Filter = "dual,ha", "ha"
+	mutColor(t, false)
+	out = mutCapture(t, func() { Plan(cfg, s, slots) })
+	lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
+	if f := strings.Fields(lines[0]); f[len(f)-1] != "FILTER" || !strings.HasSuffix(strings.TrimRight(lines[1], " "), "  ha") || !strings.HasSuffix(strings.TrimRight(lines[2], " "), "  -") {
+		t.Errorf("plan with FILTER:\n%s", out)
+	}
+	if mutCol(lines[0], strings.Index(lines[0], "FILTER")) != mutCol(lines[1], strings.LastIndex(lines[1], "ha")) {
+		t.Errorf("FILTER column not aligned:\n%s", out)
+	}
+	mutColor(t, true)
+	if colored := mutCapture(t, func() { Plan(cfg, s, slots) }); mutStrip(colored) != out {
+		t.Errorf("colored plan with FILTER misaligned:\n%s", mutStrip(colored))
 	}
 }
 
@@ -514,6 +555,7 @@ func TestMutJSON(t *testing.T) {
 	}
 	// Comets are flagged; Bortle without SQM is the flag's; the filter with -filter.
 	cfg.Top, cfg.SQM, cfg.Bortle, cfg.Filter, cfg.FilterNM, cfg.Framing = 3, 0, 5, "oiii", 3, false
+	res[1].Filter = "oiii"
 	out = mutCapture(t, func() { _ = JSON(cfg, s, "", nil, res) })
 	doc = nil
 	_ = json.Unmarshal([]byte(out), &doc)
@@ -529,5 +571,9 @@ func TestMutJSON(t *testing.T) {
 	}
 	if _, ok := doc["plan"]; ok {
 		t.Error("empty plan emitted")
+	}
+	// A target's FILTER, left out when none helped.
+	if tg := doc["targets"].([]any); tg[1].(map[string]any)["filter"] != "oiii" || tg[0].(map[string]any)["filter"] != nil {
+		t.Errorf("filter %v / %v", tg[1].(map[string]any)["filter"], tg[0].(map[string]any)["filter"])
 	}
 }

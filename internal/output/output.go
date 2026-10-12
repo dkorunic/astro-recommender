@@ -179,20 +179,30 @@ func Weather(cfg *config.Config, s *scoring.Sky) {
 	fmt.Println()
 }
 
-func Plan(s *scoring.Sky, slots []plan.Slot) {
+func Plan(cfg *config.Config, s *scoring.Sky, slots []plan.Slot) {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	row(w, "01", names(planColumns)...)
+	cols := columns(cfg, planColumns)
+	row(w, "01", names(cols)...)
 	for _, p := range slots {
 		when := paint("39", spanText(s, p.Start, p.End))
 		if p.Result == nil {
-			na := paint("39", "-")
-			row(w, "", when, paint("39", "no target"), na, na, na, na)
+			cells := []string{when, paint("39", "no target")}
+			for range len(cols) - len(cells) {
+				cells = append(cells, paint("39", "-"))
+			}
+			row(w, "", cells...)
 
 			continue
 		}
-		row(w, "", when, paint("36", p.Result.Name), paint("39", shortDesc(p.Result.Description)), paint(typeColor(p.Result.Target), p.Result.Type),
+		cells := []string{
+			when, paint("36", p.Result.Name), paint("39", shortDesc(p.Result.Description)), paint(typeColor(p.Result.Target), p.Result.Type),
 			paint(scale(p.Score, 0.66, 0.33), fmt.Sprintf("%.2f", p.Score)),
-			paint("39", fmt.Sprintf("%.0f° @ %s", p.PeakAlt, clock(s, p.PeakAt))))
+			paint("39", fmt.Sprintf("%.0f° @ %s", p.PeakAlt, clock(s, p.PeakAt))),
+		}
+		if cfg.Filter != "" {
+			cells = append(cells, paint("39", filterText(*p.Result)))
+		}
+		row(w, "", cells...)
 	}
 	w.Flush()
 	fmt.Println()
@@ -208,7 +218,7 @@ func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) int {
 	}
 	var buf bytes.Buffer
 	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', 0)
-	row(w, "01", names(resultColumns)...)
+	row(w, "01", names(columns(cfg, resultColumns))...)
 	for i, r := range results[:min(cfg.Top, len(results))] {
 		px := "-" // without framing there is no pixel scale to measure against
 		if cfg.Framing {
@@ -223,7 +233,8 @@ func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) int {
 			size = fmt.Sprintf("%.0fx%.0f'", major, minor)
 		}
 		ra, dec := position(r.Position())
-		row(w, "", paint("39", strconv.Itoa(i+1)), paint("36", r.Name), paint("39", shortDesc(r.Description)), paint(typeColor(r.Target), r.Type),
+		cells := []string{
+			paint("39", strconv.Itoa(i+1)), paint("36", r.Name), paint("39", shortDesc(r.Description)), paint(typeColor(r.Target), r.Type),
 			paint("39", r.Constellation), paint("39", ra), paint("39", dec), paint("39", size),
 			paint(scale(r.Foto, 0.66, 0.33), fmt.Sprintf("%.2f", r.Foto)),
 			paint(scale(r.Score, 0.66, 0.33), fmt.Sprintf("%.2f", r.Score)),
@@ -231,7 +242,11 @@ func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) int {
 			paint("39", fmt.Sprintf("%.0f° @ %s", r.MaxAlt, clock(s, r.MaxAt))),
 			paint(scale(r.SkyMag, 20.5, 19), fmt.Sprintf("%.1f", r.SkyMag)),
 			paint("39", sbText(r)),
-			paint("39", px))
+		}
+		if cfg.Filter != "" {
+			cells = append(cells, paint("39", filterText(r)))
+		}
+		row(w, "", append(cells, paint("39", px))...)
 	}
 	w.Flush()
 	width := 0
@@ -301,6 +316,10 @@ func shortDesc(s string) string {
 
 	return prefix + "…"
 }
+
+// filterText is the FILTER cell: the -filter choice that scored best, "-"
+// when none beat no filter.
+func filterText(r scoring.Result) string { return cmp.Or(r.Filter, "-") }
 
 // sbText is the SB column: the object's surface brightness, ~ when estimated
 // (from its magnitude and size, or a B value moved to V by a typical colour),
@@ -450,6 +469,9 @@ var weatherColumns = []column{
 
 const sameAsTargets = "as in the target list"
 
+// filterColumn is shown only with -filter (columns).
+const filterColumn = "FILTER"
+
 var planColumns = []column{
 	{"TIME", "imaging block"},
 	{"NAME", sameAsTargets},
@@ -457,6 +479,7 @@ var planColumns = []column{
 	{"TYPE", sameAsTargets},
 	{"SCORE", "the target's score within this block"},
 	{"PEAK ALT", "highest altitude within the block, and when"},
+	{filterColumn, sameAsTargets},
 }
 
 var resultColumns = []column{
@@ -473,8 +496,18 @@ var resultColumns = []column{
 	{"OBSERVABLE", "longest stretch within the limits without a break (+ there are others; +1d a whole day)"},
 	{"MAX ALT", "highest altitude in the window, and when"},
 	{"SKY", "mean sky brightness at the object, mag/arcsec² (higher is darker; no filter)"},
-	{"SB", "the object's own surface brightness, mag/arcsec², set against the sky it sees: SKY, cut by -filter to its bands' share for emission-line objects when that scores better, or halved for star clusters without nebulosity, whose own brightness is then not used (~ estimated from the magnitude and size or from a B value and a typical colour; - unknown, scored as sky-limited)"},
+	{"SB", "the object's own surface brightness, mag/arcsec², set against the sky it sees: SKY, cut by the chosen -filter to its bands' share for emission-line objects when that scores better, or halved for star clusters without nebulosity, whose own brightness is then not used (~ estimated from the magnitude and size or from a B value and a typical colour; - unknown, scored as sky-limited)"},
+	{filterColumn, "with -filter: the filter of the list that scores the object best, each minute taking the better of it and none (- when none helps: not emission-line, or the filter passes too little of its light)"},
 	{"PX", "size in pixels at the frame's pixel scale, and the mosaic (columns along the long side x rows) when more than one panel scores best (- without framing)"},
+}
+
+// columns returns cols without FILTER when there is no -filter.
+func columns(cfg *config.Config, cols []column) []column {
+	if cfg.Filter != "" {
+		return cols
+	}
+
+	return slices.DeleteFunc(slices.Clone(cols), func(c column) bool { return c.name == filterColumn })
 }
 
 func names(cols []column) []string {
@@ -488,7 +521,7 @@ func names(cols []column) []string {
 
 // Legend explains the columns of the tables that were printed and the colors,
 // wrapped to tableWidth (legendWidth when 0).
-func Legend(s *scoring.Sky, withPlan bool, tableWidth int) {
+func Legend(cfg *config.Config, s *scoring.Sky, tableWidth int) {
 	fmt.Println()
 	fmt.Println(paint("01", "Legend"))
 	// One tabwriter for all sections keeps them aligned; the buffer lets the
@@ -501,10 +534,10 @@ func Legend(s *scoring.Sky, withPlan bool, tableWidth int) {
 	if forecastFetched(s) {
 		sections = append(sections, section{"Forecast table:", weatherColumns})
 	}
-	if withPlan {
-		sections = append(sections, section{"Night plan:", planColumns})
+	if cfg.Plan > 0 {
+		sections = append(sections, section{"Night plan:", columns(cfg, planColumns)})
 	}
-	sections = append(sections, section{"Targets:", resultColumns})
+	sections = append(sections, section{"Targets:", columns(cfg, resultColumns)})
 	// Descriptions start where tabwriter puts the second column: after the
 	// widest first cell (titles included) and the padding.
 	indent := 0

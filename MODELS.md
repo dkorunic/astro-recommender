@@ -476,6 +476,8 @@ W_{\text{filter}} = \min\!\Bigg(1,\ \sqrt{\frac{w^2\,(S + B_{\text{ref}})}{w\,S 
 
 With w = 1 and every f equal to k this is the broadband weight. Each minute takes the better of `W_filter` and the broadband `W_sky`: an imager would not shoot an H II region through [O III] if broadband did better.
 
+**A list of filters** (`-filter dual,ha,oiii`, the ones you own) scores each emission-line target once per filter, each run as above, and keeps the best score (the first in the list on a tie). The target's FILTER is that filter when it mattered, when some minute's `W_filter` beat `W_sky` or only its wider Moon limit admitted the minute, and `-` otherwise (`Result.Filter`). One filter per target rather than per minute: changing filters mid-target means a second set of flats and a split stack. A single filter therefore scores exactly as it did before lists.
+
 **The Moon limit.** Away from the Moon its light is mostly Rayleigh-scattered, so the filter's sky-limited gain against moonlight is `f_R / w²`. That, at most 1, replaces k in the Moon-distance rule. At full Moon (100°) through 7 nm bands:
 
 | Target | `ha` | `oiii` | `sii` | `dual` | `tri` | `quad` |

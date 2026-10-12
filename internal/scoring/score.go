@@ -31,6 +31,7 @@ type Result struct { // betteralign:ignore (embedded target first, per embeddeds
 	Score   float64       // foto weighted by clouds, moonlight and framing
 	Frame   float64       // framing factor (1 without framing), divided among the mosaic's panels
 	Mosaic  config.Mosaic // the grid Frame was scored on; zero without framing
+	Filter  string        // the -filter choice that scored best, "" when none beat no filter
 	SkyMag  float64       // mean sky brightness at the target while observable, mag/arcsec²
 	MeanAlt float64
 	MaxAlt  float64
@@ -62,11 +63,32 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 		if !cfg.Near(tg.Position()) || cfg.Skip[catalog.NameKey(tg.Name)] || !cfg.Wanted(tg) {
 			continue
 		}
-		if r, ok := scoreTarget(cfg, s, tg, mosaics, alt, weight); ok {
+		// Each -filter choice that passes some of the target's light is a
+		// candidate, scored once (each minute already takes the better of it
+		// and no filter); the best wins, the first of equals. A target no
+		// choice helps, a galaxy, is scored once without.
+		var best Result
+		found, tried := false, false
+		for _, name := range append(cfg.FilterNames(), "") {
+			fp := passes(cfg, tg, name)
+			if (name != "" && fp.w == 0) || (name == "" && tried) {
+				continue
+			}
+			tried = true
+			r, ok := scoreTarget(cfg, s, tg, fp, mosaics, alt, weight)
+			if !ok || (found && r.Score <= best.Score) {
+				continue
+			}
+			if r.Filter != "" {
+				r.Filter = name
+			}
 			if perMinute {
 				r.Alt, r.Weight = slices.Clone(alt), slices.Clone(weight)
 			}
-			results = append(results, r)
+			best, found = r, true
+		}
+		if found {
+			results = append(results, best)
 		}
 	}
 
@@ -79,8 +101,11 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 }
 
 // scoreTarget fills weight (len(s.Grid), overwritten) with the target's
-// per-minute weight, and alt with its altitude when alt is not nil.
-func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, mosaics []config.Mosaic, alt, weight []float64) (Result, bool) {
+// per-minute weight through fp, and alt with its altitude when alt is not
+// nil. Its Result.Filter is non-empty (a placeholder Score names) when fp
+// mattered: some minute's filtered weight beat the broadband one, or only
+// fp's wider Moon limit let the minute in.
+func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, fp filterPass, mosaics []config.Mosaic, alt, weight []float64) (Result, bool) {
 	var ra, dec float64
 	if tg.Track == nil {
 		// Catalogs are J2000; the hour angle comes from sidereal time of date.
@@ -95,13 +120,14 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, mosaics []config
 	// this target unfiltered; with what a -filter passes, it scales the Moon
 	// separation limit.
 	k := skyK(tg)
-	fp := passes(cfg, tg)
 	// The Moon separation is the Acos of a dot product of unit vectors, and a
 	// minute closer than the limit (at most 100°, where the cosine still
 	// falls) is rejected on the cosine alone. On a moonlit night with low
 	// altitude limits Separation's trigonometry was 40% of scoring.
 	unit := astro.Unit(ra, dec) // a comet's is redone per minute
 	cosMoonSep := math.Cos(min(k, fp.moonK()) * s.MoonSep * deg)
+	cosMoonSepK := math.Cos(k * s.MoonSep * deg) // the limit without fp
+	helped := false
 
 	// The limits compare as sines, so the Asin runs only for the minutes
 	// that pass them (and for alt): the bulk of the minutes do not.
@@ -170,6 +196,7 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, mosaics []config
 			if c > cosMoonSep {
 				continue
 			}
+			helped = helped || c > cosMoonSepK
 			rho = math.Acos(c) / deg
 		}
 		// SNR in a fixed time goes as signal/sqrt(signal+sky), relative to the
@@ -182,7 +209,9 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, mosaics []config
 		if fp.w > 0 {
 			glow, rayleigh, mie := atmos.SkyParts(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i])
 			sb = glow + rayleigh + mie
-			skyW = max(min(1, math.Sqrt(objRef/(objNL+k*sb))), fp.weight(objNL, objRef, glow, rayleigh, mie))
+			broad, filtered := min(1, math.Sqrt(objRef/(objNL+k*sb))), fp.weight(objNL, objRef, glow, rayleigh, mie)
+			helped = helped || filtered > broad
+			skyW = max(broad, filtered)
 		} else {
 			sb = atmos.SkyBrightnessLit(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i])
 			skyW = min(1, math.Sqrt(objRef/(objNL+k*sb)))
@@ -219,6 +248,9 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, mosaics []config
 	r.MeanAlt = altSum / float64(good)
 	r.SkyMag = skySum / float64(good)
 	r.Score = weighted / float64(len(s.Grid)) * r.Frame
+	if helped {
+		r.Filter = "+"
+	}
 
 	return r, true
 }
@@ -260,21 +292,22 @@ func frameFill(fill float64) float64 {
 	return 1
 }
 
-// filterPass is what -filter passes for one target: w, its share of the
+// filterPass is what one -filter choice passes for one target: w, its share of the
 // target's light (the lines in the filter's bands, catalog.Target.Lines), and
 // glow, rayleigh and mie, the shares of atmos.SkyParts' parts (atmos.BandSky,
 // summed over the bands, which a dual-band filter takes onto one frame). w is
 // 0 without a filter or for a target without lines.
 type filterPass struct{ w, glow, rayleigh, mie float64 }
 
-// passes returns what cfg's -filter passes for tg.
-func passes(cfg *config.Config, tg catalog.Target) filterPass {
+// passes returns what the -filter choice name passes for tg; nothing for ""
+// (no filter).
+func passes(cfg *config.Config, tg catalog.Target, name string) filterPass {
 	var fp filterPass
-	if cfg.Filter == "" {
+	if name == "" {
 		return fp
 	}
 	lines := tg.Lines()
-	for _, l := range config.Filters[cfg.Filter] {
+	for _, l := range config.Filters[name] {
 		glow, rayleigh, mie := atmos.BandSky(catalog.LineNM[l], cfg.FilterNM)
 		fp.w += lines[l]
 		fp.glow += glow

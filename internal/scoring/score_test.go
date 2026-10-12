@@ -4,7 +4,9 @@
 package scoring
 
 import (
+	"cmp"
 	"math"
+	"slices"
 	"testing"
 	"time"
 
@@ -357,13 +359,37 @@ func TestScoreFilter(t *testing.T) {
 	}
 	// The Moon limit: Hα beats the Moon best on an H II region, [O III]
 	// not at all.
-	cfg.Filter = "ha"
-	ha := passes(cfg, catalog.Target{Type: "HII Region"}).moonK()
-	cfg.Filter = "dual"
-	dual := passes(cfg, catalog.Target{Type: "HII Region"}).moonK()
-	cfg.Filter = "oiii"
-	o3 := passes(cfg, catalog.Target{Type: "HII Region"}).moonK()
+	hii := catalog.Target{Type: "HII Region"}
+	ha, dual, o3 := passes(cfg, hii, "ha").moonK(), passes(cfg, hii, "dual").moonK(), passes(cfg, hii, "oiii").moonK()
 	if !(ha < dual && dual < 1 && o3 == 1) {
 		t.Errorf("moonK H II: ha %v, dual %v, oiii %v", ha, dual, o3)
+	}
+
+	// A list scores each target with each choice and keeps the best: the
+	// same score as that filter alone, named in Filter, whatever the order;
+	// "" when no choice beats no filter (a galaxy, an H II region through
+	// [O III]).
+	result := func(filter, typ string) Result {
+		cfg.Filter = filter
+		r := Score(cfg, &s, []catalog.Target{{Name: "T", Type: typ, RADeg: 150, DecDeg: 60, Size: 60}}, true)
+		if len(r) != 1 {
+			t.Fatalf("%s through %q: not observable", typ, filter)
+		}
+
+		return r[0]
+	}
+	for _, c := range []struct{ list, typ, want string }{
+		{"dual,ha,oiii", "HII Region", "ha"},
+		{"oiii,ha,dual", "HII Region", "ha"},
+		{"ha,oiii", "Planetary Nebula", "oiii"},
+		{"ha,oiii,dual", "Spiral Galaxy", ""},
+		{"oiii", "HII Region", ""},
+		{"dual", "HII Region", "dual"},
+	} {
+		r := result(c.list, c.typ)
+		single := result(cmp.Or(c.want, "oiii"), c.typ)
+		if r.Filter != c.want || r.Score != single.Score || !slices.Equal(r.Weight, single.Weight) {
+			t.Errorf("%s through %q: filter %q score %v, want %q and the single filter's %v", c.typ, c.list, r.Filter, r.Score, c.want, single.Score)
+		}
 	}
 }
