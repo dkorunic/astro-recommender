@@ -14,6 +14,7 @@ import (
 	"io"
 	"math"
 	"os"
+	"reflect"
 	"slices"
 	"strings"
 
@@ -363,13 +364,20 @@ func Load(listName, file string) ([]Target, string, error) {
 	// rest without a word, so a stray "---" lost every target after it. An
 	// empty document (a leading or trailing "---", a comment-only file) holds
 	// nothing and is skipped; a second list is an error, not merged.
+	// Each document goes through a Node first, which keeps its keys: a
+	// misspelt one (sise: 20) would otherwise vanish, and the object with it.
 	var targets []Target
+	var unknown []string
 	dec := yaml.NewDecoder(bytes.NewReader(data))
 	for seen := false; ; {
-		var doc []Target
-		err := dec.Decode(&doc)
+		var node yaml.Node
+		err := dec.Decode(&node)
 		if errors.Is(err, io.EOF) {
 			break
+		}
+		var doc []Target
+		if err == nil {
+			err = node.Decode(&doc)
 		}
 		if err != nil {
 			return nil, "", fmt.Errorf("%s: %w", file, err)
@@ -380,7 +388,10 @@ func Load(listName, file string) ([]Target, string, error) {
 		if seen {
 			return nil, "", fmt.Errorf("%w: %s", errDocuments, file)
 		}
-		targets, seen = doc, true
+		targets, seen, unknown = doc, true, unknownKeys(&node)
+	}
+	if len(unknown) > 0 {
+		fmt.Fprintf(os.Stderr, "warning: %s: unknown keys ignored, check their spelling: %s\n", file, strings.Join(unknown, ", "))
 	}
 	// -targets may come from anywhere; its text ends up on the terminal.
 	for i := range targets {
@@ -424,6 +435,42 @@ func Load(listName, file string) ([]Target, string, error) {
 	}
 
 	return targets, listName, nil
+}
+
+// knownKeys are the target keys Load reads (Target's yaml tags) and the
+// ones it tolerates unread: GaryImmFull's Compendium rating.
+var knownKeys = func() map[string]bool {
+	known := map[string]bool{"rating": true}
+	t := reflect.TypeFor[Target]()
+	for field := range t.Fields() {
+		if name, _, _ := strings.Cut(field.Tag.Get("yaml"), ","); name != "" && name != "-" {
+			known[name] = true
+		}
+	}
+
+	return known
+}()
+
+// unknownKeys returns the keys of a target list document (a sequence of
+// mappings) that knownKeys lacks, sanitized, sorted and each once.
+func unknownKeys(doc *yaml.Node) []string {
+	if doc.Kind == yaml.DocumentNode && len(doc.Content) == 1 {
+		doc = doc.Content[0]
+	}
+	var out []string
+	for _, item := range doc.Content {
+		if item.Kind != yaml.MappingNode {
+			continue
+		}
+		for i := 0; i+1 < len(item.Content); i += 2 {
+			if k := sanitize.Text(item.Content[i].Value); !knownKeys[k] && !slices.Contains(out, k) {
+				out = append(out, k)
+			}
+		}
+	}
+	slices.Sort(out)
+
+	return out
 }
 
 // embedded decodes the gob of list name, already in Load's form. Open

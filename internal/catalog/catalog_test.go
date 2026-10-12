@@ -366,3 +366,22 @@ func TestLines(t *testing.T) {
 		t.Error("a galaxy has lines")
 	}
 }
+
+// unknownKeys names the keys Load does not read, once each and sorted, so a
+// misspelt key is reported rather than silently dropped; Target's own keys
+// and GaryImmFull's rating are known.
+func TestUnknownKeys(t *testing.T) {
+	var node yaml.Node
+	src := "- {name: A, ra: '1 0 0', dec: '+1 0 0', sise: 20, rating: 2}\n- {name: B, Type: Galaxy, sise: 3, surfbr: 22}\n"
+	if err := yaml.Unmarshal([]byte(src), &node); err != nil {
+		t.Fatal(err)
+	}
+	if got := unknownKeys(&node); strings.Join(got, ",") != "Type,sise" {
+		t.Errorf("unknownKeys = %q, want [Type sise]", got)
+	}
+	for _, k := range []string{"name", "ra", "dec", "size", "minor", "mag", "bmag", "surfbr", "bsurfbr", "type", "description", "constellation"} {
+		if !knownKeys[k] {
+			t.Errorf("%s unknown", k)
+		}
+	}
+}
