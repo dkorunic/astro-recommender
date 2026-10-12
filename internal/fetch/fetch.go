@@ -176,8 +176,9 @@ const maxRetryWait = 5 * time.Second
 // Retry-After (seconds or an HTTP date) asks for it; false past maxRetryWait.
 func retryWait(after string) (time.Duration, bool) {
 	var wait time.Duration
-	if s, err := strconv.Atoi(after); err == nil {
-		if time.Duration(s) > maxRetryWait/time.Second { // before multiplying, which could overflow
+	// Seconds past int's range are a request for longer, not junk.
+	if s, err := strconv.Atoi(after); err == nil || errors.Is(err, strconv.ErrRange) {
+		if err != nil || time.Duration(s) > maxRetryWait/time.Second { // before multiplying, which could overflow
 			return 0, false
 		}
 		wait = time.Duration(s) * time.Second
