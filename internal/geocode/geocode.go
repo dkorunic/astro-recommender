@@ -17,11 +17,14 @@ import (
 
 var errNominatim = errors.New("nominatim")
 
+// baseURL is a variable so that tests can point it at a local server.
+var baseURL = "https://nominatim.openstreetmap.org/reverse"
+
 // Reverse returns an approximate (suburb-level) place name from
 // OpenStreetMap Nominatim. Usage policy: identify via User-Agent, <=1 req/s.
 func Reverse(ctx context.Context, lat, lon float64) (string, error) {
 	// Same ~1 km rounding as forecast(): approximate on purpose.
-	url := fmt.Sprintf("https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=%.2f&lon=%.2f&zoom=14", lat, lon)
+	url := fmt.Sprintf("%s?format=jsonv2&lat=%.2f&lon=%.2f&zoom=14", baseURL, lat, lon)
 	//nolint:tagliatelle // Nominatim's field names
 	var body struct {
 		DisplayName string `json:"display_name"`
