@@ -294,4 +294,10 @@ func TestParseTypes(t *testing.T) {
 	if _, err := parse(t, "-type", "galaxies"); err == nil {
 		t.Error("-type galaxies accepted")
 	}
+	if _, err := parse(t, "-type", "comet", "-no-comets"); err == nil {
+		t.Error("-type comet -no-comets accepted")
+	}
+	if _, err := parse(t, "-type", "comet,galaxy", "-no-comets"); err != nil {
+		t.Errorf("-type comet,galaxy -no-comets: %v", err)
+	}
 }

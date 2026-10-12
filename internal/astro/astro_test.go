@@ -220,3 +220,41 @@ func TestTonight(t *testing.T) {
 		t.Errorf("Tonight(Santiago 00:10) = %v, %v; want day 20, false", day, inProgress)
 	}
 }
+
+// A polar night in progress carries on past noon into the next one, up to
+// 24 h from now; an ordinary night keeps its dawn.
+func TestContinuePolar(t *testing.T) {
+	const lat, lon = 89.9, 0.0
+	day := time.Date(2026, 12, 20, 0, 0, 0, 0, time.UTC)
+	dusk, dawn, ok := Window(day, lat, lon, Astronomical)
+	if !ok || dawn.Sub(dusk) != 24*time.Hour {
+		t.Fatalf("Window(pole, 20 Dec) = %v - %v, %v; want polar night", dusk, dawn, ok)
+	}
+	now := dawn.Add(-10 * time.Minute) // 11:50, ten minutes before the noon it would end at
+	if got, want := ContinuePolar(day, dusk, dawn, now, lat, lon, Astronomical), now.Add(24*time.Hour); !got.Equal(want) {
+		t.Errorf("ContinuePolar at 11:50 = %v, want %v", got, want)
+	}
+	zg, _ := time.LoadLocation("Europe/Zagreb")
+	day = time.Date(2026, 10, 5, 0, 0, 0, 0, zg)
+	dusk, dawn, _ = Window(day, 45.8, 16, Astronomical)
+	if got := ContinuePolar(day, dusk, dawn, dusk.Add(time.Hour), 45.8, 16, Astronomical); !got.Equal(dawn) {
+		t.Errorf("ContinuePolar(Zagreb) = %v, want its dawn %v", got, dawn)
+	}
+}
+
+// At 85° N on 31 December it is dark from noon until the Sun clears -18°
+// minutes before the next noon: that is the night, not the previous one's
+// tail, and it continues the polar night of the 30th (from 11:59, when it
+// ends before the 24 h cap).
+func TestWindowPolarNightEnd(t *testing.T) {
+	day := time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC)
+	dusk, dawn, ok := Window(day, 85, 0, Astronomical)
+	if !ok || dawn.Sub(dusk) < 23*time.Hour || dawn.Sub(dusk) >= 24*time.Hour {
+		t.Fatalf("Window(85° N, 31 Dec) = %v - %v, %v; want a night of 23-24 h", dusk, dawn, ok)
+	}
+	prev := day.AddDate(0, 0, -1)
+	pDusk, pDawn, _ := Window(prev, 85, 0, Astronomical)
+	if got := ContinuePolar(prev, pDusk, pDawn, pDawn.Add(-time.Minute), 85, 0, Astronomical); !got.Equal(dawn) {
+		t.Errorf("ContinuePolar(30 Dec) = %v, want the 31st's dawn %v", got, dawn)
+	}
+}

@@ -282,9 +282,6 @@ func moonText(s *scoring.Sky) string {
 	return "never up"
 }
 
-// sbText is the SB column: the object's surface brightness, ~ when estimated
-// (from its magnitude and size, or a B value moved to V by a typical colour),
-// - when unknown.
 // descWidth caps the DESCRIPTION cell: tabwriter makes the column as wide as
 // the longest description shown, and Caldwell's alias lists run past 100
 // characters, 192-column rows. 40 holds every GaryImm description (37), so
@@ -305,6 +302,9 @@ func shortDesc(s string) string {
 	return prefix + "…"
 }
 
+// sbText is the SB column: the object's surface brightness, ~ when estimated
+// (from its magnitude and size, or a B value moved to V by a typical colour),
+// - when unknown.
 func sbText(r scoring.Result) string {
 	sb, estimated := r.SurfaceBrightness()
 	switch {

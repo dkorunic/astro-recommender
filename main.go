@@ -54,12 +54,16 @@ func main() {
 
 		return
 	}
+	now := cfg.Day.Truncate(time.Minute)
+	if inProgress {
+		dawnT = astro.ContinuePolar(day, duskT, dawnT, now, cfg.Lat, cfg.Lon, cfg.SunAlt())
+	}
 	duskT, dawnT = duskT.In(cfg.Loc), dawnT.In(cfg.Loc) // all times display in -tz
 	start, end, err := astro.ClipWindow(day, cfg.Loc, duskT, dawnT, cfg.From, cfg.To)
 	if err != nil {
 		fatal(err.Error())
 	}
-	if now := cfg.Day.Truncate(time.Minute); inProgress && now.After(start) {
+	if inProgress && now.After(start) {
 		if start = now; !start.Before(end) {
 			nothing(&cfg, "The requested part of tonight has already passed.")
 

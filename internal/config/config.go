@@ -179,6 +179,9 @@ func Parse() (Config, error) {
 	if cfg.Types, err = parseTypes(types); err != nil {
 		return Config{}, err
 	}
+	if cfg.NoComets && slices.Equal(cfg.Types, []string{"comet"}) {
+		return Config{}, fmt.Errorf("%w: -type comet with -no-comets keeps nothing", errInvalidFlag)
+	}
 	// Comets are fetched only when they can be kept.
 	if cfg.Types != nil && !slices.Contains(cfg.Types, "comet") {
 		cfg.NoComets = true

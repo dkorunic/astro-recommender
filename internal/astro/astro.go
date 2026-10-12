@@ -63,12 +63,18 @@ func Window(day time.Time, lat, lon, sunAlt float64) (time.Time, time.Time, bool
 	// Dark at noon is the previous night's tail when light follows: near the
 	// pole the Sun can rise above sunAlt only minutes after mean noon (the
 	// equation of time, and its declination drifting more than its daily
-	// swing), and that is not tonight. Dark until limit is polar night.
+	// swing), and that is not tonight. Dark until limit is polar night, and
+	// dark past midnight (half the search) is tonight's too: at the end of
+	// polar night the Sun can clear sunAlt only minutes before the next noon
+	// (85° N on 31 December), which is no reason to skip the night before.
 	for t.Before(limit) && dark(t) {
 		t = t.Add(time.Minute)
 	}
 	if !t.Before(limit) {
 		return noon, limit, true
+	}
+	if t.Sub(noon) > 12*time.Hour {
+		return noon, t, true
 	}
 	for t.Before(limit) && !dark(t) {
 		t = t.Add(time.Minute)
@@ -96,6 +102,26 @@ func Tonight(now time.Time, lat, lon, sunAlt float64) (time.Time, bool) {
 	}
 
 	return now, false
+}
+
+// ContinuePolar returns the dawn to plan to for the night [dusk, dawn) of
+// day in progress at now. Polar night runs noon to noon, so one in progress
+// would end at the next noon however near it is (at 11:50, ten minutes): it
+// carries on into the next day's night when that one is dark from the same
+// noon, up to 24 hours from now. Any other night keeps its dawn.
+func ContinuePolar(day, dusk, dawn, now time.Time, lat, lon, sunAlt float64) time.Time {
+	if dawn.Sub(dusk) < 24*time.Hour {
+		return dawn
+	}
+	if next, nextDawn, ok := Window(day.AddDate(0, 0, 1), lat, lon, sunAlt); ok && next.Equal(dawn) {
+		if limit := now.Add(24 * time.Hour); nextDawn.After(limit) {
+			return limit
+		}
+
+		return nextDawn
+	}
+
+	return dawn
 }
 
 // ClipWindow narrows the night [start, end) to the local clock times from and

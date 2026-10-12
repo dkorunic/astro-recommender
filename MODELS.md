@@ -132,7 +132,7 @@ The night is the time while the Sun's geometric centre is below −18° (astrono
 - Zones across the date line (Samoa, Kiritimati) get their own night rather than the next one.
 - Polar night is capped at 24 hours.
 
-If the Sun is already below the limit at noon and rises above it soon after, that darkness is the end of the previous night and is skipped. If the Sun never gets below the limit, there is no night (high-latitude summer). Without `-date`, a run during the night plans only what remains of it. `-from`/`-to` can only narrow the window.
+If the Sun is already below the limit at noon and rises above it soon after, that darkness is the end of the previous night and is skipped. If that darkness lasts past midnight (more than 12 hours), it is tonight's night: at the end of polar night the Sun can clear the limit only minutes before the next noon (85° N on 31 December). If the Sun never gets below the limit, there is no night (high-latitude summer). Without `-date`, a run during the night plans only what remains of it; a polar night in progress, which would end at the next noon however near, carries on into the next day's night when that one is dark from the same noon, up to 24 hours from now (`astro.ContinuePolar`). `-from`/`-to` can only narrow the window.
 
 ## The Moon
 

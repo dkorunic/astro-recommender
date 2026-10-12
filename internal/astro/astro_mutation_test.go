@@ -414,15 +414,24 @@ func TestMutClipWindow(t *testing.T) {
 	}
 }
 
-// Dusk is a crossing: the minute before it is light (unless polar night), so
-// a night already running at noon (the previous one's tail) is never
-// returned as tonight. 88° N in late January: the noon Sun hovers at -18°.
+// Dusk is a crossing: the minute before it is light, so a night already
+// running at noon (the previous one's tail) is never returned as tonight,
+// unless it lasts past midnight (polar night, or its last day, when the Sun
+// clears -18° only near the next noon). 88° N in late January: the noon Sun
+// hovers at -18°.
 func TestMutWindowDuskCrossing(t *testing.T) {
 	for _, lat := range []float64{80, 84, 86, 87, 88, 89} {
 		for d := range 60 {
 			day := time.Date(2026, 1, 1+d, 0, 0, 0, 0, time.UTC)
 			dusk, dawn, ok := Window(day, lat, 0, Astronomical)
-			if !ok || dawn.Sub(dusk) == 24*time.Hour {
+			if !ok {
+				continue
+			}
+			if dusk.Equal(day.Add(12 * time.Hour)) { // dark at noon
+				if dawn.Sub(dusk) <= 12*time.Hour {
+					t.Fatalf("lat %v %v: a %v tail at noon returned as tonight", lat, day.Format(time.DateOnly), dawn.Sub(dusk))
+				}
+
 				continue
 			}
 			before := dusk.Add(-time.Minute)
