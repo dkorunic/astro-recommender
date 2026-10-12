@@ -36,7 +36,11 @@ import (
 // Caldwell catalogue (1995) from the Compendium and OpenNGC; RCW is Rodgers,
 // Campbell & Whiteoak (1960, CDS VII/216) and SNR the optically detected
 // remnants of Green's catalogue (2024 October version, CDS VII/297), both
-// cross-identified with the Compendium.
+// cross-identified with the Compendium; Barnard (1927, VII/220A) dark
+// nebulae, van den Bergh's (1966, VII/21) reflection nebulae, Arp's (1966,
+// Webb's index VII/192) peculiar galaxies and Hickson's (1982, VII/213)
+// compact groups likewise, and van den Bergh & Herbst's (1975, VII/218)
+// southern reflection nebulae (vdBH) from VizieR alone.
 //
 // The binary embeds each list as the gob of what Load makes of its YAML
 // (sanitized, checked, positions in degrees, constellations looked up):
@@ -334,7 +338,7 @@ func (t Target) typicalBV(k kind) float64 {
 }
 
 // Lists are the embedded uptonight target lists selectable with -list.
-var Lists = []string{"GaryImm", "GaryImmFull", "Messier", "Herschel400", "Pensack500", "OpenNGC", "OpenIC", "LBN", "LDN", "MWSC", "Melotte", "Collinder", "PNnet", "HASH", "Sharpless", "Caldwell", "RCW", "SNR"}
+var Lists = []string{"GaryImm", "GaryImmFull", "Messier", "Herschel400", "Pensack500", "OpenNGC", "OpenIC", "LBN", "LDN", "MWSC", "Melotte", "Collinder", "PNnet", "HASH", "Sharpless", "Caldwell", "RCW", "SNR", "Barnard", "vdB", "vdBH", "Arp", "HCG"}
 
 var (
 	errList        = errors.New("unknown target list")
@@ -513,6 +517,7 @@ var emissionNames = map[string]bool{
 	"Sh2-155":       true, // Cave Nebula
 	"NGC 2024":      true, // Flame Nebula
 	"IC 434":        true, // Horsehead, silhouetted against Ha emission
+	"Barnard 33":    true, // the Horsehead itself (Barnard, GaryImmFull)
 	"Cederblad 211": true, // R Aquarii symbiotic nebula
 	"M 8":           true, // Lagoon
 	"M 16":          true, // Eagle (an Open Cluster in Messier.yaml)

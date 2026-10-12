@@ -204,6 +204,11 @@ func TestEmissionLineLists(t *testing.T) {
 		"Caldwell":    {"C 9": true, "C 50": true, "C 100": true, "C 49": true, "C 14": false},
 		"RCW":         {"RCW 2": true, "RCW 124": true, "RCW 86": true},
 		"SNR":         {"SNR G074.0-08.5": true, "SNR G184.6-05.8": true},
+		"Barnard":     {"Barnard 33": true, "Barnard 150": false},
+		"vdB":         {"vdB 142": false},
+		"vdBH":        {"vdBH 1": false},
+		"Arp":         {"Arp 244": false},
+		"HCG":         {"HCG 92": false},
 	} {
 		targets, _, err := Load(list, "")
 		if err != nil {
