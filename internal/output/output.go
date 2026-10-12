@@ -42,7 +42,7 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 	night := ""
 	switch {
 	case !s.Start.Equal(s.Night[0]) || !s.End.Equal(s.Night[1]):
-		night = fmt.Sprintf(", %s night %s - %s", cfg.Twilight, clock(s, s.Night[0]), clock(s, s.Night[1]))
+		night = fmt.Sprintf(", %s night %s", cfg.Twilight, spanText(s, s.Night[0], s.Night[1]))
 	case cfg.Twilight != "astronomical":
 		night = ", " + cfg.Twilight + " night"
 	}

@@ -430,7 +430,7 @@ func TestMutHeader(t *testing.T) {
 	s.Elevation, s.AOD = 120, map[int64]float64{1: 0.1}
 	cfg.ExtinctionSet = false
 	out = mutCapture(t, func() { Header(cfg, s, "") })
-	for _, want := range []string{"nautical night 20:00 - 22:00", "Bortle 6 (zenith 18.80 mag/arcsec²)", "(elevation 120 m, aerosols)"} {
+	for _, want := range []string{"nautical night 20:00-22:00", "Bortle 6 (zenith 18.80 mag/arcsec²)", "(elevation 120 m, aerosols)"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("header lacks %q:\n%s", want, out)
 		}
@@ -438,6 +438,11 @@ func TestMutHeader(t *testing.T) {
 	s.AOD = nil
 	if out = mutCapture(t, func() { Header(cfg, s, "") }); !strings.Contains(out, "(elevation 120 m, typical aerosols)") {
 		t.Errorf("header without AOD:\n%s", out)
+	}
+	// A clipped polar night: noon to noon reads as a whole day, not empty.
+	s.Night[1] = s.Night[0].Add(24 * time.Hour)
+	if out = mutCapture(t, func() { Header(cfg, s, "") }); !strings.Contains(out, "nautical night 20:00-20:00+1d") {
+		t.Errorf("header of a 24 h night:\n%s", out)
 	}
 }
 
