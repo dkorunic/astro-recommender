@@ -637,6 +637,14 @@ h_\text{hor}(A) = h_\text{lo} + (h_\text{hi} - h_\text{lo})\,\frac{(A - A_\text{
 
 Two points at the same azimuth make a vertical step. A minute counts only when the target is above both `-alt-min` and the horizon.
 
+`scripts/terrain2horizon.py` writes such a file from a digital elevation model (AWS Terrain Tiles, Terrarium encoding, bilinear between pixels). Along each azimuth it steps one pixel at a time from `--near` (100 m) to `--radius` (20 km) and keeps the steepest angle to the ground at distance d. The ground there is lowered by Earth's curvature, less the standard terrestrial refraction (k = 0.13):
+
+```math
+h_\text{hor}(A) = \max_d \arctan\frac{z(d) - z_0 - d^2 (1 - k) / 2R}{d}
+```
+
+z₀ is the site's model elevation (or `--elevation`) plus a 2 m eye height. A ridge must rise about 580 m per km to reach the default 30° floor, so the file matters mostly with a lower `-alt-min` in the mountains. Trees and buildings are not in the model.
+
 ## Heuristics
 
 The models above come from the literature. The following are this project's own judgment, chosen to rank nights sensibly rather than to measure anything:

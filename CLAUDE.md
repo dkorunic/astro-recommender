@@ -18,6 +18,7 @@ task pgo                            # regenerate default.pgo from BenchmarkPipel
 scripts/calibrate_seeing.py [--site lasilla]   # refit weather's groundFactor/freeFactor against the ESO DIMM archive (network; ~2 min cold, then cached under ~/.cache/astro-recommender/calibrate); redo after changes to Seeing, cn2, levels() or pressures, never on a schedule
 task lint                           # fmt + golangci-lint (.golangci.yml: default all, some disabled); keep at 0 issues
 task fmt                            # NOTE: rewrites files in place
+scripts/terrain2horizon.py LAT LON > horizon.txt   # a -horizon file from AWS Terrain Tiles (network, tiles cached under ~/.cache/astro-recommender/terrain); --selftest checks the PNG decoder and the ray march offline
 task web                            # GOOS=js build into web/ (app.wasm + wasm_exec.js, both gitignored); serve with python3 -m http.server -d web 8000 (the Worker proxy allows only that local origin)
 task demo                           # re-render demo.jpg from a live run (scripts/demo.sh; needs freeze, jpegoptim optional, network)
 go build ./...
