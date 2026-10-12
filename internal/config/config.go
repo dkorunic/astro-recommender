@@ -155,6 +155,12 @@ func Parse() (Config, error) {
 	flag.Float64Var(&cfg.CometMag, "comet-mag", 12, "include comets brighter than this total visual magnitude")
 	version := flag.Bool("version", false, "print the version and exit")
 	flag.Parse()
+	// flag stops at the first argument that is not a flag, so everything
+	// after a stray word (-origin true: a bool takes -origin=false) would be
+	// dropped without a word.
+	if flag.NArg() > 0 {
+		return Config{}, fmt.Errorf("%w: unexpected argument %q, the flags after it were not read (a true/false flag takes -flag=false)", errInvalidFlag, flag.Arg(0))
+	}
 	if *version {
 		return Config{Version: true}, nil
 	}
@@ -176,15 +182,8 @@ func Parse() (Config, error) {
 	if err := cfg.parseRegion(set, ra, dec); err != nil {
 		return Config{}, err
 	}
-	if cfg.Types, err = parseTypes(types); err != nil {
+	if err := cfg.setTypes(types); err != nil {
 		return Config{}, err
-	}
-	if cfg.NoComets && slices.Equal(cfg.Types, []string{"comet"}) {
-		return Config{}, fmt.Errorf("%w: -type comet with -no-comets keeps nothing", errInvalidFlag)
-	}
-	// Comets are fetched only when they can be kept.
-	if cfg.Types != nil && !slices.Contains(cfg.Types, "comet") {
-		cfg.NoComets = true
 	}
 
 	// Framing (-origin, -fov or -focal/-sensor, -scale or -focal/-pixel)
@@ -405,6 +404,23 @@ func (cfg *Config) MaxFramed() float64 {
 // guarantees Scale > 0; a zero-value Config returns NaN (0/0).
 func (cfg *Config) FramePx() (float64, float64) {
 	return cfg.FOVLong * 60 / cfg.Scale, cfg.FOVShort * 60 / cfg.Scale
+}
+
+// setTypes sets Types from -type and turns the comet fetch off when comets
+// cannot be kept; -type comet alone with -no-comets keeps nothing.
+func (cfg *Config) setTypes(types string) error {
+	var err error
+	if cfg.Types, err = parseTypes(types); err != nil {
+		return err
+	}
+	if cfg.NoComets && slices.Equal(cfg.Types, []string{"comet"}) {
+		return fmt.Errorf("%w: -type comet with -no-comets keeps nothing", errInvalidFlag)
+	}
+	if cfg.Types != nil && !slices.Contains(cfg.Types, "comet") {
+		cfg.NoComets = true
+	}
+
+	return nil
 }
 
 // frameSizes checks -mosaic and -rotate, and with framing replaces the size

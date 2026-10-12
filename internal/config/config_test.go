@@ -301,3 +301,14 @@ func TestParseTypes(t *testing.T) {
 		t.Errorf("-type comet,galaxy -no-comets: %v", err)
 	}
 }
+
+// A stray argument stops flag parsing, so it is an error rather than the
+// flags after it being dropped: -origin true would lose -n and -bortle.
+func TestParseStrayArgument(t *testing.T) {
+	if _, err := parse(t, "-origin", "true", "-n", "2"); err == nil || !strings.Contains(err.Error(), `"true"`) {
+		t.Errorf("-origin true -n 2: err %v, want the stray \"true\" named", err)
+	}
+	if cfg, err := parse(t, "-origin=false", "-n", "2"); err != nil || cfg.Top != 2 || cfg.Framing {
+		t.Errorf("-origin=false -n 2: Top %d, Framing %v, err %v", cfg.Top, cfg.Framing, err)
+	}
+}
