@@ -213,6 +213,13 @@ func TestMutSmallCells(t *testing.T) {
 	if got := runText(s, r); got != "20:05-21:05+" {
 		t.Errorf("runText = %q", got)
 	}
+	// A polar night's whole day must not read as an empty 12:00-12:00.
+	if got := spanText(s, s.Grid[0], s.Grid[0].Add(24*time.Hour)); got != "20:00-20:00+1d" {
+		t.Errorf("spanText(24h) = %q", got)
+	}
+	if got := spanText(s, s.Grid[0], s.Grid[0].Add(24*time.Hour-time.Minute)); got != "20:00-19:59" {
+		t.Errorf("spanText(24h-1m) = %q", got)
+	}
 	if sizeText(catalog.Target{Size: -9999}, "%.0f'", -9999) != "-" || sizeText(catalog.Target{Size: 12.4}, "%.0f'", 12.4) != "12'" {
 		t.Error("sizeText")
 	}

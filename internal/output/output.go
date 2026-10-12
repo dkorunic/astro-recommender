@@ -183,7 +183,7 @@ func Plan(s *scoring.Sky, slots []plan.Slot) {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	row(w, "01", names(planColumns)...)
 	for _, p := range slots {
-		when := paint("39", clock(s, p.Start)+"-"+clock(s, p.End))
+		when := paint("39", spanText(s, p.Start, p.End))
 		if p.Result == nil {
 			na := paint("39", "-")
 			row(w, "", when, paint("39", "no target"), na, na, na, na)
@@ -251,7 +251,7 @@ var UseColor bool
 // runText is the OBSERVABLE column: the longest continuous observable
 // stretch, with a + when there are others.
 func runText(s *scoring.Sky, r scoring.Result) string {
-	text := clock(s, r.RunFrom) + "-" + clock(s, r.RunTo)
+	text := spanText(s, r.RunFrom, r.RunTo)
 	if r.Runs > 1 {
 		text += "+"
 	}
@@ -331,6 +331,18 @@ func clockLayout(s *scoring.Sky) string {
 }
 
 func clock(s *scoring.Sky, t time.Time) string { return t.Format(clockLayout(s)) }
+
+// spanText formats [from, to) as clock times, the end marked +Nd when the
+// span lasts N whole days or more: a polar night's 24 h window would
+// otherwise read 12:00-12:00, as if it were empty.
+func spanText(s *scoring.Sky, from, to time.Time) string {
+	text := clock(s, from) + "-" + clock(s, to)
+	if days := int(to.Sub(from) / (24 * time.Hour)); days > 0 {
+		text += fmt.Sprintf("+%dd", days)
+	}
+
+	return text
+}
 
 // typeColor is the TYPE cell's color, as the legend explains it: magenta for
 // emission-line targets, yellow for comets.
@@ -458,7 +470,7 @@ var resultColumns = []column{
 	{"SIZE", "major axis in arcminutes, with -rotate major x minor where the minor axis is known (- unknown or comet)"},
 	{"FOTO", "fraction of the window within the altitude, horizon and Moon-distance limits"},
 	{"SCORE", "0-1 imaging quality: 1 = every minute observable under a perfect, pristine dark sky"},
-	{"OBSERVABLE", "longest stretch within the limits without a break (+ there are others)"},
+	{"OBSERVABLE", "longest stretch within the limits without a break (+ there are others; +1d a whole day)"},
 	{"MAX ALT", "highest altitude in the window, and when"},
 	{"SKY", "mean sky brightness at the object, mag/arcsec² (higher is darker; no filter)"},
 	{"SB", "the object's own surface brightness, mag/arcsec², set against the sky it sees: SKY, cut by -filter to its bands' share for emission-line objects when that scores better, or halved for star clusters without nebulosity, whose own brightness is then not used (~ estimated from the magnitude and size or from a B value and a typical colour; - unknown, scored as sky-limited)"},
