@@ -379,6 +379,14 @@ func TestUnknownKeys(t *testing.T) {
 	if got := unknownKeys(&node); strings.Join(got, ",") != "Type,sise" {
 		t.Errorf("unknownKeys = %q, want [Type sise]", got)
 	}
+	// A merge key is YAML's, not a target's; a quoted "<<" is a plain key.
+	src = "- &a {name: A, ra: '1 0 0', dec: '+1 0 0'}\n- {<<: *a, name: B}\n- {'<<': 1}\n- *a\n"
+	if err := yaml.Unmarshal([]byte(src), &node); err != nil {
+		t.Fatal(err)
+	}
+	if got := unknownKeys(&node); strings.Join(got, ",") != "<<" || len(got) != 1 {
+		t.Errorf("unknownKeys with a merge key = %q, want only the quoted [<<]", got)
+	}
 	for _, k := range []string{"name", "ra", "dec", "size", "minor", "mag", "bmag", "surfbr", "bsurfbr", "type", "description", "constellation"} {
 		if !knownKeys[k] {
 			t.Errorf("%s unknown", k)

@@ -452,7 +452,9 @@ var knownKeys = func() map[string]bool {
 }()
 
 // unknownKeys returns the keys of a target list document (a sequence of
-// mappings) that knownKeys lacks, sanitized, sorted and each once.
+// mappings) that knownKeys lacks, sanitized, sorted and each once. A merge
+// key (<<: *anchor) is the decoder's, not a target's; the mapping it pulls
+// in is checked where the anchor is defined.
 func unknownKeys(doc *yaml.Node) []string {
 	if doc.Kind == yaml.DocumentNode && len(doc.Content) == 1 {
 		doc = doc.Content[0]
@@ -463,6 +465,9 @@ func unknownKeys(doc *yaml.Node) []string {
 			continue
 		}
 		for i := 0; i+1 < len(item.Content); i += 2 {
+			if item.Content[i].ShortTag() == "!!merge" {
+				continue
+			}
 			if k := sanitize.Text(item.Content[i].Value); !knownKeys[k] && !slices.Contains(out, k) {
 				out = append(out, k)
 			}
