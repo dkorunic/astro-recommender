@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"strings"
 
 	"github.com/dkorunic/astro-recommender/internal/astro"
 	"github.com/dkorunic/astro-recommender/internal/config"
@@ -50,11 +51,22 @@ func CSV(cfg *config.Config, s *scoring.Sky, slots []plan.Slot, results []scorin
 			ra, dec = astro.PrecessT(ra, dec, -astro.DaysJ2000(s.Grid[len(s.Grid)/2])/36525)
 		}
 		raS, decS := sexagesimal(ra, dec)
-		_ = w.Write([]string{res.Name, "", raS, decS})
+		_ = w.Write([]string{cell(res.Name), "", raS, decS})
 	}
 	w.Flush()
 
 	return w.Error()
+}
+
+// cell keeps a -targets name from running as a spreadsheet formula when the
+// CSV is opened in one: a leading =, +, - or @ gets an apostrophe before it
+// (OWASP's CSV injection advice). No embedded list name starts with one.
+func cell(s string) string {
+	if s != "" && strings.ContainsRune("=+-@", rune(s[0])) {
+		return "'" + s
+	}
+
+	return s
 }
 
 // sexagesimal formats J2000 degrees as "05h 35m 17.3s" and "-05° 23′ 28″"

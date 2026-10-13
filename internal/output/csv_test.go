@@ -12,6 +12,14 @@ import (
 	"github.com/dkorunic/astro-recommender/internal/plan"
 )
 
+func TestCell(t *testing.T) {
+	for in, want := range map[string]string{"=1+1": "'=1+1", "+x": "'+x", "-x": "'-x", "@x": "'@x", "M 31": "M 31", "": ""} {
+		if got := cell(in); got != want {
+			t.Errorf("cell(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
 func TestSexagesimal(t *testing.T) {
 	for _, c := range []struct {
 		ra, dec  float64

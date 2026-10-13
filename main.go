@@ -8,6 +8,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"sync"
@@ -161,7 +162,15 @@ func nothing(cfg *config.Config, msg string) {
 		return
 	}
 	if cfg.JSON {
-		fmt.Printf("{\n  \"message\": %q,\n  \"targets\": []\n}\n", msg)
+		// json, not %q: Go's escapes (\x..) are not all valid JSON.
+		b, err := json.MarshalIndent(struct {
+			Message string   `json:"message"`
+			Targets []string `json:"targets"`
+		}{msg, []string{}}, "", "  ")
+		if err != nil {
+			fatal(err.Error())
+		}
+		fmt.Println(string(b))
 
 		return
 	}

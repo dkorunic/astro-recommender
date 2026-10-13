@@ -614,7 +614,7 @@ func pixelScale(pixel, focal float64) float64 {
 
 // parseWxH parses flag value s, "WxH" in unit, into its long and short sides.
 func parseWxH(name, unit, example, s string) (float64, float64, error) {
-	ws, hs, ok := strings.Cut(s, "x")
+	ws, hs, ok := strings.Cut(strings.ToLower(s), "x") // 2X1 too
 	w, err1 := strconv.ParseFloat(strings.TrimSpace(ws), 64)
 	h, err2 := strconv.ParseFloat(strings.TrimSpace(hs), 64)
 	if !ok || err1 != nil || err2 != nil {

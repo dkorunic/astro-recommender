@@ -21,6 +21,7 @@ var (
 	errFields = errors.New("want 1 to 3 fields")
 	errRange  = errors.New("fields must be positive, minutes and seconds below 60")
 	errSign   = errors.New("more than one sign")
+	errDigits = errors.New("fields must be decimal numbers, a fraction only in the last")
 	errWindow = errors.New("requested window is empty or outside the night")
 	errClock  = errors.New("no such local time")
 )
@@ -451,6 +452,11 @@ func Sexagesimal(text string) (float64, error) {
 		// ParseFloat's -0 would pass the range check) is a second sign.
 		if f[0] == '-' || f[0] == '+' {
 			return 0, fmt.Errorf("%w: %q", errSign, text)
+		}
+		// Plain decimals only (ParseFloat also takes 1e2, 0x1p4, Inf), and a
+		// fraction only in the last field: "12.5 30" is a typo, not 13.
+		if strings.Trim(f, "0123456789.") != "" || strings.Count(f, ".") > 1 || i < n-1 && strings.Contains(f, ".") {
+			return 0, fmt.Errorf("%w: %q", errDigits, text)
 		}
 		x, err := strconv.ParseFloat(f, 64)
 		if err != nil {

@@ -22,7 +22,7 @@ func TestZenithMag(t *testing.T) {
 }
 
 func TestParseFOV(t *testing.T) {
-	for _, ok := range []string{"0.75x1.32", " 0.75x1.32", "0.75x 1.32 "} {
+	for _, ok := range []string{"0.75x1.32", " 0.75x1.32", "0.75x 1.32 ", "0.75X1.32"} {
 		if long, short, err := parseFOV(ok); err != nil || long != 1.32*60 || short != 0.75*60 {
 			t.Errorf("parseFOV(%q) = %v %v %v", ok, long, short, err)
 		}

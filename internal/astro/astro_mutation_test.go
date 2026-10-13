@@ -253,7 +253,7 @@ func TestMutSexagesimal(t *testing.T) {
 			t.Errorf("Sexagesimal(%q) = %v, %v; want %v", in, got, err, want)
 		}
 	}
-	for _, in := range []string{"", "  ", "+-10", "--5", "1 2 3 4", "10 60", "10 30 60", "-1 -2", "+ -00 30", "NaN", "10 NaN", "Inf", "10 Inf", "1e400", "x 10"} {
+	for _, in := range []string{"", "  ", "+-10", "--5", "1 2 3 4", "10 60", "10 30 60", "-1 -2", "+ -00 30", "NaN", "10 NaN", "Inf", "10 Inf", "1e400", "x 10", "12.5 30", "1.2.3", "0x1p4", "1e2", "1_0"} {
 		if got, err := Sexagesimal(in); err == nil {
 			t.Errorf("Sexagesimal(%q) = %v, want error", in, got)
 		}
