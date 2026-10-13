@@ -175,6 +175,8 @@ tasks:
     internal: true
     requires:
       vars: [FUZZ, PKG]
+    env:
+      CGO_ENABLED: 1
     cmds:
       - gosentry test -fuzz='^{{.FUZZ}}$' --use-libafl --focus-on-new-code=false --catch-races=false --catch-leaks=true {{.CLI_ARGS}} {{.PKG}}
 
