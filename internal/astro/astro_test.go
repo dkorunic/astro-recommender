@@ -258,3 +258,29 @@ func TestWindowPolarNightEnd(t *testing.T) {
 		t.Errorf("ContinuePolar(30 Dec) = %v, want the 31st's dawn %v", got, dawn)
 	}
 }
+
+// Ecliptic inverts eclipticToEquatorial, puts the Sun on the ecliptic at
+// SunLongitude, and the celestial pole at latitude 90° − ε.
+func TestEcliptic(t *testing.T) {
+	at := time.Date(2026, 10, 5, 22, 0, 0, 0, time.UTC)
+	n := DaysJ2000(at)
+	for _, c := range [][2]float64{{0, 0}, {90, 0}, {200, -60}, {359.9, 45}, {123.4, 89.9}} {
+		ra, dec := eclipticToEquatorial(c[0]*deg, c[1]*deg, n)
+		lon, lat := Ecliptic(ra, dec, at)
+		if math.Abs(math.Mod(lon-c[0]+540, 360)-180) > 1e-9 || math.Abs(lat-c[1]) > 1e-9 {
+			t.Errorf("Ecliptic round trip of %v = %v, %v", c, lon, lat)
+		}
+	}
+	sra, sdec := SunRADec(at)
+	lon, lat := Ecliptic(sra, sdec, at)
+	if sun := SunLongitude(at); math.Abs(lon-sun) > 1e-6 || math.Abs(lat) > 1e-6 || sun < 0 || sun >= 360 {
+		t.Errorf("the Sun at ecliptic %v, %v, SunLongitude %v", lon, lat, sun)
+	}
+	// 5 October: the Sun near longitude 192°.
+	if sun := SunLongitude(at); math.Abs(sun-192.4) > 0.5 {
+		t.Errorf("SunLongitude on 5 October = %v, want ~192.4", sun)
+	}
+	if _, lat := Ecliptic(0, 90, at); math.Abs(lat-(90-23.439+0.0000004*n)) > 1e-6 {
+		t.Errorf("the celestial pole at ecliptic latitude %v", lat)
+	}
+}

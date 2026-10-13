@@ -344,8 +344,12 @@ func TestScoreFilter(t *testing.T) {
 				}
 			}
 		}
+		// A filter that passes too little of the light scores as none, to
+		// within the band's lower extinction, which tips the minutes where
+		// the two weights were within a few percent (a planetary through
+		// Hα near the Moon); a galaxy, never filtered, scores exactly so.
 		for f := range c.equal {
-			if got := score(f, c.typ); got != none {
+			if got := score(f, c.typ); got < none || got > none*1.001 || c.typ == "Spiral Galaxy" && got != none {
 				t.Errorf("%s through %q: %v, want the unfiltered %v", c.typ, f, got, none)
 			}
 		}

@@ -107,11 +107,22 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 // fp's wider Moon limit let the minute in.
 func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, fp filterPass, mosaics []config.Mosaic, alt, weight []float64) (Result, bool) {
 	var ra, dec float64
+	mid := s.Grid[len(s.Grid)/2]
 	if tg.Track == nil {
 		// Catalogs are J2000; the hour angle comes from sidereal time of date.
-		ra, dec = astro.Precess(tg.RADeg, tg.DecDeg, s.Grid[len(s.Grid)/2])
+		ra, dec = astro.Precess(tg.RADeg, tg.DecDeg, mid)
 	}
 	hz := astro.NewHorizontal(cfg.Lat, dec)
+	// The zodiacal light where the target stands (its mid-window position of
+	// date, a comet's too) against the reference direction the zenith
+	// brightness includes: half a magnitude more on the ecliptic 90° from
+	// the Sun, a little less at the ecliptic pole, and never below the pole's.
+	mra, mdec := ra, dec
+	if tg.Track != nil {
+		mra, mdec = tg.Track[len(s.Grid)/2][0], tg.Track[len(s.Grid)/2][1]
+	}
+	lon, lat := astro.Ecliptic(mra, mdec, mid)
+	zenithNL := max(s.ZenithNL+atmos.ZodiacalExcess(lon-s.SunLon, lat), atmos.ZodiacalPoleNL)
 	// cos(LST - ra) by the difference formula: one Sincos per target instead
 	// of a Cos per target-minute.
 	sinRA, cosRA := math.Sincos(ra * deg)
@@ -203,18 +214,24 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, fp filterPass, m
 		// same object under a pristine dark sky: an object much brighter than
 		// the sky loses nothing, a faint or unknown one (objNL = 0) is
 		// sky-limited, sqrt(RefNL/(k·sky)). Through a filter, the better of
-		// that and the filtered weight; the sky is then the sum of its parts
-		// (SkyBrightnessLit's to rounding), not computed twice.
-		var sb, skyW float64
+		// that and the filtered weight, each with its own extinction (the
+		// bands' Rayleigh and aerosol parts scale with wavelength); the sky
+		// is then the sum of its parts (SkyBrightnessLit's to rounding), not
+		// computed twice.
+		var sb, w float64
+		air := atmos.Airmass(a)
+		ext := atmos.Transmission(air, s.Ext[i])
 		if fp.w > 0 {
-			glow, rayleigh, mie := atmos.SkyParts(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i])
+			glow, rayleigh, mie := atmos.SkyParts(zenithNL, s.Ext[i], a, rho, s.MoonLight[i])
 			sb = glow + rayleigh + mie
-			broad, filtered := min(1, math.Sqrt(objRef/(objNL+k*sb))), fp.weight(objNL, objRef, glow, rayleigh, mie)
+			broad := ext * min(1, math.Sqrt(objRef/(objNL+k*sb)))
+			filtered := atmos.Transmission(air, s.ExtRayleigh[i]*fp.ray+atmos.OzoneExtinction+s.ExtAerosol[i]*fp.aer) *
+				fp.weight(objNL, objRef, glow, rayleigh, mie)
 			helped = helped || filtered > broad
-			skyW = max(broad, filtered)
+			w = s.Quality[i] * max(broad, filtered)
 		} else {
-			sb = atmos.SkyBrightnessLit(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i])
-			skyW = min(1, math.Sqrt(objRef/(objNL+k*sb)))
+			sb = atmos.SkyBrightnessLit(zenithNL, s.Ext[i], a, rho, s.MoonLight[i])
+			w = s.Quality[i] * ext * min(1, math.Sqrt(objRef/(objNL+k*sb)))
 		}
 		if i != prev+1 {
 			runStart = i
@@ -227,8 +244,8 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, fp filterPass, m
 		good++
 		altSum += a
 		skySum += atmos.MagFromNL(sb)
-		weight[i] = s.Quality[i] * atmos.Extinction(a, s.Ext[i]) * skyW
-		weighted += weight[i]
+		weight[i] = w
+		weighted += w
 	}
 	r.MaxAlt, r.MaxAt = math.Asin(maxSin)/deg, s.Grid[maxAt]
 	if good == 0 {
@@ -296,8 +313,10 @@ func frameFill(fill float64) float64 {
 // target's light (the lines in the filter's bands, catalog.Target.Lines), and
 // glow, rayleigh and mie, the shares of atmos.SkyParts' parts (atmos.BandSky,
 // summed over the bands, which a dual-band filter takes onto one frame). w is
-// 0 without a filter or for a target without lines.
-type filterPass struct{ w, glow, rayleigh, mie float64 }
+// 0 without a filter or for a target without lines. ray and aer scale the
+// extinction's Rayleigh and aerosol parts to the bands: (λ/551)⁻⁴ and
+// (λ/551)^-1.3, each line's weighted by its share of the light passed.
+type filterPass struct{ w, glow, rayleigh, mie, ray, aer float64 }
 
 // passes returns what the -filter choice name passes for tg; nothing for ""
 // (no filter).
@@ -313,6 +332,11 @@ func passes(cfg *config.Config, tg catalog.Target, name string) filterPass {
 		fp.glow += glow
 		fp.rayleigh += rayleigh
 		fp.mie += mie
+		fp.ray += lines[l] * rayleigh / glow
+		fp.aer += lines[l] * mie / glow
+	}
+	if fp.w > 0 {
+		fp.ray, fp.aer = fp.ray/fp.w, fp.aer/fp.w
 	}
 
 	return fp

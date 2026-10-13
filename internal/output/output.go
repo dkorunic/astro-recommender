@@ -21,6 +21,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/dkorunic/astro-recommender/internal/astro"
 	"github.com/dkorunic/astro-recommender/internal/atmos"
 	"github.com/dkorunic/astro-recommender/internal/catalog"
 	"github.com/dkorunic/astro-recommender/internal/config"
@@ -275,22 +276,22 @@ func runText(s *scoring.Sky, r scoring.Result) string {
 }
 
 // moonText says when the Moon is up within the window: "up throughout",
-// "never up", or its rises and sets in order (geometric altitude, no
-// refraction: a few minutes early for a rise, late for a set).
+// "never up", or its rises and sets in order, the upper limb on the
+// refracted horizon as the almanacs give them (astro.MoonHorizon).
 func moonText(s *scoring.Sky) string {
 	var events []string
 	for i := 1; i < len(s.Grid); i++ {
 		switch {
-		case s.MoonAlt[i-1] <= 0 && s.MoonAlt[i] > 0:
+		case s.MoonAlt[i-1] <= astro.MoonHorizon && s.MoonAlt[i] > astro.MoonHorizon:
 			events = append(events, "rises "+clock(s, s.Grid[i]))
-		case s.MoonAlt[i-1] > 0 && s.MoonAlt[i] <= 0:
+		case s.MoonAlt[i-1] > astro.MoonHorizon && s.MoonAlt[i] <= astro.MoonHorizon:
 			events = append(events, "sets "+clock(s, s.Grid[i]))
 		}
 	}
 	switch {
 	case len(events) > 0:
 		return strings.Join(events, ", ")
-	case s.MoonAlt[0] > 0:
+	case s.MoonAlt[0] > astro.MoonHorizon:
 		return "up throughout"
 	}
 
@@ -495,7 +496,7 @@ var resultColumns = []column{
 	{"SCORE", "0-1 imaging quality: 1 = every minute observable under a perfect, pristine dark sky"},
 	{"OBSERVABLE", "longest stretch within the limits without a break (+ there are others; +1d a whole day)"},
 	{"MAX ALT", "highest altitude in the window, and when"},
-	{"SKY", "mean sky brightness at the object, mag/arcsec² (higher is darker; no filter)"},
+	{"SKY", "mean sky brightness at the object, mag/arcsec², with the zodiacal light of its direction (higher is darker; no filter)"},
 	{"SB", "the object's own surface brightness, mag/arcsec², set against the sky it sees: SKY, cut by the chosen -filter to its bands' share for emission-line objects when that scores better, or halved for star clusters without nebulosity, whose own brightness is then not used (~ estimated from the magnitude and size or from a B value and a typical colour; - unknown, scored as sky-limited)"},
 	{filterColumn, "with -filter: the filter of the list that scores the object best, each minute taking the better of it and none (- when none helps: not emission-line, or the filter passes too little of its light)"},
 	{"PX", "size in pixels at the frame's pixel scale, and the mosaic (columns along the long side x rows) when more than one panel scores best (- without framing)"},

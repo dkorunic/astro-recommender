@@ -52,7 +52,7 @@ N is the number of minutes in the window. Each factor lies between 0 and 1, so a
 | Q | weather quality (cloud, rain, dew, gusts, transparency) | [Weather](#weather) |
 | κ | extinction coefficient, mag per airmass | [Atmosphere and sky](#atmosphere-and-sky) |
 | T | fraction of light surviving extinction, relative to the zenith | [Atmosphere and sky](#atmosphere-and-sky) |
-| B | sky brightness at the target (light pollution + moonlight) | [Atmosphere and sky](#atmosphere-and-sky) |
+| B | sky brightness at the target (light pollution + zodiacal light + moonlight) | [Atmosphere and sky](#atmosphere-and-sky) |
 | S | the object's own surface brightness | [Object surface brightness](#object-surface-brightness) |
 | k | fraction of sky glow that counts against the target | [Scoring a target](#scoring-a-target) |
 | w, f | through a `-filter`: the target's share of light in its bands, and the bands' share of each part of the sky (replacing k) | [Nebula filters](#nebula-filters) |
@@ -176,6 +176,8 @@ The Moon's altitude and its separation from each target both use this topocentri
 
 The illumination, phase angle and distance are taken once, at the middle of the window, and drive both the Moon-distance rule and the moonlight model below.
 
+**Rise and set.** The header's "rises" and "sets" (and the JSON `moon.up` spans) are the minutes the Moon's topocentric centre crosses −50′: the upper limb on the refracted horizon, 34′ of refraction plus 16′ of semi-diameter, as the almanacs define moonrise and moonset ([USNO][usno-twilight]). The moonlight model and the Moon-distance rule keep the geometric horizon (centre above 0°); the few minutes between change nothing there.
+
 ## Comets
 
 `internal/comets`
@@ -259,6 +261,8 @@ With κ = 0.2, T is about 0.83 at 30° altitude.
 - **Ozone**: the Chappuis band for a 300 DU column.
 - **Aerosols**: the hourly AOD from the [CAMS][cams] forecast via Open-Meteo. The factor 1.086 = 2.5 log₁₀ e converts optical depth to magnitudes.
 
+The three parts are kept apart (`atmos.RayleighExtinction`, `OzoneExtinction`, `AerosolExtinction`) because they scale differently with wavelength, which the [filter bands](#nebula-filters) use. A fixed `-extinction` is split the same way: ozone first, Rayleigh up to its sea-level 0.1066, the rest aerosol (`atmos.SplitExtinction`).
+
 Past the CAMS range (about 5 days), a typical AOD of 0.1 is used. The elevation comes from the CAMS response, else from the weather forecast's, whose range is longer. When neither has it, or when `-extinction` is given, that fixed value (default 0.2) is used instead. A smoky or dusty night therefore penalises low targets and spreads moonlight more widely.
 
 ### Sky brightness: Krisciunas & Schaefer (1991)
@@ -289,6 +293,14 @@ X_s(h) = \big(1 - 0.96\sin^2 Z\big)^{-1/2} ,\qquad
 B_{\text{dark}}(h) = B_{\text{zen}}\cdot 10^{-0.4\,\kappa\,(X_s-1)}\cdot X_s
 ```
 
+**Zodiacal light.** The natural sky is not the same in every direction: sunlight scattered by interplanetary dust brightens it along the ecliptic, most towards the Sun, and least at the ecliptic poles. [Leinert et al. (1998)][leinert] Table 17 gives its brightness Z(Δλ, β) at 500 nm by the ecliptic longitude from the Sun Δλ and the ecliptic latitude β, from 77 (in 10⁻⁸ W m⁻² sr⁻¹ µm⁻¹) at the pole to 259 on the ecliptic 90° from the Sun; 1 S10 unit is 1.28 of those and 27.78 mag/arcsec² in V, so the pole reads 23.3 mag/arcsec², the ecliptic at 90° 22.0, and the gegenschein opposite the Sun 22.2. The zenith brightness above already includes the zodiacal light of a typical zenith: a mid-latitude site's zenith runs over β = 45° ± 23.4° and Δλ from 90° at dusk to 180° at midnight, so the value is taken to include Z at the reference direction (Δλ, β) = (135°, 45°), which reads 90, and is corrected per target by the difference (`atmos.ZodiacalExcess`; the heliocentric ±7% and seasonal ±10% factors are left out):
+
+```math
+B_{\text{zen}}(\text{target}) = \max\big(B_{\text{zen}} + Z(\Delta\lambda,\beta) - Z(135^\circ, 45^\circ),\ Z_{\text{pole}}\big)
+```
+
+in nanoLamberts, bilinearly interpolated in the table, with the pole value past β = 75° and the blank cells near the Sun (which no night-time direction reaches) filled from the row's first tabulated latitude. The target's ecliptic coordinates come from its mid-window position of date (a comet's too) and the Sun's longitude at mid-window. On a pristine sky this makes the ecliptic 90° from the Sun 0.5 mag/arcsec² brighter than the reference and the pole 0.06 darker: a faint galaxy in Virgo or Leo in the evening sees a brighter sky than one in Ursa Major, and its sky-limited weight is 15–25% lower. Under light pollution the same nanoLamberts hardly show. The floor is the pole's own light: no configured sky gets darker than that.
+
 **Scattered moonlight** is added while the Moon is above the horizon. The Moon's brightness outside the atmosphere depends on its phase angle α (degrees, 0 = full):
 
 ```math
@@ -315,7 +327,7 @@ B_{\text{moon}} = f(\rho)\cdot I^*\cdot 10^{-0.4\,\kappa\,X_s(h_\text{moon})}\cd
 B = B_{\text{dark}} + B_{\text{moon}}
 ```
 
-The table's SKY column is this B converted back to mag/arcsec² and averaged over the observable minutes. The part of B_moon that does not depend on the target (I* times the Moon's extinction) is computed once per grid minute (`atmos.MoonLight`).
+The table's SKY column is this B (with the zodiacal light) converted back to mag/arcsec² and averaged over the observable minutes. The part of B_moon that does not depend on the target (I* times the Moon's extinction) is computed once per grid minute (`atmos.MoonLight`).
 
 ## Object surface brightness
 
@@ -474,7 +486,15 @@ Each extra band also passes its share of the sky, so the multi-band filters scor
 W_{\text{filter}} = \min\!\Bigg(1,\ \sqrt{\frac{w^2\,(S + B_{\text{ref}})}{w\,S + f_{\text{glow}}B_{\text{glow}} + f_{\text{R}}B_{\text{R}} + f_{\text{M}}B_{\text{M}}}}\Bigg)
 ```
 
-With w = 1 and every f equal to k this is the broadband weight. Each minute takes the better of `W_filter` and the broadband `W_sky`: an imager would not shoot an H II region through [O III] if broadband did better.
+With w = 1 and every f equal to k this is the broadband weight.
+
+**Extinction in the bands.** The extinction coefficient κ above is at 550 nm. Rayleigh scattering goes as λ⁻⁴ and aerosol extinction as λ^−1.3 like the moonlight they scatter, while the ozone term barely changes across the nebula lines (the Chappuis band peaks at 600 nm; within 0.02 mag/airmass), so a band at λ sees
+
+```math
+\kappa_\lambda = \kappa_{\text{R}}\Big(\frac{\lambda}{551}\Big)^{-4} + \kappa_{\text{O}_3} + \kappa_{\text{aer}}\Big(\frac{\lambda}{551}\Big)^{-1.3}
+```
+
+and a multi-band filter the mean over its lines weighted by the share of light each passes. At κ = 0.2 the Hα band's coefficient is 0.14 and the [O III] band's 0.25, so at airmass 2 an Hα target through its filter keeps 6% more light than the V coefficient says and an [O III] target 4% less. The filtered weight carries its own transmission `T(h, κ_λ)` and the broadband one `T(h, κ)`; each minute takes the better of the two products, so an imager would not shoot an H II region through [O III] if broadband did better. A filter whose weight runs within a few percent of broadband can now win on extinction alone (a planetary near the Moon through Hα, by a hair), which is as it should be.
 
 **A list of filters** (`-filter dual,ha,oiii`, the ones you own) scores each emission-line target once per filter, each run as above, and keeps the best score (the first in the list on a tie). The target's FILTER is that filter when it mattered, when some minute's `W_filter` beat `W_sky` or only its wider Moon limit admitted the minute, and `-` otherwise (`Result.Filter`). One filter per target rather than per minute: changing filters mid-target means a second set of flats and a split stack. A single filter therefore scores exactly as it did before lists.
 
@@ -492,11 +512,11 @@ The filtered limits run well below [Telescopius][telescopius]' Lorentzian Moon a
 ### Putting it together
 
 ```math
-w_i = Q_i \cdot T(h_i,\kappa_i)\cdot W_{\text{sky},i} ,\qquad
+w_i = Q_i \cdot \max\big(T(h_i,\kappa_i)\, W_{\text{sky},i},\ T(h_i,\kappa_{\lambda,i})\, W_{\text{filter},i}\big) ,\qquad
 \text{SCORE} = F_{\text{frame}}\cdot\frac{1}{N}\sum_i w_i
 ```
 
-Results are sorted by SCORE, and the mean altitude over the observable minutes breaks ties. Extinction does not also dim S. It enters once, as the separate factor T.
+(without a `-filter`, just `Q · T(h, κ) · W_sky`). Results are sorted by SCORE, and the mean altitude over the observable minutes breaks ties. Extinction does not also dim S. It enters once, as the separate factor T.
 
 ## Framing and mosaics
 
@@ -676,6 +696,8 @@ The models above come from the literature. The following are this project's own 
 | OSM obstacle heights | building 8 m (else 3 m a level + 2 m), tree 12 m, wood 20 m | typical two-storey house, mature broadleaf, temperate forest canopy; OSM tags few heights |
 | Canopy floor | trees under 1 m ignored | the canopy map reads a metre or so over open ground |
 | Night-sky spectrum | flat per nm, Moon before scattering and glow | the lamp mix is unknown; the Moon's redness offsets the Sun's fall |
+| Zodiacal reference direction | 135° from the Sun at ecliptic latitude 45° | a mid-latitude zenith through the night; the zenith brightness given or defaulted includes that much zodiacal light |
+| Ozone in a filter band | the 550 nm value | within 0.02 mag/airmass at every nebula line |
 | High cloud weight | ½ | thin cirrus dims rather than blocks |
 | Dew ramp | spread 4 → 1 °C, × 1 → 0.7 | dew on optics ends sessions |
 | Gust ramp | 20 → 40 km/h, × 1 → 0.5 | shaken frames get discarded |
@@ -701,6 +723,7 @@ Treat SCORE as a way to order tonight's options, not as an absolute measure of q
 | Rayleigh extinction | [Hayes & Latham (1975)][hayes], ApJ 197, 593; [Bucholtz (1995)][bucholtz], Appl. Opt. 34, 2765 |
 | Aerosols | [CAMS][cams] via Open-Meteo |
 | Sky brightness and moonlight | [Krisciunas & Schaefer (1991)][ks], PASP 103, 1033; opposition surge after [thorsky][thorsky] |
+| Zodiacal light | [Leinert et al. (1998)][leinert], A&AS 127, 1, Table 17 (transcribed as in [astrogo](https://github.com/TuSKan/astrogo)); the natural-sky reference of [Falchi et al. (2016)][falchi], Sci. Adv. 2, e1600377 |
 | Filter bands | V band: [Bessell (1990)][bessell], PASP 102, 1181; Ångström exponent: [Ångström (1929)][angstrom]; Moon colour: [Thejll et al. (2014)][moon-colour], A&A 563, A38 |
 | Emission line ratios | SNR criterion: [Mathewson & Clarke (1973)][mathewson], ApJ 180, 725; Magellanic Cloud PN [O III]/Hβ: [Stanghellini et al. (2003)][stanghellini], ApJ 596, 997; the criterion against H II regions: [Kopsacheili et al. (2020)][kopsacheili], MNRAS 491, 889; case-B Hα/Hβ: [Osterbrock & Ferland (2006)][agn2], *Astrophysics of Gaseous Nebulae and AGN*, 2nd ed. |
 | Per-filter Moon avoidance (comparison) | [Telescopius][telescopius]; the BAIT Lorentzian as in ACP |
@@ -725,6 +748,8 @@ Treat SCORE as a way to order tonight's options, not as an absolute measure of q
 [bucholtz]: https://doi.org/10.1364/AO.34.002765
 [cams]: https://atmosphere.copernicus.eu/
 [ks]: https://doi.org/10.1086/132921
+[leinert]: https://doi.org/10.1051/aas:1998105
+[falchi]: https://doi.org/10.1126/sciadv.1600377
 [thorsky]: https://github.com/jrthorstensen/thorsky
 [bortle]: https://skyandtelescope.org/astronomy-resources/light-pollution-and-astronomy-the-bortle-dark-sky-scale/
 [openngc]: https://github.com/mattiaverga/OpenNGC

@@ -23,9 +23,10 @@ var mutEpoch = time.Date(2000, 1, 1, 12, 0, 0, 0, time.UTC)
 // mutSky is a synthetic night of n minutes at an equatorial site whose
 // sidereal time advances 1° a minute from 0: an equatorial target at RA r
 // stands at altitude 90 − |i − r| at minute i. No extinction, no Moon above
-// the horizon, perfect weather, a pristine sky.
+// the horizon, perfect weather, a pristine sky (plus the zodiacal light
+// where the target stands, mutZenith).
 func mutSky(n int) *Sky {
-	s := &Sky{Start: mutEpoch, ZenithNL: atmos.NanoLamberts(22), RefNL: atmos.NanoLamberts(22), MoonSep: 50}
+	s := &Sky{Start: mutEpoch, ZenithNL: atmos.NanoLamberts(22), RefNL: atmos.NanoLamberts(22), MoonSep: 50, SunLon: astro.SunLongitude(mutEpoch)}
 	for i := range n {
 		t := mutEpoch.Add(time.Duration(i) * time.Minute)
 		s.Grid = append(s.Grid, t)
@@ -36,12 +37,23 @@ func mutSky(n int) *Sky {
 		s.MoonAlt = append(s.MoonAlt, -10)
 		s.MoonUnit = append(s.MoonUnit, astro.Unit(0, -80))
 		s.Ext = append(s.Ext, 0)
+		s.ExtRayleigh = append(s.ExtRayleigh, 0)
+		s.ExtAerosol = append(s.ExtAerosol, 0)
 		s.MoonLight = append(s.MoonLight, 0)
 		s.Quality = append(s.Quality, 1)
 	}
 	s.End = s.Grid[n-1].Add(time.Minute)
 
 	return s
+}
+
+// mutZenith is mutSky's dark zenith sky in nanoLamberts for a target at
+// ra/dec (J2000 = of date at mutEpoch): the pristine 22 plus the zodiacal
+// excess where it stands.
+func mutZenith(ra, dec float64) float64 {
+	lon, lat := astro.Ecliptic(ra, dec, mutEpoch)
+
+	return max(atmos.NanoLamberts(22)+atmos.ZodiacalExcess(lon-astro.SunLongitude(mutEpoch), lat), atmos.ZodiacalPoleNL)
 }
 
 func mutCfg() *config.Config {
@@ -52,10 +64,11 @@ func mutTarget(name string, ra, dec float64) catalog.Target {
 	return catalog.Target{Name: name, Type: "Galaxy", RADeg: ra, DecDeg: dec, Size: 20}
 }
 
-// mutWeight is the pristine-sky weight at altitude a for an object of
-// surface brightness sb (0 = unknown) and sky fraction k, from K&S's
-// scattering airmass X = 1/√(1 − 0.96 sin² z) and SNR ∝ S/√(S+B).
-func mutWeight(a, sb, k float64) float64 {
+// mutWeight is the moonless weight at altitude a for an object of surface
+// brightness sb (0 = unknown) and sky fraction k under a zenith sky of zen
+// nanoLamberts (mutZenith), from K&S's scattering airmass
+// X = 1/√(1 − 0.96 sin² z) and SNR ∝ S/√(S+B) against the pristine 22.
+func mutWeight(a, sb, k, zen float64) float64 {
 	z := (90 - a) * math.Pi / 180
 	x := 1 / math.Sqrt(1-0.96*math.Sin(z)*math.Sin(z))
 	ref := atmos.NanoLamberts(22)
@@ -64,7 +77,7 @@ func mutWeight(a, sb, k float64) float64 {
 		obj = atmos.NanoLamberts(sb)
 	}
 
-	return min(1, math.Sqrt((obj+ref)/(obj+k*ref*x)))
+	return min(1, math.Sqrt((obj+ref)/(obj+k*zen*x)))
 }
 
 func mutOne(t *testing.T, cfg *config.Config, s *Sky, tg catalog.Target, perMinute bool) (Result, bool) {
@@ -92,15 +105,16 @@ func TestMutScoreGeometry(t *testing.T) {
 		t.Errorf("Foto %v, want %v", r.Foto, 90.0/141)
 	}
 	var sum, altSum, skySum float64
+	zen := mutZenith(90.5, 0)
 	for i := range 141 {
 		a := 90 - math.Abs(float64(i)-90.5)
 		if a < 30 || a > 80 {
 			continue
 		}
-		sum += mutWeight(a, 0, 1)
+		sum += mutWeight(a, 0, 1, zen)
 		altSum += a
 		z := (90 - a) * math.Pi / 180
-		skySum += atmos.MagFromNL(atmos.NanoLamberts(22) / math.Sqrt(1-0.96*math.Sin(z)*math.Sin(z)))
+		skySum += atmos.MagFromNL(zen / math.Sqrt(1-0.96*math.Sin(z)*math.Sin(z)))
 	}
 	if math.Abs(r.Score-sum/141) > 1e-7 {
 		t.Errorf("Score %v, want %v", r.Score, sum/141)
@@ -120,7 +134,7 @@ func TestMutScoreGeometry(t *testing.T) {
 	if len(r.Alt) != 141 || math.Abs(r.Alt[0]-(90-90.5)) > 1e-5 || math.Abs(r.Alt[90]-89.5) > 1e-5 {
 		t.Errorf("Alt %v %v", r.Alt[0], r.Alt[90])
 	}
-	if r.Weight[30] != 0 || r.Weight[90] != 0 || math.Abs(r.Weight[31]-mutWeight(30.5, 0, 1)) > 1e-7 {
+	if r.Weight[30] != 0 || r.Weight[90] != 0 || math.Abs(r.Weight[31]-mutWeight(30.5, 0, 1, zen)) > 1e-7 {
 		t.Errorf("Weight %v %v %v", r.Weight[30], r.Weight[90], r.Weight[31])
 	}
 	// RA 50.5: minutes 0..40 (41) then 61..110 (50): the later run is longer.
@@ -249,16 +263,17 @@ func TestMutCometTrack(t *testing.T) {
 func TestMutSurfaceBrightnessWeight(t *testing.T) {
 	s := mutSky(141)
 	cfg := mutCfg()
+	zen := mutZenith(90.5, 0)
 	for _, sb := range []float64{16, 21, 24} {
 		tg := catalog.Target{Name: "S", Type: "Galaxy", RADeg: 90.5, Size: 20, SurfBr: sb}
 		r, _ := mutOne(t, cfg, s, tg, true)
-		if w := mutWeight(40.5, sb, 1); math.Abs(r.Weight[41]-w) > 1e-7 {
+		if w := mutWeight(40.5, sb, 1, zen); math.Abs(r.Weight[41]-w) > 1e-7 {
 			t.Errorf("SB %v: weight %v, want %v", sb, r.Weight[41], w)
 		}
 	}
 	// Cluster: half the sky, no surface brightness.
 	r, _ := mutOne(t, cfg, s, catalog.Target{Name: "K", Type: "Open Cluster", RADeg: 90.5, Size: 20, SurfBr: 16}, true)
-	if w := mutWeight(40.5, 0, 0.5); math.Abs(r.Weight[41]-w) > 1e-7 {
+	if w := mutWeight(40.5, 0, 0.5, zen); math.Abs(r.Weight[41]-w) > 1e-7 {
 		t.Errorf("cluster weight %v, want %v", r.Weight[41], w)
 	}
 	// Quality and extinction multiply in.
@@ -266,7 +281,7 @@ func TestMutSurfaceBrightnessWeight(t *testing.T) {
 	r, _ = mutOne(t, cfg, s, mutTarget("Q", 90.5, 0), true)
 	z := 49.5 * math.Pi / 180
 	x := 1 / math.Sqrt(1-0.96*math.Sin(z)*math.Sin(z))
-	sky := atmos.NanoLamberts(22) * math.Pow(10, -0.4*0.2*(x-1)) * x
+	sky := zen * math.Pow(10, -0.4*0.2*(x-1)) * x
 	want := 0.5 * math.Pow(10, -0.4*0.2*(atmos.Airmass(40.5)-1)) * math.Sqrt(atmos.NanoLamberts(22)/sky)
 	if math.Abs(r.Weight[41]-want) > 1e-7 {
 		t.Errorf("weight with quality+extinction %v, want %v", r.Weight[41], want)
@@ -607,5 +622,83 @@ func TestMutScoreHorizonAzimuth(t *testing.T) {
 	}
 	if checked[0] < 50 || checked[1] < 50 {
 		t.Errorf("checked %v", checked)
+	}
+}
+
+// Through a filter the filtered weight carries the bands' own extinction:
+// the Rayleigh part as (λ/551)⁻⁴ and the aerosol part as (λ/551)^-1.3, ozone
+// as is, each line's weighted by its share of the light passed. Under a
+// bright sky an H II region without data is sky-limited and gains through
+// Hα, so its weight is the band's transmission times the filtered sky weight.
+func TestMutBandExtinction(t *testing.T) {
+	s := mutSky(141)
+	cfg := mutCfg()
+	cfg.Filter = "ha"
+	s.ZenithNL = atmos.NanoLamberts(19)
+	ray, aer := atmos.SplitExtinction(0.2)
+	for i := range s.Grid {
+		s.Ext[i], s.ExtRayleigh[i], s.ExtAerosol[i] = 0.2, ray, aer
+	}
+	tg := catalog.Target{Name: "N", Type: "Emission Nebula", RADeg: 90.5, Size: 20}
+	fp := passes(cfg, tg, "ha")
+	if x := 656.3 / 551; math.Abs(fp.ray-math.Pow(x, -4)) > 1e-12 || math.Abs(fp.aer-math.Pow(x, -1.3)) > 1e-12 {
+		t.Errorf("Hα band factors %v %v, want %v %v", fp.ray, fp.aer, math.Pow(x, -4), math.Pow(x, -1.3))
+	}
+	lines, dual := tg.Lines(), passes(cfg, tg, "dual")
+	wantRay := (lines[catalog.Ha]*math.Pow(656.3/551, -4) + lines[catalog.OIII]*math.Pow(500.7/551, -4)) / (lines[catalog.Ha] + lines[catalog.OIII])
+	if math.Abs(dual.ray-wantRay) > 1e-12 {
+		t.Errorf("dual-band Rayleigh factor %v, want the light-weighted %v", dual.ray, wantRay)
+	}
+	r, ok := mutOne(t, cfg, s, tg, true)
+	if !ok || r.Filter != "ha" {
+		t.Fatalf("H II region through Hα: %v, filter %q", ok, r.Filter)
+	}
+	lon, lat := astro.Ecliptic(90.5, 0, mutEpoch)
+	zen := max(s.ZenithNL+atmos.ZodiacalExcess(lon-s.SunLon, lat), atmos.ZodiacalPoleNL)
+	glow, _, _ := atmos.SkyParts(zen, 0.2, 40.5, 180, 0)
+	band := ray*fp.ray + atmos.OzoneExtinction + aer*fp.aer
+	want := atmos.Transmission(atmos.Airmass(40.5), band) * fp.weight(0, s.RefNL, glow, 0, 0)
+	if math.Abs(r.Weight[41]-want) > 1e-7 || band >= 0.2 {
+		t.Errorf("weight %v, want %v through the band's %.4f mag/airmass", r.Weight[41], want, band)
+	}
+	// Without the filter: the V coefficient and the broadband weight.
+	cfg.Filter = ""
+	r, _ = mutOne(t, cfg, s, tg, true)
+	if want := atmos.Extinction(40.5, 0.2) * min(1, math.Sqrt(s.RefNL/glow)); math.Abs(r.Weight[41]-want) > 1e-7 {
+		t.Errorf("broadband weight %v, want %v", r.Weight[41], want)
+	}
+}
+
+// The zodiacal light enters once per target: on the ecliptic the sky is
+// brighter than at the ecliptic pole, so the same object scores less there,
+// and no configured sky gets darker than the pole's light allows.
+func TestMutZodiacal(t *testing.T) {
+	s := mutSky(181)
+	cfg := mutCfg()
+	// mutEpoch is J2000, so J2000 positions are of date: the June solstice
+	// point (RA 90°, Dec 23.44°) lies on the ecliptic 170° from the January
+	// Sun, the south ecliptic pole at RA 90°, Dec −66.56°.
+	ecl, pole := mutZenith(90, 23.44), mutZenith(90, -66.56)
+	if _, lat := astro.Ecliptic(90, -66.56, mutEpoch); math.Abs(lat+90) > 0.01 {
+		t.Fatalf("south ecliptic pole at latitude %v", lat)
+	}
+	if d := atmos.MagFromNL(pole) - atmos.MagFromNL(ecl); d < 0.4 || d > 0.6 {
+		t.Errorf("ecliptic %.2f, pole %.2f mag/arcsec²: want the ecliptic about half a magnitude brighter", atmos.MagFromNL(ecl), atmos.MagFromNL(pole))
+	}
+	if math.Abs(pole-atmos.ZodiacalPoleNL-(atmos.NanoLamberts(22)-atmos.Zodiacal(atmos.ZodiacalRefLon, atmos.ZodiacalRefLat))) > 0.01 { // Dec −66.56° is 0.01° off the pole
+		t.Errorf("pole zenith %v: want 22 mag/arcsec² less the reference's zodiacal light plus the pole's", pole)
+	}
+	// The pole target transits at 23.44° at minute 90; a configured sky
+	// darker than the pole's zodiacal light is held at it.
+	cfg.AltMin = -90
+	s.ZenithNL = atmos.ZodiacalPoleNL / 2
+	r, ok := mutOne(t, cfg, s, catalog.Target{Name: "Z", Type: "Galaxy", RADeg: 90, DecDeg: -66.56, Size: 20, SurfBr: 30}, true)
+	if !ok || math.Abs(r.MaxAlt-23.44) > 0.01 {
+		t.Fatalf("pole target: %v, max alt %v", ok, r.MaxAlt)
+	}
+	glow, _, _ := atmos.SkyParts(atmos.ZodiacalPoleNL, 0, r.Alt[90], 180, 0)
+	obj := atmos.NanoLamberts(30)
+	if want := min(1, math.Sqrt((obj+s.RefNL)/(obj+glow))); math.Abs(r.Weight[90]-want) > 1e-7 {
+		t.Errorf("weight at the floor %v, want %v", r.Weight[90], want)
 	}
 }

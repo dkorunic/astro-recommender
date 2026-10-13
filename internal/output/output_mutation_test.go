@@ -15,6 +15,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/dkorunic/astro-recommender/internal/astro"
 	"github.com/dkorunic/astro-recommender/internal/atmos"
 	"github.com/dkorunic/astro-recommender/internal/catalog"
 	"github.com/dkorunic/astro-recommender/internal/config"
@@ -170,7 +171,7 @@ func TestMutMoonTextAndUp(t *testing.T) {
 	for i := range s.MoonAlt {
 		s.MoonAlt[i] = 5
 	}
-	s.MoonAlt[0] = 0 // exactly on the horizon is down
+	s.MoonAlt[0] = astro.MoonHorizon // the upper limb exactly on the refracted horizon is down
 	if got := moonText(s); got != "rises 20:01" {
 		t.Errorf("moonText = %q", got)
 	}
@@ -182,7 +183,7 @@ func TestMutMoonTextAndUp(t *testing.T) {
 		t.Errorf("moonUp throughout = %v", up)
 	}
 	for i := range s.MoonAlt {
-		s.MoonAlt[i] = -1
+		s.MoonAlt[i] = -1 // the centre 1° down: the limb is below the horizon
 	}
 	if got := moonText(s); got != "never up" {
 		t.Errorf("moonText = %q", got)

@@ -227,12 +227,44 @@ func DaysJ2000(t time.Time) float64 {
 // (Astronomical Almanac low-precision formula, ~0.01°).
 func SunRADec(t time.Time) (float64, float64) {
 	n := DaysJ2000(t)
+
+	return eclipticToEquatorial(sunLongitude(n), 0, n)
+}
+
+// SunLongitude returns the Sun's ecliptic longitude of date in degrees
+// [0, 360): the zodiacal light is laid out around it.
+func SunLongitude(t time.Time) float64 {
+	return math.Mod(sunLongitude(DaysJ2000(t))/deg+360, 360)
+}
+
+// sunLongitude is the Sun's ecliptic longitude in radians n days from J2000
+// (Astronomical Almanac low-precision formula).
+func sunLongitude(n float64) float64 {
 	L := 280.460 + 0.9856474*n
 	g := (357.528 + 0.9856003*n) * deg
-	lambda := (L + 1.915*math.Sin(g) + 0.020*math.Sin(2*g)) * deg
 
-	return eclipticToEquatorial(lambda, 0, n)
+	return (L + 1.915*math.Sin(g) + 0.020*math.Sin(2*g)) * deg
 }
+
+// Ecliptic converts equatorial coordinates of date (degrees) to ecliptic
+// longitude [0, 360) and latitude in degrees at t (Meeus eq. 13.1, as
+// vectors so the pole needs no tangent).
+func Ecliptic(ra, dec float64, t time.Time) (float64, float64) {
+	sinA, cosA := math.Sincos(ra * deg)
+	sinD, cosD := math.Sincos(dec * deg)
+	sinE, cosE := math.Sincos(obliquity(DaysJ2000(t)))
+	x := cosD * cosA
+	y := cosD*sinA*cosE + sinD*sinE
+	z := max(-1, min(1, sinD*cosE-cosD*sinA*sinE))
+
+	return math.Mod(math.Atan2(y, x)/deg+360, 360), math.Asin(z) / deg
+}
+
+// MoonHorizon is the topocentric altitude of the Moon's centre, degrees, at
+// moonrise and moonset as the almanacs define them: the upper limb on the
+// refracted horizon, 34′ of refraction and 16′ of semi-diameter below 0°.
+// The header's rises and sets use it; the moonlight rule stays geometric.
+const MoonHorizon = -(34.0 + 16.0) / 60
 
 // MoonRADec returns the Moon's geocentric right ascension and declination in
 // degrees (Astronomical Almanac low-precision formula, ~0.4°).
@@ -252,13 +284,17 @@ func MoonRADec(t time.Time) (float64, float64) {
 // eclipticToEquatorial converts ecliptic longitude/latitude (radians) to right
 // ascension and declination in degrees.
 func eclipticToEquatorial(lambda, beta, n float64) (float64, float64) {
-	eps := (23.439 - 0.0000004*n) * deg
+	eps := obliquity(n)
 	x := math.Cos(beta) * math.Cos(lambda)
 	y := math.Cos(eps)*math.Cos(beta)*math.Sin(lambda) - math.Sin(eps)*math.Sin(beta)
 	z := math.Sin(eps)*math.Cos(beta)*math.Sin(lambda) + math.Cos(eps)*math.Sin(beta)
 
 	return math.Mod(math.Atan2(y, x)/deg+360, 360), math.Asin(z) / deg
 }
+
+// obliquity is the mean obliquity of the ecliptic in radians n days from
+// J2000 (Astronomical Almanac low precision).
+func obliquity(n float64) float64 { return (23.439 - 0.0000004*n) * deg }
 
 // MoonIllumination returns the illuminated fraction, from Sun-Moon elongation.
 func MoonIllumination(t time.Time) float64 {

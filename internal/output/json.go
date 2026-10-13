@@ -10,6 +10,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/dkorunic/astro-recommender/internal/astro"
 	"github.com/dkorunic/astro-recommender/internal/atmos"
 	"github.com/dkorunic/astro-recommender/internal/config"
 	"github.com/dkorunic/astro-recommender/internal/plan"
@@ -208,14 +209,16 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 	return enc.Encode(r)
 }
 
-// moonUp lists the spans within the window during which the Moon is up.
+// moonUp lists the spans within the window during which the Moon is up, its
+// upper limb on the refracted horizon as the header's rises and sets
+// (astro.MoonHorizon).
 func moonUp(s *scoring.Sky) []span {
 	spans := []span{}
 	for i, alt := range s.MoonAlt {
-		switch up := alt > 0; {
-		case up && (i == 0 || s.MoonAlt[i-1] <= 0):
+		switch up := alt > astro.MoonHorizon; {
+		case up && (i == 0 || s.MoonAlt[i-1] <= astro.MoonHorizon):
 			spans = append(spans, span{From: s.Grid[i], To: s.End})
-		case !up && i > 0 && s.MoonAlt[i-1] > 0:
+		case !up && i > 0 && s.MoonAlt[i-1] > astro.MoonHorizon:
 			spans[len(spans)-1].To = s.Grid[i]
 		}
 	}

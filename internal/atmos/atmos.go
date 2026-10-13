@@ -40,12 +40,37 @@ func BortleClass(mag float64) int {
 }
 
 // ExtinctionCoeff estimates extinction at 550 nm (the CAMS AOD wavelength, ~V)
-// in mag per airmass: Rayleigh scattering (Hayes & Latham 1975 at 0.55 µm,
-// matching astrogo's Winkler 2022 tau_R = 0.098) scaled by elevation (scale
-// height ~8 km), Chappuis-band ozone (300 DU, sigma ~3.3e-21 cm^2), and
-// aerosols (1.086 converts optical depth to magnitudes).
+// in mag per airmass: RayleighExtinction, OzoneExtinction and AerosolExtinction.
 func ExtinctionCoeff(elevation, aod float64) float64 {
-	return 0.1066*math.Exp(-elevation/7996) + 0.029 + 1.086*aod
+	return RayleighExtinction(elevation) + OzoneExtinction + AerosolExtinction(aod)
+}
+
+// RayleighExtinction is the Rayleigh scattering part of ExtinctionCoeff:
+// Hayes & Latham (1975) at 0.55 µm (matching astrogo's Winkler 2022 tau_R =
+// 0.098) scaled by elevation (m) over a scale height of ~8 km. It goes as
+// λ⁻⁴ (BandSky), so a filter band's extinction scales it.
+func RayleighExtinction(elevation float64) float64 { return 0.1066 * math.Exp(-elevation/7996) }
+
+// OzoneExtinction is the Chappuis-band ozone part of ExtinctionCoeff for a
+// 300 DU column (sigma ~3.3e-21 cm² at 550 nm). The band peaks at 600 nm
+// and is within 0.02 mag/airmass of this at every nebula line, so a filter
+// band keeps it as is.
+const OzoneExtinction = 0.029
+
+// AerosolExtinction is the aerosol part of ExtinctionCoeff for an optical
+// depth aod at 550 nm (1.086 converts optical depth to magnitudes). It goes
+// as λ^-angstrom (BandSky).
+func AerosolExtinction(aod float64) float64 { return 1.086 * aod }
+
+// SplitExtinction splits a fixed total coefficient k (-extinction, or its
+// default without an elevation) into its Rayleigh and aerosol parts for a
+// filter band's scaling: ozone first, then Rayleigh up to its sea-level
+// value, the rest aerosol.
+func SplitExtinction(k float64) (float64, float64) {
+	k = max(0, k-OzoneExtinction)
+	rayleigh := min(k, RayleighExtinction(0))
+
+	return rayleigh, k - rayleigh
 }
 
 // TypicalAOD fills hours past the CAMS forecast range: clean continental air.
@@ -62,7 +87,13 @@ func Airmass(alt float64) float64 {
 // Extinction returns the fraction of a target's light that survives the
 // atmosphere at altitude alt, relative to the zenith, for k mag per airmass.
 func Extinction(alt, k float64) float64 {
-	return exp10(-0.4 * k * (Airmass(alt) - 1))
+	return Transmission(Airmass(alt), k)
+}
+
+// Transmission is Extinction at a given airmass, for callers that compare
+// several coefficients at one altitude.
+func Transmission(airmass, k float64) float64 {
+	return exp10(-0.4 * k * (airmass - 1))
 }
 
 // meanMoonDist is the Moon's mean distance in Earth radii, the one K&S's

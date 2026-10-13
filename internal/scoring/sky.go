@@ -20,30 +20,33 @@ import (
 // Sky holds everything about the night that does not depend on the target,
 // sampled on a 1-minute grid (as in uptonight).
 type Sky struct {
-	Night      [2]time.Time // full night at -twilight's Sun limit; start/end may be clipped inside it
-	Start, End time.Time
-	Weather    map[int64]weather.HourWeather
-	Astro      map[int64]weather.AstroBlock
-	AOD        map[int64]float64 // aerosol optical depth at 550 nm per unix hour (CAMS)
-	Grid       []time.Time
-	LST        []float64 // local sidereal time per grid minute, degrees
-	SinLST     []float64 // sin and cos of LST, so a fixed target's cos(hour angle) needs no Cos
-	CosLST     []float64
-	MoonPos    [][2]float64 // topocentric RA/Dec of date, degrees
-	MoonUnit   [][3]float64 // astro.Unit of MoonPos, for the per-minute Moon separations
-	MoonAlt    []float64
-	Ext        []float64 // extinction per grid minute, mag per airmass
-	MoonLight  []float64 // atmos.MoonLight per grid minute
-	Quality    []float64 // clear-sky fraction x rain x dew x gust x transparency, 1 = perfect
-	Elevation  float64   // site elevation in m, from Open-Meteo; NaN if unknown
-	Illum      float64
-	MoonPhase  float64 // phase angle in degrees, 0 = full
-	MoonDist   float64 // geocentric distance in Earth radii
-	MoonSep    float64 // uptonight: min separation in degrees = illumination %
-	ZenithNL   float64 // site's moonless zenith sky brightness, nanoLamberts
-	RefNL      float64 // refZenithMag in nanoLamberts
-	Comets     int     // comets added as targets
-	CometsLost bool    // the comet elements could not be fetched
+	Night       [2]time.Time // full night at -twilight's Sun limit; start/end may be clipped inside it
+	Start, End  time.Time
+	Weather     map[int64]weather.HourWeather
+	Astro       map[int64]weather.AstroBlock
+	AOD         map[int64]float64 // aerosol optical depth at 550 nm per unix hour (CAMS)
+	Grid        []time.Time
+	LST         []float64 // local sidereal time per grid minute, degrees
+	SinLST      []float64 // sin and cos of LST, so a fixed target's cos(hour angle) needs no Cos
+	CosLST      []float64
+	MoonPos     [][2]float64 // topocentric RA/Dec of date, degrees
+	MoonUnit    [][3]float64 // astro.Unit of MoonPos, for the per-minute Moon separations
+	MoonAlt     []float64
+	Ext         []float64 // extinction per grid minute, mag per airmass, at 550 nm: ExtRayleigh + atmos.OzoneExtinction + ExtAerosol
+	ExtRayleigh []float64 // its Rayleigh part, which a filter band scales as λ⁻⁴
+	ExtAerosol  []float64 // its aerosol part, scaled as λ^-1.3
+	MoonLight   []float64 // atmos.MoonLight per grid minute
+	Quality     []float64 // clear-sky fraction x rain x dew x gust x transparency, 1 = perfect
+	Elevation   float64   // site elevation in m, from Open-Meteo; NaN if unknown
+	SunLon      float64   // the Sun's ecliptic longitude at mid-window, degrees, for the zodiacal light
+	Illum       float64
+	MoonPhase   float64 // phase angle in degrees, 0 = full
+	MoonDist    float64 // geocentric distance in Earth radii
+	MoonSep     float64 // uptonight: min separation in degrees = illumination %
+	ZenithNL    float64 // site's moonless zenith sky brightness, nanoLamberts
+	RefNL       float64 // refZenithMag in nanoLamberts
+	Comets      int     // comets added as targets
+	CometsLost  bool    // the comet elements could not be fetched
 }
 
 // Forecast is the network input of BuildSky; the zero value (with NaN
@@ -177,6 +180,7 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 	s.MoonSep = s.Illum * 100
 	s.MoonPhase = astro.MoonPhaseAngle(mid)
 	s.MoonDist = astro.MoonDistance(mid)
+	s.SunLon = astro.SunLongitude(mid)
 	s.ZenithNL = atmos.NanoLamberts(cfg.ZenithMag())
 	s.RefNL = atmos.NanoLamberts(atmos.RefZenithMag)
 
@@ -195,12 +199,14 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 
 	s.Quality = make([]float64, len(s.Grid))
 	s.Ext = make([]float64, len(s.Grid))
+	s.ExtRayleigh, s.ExtAerosol = make([]float64, len(s.Grid)), make([]float64, len(s.Grid))
 	s.MoonLight = make([]float64, len(s.Grid))
 	// Weather and transparency per minute; ok marks the minutes each forecast covers.
 	sky, skyOK := make([]float64, len(s.Grid)), make([]bool, len(s.Grid))
 	transp, transpOK := make([]float64, len(s.Grid)), make([]bool, len(s.Grid))
 	for i, t := range s.Grid {
 		s.Ext[i] = s.ExtinctionAt(t, cfg.Extinction)
+		s.ExtRayleigh[i], s.ExtAerosol[i] = s.extinctionParts(t, cfg.Extinction)
 		s.MoonLight[i] = atmos.MoonLight(s.Ext[i], s.MoonAlt[i], s.MoonPhase, s.MoonDist)
 		if h, ok := s.Weather[t.Truncate(time.Hour).Unix()]; ok {
 			// ponytail: guessed ramps; dew (spread 4 -> 1 °C) and gusts (20 -> 40 km/h)
@@ -278,10 +284,26 @@ func (s *Sky) ExtinctionAt(t time.Time, fallback float64) float64 {
 	if math.IsNaN(s.Elevation) {
 		return fallback
 	}
-	aod, ok := s.AOD[t.Truncate(time.Hour).Unix()]
-	if !ok {
-		aod = atmos.TypicalAOD
+
+	return atmos.ExtinctionCoeff(s.Elevation, s.aodAt(t))
+}
+
+// extinctionParts returns the Rayleigh and aerosol parts of ExtinctionAt,
+// which a filter band scales by its wavelength; a fixed coefficient is
+// split by atmos.SplitExtinction.
+func (s *Sky) extinctionParts(t time.Time, fallback float64) (float64, float64) {
+	if math.IsNaN(s.Elevation) {
+		return atmos.SplitExtinction(fallback)
 	}
 
-	return atmos.ExtinctionCoeff(s.Elevation, aod)
+	return atmos.RayleighExtinction(s.Elevation), atmos.AerosolExtinction(s.aodAt(t))
+}
+
+// aodAt returns the hour's aerosol optical depth, TypicalAOD when unknown.
+func (s *Sky) aodAt(t time.Time) float64 {
+	if aod, ok := s.AOD[t.Truncate(time.Hour).Unix()]; ok {
+		return aod
+	}
+
+	return atmos.TypicalAOD
 }
