@@ -127,7 +127,7 @@ The azimuth is measured from north through east. Thousands of targets are evalua
 
 ```math
 \sin b = \sin\delta\sin\delta_P + \cos\delta\cos\delta_P\cos(\alpha-\alpha_P) ,\qquad
-l = l_{\text{NCP}} - \operatorname{atan2}\big(\cos\delta\sin(\alpha-\alpha_P),\ \sin\delta\cos\delta_P - \cos\delta\sin\delta_P\cos(\alpha-\alpha_P)\big)
+l = l_{\text{NCP}} - \mathrm{atan2}\big(\cos\delta\sin(\alpha-\alpha_P),\ \sin\delta\cos\delta_P - \cos\delta\sin\delta_P\cos(\alpha-\alpha_P)\big)
 ```
 
 The frame is FK5's; SOFA's ICRS-based `Icrs2g` agrees within 0.005″ (`TestSOFAGalactic`).
