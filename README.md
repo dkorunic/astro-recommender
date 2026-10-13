@@ -561,16 +561,22 @@ Extinction and sky brightness come from published models. The weather ramps, the
 
 ### Accuracy
 
-The astronomy uses compact published formulas rather than a full ephemeris library. `TestSOFA` checks them against [SOFA](http://iausofa.org) (through [gofa](https://github.com/hebl/gofa), a test-only dependency) over 3000 random dates in 2000–2050; the limits it enforces are:
+The astronomy uses compact published formulas rather than a full ephemeris library. `TestSOFA` checks them against [SOFA](http://iausofa.org) (through [gofa](https://github.com/hebl/gofa), a test-only dependency, the Go port of SOFA's current release, 2023-10-11) over 3000 random dates in 2000–2050, and `TestSOFAWindow` dusk and dawn over 300 random nights; `TestSOFAReference` pins the results SOFA's own validation program gives for every SOFA routine these comparisons use, so a gofa upgrade that strays from SOFA fails there. The limits enforced are:
 
 | Quantity | Formula | Difference from SOFA |
 |---|---|---|
 | Sidereal time | IAU 1982 GMST, linear terms | < 0.3″ |
 | Sun | Astronomical Almanac low precision | < 1′ |
+| Sun's ecliptic longitude (for the zodiacal light) | the same | < 1′ against SOFA's mean ecliptic and equinox of date |
 | Moon | Astronomical Almanac low precision (geocentric) | < 0.4° |
 | Moon from the site | the same, shifted by its horizontal parallax | < 0.4° against SOFA's Moon seen from the WGS84 site |
-| Moon illumination | from Sun–Moon elongation | < 0.3 percentage points |
+| Moon distance (for the moonlight) | from its horizontal parallax | < 0.25 Earth radii |
+| Moon phase angle (for the moonlight) | 180° less the Sun–Moon elongation | < 0.4° against the true angle at the Moon |
+| Moon illumination | from Sun–Moon elongation | < 0.3 percentage points of the true illuminated fraction |
 | Target altitude | J2000 catalogue positions precessed to date (IAU 1976, Lieske 1977), GMST | < 0.3′ against SOFA's full precession-nutation and apparent sidereal time (precession itself within 0.01″) |
+| Target azimuth (against `-horizon`) | the same | < 0.3′ on the sky |
+| Ecliptic coordinates (for the zodiacal light) | J2000 precessed to date, low-precision mean obliquity | < 5″ against SOFA's IAU 2006 ecliptic of date |
+| Dusk and dawn | 1-minute search of the Sun's altitude | the minute SOFA's Sun crosses the limit, within 0.02° |
 | Earth position (for comets) | Sun formula, corrected to J2000 | < 0.00025 AU |
 | Galactic coordinates (for the Milky Way's light) | IAU 1958 frame in J2000 | < 0.05″ (`TestSOFAGalactic`) |
 

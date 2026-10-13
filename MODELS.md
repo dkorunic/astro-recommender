@@ -84,7 +84,7 @@ g = 357.528^\circ + 0.9856003^\circ n ,\quad
 \lambda_\odot = L + 1.915^\circ \sin g + 0.020^\circ \sin 2g
 ```
 
-The latitude is 0, and the ecliptic is rotated to the equator by the obliquity `ε = 23.439° − 0.0000004° n`:
+The latitude is 0, and the ecliptic is rotated to the equator by the obliquity `ε = 23.439° − 0.0000004° n` (the same rotation, inverted, gives a target's ecliptic coordinates for the zodiacal light, `astro.Ecliptic`; against SOFA's IAU 2006 ecliptic of date they are within 3.9″, the low-precision obliquity's drift by 2050, and the Sun's longitude within 0.0123°):
 
 ```math
 \tan\alpha = \frac{\cos\varepsilon \cos\beta \sin\lambda - \sin\varepsilon \sin\beta}{\cos\beta\cos\lambda},\qquad
@@ -183,7 +183,7 @@ The Moon's altitude and its separation from each target both use this topocentri
 \text{illuminated fraction} = \frac{1-\cos\psi}{2} ,\qquad \text{phase angle } \alpha_\text{phase} \approx 180^\circ - \psi \quad (0 = \text{full})
 ```
 
-The illumination, phase angle and distance are taken once, at the middle of the window, and drive both the Moon-distance rule and the moonlight model below.
+The illumination, phase angle and distance are taken once, at the middle of the window, and drive both the Moon-distance rule and the moonlight model below. Against SOFA (`TestSOFA`) the distance is within 0.19 Earth radii (0.3%, 0.6% in the moonlight's (60.27/r)²), the phase angle within 0.35° of the true angle at the Moon and the illumination within 0.27 percentage points of the true illuminated fraction (1 + cos i)/2.
 
 **Rise and set.** The header's "rises" and "sets" (and the JSON `moon.up` spans) are the minutes the Moon's topocentric centre crosses −50′: the upper limb on the refracted horizon, 34′ of refraction plus 16′ of semi-diameter, as the almanacs define moonrise and moonset ([USNO][usno-twilight]). The moonlight model and the Moon-distance rule keep the geometric horizon (centre above 0°); the few minutes between change nothing there.
 
