@@ -11,12 +11,14 @@ import (
 	"math"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/dkorunic/astro-recommender/internal/astro"
 	"github.com/dkorunic/astro-recommender/internal/catalog"
 	"github.com/dkorunic/astro-recommender/internal/config"
 	"github.com/dkorunic/astro-recommender/internal/geotz"
 	"github.com/dkorunic/astro-recommender/internal/scoring"
+	"github.com/dkorunic/astro-recommender/internal/weather"
 )
 
 // init serves web/index.html's time zone lookup: run as argv ["tz", lat, lon]
@@ -39,6 +41,13 @@ func init() { //nolint:gochecknoinits // must run before main, which parses the 
 	os.Exit(0)
 }
 
+// wxHour is one forecast hour of the page's altitude curves.
+type wxHour struct {
+	T     int64   `json:"t"`
+	Cloud float64 `json:"cloud"`
+	Rain  bool    `json:"rain"`
+}
+
 // altStep is the spacing of the page's altitude curves, in grid minutes.
 const altStep = 5
 
@@ -50,7 +59,9 @@ const altStep = 5
 // would put a flat top's peak at its first sample) over s.Grid,
 // computed as scoring does (catalogue positions precessed to mid-window,
 // comet tracks as they are), and the [from, to) Unix seconds of each
-// observable stretch, rescored per minute unless -plan already did.
+// observable stretch, rescored per minute unless -plan already did; and
+// the forecast hours within the window, their cloud cover (%) and whether
+// it rains (from the weather table's threshold).
 func altitudes(cfg *config.Config, s *scoring.Sky, results []scoring.Result) {
 	if len(s.Grid) == 0 {
 		return
@@ -59,11 +70,17 @@ func altitudes(cfg *config.Config, s *scoring.Sky, results []scoring.Result) {
 		Zone  string       `json:"zone"`
 		Alt   [][]float64  `json:"alt"`
 		Obs   [][][2]int64 `json:"obs"`
+		Wx    []wxHour     `json:"wx"`
 		Start int64        `json:"start"`
 		Step  int64        `json:"step"`
 		Min   float64      `json:"min"`
 		Max   float64      `json:"max"`
 	}{Zone: cfg.Loc.String(), Start: s.Grid[0].Unix(), Step: altStep * 60, Min: cfg.AltMin, Max: cfg.AltMax}
+	for t := s.Start.Truncate(time.Hour); t.Before(s.End); t = t.Add(time.Hour) {
+		if h, ok := s.Weather[t.Unix()]; ok {
+			doc.Wx = append(doc.Wx, wxHour{T: t.Unix(), Cloud: math.Round(h.Cloud), Rain: h.Precip >= weather.RainGate/2})
+		}
+	}
 	mid := s.Grid[len(s.Grid)/2]
 	for _, res := range results[:min(cfg.Top, len(results))] {
 		ra, dec := astro.Precess(res.RADeg, res.DecDeg, mid)

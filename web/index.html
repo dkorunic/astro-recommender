@@ -304,9 +304,10 @@ $("out").addEventListener("mouseover", (e) => {
   thumbFor = a;
   img.hidden = $("alt").hidden = $("name").hidden = true;
   if (!a) return;
-  // The name (26px tall, 4px gap) above the thumbnail, the curve below.
+  // The name (26px tall, 4px gap) above the thumbnail, the curve (up to
+  // 108px) below.
   const r = a.getBoundingClientRect(), left = Math.min(r.right + 12, innerWidth - 252);
-  const top = Math.max(8, Math.min(r.top - 130, innerHeight - 382));
+  const top = Math.max(8, Math.min(r.top - 130, innerHeight - 394));
   Object.assign($("name"), { textContent: a.textContent, hidden: false });
   $("name").style.left = img.style.left = `${left}px`;
   $("name").style.top = `${top}px`;
@@ -322,13 +323,16 @@ $("out").addEventListener("mouseleave", () => { thumbFor = null; $("thumb").hidd
 // from curves.start) from 0° to 90°, the -alt-min/-alt-max limits dashed,
 // the observable stretches (obs, [from, to) Unix seconds: the altitude,
 // Moon and horizon limits) shaded and the curve drawn bold within them,
-// with the window's ends and the peak in curves.zone.
+// with the window's ends and the peak in curves.zone; with a forecast, a
+// ribbon of its hours under the plot, grey by cloud cover, blue for rain.
 function drawAlt(alt, obs, left, top) {
   const c = $("alt");
   if (!alt?.length) return;
   const css = getComputedStyle(document.documentElement), v = (n) => css.getPropertyValue(n).trim();
-  const dpr = devicePixelRatio || 1, W = 240, H = 96, P = 6, T = 16;
+  const wx = curves.wx ?? [];
+  const dpr = devicePixelRatio || 1, W = 240, H = wx.length ? 108 : 96, P = 6, T = wx.length ? 28 : 16;
   c.width = W * dpr; c.height = H * dpr;
+  c.style.height = `${H}px`;
   const g = c.getContext("2d");
   g.scale(dpr, dpr);
   const x = (i) => P + (W - 2 * P) * i / Math.max(1, alt.length - 1);
@@ -345,6 +349,13 @@ function drawAlt(alt, obs, left, top) {
   for (const d of [curves.min, curves.max]) { g.moveTo(P, y(d)); g.lineTo(W - P, y(d)); }
   g.stroke();
   g.setLineDash([]);
+  for (const h of wx) {
+    const a = Math.max(P, xt(h.t)), b = Math.min(W - P, xt(h.t + 3600));
+    g.fillStyle = v(h.rain ? "--c34" : "--muted");
+    g.globalAlpha = h.rain ? 1 : 0.15 + 0.7 * h.cloud / 100;
+    g.fillRect(a, H - 26, b - a - 1, 8);
+  }
+  g.globalAlpha = 1;
   g.strokeStyle = v("--muted");
   g.beginPath();
   alt.forEach((d, i) => i ? g.lineTo(x(i), y(d)) : g.moveTo(x(i), y(d)));
