@@ -3080,7 +3080,7 @@
 - constellation: Puppis
   dec: -18 13
   description: Albino Butterfly Nebula,Burning Ember,Bat Neb.
-  mag: 11.5
+  mag: 9.40
   name: NGC 2440
   ra: 07 41.9
   size: 0.9
@@ -3491,7 +3491,7 @@
 - constellation: Sagittarius
   dec: -20 01
   description: Box Nebula (In Same Field As 6440)/Coffin Neb.
-  mag: 13.0
+  mag: 11.20
   name: NGC 6445
   ra: 17 49.3
   size: 0.58
@@ -3612,7 +3612,7 @@
 - constellation: Sagittarius
   dec: -33 52
   description: The Southern Ring Nebula
-  mag: 13.0
+  mag: 11.00
   name: NGC 6563
   ra: 18 12.0
   size: 0.9

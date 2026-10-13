@@ -213,7 +213,7 @@
 - constellation: Vulpecula
   dec: +22 43 0
   description: NGC 6853 Dumbbell Nebula
-  mag: 14.1
+  mag: 7.40
   name: M 27
   ra: 19 59 36
   size: 8.0
@@ -470,7 +470,7 @@
 - constellation: Lyra
   dec: +33 2 0
   description: NGC 6720 Ring Nebula
-  mag: 15.8
+  mag: 8.80
   name: M 57
   ra: 18 53 36
   size: 1.4
@@ -649,7 +649,7 @@
 - constellation: Perseus
   dec: +51 34 0
   description: NGC 650 Little Dumbell or Cork or Butterfly Nebula
-  mag: 17.5
+  mag: 10.10
   name: M 76
   ra: 1 42 18
   size: 2.7
@@ -862,7 +862,7 @@
 - constellation: Ursa Major
   dec: +55 1 0
   description: NGC 3587 Owl Nebula
-  mag: 15.8
+  mag: 9.90
   name: M 97
   ra: 11 14 48
   size: 3.4

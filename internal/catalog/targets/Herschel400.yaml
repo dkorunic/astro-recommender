@@ -492,7 +492,7 @@
 - constellation: Eridanus
   dec: -12 44
   description: PK 206-40.1
-  mag: 12.8
+  mag: 9.60
   name: NGC 1535
   ra: 4 14.2
   size: 0.7
@@ -601,7 +601,7 @@
 - constellation: Orion
   dec: +9 5
   description: PK 196-10.1
-  mag: 14.2
+  mag: 11.60
   name: NGC 2022
   ra: 5 42.1
   size: 0.3
@@ -691,7 +691,7 @@
   description: OCL 545
   mag: 4.2
   name: NGC 2232
-  ra: 6 26.6
+  ra: 6 27.6
   size: 30.0
   type: Open Cluster
 - constellation: Monoceros
@@ -731,7 +731,7 @@
   description: OCL 446
   mag: 5.4
   name: NGC 2281
-  ra: 6 49.3
+  ra: 6 48.4
   size: 15.0
   type: Open Cluster
 - constellation: Monoceros
@@ -833,7 +833,7 @@
 - constellation: Gemini
   dec: +29 29
   description: NGC 2372
-  mag: 13.5
+  mag: 11.20
   name: NGC 2371
   ra: 7 25.6
   size: 0.9
@@ -842,7 +842,7 @@
 - constellation: Gemini
   dec: +29 30
   description: NGC 2371
-  mag: 13.5
+  mag: 11.20
   name: NGC 2372
   ra: 7 25.6
   size: 0.9
@@ -1351,7 +1351,7 @@
 - constellation: Hydra
   dec: -18 38
   description: PK 261+32.1
-  mag: 12.1
+  mag: 7.70
   name: NGC 3242
   ra: 10 24.8
   size: 20.8
@@ -2236,7 +2236,7 @@
 - constellation: Corvus
   dec: -18 48
   description: ESO 573-PN19
-  mag: 13.2
+  mag: 10.90
   name: NGC 4361
   ra: 12 24.5
   size: 1.8
@@ -3257,7 +3257,7 @@
   size: 5.6
   type: Globular Cluster
 - constellation: Ophiuchus
-  dec: +3 0
+  dec: +3 10
   description: GCL 76
   mag: 10.9
   name: NGC 6426
@@ -3339,7 +3339,7 @@
 - constellation: Draco
   dec: +66 38
   description: PK 96+29.1
-  mag: 11.3
+  mag: 9.01
   name: NGC 6543
   ra: 17 58.6
   size: 5.8
@@ -3529,7 +3529,7 @@
   size: 7.0
   type: Open Cluster
 - constellation: Vulpecula
-  dec: +26 33
+  dec: +26 49
   description: NGC 6882
   mag: 14.1
   name: NGC 6882
@@ -3547,7 +3547,7 @@
 - constellation: Delphinus
   dec: +20 7
   description: PK 61-9.1 or H IV 16
-  mag: 14.5
+  mag: 11.10
   name: NGC 6905
   ra: 20 22.4
   size: 1.7
@@ -3603,7 +3603,7 @@
   ra: 20 58.8
   size: 120.0
   minor: 30.0
-  type: Nebula
+  type: Emission Nebula
 - constellation: Delphinus
   dec: +16 11
   description: GCL 119
@@ -3623,7 +3623,7 @@
 - constellation: Aquarius
   dec: -11 22
   description: PK 37-34.1
-  mag: 12.1
+  mag: 8.00
   name: NGC 7009
   ra: 21 4.2
   size: 1.7

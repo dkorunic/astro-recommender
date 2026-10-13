@@ -3737,7 +3737,7 @@
   name: "IC 348"
   ra: "03 44 34.19"
   size: 10.00
-  type: "Cl+N Emission Nebula"
+  type: "Cluster Nebulosity"
 - constellation: "Taurus"
   dec: "+23 56 23.3"
   description: "Barnard's Merope Nebula"
@@ -4349,7 +4349,7 @@
   name: "IC 405"
   ra: "05 16 29.48"
   size: 50.00
-  type: "Nebula"
+  type: "Emission Nebula"
 - constellation: "Auriga"
   dec: "+39 53 09.7"
   description: ""
@@ -4397,7 +4397,7 @@
   name: "IC 410"
   ra: "05 22 42.00"
   size: 40.00
-  type: "Nebula"
+  type: "Emission Nebula"
 - bmag: 14.13
   bsurfbr: 23.53
   constellation: "Lepus"
@@ -4552,7 +4552,7 @@
   name: "IC 426"
   ra: "05 36 31.38"
   size: 10.00
-  type: "Nebula"
+  type: "Reflection Nebula"
 - constellation: "Orion"
   dec: "-06 36 59.2"
   description: ""
@@ -4749,7 +4749,7 @@
   name: "IC 447"
   ra: "06 31 00.32"
   size: 25.00
-  type: "HII Emission Nebula"
+  type: "Reflection Nebula"
 - constellation: "Monoceros"
   dec: "+07 23 19.1"
   description: ""
@@ -22345,7 +22345,7 @@
   name: "IC 2067"
   ra: "04 30 51.03"
   size: -9999
-  type: "Nebula"
+  type: "Reflection Nebula"
 - bmag: 14.27
   bsurfbr: 23.43
   constellation: "Caelum"
@@ -22554,7 +22554,7 @@
   name: "IC 2087"
   ra: "04 39 59.97"
   size: 4.00
-  type: "Nebula"
+  type: "Reflection Nebula"
 - constellation: "Taurus"
   dec: "+26 36 25.3"
   description: ""
@@ -23408,7 +23408,7 @@
   name: "IC 2177"
   ra: "07 04 36.91"
   size: 20.00
-  type: "Reflection Nebula"
+  type: "Emission Nebula"
 - bmag: 16.01
   bsurfbr: 23.54
   constellation: "Gemini"
@@ -48649,7 +48649,7 @@
   name: "IC 4601"
   ra: "16 20 17.80"
   size: 20.00
-  type: "Nebula"
+  type: "Reflection Nebula"
 - constellation: "Hercules"
   dec: "+11 47 10.5"
   description: "NGC 6132"
@@ -48915,7 +48915,7 @@
   name: "IC 4628"
   ra: "16 56 58.43"
   size: 89.13
-  type: "Nebula"
+  type: "Emission Nebula"
 - constellation: "Ophiuchus"
   dec: "-16 42 35.6"
   description: ""
@@ -49462,7 +49462,7 @@
   name: "IC 4685"
   ra: "18 09 17.50"
   size: 15.00
-  type: "Nebula"
+  type: "Emission Nebula"
 - bmag: 14.79
   bsurfbr: 23.00
   constellation: "Pavo"
@@ -52335,7 +52335,7 @@
   name: "IC 4954"
   ra: "20 04 45.02"
   size: 3.00
-  type: "HII Emission Nebula"
+  type: "Reflection Nebula"
 - bmag: 12.98
   constellation: "Vulpecula"
   dec: "+29 11 33.4"

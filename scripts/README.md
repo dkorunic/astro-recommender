@@ -75,7 +75,8 @@ The scripts also import each other's helpers: `imm2yaml` (XLSX reading, `aliases
 | `openngc2yaml.py` | `OpenNGC.yaml` (8373), `OpenIC.yaml` (5590) | OpenNGC `NGC.csv`, pinned to commit `75ca7ff0` |
 | `fillmag.py` | edits a list in place via stdout | fills `-9999` magnitudes and adds `surfbr`, `bsurfbr` and `minor` from Messier/OpenNGC/OpenIC/GaryImmFull; `--minor-only` adds just `minor` |
 | `mwsc2yaml.py` | `MWSC.yaml` (3006) | Kharchenko et al. 2013 star clusters, CDS J/A+A/558/A53 |
-| `lbnminor.py` | edits `LBN.yaml` via stdout | adds minor axes from Lynds, CDS VII/9 |
+| `lbnminor.py` | edits `LBN.yaml` via stdout | adds minor axes and Lynds' colour-index types (reflection, nebula, H II region) from Lynds, CDS VII/9 |
+| `ldnsize.py` | edits `LDN.yaml` via stdout | replaces the sizes by the diameter of a disc of Lynds' area, CDS VII/7A |
 
 ```sh
 scripts/imm2yaml.py $X > $T/GaryImmFull.yaml
@@ -84,7 +85,7 @@ curl -O https://raw.githubusercontent.com/mattiaverga/OpenNGC/75ca7ff0/database_
 scripts/openngc2yaml.py NGC.csv NGC > $T/OpenNGC.yaml
 scripts/openngc2yaml.py NGC.csv IC > $T/OpenIC.yaml
 
-# fillmag and lbnminor rewrite a list that is also their input: go through a temp file
+# fillmag, lbnminor and ldnsize rewrite a list that is also their input: go through a temp file
 for l in Messier GaryImm Herschel400 Pensack500; do
     scripts/fillmag.py $T/$l.yaml > /tmp/$l.yaml && mv /tmp/$l.yaml $T/$l.yaml
 done
@@ -94,6 +95,9 @@ scripts/mwsc2yaml.py catalog.dat > $T/MWSC.yaml
 
 curl -o lbn.dat https://cdsarc.cds.unistra.fr/ftp/cats/VII/9/catalog.dat
 scripts/lbnminor.py lbn.dat $T/LBN.yaml > /tmp/lbn.yaml && mv /tmp/lbn.yaml $T/LBN.yaml
+
+curl -o ldn.tsv 'https://vizier.cds.unistra.fr/viz-bin/asu-tsv?-source=VII/7A/ldn&-out.all&-out.max=3000&-oc.form=dec'
+scripts/ldnsize.py ldn.tsv $T/LDN.yaml > /tmp/ldn.yaml && mv /tmp/ldn.yaml $T/LDN.yaml
 ```
 
 ### Clusters
@@ -117,7 +121,7 @@ scripts/wiki2yaml.py Collinder cr.wiki > $T/Collinder.yaml
 | `rcw2yaml.py` | `RCW.yaml` (181) | CDS VII/216 + Compendium |
 | `snr2yaml.py` | `SNR.yaml` (98 optical of Green's 310) | CDS VII/297 + Green's detailed listings (`snrs.G*.html`) + Compendium |
 | `hash2yaml.py` | `HASH.yaml` (3994) | HASH PN database CSV export (registered users), optional Compendium for V magnitudes |
-| `pnnet2yaml.py` | `PNnet.yaml` (1015) | live planetarynebulae.net, two requests; embedded with the authors' permission |
+| `pnnet2yaml.py` | `PNnet.yaml` (1016) | planetarynebulae.net's CSV export, plus two requests to the site's search for the sizes; embedded with the authors' permission |
 
 ```sh
 curl -o sh2.tsv 'https://vizier.cds.unistra.fr/viz-bin/asu-tsv?-source=VII/20&-out.all&-out.max=400&-out.add=_RAJ,_DEJ&-oc.form=dec'
@@ -133,14 +137,15 @@ curl -o snr.tsv 'https://vizier.cds.unistra.fr/viz-bin/asu-tsv?-source=VII/297/s
 scripts/snr2yaml.py snr.tsv snrs/ $X > $T/SNR.yaml
 
 scripts/hash2yaml.py hash.csv $X > $T/HASH.yaml
-scripts/pnnet2yaml.py > $T/PNnet.yaml
+curl -o pnnet.csv https://planetarynebulae.net/datas/TABLE_NP_CSV_converti.csv
+scripts/pnnet2yaml.py pnnet.csv > $T/PNnet.yaml   # also fetches the site's search, for the sizes
 ```
 
 Sharpless, RCW and SNR print a warning on stderr for every Compendium row they reject as too far away. Compare those warnings with the counts in the script's docstring.
 
 ### VizieR and SIMBAD catalogues: `vizier2yaml.py`
 
-One script, with the catalogue name as the first argument: Barnard, vdB, vdBH, Arp, HCG, Ced, ACO, Gum, CG. A Compendium row whose position disagrees with VizieR's and that `POSITION` does not settle stops the script; check it against SIMBAD and add it to `POSITION`.
+One script, with the catalogue name as the first argument: Barnard, vdB, vdBH, Arp, HCG, Ced, ACO, Gum, CG, MCRN, Henize, DEM, Harris, Dias, DCld, AM. A Compendium row whose position disagrees with VizieR's and that `POSITION` does not settle stops the script; check it against SIMBAD and add it to `POSITION`.
 
 ```sh
 curl -o barnard.tsv "${V}VII/220A/barnard"
@@ -159,9 +164,18 @@ scripts/vizier2yaml.py ACO aco3.tsv aco4.tsv aco5.tsv $X > $T/ACO.yaml
 # Gum and CG share one SIMBAD TAP query; see the script's docstring for it
 scripts/vizier2yaml.py Gum simbad.tsv $X > $T/Gum.yaml
 scripts/vizier2yaml.py CG simbad.tsv $X > $T/CG.yaml
+
+# Henize's Magellanic nebulae from SIMBAD (another TAP query), sized from DEM's two tables
+curl -o deml.tsv "${V}VII/232/lmc"; curl -o dems.tsv "${V}VII/232/smc"
+scripts/vizier2yaml.py Henize henize.tsv deml.tsv dems.tsv $X > $T/Henize.yaml
+scripts/vizier2yaml.py DEM deml.tsv dems.tsv $X > $T/DEM.yaml
+
+# Harris' globular clusters, 2010 edition, from his site (VizieR's VII/202 is older)
+curl -o mwgc.dat https://physics.mcmaster.ca/~harris/mwgc.dat
+scripts/vizier2yaml.py Harris mwgc.dat $X > $T/Harris.yaml
 ```
 
-The docstring has the `curl` line for every table (vdB VII/21, HCG VII/213, Ced VII/231).
+The docstring has the `curl` line for every table (vdB VII/21, HCG VII/213, Ced VII/231, MCRN J/A+A/399/141, Dias B/ocl, DCld VII/191, AM VII/170) and the Henize query.
 
 ### Caldwell: `caldwell2yaml.py`
 

@@ -12401,11 +12401,11 @@
   surfbr: 21.69
   type: "Galaxy"
 - constellation: "Leo"
-  dec: "+13 18 12.0"
+  dec: "+12 59 29.4"
   description: "Leo Triplet"
   mag: 8.9
   name: "M 66"
-  ra: "11 19 56.0"
+  ra: "11 20 15.0"
   rating: 4
   size: 10.0
   surfbr: 21.59
@@ -13741,11 +13741,11 @@
   surfbr: 22.89
   type: "Galaxy"
 - constellation: "Psc"
-  dec: "+30 21 00.0"
+  dec: "+30 21 08.8"
   description: ""
   mag: 11.2
   name: "NGC 315"
-  ra: "00 57 00.0"
+  ra: "00 57 48.9"
   rating: 2
   size: 3.0
   surfbr: 22.09
@@ -14456,11 +14456,11 @@
   surfbr: 21.79
   type: "Galaxy"
 - constellation: "Cas"
-  dec: "+61 33 00.0"
+  dec: "+61 36 58.0"
   description: ""
   mag: 6.7
   name: "NGC 1027"
-  ra: "02 47 42.0"
+  ra: "02 42 42.5"
   rating: 2
   size: 5.0
   type: "Open Cluster"
@@ -14745,7 +14745,7 @@
   surfbr: 22.89
   type: "Galaxy"
 - constellation: "For"
-  dec: "-00 25 43.0"
+  dec: "-25 43 00.0"
   description: ""
   mag: 12.7
   name: "NGC 1210"
@@ -17689,7 +17689,7 @@
   surfbr: 22.09
   type: "Galaxy"
 - constellation: "Leo"
-  dec: "+00 13 25.0"
+  dec: "+13 25 00.0"
   description: ""
   mag: 10.5
   name: "NGC 3412"
@@ -18036,7 +18036,7 @@
   surfbr: 22.29
   type: "Galaxy"
 - constellation: "Leo"
-  dec: "+00 16 35.0"
+  dec: "+16 35 00.0"
   description: ""
   mag: 11.7
   name: "NGC 3655"
@@ -20353,11 +20353,11 @@
   surfbr: 22.49
   type: "Galaxy"
 - constellation: "Vir"
-  dec: "-01 06 00.0"
+  dec: "-01 06 52.6"
   description: ""
   mag: 11.3
   name: "NGC 5334"
-  ra: "13 52 00.0"
+  ra: "13 52 54.5"
   rating: 2
   size: 3.8
   surfbr: 22.79
@@ -22453,11 +22453,11 @@
   size: 0.15
   type: "Planetary Nebula"
 - constellation: "Pav"
-  dec: "-65 51 00.0"
+  dec: "-63 51 26.9"
   description: "Caldwell101"
   mag: 8.2
   name: "NGC 6744"
-  ra: "19 09 48.0"
+  ra: "19 09 46.1"
   rating: 4
   size: 20.0
   surfbr: 23.29
@@ -22882,11 +22882,11 @@
   size: 0.7
   type: "Planetary Nebula"
 - constellation: "Del"
-  dec: "+20 06 16.0"
+  dec: "+20 06 16.3"
   description: "Blue Flash Nebula"
   mag: 14.5
   name: "NGC 6905"
-  ra: "20 23 23.0"
+  ra: "20 22 23.0"
   rating: 2
   size: 1.5
   type: "Planetary Nebula"
@@ -24111,11 +24111,11 @@
   size: 0.5
   type: "Planetary Nebula"
 - constellation: "Psc"
-  dec: "-00 11 12.0"
+  dec: "-00 06 30.2"
   description: ""
   mag: 13.9
   name: "NGC 7667"
-  ra: "23 27 22.0"
+  ra: "23 24 22.8"
   rating: 2
   size: 1.5
   surfbr: 23.29

@@ -15030,7 +15030,7 @@
   name: "NGC 1333"
   ra: "03 28 55.2"
   size: 19.50
-  type: "Cl+N Emission Nebula"
+  type: "Cluster Nebulosity"
 - bmag: 14.73
   bsurfbr: 23.48
   constellation: "Perseus"
@@ -16889,7 +16889,7 @@
   name: "NGC 1499"
   ra: "04 03 14.42"
   size: 160.00
-  type: "Nebula"
+  type: "Emission Nebula"
 - bmag: 14.81
   bsurfbr: 24.52
   constellation: "Dorado"
@@ -22226,7 +22226,7 @@
   name: "NGC 2024"
   ra: "05 41 42.57"
   size: 30.00
-  type: "Nebula"
+  type: "Emission Nebula"
 - bmag: 11.18
   constellation: "Mensa"
   dec: "-71 42 55.8"
@@ -22663,7 +22663,7 @@
   name: "NGC 2071"
   ra: "05 47 07.26"
   size: 7.00
-  type: "Cl+N Emission Nebula"
+  type: "Cluster Nebulosity"
 - bmag: 13.73
   constellation: "Mensa"
   dec: "-70 14 02.6"
@@ -23673,7 +23673,7 @@
   name: "NGC 2174"
   ra: "06 09 23.62"
   size: 40.00
-  type: "Nebula"
+  type: "Emission Nebula"
 - bmag: 7.00
   constellation: "Orion"
   dec: "+20 29 15.3"
@@ -23777,7 +23777,7 @@
   name: "NGC 2185"
   ra: "06 11 00.47"
   size: 2.00
-  type: "Nebula"
+  type: "Reflection Nebula"
 - bmag: 9.20
   constellation: "Orion"
   dec: "+05 27 30.9"
@@ -24303,7 +24303,7 @@
   name: "NGC 2237"
   ra: "06 30 54.61"
   size: 80.00
-  type: "Nebula"
+  type: "Emission Nebula"
 - bmag: 6.00
   constellation: "Monoceros"
   dec: "+05 00 47.0"
@@ -24748,7 +24748,7 @@
   name: "NGC 2282"
   ra: "06 46 51.57"
   size: 3.00
-  type: "HII Emission Nebula"
+  type: "Reflection Nebula"
 - bmag: 12.95
   bsurfbr: 23.62
   constellation: "Canis Major"
@@ -25083,7 +25083,7 @@
   name: "NGC 2316"
   ra: "06 59 40.85"
   size: 4.00
-  type: "Nebula"
+  type: "Reflection Nebula"
 - constellation: "Monoceros"
   dec: "-07 46 28.2"
   description: ""
@@ -25200,7 +25200,7 @@
   name: "NGC 2327"
   ra: "07 04 07.22"
   size: 1.00
-  type: "Reflection Nebula"
+  type: "Emission Nebula"
 - bmag: 13.16
   bsurfbr: 22.94
   constellation: "Puppis"
@@ -25515,7 +25515,7 @@
   name: "NGC 2359"
   ra: "07 18 30.98"
   size: 10.00
-  type: "HII Emission Nebula"
+  type: "Wolf-Rayet Nebula"
 - bmag: 7.62
   constellation: "Canis Major"
   dec: "-15 38 28.7"
@@ -29607,7 +29607,7 @@
   name: "NGC 2736"
   ra: "09 00 16.94"
   size: 30.00
-  type: "HII Emission Nebula"
+  type: "Supernova Remnant"
 - bmag: 14.60
   bsurfbr: 22.55
   constellation: "Cancer"
@@ -34883,7 +34883,7 @@
   name: "NGC 3199"
   ra: "10 17 24.43"
   size: 20.00
-  type: "Nebula"
+  type: "Wolf-Rayet Nebula"
 - bmag: 12.69
   bsurfbr: 23.48
   constellation: "Hydra"
@@ -69633,7 +69633,7 @@
   name: "NGC 6188"
   ra: "16 40 05.84"
   size: 20.00
-  type: "Nebula"
+  type: "Emission Nebula"
 - bmag: 13.22
   bsurfbr: 22.41
   constellation: "Draco"
@@ -71192,7 +71192,7 @@
   name: "NGC 6334"
   ra: "17 20 49.70"
   size: 8.40
-  type: "Supernova Remnant"
+  type: "Emission Nebula"
 - constellation: "Scorpius"
   dec: "-30 09 51.0"
   description: ""
@@ -73507,7 +73507,7 @@
   name: "NGC 6559"
   ra: "18 09 56.85"
   size: 15.00
-  type: "Nebula"
+  type: "Emission Nebula"
 - bmag: 14.16
   bsurfbr: 22.78
   constellation: "Hercules"
@@ -76277,7 +76277,7 @@
   name: "NGC 6820"
   ra: "19 42 28.02"
   size: 0.50
-  type: "Nebula"
+  type: "Emission Nebula"
 - bmag: 13.62
   bsurfbr: 22.33
   constellation: "Aquila"
@@ -77089,7 +77089,7 @@
   name: "NGC 6888"
   ra: "20 12 06.55"
   size: 20.00
-  type: "HII Emission Nebula"
+  type: "Wolf-Rayet Nebula"
 - bmag: 13.71
   bsurfbr: 23.26
   constellation: "Telescopium"
@@ -78537,7 +78537,7 @@
   name: "NGC 7023"
   ra: "21 01 35.62"
   size: 10.00
-  type: "Nebula"
+  type: "Reflection Nebula"
 - constellation: "Cygnus"
   dec: "+41 29 04.5"
   description: ""
@@ -79709,7 +79709,7 @@
   name: "NGC 7129"
   ra: "21 42 59.03"
   size: 2.10
-  type: "Cl+N Emission Nebula"
+  type: "Cluster Nebulosity"
 - bmag: 12.93
   bsurfbr: 22.55
   constellation: "Piscis Austrinus"
@@ -85480,7 +85480,7 @@
   name: "NGC 7635"
   ra: "23 20 45.60"
   size: 15.00
-  type: "HII Emission Nebula"
+  type: "Wolf-Rayet Nebula"
 - bmag: 14.87
   bsurfbr: 23.61
   constellation: "Sculptor"

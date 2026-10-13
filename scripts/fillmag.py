@@ -16,6 +16,12 @@ object has a shape of its own); everything else is left byte for byte.
     scripts/fillmag.py internal/catalog/targets/Messier.yaml > /tmp/m.yaml && mv /tmp/m.yaml internal/catalog/targets/Messier.yaml
     scripts/fillmag.py --minor-only internal/catalog/targets/Caldwell.yaml > /tmp/c.yaml && mv /tmp/c.yaml internal/catalog/targets/Caldwell.yaml
 
+A planetary nebula whose magnitude is more than 1.5 fainter than OpenNGC's or
+OpenIC's integrated V gets theirs: uptonight's lists carry the central
+star's (M 57 15.8 for 8.8, NGC 7293 13.5 for 7.3), which would derive a
+surface brightness some 7 mag too faint. A brighter one is left as it is,
+since the references disagree among themselves there.
+
 --minor-only adds just the minor axis and leaves every other key as the
 list's generator wrote it (Caldwell's come from caldwell2yaml.py).
 
@@ -32,6 +38,7 @@ from mwsc2yaml import entries, lookup
 def main():
     minor_only = sys.argv[1] == "--minor-only"
     tables = {} if minor_only else {field: lookup(field) for field in ("mag", "surfbr", "bsurfbr")}
+    nebular = {} if minor_only else lookup("mag", ("OpenIC.yaml", "OpenNGC.yaml"))
     axes = {}
     for f in (f for name in ("OpenIC.yaml", "OpenNGC.yaml") for f in entries(name) if "minor" in f):
         # OpenNGC's description starts with the Messier number, which GaryImm's M 31 goes by.
@@ -45,6 +52,10 @@ def main():
         keys = [f.get("name", "")] + ids[:1]
         if f.get("type") == "Galaxy Cluster":  # not the "Abell N" planetaries and remnants
             keys.append(keys[0].replace("Abell ", "AbellG "))
+        v = next((nebular[k] for k in keys if k in nebular), None)
+        if f.get("type") == "Planetary Nebula" and v and float(f.get("mag", -9999)) - float(v) > 1.5:
+            print(f"{f['name']}: mag {f['mag']} is the central star's, OpenNGC's {v}", file=sys.stderr)
+            chunk = re.sub(r"^(\s*mag: ).*$", rf"\g<1>{v}", chunk, count=1, flags=re.M)
         for field, table in tables.items():
             v = next((table[k] for k in keys if k in table), None)
             if v is None:

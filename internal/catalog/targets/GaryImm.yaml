@@ -374,7 +374,7 @@
 - constellation: Grus
   dec: -39 23 09
   description: Spare Tire Nebula
-  mag: 16.5
+  mag: 11.00
   name: IC 5148
   ra: 21 59 35
   size: 2.0
@@ -815,7 +815,7 @@
 - constellation: Fornax
   dec: -25 52 19
   description: Robins Egg Nebula
-  mag: 11.2
+  mag: 9.40
   name: NGC 1360
   ra: 03 33 15
   size: 6.0
@@ -891,7 +891,7 @@
   name: NGC 1788
   ra: 05 06 53
   size: 8.0
-  type: Emission Nebula
+  type: Reflection Nebula
 - constellation: Orion
   dec: -04 49 15
   description: Running Man Nebula
@@ -1017,7 +1017,7 @@
 - constellation: Gemini
   dec: 29 29 17
   description: Double Bubble
-  mag: 13.5
+  mag: 11.20
   name: NGC 2371
   ra: 07 25 34
   size: 2.1
@@ -1087,7 +1087,7 @@
 - constellation: Hydra
   dec: -18 38 34
   description: Ghost of Jupiter or CBS Eye Nebula
-  mag: 12.1
+  mag: 7.70
   name: NGC 3242
   ra: 10 24 46
   size: 0.75
@@ -1273,7 +1273,7 @@
 - constellation: Draco
   dec: +66 37 59
   description: Cat's Eye Nebula
-  mag: 11.3
+  mag: 9.01
   name: NGC 6543
   ra: 17 58 33
   size: 8.0
@@ -1397,7 +1397,7 @@
 - constellation: Aquarius
   dec: -11 21 50
   description: Saturn Nebula
-  mag: 12.1
+  mag: 8.00
   name: NGC 7009
   ra: 21 04 11
   size: 1.7
@@ -1415,7 +1415,7 @@
 - constellation: Aquarius
   dec: -20 50 13
   description: Helix Nebula
-  mag: 13.5
+  mag: 7.30
   name: NGC 7293
   ra: 22 29 38
   size: 13.0

@@ -213,6 +213,13 @@ func TestEmissionLineLists(t *testing.T) {
 		"Gum":         {"Gum 4": true, "Gum 27": true, "Gum 28": true, "Gum 30": true},
 		"CG":          {"CG 4": false, "CG 22": false},
 		"ACO":         {"ACO 1656": false},
+		"MCRN":        {"MCRN 3": false, "MCRN 15": true},
+		"Henize":      {"LMC N44": true, "LMC N11": true, "SMC N66": true},
+		"DEM":         {"DEM L 152": true, "DEM S 103": true},
+		"Harris":      {"NGC 104": false, "Terzan 5": false},
+		"Dias":        {"NGC 2264": true, "NGC 6514": true, "NGC 7789": false},
+		"DCld":        {"DCld 000.3-18.8": false},
+		"AM":          {"AM 0644-741": false},
 	} {
 		targets, _, err := Load(list, "")
 		if err != nil {

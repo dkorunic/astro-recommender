@@ -41,7 +41,16 @@ TYPES = {
 }
 # Dec typed as DDMM without seconds (e.g. 3633 for +36 33), which the sheet
 # reads as 0 36 33: these lie in Ursa Major, not on the celestial equator.
-DDMM_TYPOS = {"NGC 3813", "NGC 3998", "NGC 5473"}
+DDMM_TYPOS = {"NGC 3813", "NGC 3998", "NGC 5473", "NGC 1210", "NGC 3412", "NGC 3655"}
+# Coordinates mistyped in both the decimal and the raw cells (a wrong digit:
+# NGC 6744's -65 51 for -63 51, NGC 1027's 2h47 for 2h42; NGC 0315's and
+# NGC 5334's dropped RA seconds; M 66 on M 65's side), replaced by SIMBAD's
+# (Sesame, 2026-10-13), which OpenNGC and the Messier list agree with.
+POSITION_TYPOS = {
+    "NGC 6744": (287.44222, -63.85747), "NGC 1027": (40.67708, 61.61611), "NGC 6905": (305.59580, 20.10452),
+    "NGC 7667": (351.09516, -0.10838), "NGC 5334": (208.22693, -1.11461), "NGC 0315": (14.45368, 30.35245),
+    "M 066": (170.06260, 12.99150),
+}
 CELL = re.compile(r'<c r="([A-Z]+)\d+"((?:(?!/>)[^>])*)(?:/>|>(.*?)</c>)', re.S)
 
 
@@ -104,6 +113,8 @@ def position(r):
     """RA and Dec in degrees: the decimal columns, cross-checked against the
     raw h/m/s and d/m/s cells (the raw cell wins when they disagree)."""
     name = r["A"].strip()
+    if name in POSITION_TYPOS:
+        return POSITION_TYPOS[name]
     ra, dec = float(r["M"]), float(r["O"])
     if name in DDMM_TYPOS:
         n = abs(int(float(r["N"])))
