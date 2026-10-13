@@ -115,36 +115,36 @@ What does not:
 ## Usage
 
 ```sh
-astro-recommender -lat 45.815 -lon 15.982 -origin -filter dual -bortle 6 -n 5 -date 2026-10-07
+astro-recommender -lat 45.815 -lon 15.982 -origin -filter dual -bortle 6 -n 5 -date 2026-10-13
 ```
 
 ```
 Location: 45.8150, 15.9820 (Mjesni odbor Zrinjevac, Gradska četvrt Donji grad, Zagreb, Grad Zagreb, Hrvatska), Europe/Zagreb
-Window:   2026-10-07 20:04 - 2026-10-08 05:25 (9h21m0s)
-Moon:     8% illuminated, min separation 8°, rises 04:30
+Window:   2026-10-13 19:53 - 2026-10-14 05:33 (9h40m0s)
+Moon:     11% illuminated, min separation 11°, never up
 Size:     4.1' - 44.7'
 Targets:  GaryImm, 1 comets brighter than mag 12.0
 Frame:    1.32° x 0.75°, 1.23"/px (3856 x 2180 px)
-Sky:      Bortle 6 (zenith 18.80 mag/arcsec²), extinction 0.29-0.33 (elevation 126 m, aerosols) mag/airmass, filter dual 7 nm
+Sky:      Bortle 6 (zenith 18.80 mag/arcsec²), extinction 0.23-0.24 (elevation 126 m, aerosols) mag/airmass, filter dual 7 nm
 
-HOUR   CLOUD  LOW/MID/HIGH  TRANSP  EXT   SEEING     DEW SPREAD  WIND/GUST
-20:00  55%    8/40/38%      3/8     0.33  1.25-1.5"  5.8°C       4/12 km/h
-21:00  26%    0/0/51%       3/8     0.33  1.25-1.5"  5.3°C       6/13 km/h
-22:00  0%     0/0/0%        3/8     0.32  1.25-1.5"  3.9°C       6/12 km/h
-23:00  43%    0/42/4%       3/8     0.31  1.25-1.5"  3.2°C       5/10 km/h
-00:00  54%    0/53/5%       3/8     0.30  1.25-1.5"  3.1°C       5/10 km/h
-01:00  62%    0/61/6%       3/8     0.29  1.25-1.5"  3.4°C       4/9 km/h
-02:00  77%    0/74/21%      3/8     0.29  1.25-1.5"  3.6°C       4/7 km/h
-03:00  79%    8/71/39%      3/8     0.30  1.25-1.5"  4.4°C       3/6 km/h
-04:00  100%   23/100/11%    4/8     0.31  1.25-1.5"  5.1°C       4/8 km/h
-05:00  94%    47/89/7%      4/8     0.31  1.25-1.5"  3.8°C       1/8 km/h
+HOUR   CLOUD  LOW/MID/HIGH  TRANSP  EXT   SEEING  DEW SPREAD  WIND/GUST
+19:00  11%    0/11/0%       2/8     0.23  1.5-2"  6.4°C       4/9 km/h
+20:00  0%     0/0/0%        2/8     0.24  1.5-2"  5.0°C       4/10 km/h
+21:00  0%     0/0/0%        2/8     0.24  1.5-2"  4.2°C       5/10 km/h
+22:00  0%     0/0/0%        2/8     0.24  1.5-2"  4.2°C       5/11 km/h
+23:00  0%     0/0/0%        2/8     0.24  1.5-2"  4.8°C       5/11 km/h
+00:00  0%     0/0/0%        2/8     0.24  1.5-2"  5.1°C       5/9 km/h
+01:00  0%     0/0/0%        2/8     0.23  1.5-2"  4.8°C       4/8 km/h
+02:00  0%     0/0/0%        2/8     0.23  1.5-2"  4.3°C       4/8 km/h
+03:00  4%     0/4/0%        2/8     0.23  1.5-2"  4.5°C       4/7 km/h
+04:00  100%   0/100/1%      2/8     0.24  1.5-2"  5.1°C       3/6 km/h
+05:00  82%    0/82/0%       2/8     0.24  1.5-2"  4.1°C       2/5 km/h
 
-#  NAME      DESCRIPTION                  TYPE               CONSTELLATION  RA       DEC     SIZE  FOTO  SCORE  OBSERVABLE   MAX ALT      SKY   SB     PX
-1  NGC 7380  Wizard Nebula                Emission Nebula    Cepheus        22 47.4  +58 08  25'   1.00  0.18   20:04-05:25  78° @ 22:38  18.7  ~22.8  1218
-2  NGC 7635  Bubble Nebula                Emission Nebula    Cassiopeia     23 20.8  +61 13  15'   1.00  0.16   20:04-05:25  74° @ 23:12  18.7  -      731
-3  Abell 85  CTB 1 or Garlic Nebula       Supernova Remnant  Cassiopeia     23 59.9  +62 27  35'   1.00  0.15   20:04-05:25  73° @ 23:51  18.7  -      1705
-4  Sh2-173   Phantom of the Opera Nebula  Emission Nebula    Cassiopeia     00 21.3  +61 44  25'   1.00  0.15   20:04-05:25  74° @ 00:13  18.7  -      1218
-5  NGC 281   PacMan Nebula                Emission Nebula    Cassiopeia     00 52.9  +56 37  35'   1.00  0.15   20:04-05:25  79° @ 00:44  18.7  -      1705
+#  NAME      DESCRIPTION                  TYPE             CONSTELLATION  RA       DEC     SIZE  FOTO  SCORE  OBSERVABLE   MAX ALT      SKY   SB     FILTER  PX
+1  NGC 7380  Wizard Nebula                Emission Nebula  Cepheus        22 47.4  +58 08  25'   0.98  0.43   19:53-05:24  78° @ 22:15  18.6  ~22.8  dual    1218
+2  NGC 281   PacMan Nebula                Emission Nebula  Cassiopeia     00 52.9  +56 37  35'   1.00  0.38   19:53-05:33  79° @ 00:21  18.7  -      dual    1705
+3  IC 63     Gamma Cassiopeia Nebula      Emission Nebula  Cassiopeia     00 59.5  +60 55  20'   1.00  0.38   19:53-05:33  75° @ 00:27  18.7  -      dual    974
+4  Sh2-173   Phantom of the Opera Nebula  Emission Nebula  Cassiopeia     00 21.3  +61 44  25'   1.00  0.38   19:53-05:33  74° @ 23:49  18.6  -      dual    1218
 ```
 
 The output ends with a legend explaining every column of the tables shown and the colours. In short:
