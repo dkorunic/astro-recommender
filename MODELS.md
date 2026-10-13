@@ -274,7 +274,7 @@ The three parts are kept apart (`atmos.RayleighExtinction`, `OzoneExtinction`, `
 
 Past the CAMS range (about 5 days), a typical AOD of 0.1 is used. The elevation comes from the CAMS response, else from the weather forecast's, whose range is longer. When neither has it, or when `-extinction` is given, that fixed value (default 0.2) is used instead. A smoky or dusty night therefore penalises low targets and spreads moonlight more widely.
 
-### Sky brightness: Krisciunas & Schaefer (1991)
+### Sky brightness: Krisciunas & Schaefer (1991), moonlight after Winkler (2022)
 
 The sky brightness B at the target is computed in nanoLamberts, a linear unit that can be added, with the [K&S][ks] conversion:
 
@@ -318,33 +318,40 @@ B_{\text{zen}}(\text{target}) = \max\big(B_{\text{zen}} + Z(\Delta\lambda,\beta)
 
 bilinearly interpolated, the ±80° rows going to their mean at the poles. The galactic coordinates come from the target's mid-window position (`astro.Galactic`, the IAU 1958 frame in J2000, within 0.005″ of SOFA's). On a pristine sky the galactic poles are 0.3 mag/arcsec² darker than the reference, the plane 0.5–1.1 brighter, the Sagittarius clouds 1.7 and the LMC 0.4: a faint galaxy at high galactic latitude sees the darkest natural sky, and a nebula in the Cassiopeia Milky Way about a magnitude brighter one. Under light pollution, again, it hardly shows. Pioneer's ~2° beam smooths the star clouds, and its red band carries some Hα, so the brightest H II regions' cells read high. The floor adds the darkest galactic light to the zodiacal pole's.
 
-**Scattered moonlight** is added while the Moon is above the horizon. The Moon's brightness outside the atmosphere depends on its phase angle α (degrees, 0 = full):
+**Scattered moonlight** is added while the Moon is above the horizon, after [Winkler (2022)][winkler]'s revised simplified scattering model. The Moon's V flux outside the atmosphere comes from its magnitude, which depends on its phase angle α (degrees, 0 = full):
 
 ```math
-I^* = 10^{-0.4\,(3.84 + 0.026\,\alpha + 4\cdot10^{-9}\alpha^4)} \cdot \Big(\frac{60.27}{r}\Big)^2 \cdot
+m_{\text{moon}} = -12.73 + 0.026\,\alpha + 4\cdot10^{-9}\alpha^4 ,\qquad
+F^* = 10^{-0.4\,m_{\text{moon}}}\cdot \Big(\frac{60.27}{r}\Big)^2 \cdot
 \begin{cases} 1.35 - 0.05\,\alpha & \alpha < 7^\circ \\ 1 & \text{otherwise}\end{cases}
 ```
 
-- The `(60.27/r)²` term scales from K&S's mean distance to the Moon's actual distance, which varies by ±13%.
-- The last factor is the *opposition surge*, the extra brightening near full Moon that K&S's I* leaves out. It is modelled as in Thorstensen's skycalc ([thorsky][thorsky]).
+- The magnitude law is the one K&S use (from Allen), at the Moon's mean distance; `(60.27/r)²` scales it to the actual distance, which varies by ±13%.
+- The last factor is the *opposition surge*, the extra brightening near full Moon that the magnitude law leaves out. It is modelled as in Thorstensen's skycalc ([thorsky][thorsky]).
 
-That light is dimmed on its way down through the Moon's own airmass, scattered towards the target by the scattering function f(ρ), and added along the target's line of sight:
+That beam is scattered once in a uniform layer of optical depth τ = 0.4 ln 10 · κ = 0.921 κ. Each height is reached through only the air above it, and the scattered light is dimmed again on its way down. K&S instead dimmed the beam by the whole column before it scatters, which makes the moonlit sky too dark, most of all under a low Moon. Integrated down the line of sight, this gives Winkler's gradation function, with X_s(h) the scattering airmass above for the target and the Moon:
 
 ```math
-f(\rho) = 10^{5.36}\,(1.06 + \cos^2\rho) + 10^{\,6.15 - \rho/40}
+\Gamma = X\,\frac{e^{-\tau X} - e^{-\tau X_{\text{moon}}}}{X_{\text{moon}} - X} \qquad \big(\to \tau X e^{-\tau X}\ \text{as}\ X_{\text{moon}} \to X\big)
+```
+
+The light is scattered towards the target by a normalised phase function (sr⁻¹). It mixes molecules (Rayleigh, [Bucholtz 1995][bucholtz], χ = 0.0148, K&S's 1.06 + cos²ρ shape) and aerosols (Henyey–Greenstein, asymmetry g = 0.8), weighted by their shares of the scattering optical depth. Those shares are the minute's own Rayleigh and aerosol extinction (κ_R, κ_A), so hazier air weighs the forward-peaked aerosol term more:
+
+```math
+p(\rho) = \frac{\kappa_R}{\kappa_R+\kappa_A}\,\frac{3(1-\chi)}{16\pi(1+2\chi)}\Big(\frac{1+3\chi}{1-\chi} + \cos^2\rho\Big) + \frac{\kappa_A}{\kappa_R+\kappa_A}\,\frac{1}{4\pi}\,\frac{1-g^2}{(1 + g^2 - 2g\cos\rho)^{3/2}}
 ```
 
 ```math
-B_{\text{moon}} = f(\rho)\cdot I^*\cdot 10^{-0.4\,\kappa\,X_s(h_\text{moon})}\cdot\big(1 - 10^{-0.4\,\kappa\,X_s(h)}\big)
+B_{\text{moon}} = 10^{\delta}\, F^*\, p(\rho)\, \Gamma \,/\, 4.2545\cdot10^{10}
 ```
 
-ρ is the Moon–target angle in degrees. In f(ρ), the first term is Rayleigh scattering by air molecules and the second is Mie scattering by aerosols, strongly forward-peaked. The total is
+ρ is the Moon–target angle. The last factor turns per-steradian into per-arcsec². δ = 0.078 is Winkler's V-band offset: it carries the particles' albedo and the light scattered more than once. g and δ are his fit at Sutherland (SAAO), where the model reproduces the moonlit sky mostly within 0.05 mag. Against K&S, the full Moon 60° up puts 18.6 mag/arcsec² at a target 60° up and 90° away (K&S: 18.45). The sky is 0.7–1 mag brighter within about 10° of the Moon (the aerosol forward peak), a little brighter under a Moon below about 12° (0.06 mag at 10°, 0.15 at 5°), and about 0.15 mag darker at moderate separations. Aerosols range over 0.5 < g < 0.8 ([Andrews et al. 2006][andrews]), so under heavy haze (κ ≳ 0.3) a narrower-than-real forward peak likely makes the sky far from the Moon somewhat too dark; there it also gets darker with more haze, where K&S's grew brighter. The total is
 
 ```math
 B = B_{\text{dark}} + B_{\text{moon}}
 ```
 
-The table's SKY column is this B (with the zodiacal and galactic light) converted back to mag/arcsec² and averaged over the observable minutes. The part of B_moon that does not depend on the target (I* times the Moon's extinction) is computed once per grid minute (`atmos.MoonLight`).
+The table's SKY column is this B (with the zodiacal and galactic light) converted back to mag/arcsec² and averaged over the observable minutes. The part of B_moon that does not depend on the target (F*, the Moon's airmass and beam transmission, and the Rayleigh share) is computed once per grid minute (`atmos.MoonLight`).
 
 ## Object surface brightness
 
@@ -466,13 +473,13 @@ A faint galaxy 30° from a bright Moon therefore scores much lower than one 120�
 
 `-filter dual|tri|quad|ha|oiii|sii` (`scoring.passes`, `atmos.SkyParts`, `atmos.BandSky`, `catalog.Target.Lines`) scores the emission-line targets through a filter: emission, planetary and Wolf-Rayet nebulae, supernova remnants, and a few named objects whose catalogue type hides their Hα, such as IC 1396. A dual-band filter passes Hα and [O III] onto one frame, a tri-band one Hβ too, a quad-band one Hβ and [S II] too; the others pass one line. Every band is the same width, so a commercial multi-band filter with one wide band (the L-eNhance's 24 nm over Hβ and [O III]) is only approximated. Each band is `-filter-nm` wide (7 nm by default).
 
-**The sky in a band.** The K&S sky splits into three parts with different spectra:
+**The sky in a band.** The sky splits into three parts with different spectra:
 
 - the **glow** (airglow and light pollution, the dark-sky term),
-- moonlight scattered by **molecules** (Rayleigh, the 10^5.36 (1.06 + cos²ρ) term), going as λ⁻⁴,
-- moonlight scattered by **aerosols** (Mie, the 10^(6.15 − ρ/40) term), going as λ^−1.3 ([Ångström][angstrom]).
+- moonlight scattered by **molecules** (Rayleigh, the χ term of p(ρ)), going as λ⁻⁴,
+- moonlight scattered by **aerosols** (Mie, the Henyey–Greenstein term), going as λ^−1.3 ([Ångström][angstrom]).
 
-K&S give them in the V band, centred at 551 nm and 88 nm wide ([Bessell 1990][bessell]). A band Δλ wide at λ passes the fractions
+The model gives them in the V band, centred at 551 nm and 88 nm wide ([Bessell 1990][bessell]). A band Δλ wide at λ passes the fractions
 
 ```math
 f_{\text{glow}} = \frac{\Delta\lambda}{88},\qquad
@@ -513,7 +520,7 @@ With w = 1 and every f equal to k this is the broadband weight.
 
 and a multi-band filter the mean over its lines weighted by the share of light each passes. At κ = 0.2 the Hα band's coefficient is 0.14 and the [O III] band's 0.25, so at airmass 2 an Hα target through its filter keeps 6% more light than the V coefficient says and an [O III] target 4% less. The filtered weight carries its own transmission `T(h, κ_λ)` and the broadband one `T(h, κ)`; each minute takes the better of the two products, so an imager would not shoot an H II region through [O III] if broadband did better. A filter whose weight runs within a few percent of broadband can now win on extinction alone (a planetary near the Moon through Hα, by a hair), which is as it should be.
 
-**A list of filters** (`-filter dual,ha,oiii`, the ones you own) scores each target once per filter that passes some of its light (a line filter: emission-line targets; a [broadband](#broadband-filters) one: all), each run as above, and keeps the best score among the filters that mattered (the first in the list on a tie): those where some minute's `W_filter` beat `W_sky` or only the filter's wider Moon limit admitted the minute; that filter is the target's FILTER (`Result.Filter`). A target no filter helped is scored without one, FILTER `-`, so its weights are exactly the unfiltered ones (the filtered path's sky, the sum of its parts, matches K&S's only to rounding). One filter per target rather than per minute: changing filters mid-target means a second set of flats and a split stack. A single filter therefore scores exactly as it did before lists.
+**A list of filters** (`-filter dual,ha,oiii`, the ones you own) scores each target once per filter that passes some of its light (a line filter: emission-line targets; a [broadband](#broadband-filters) one: all), each run as above, and keeps the best score among the filters that mattered (the first in the list on a tie): those where some minute's `W_filter` beat `W_sky` or only the filter's wider Moon limit admitted the minute; that filter is the target's FILTER (`Result.Filter`). A target no filter helped is scored without one, FILTER `-`, so its weights are exactly the unfiltered ones (the filtered path's sky, the sum of its parts, matches the unfiltered one only to rounding). One filter per target rather than per minute: changing filters mid-target means a second set of flats and a split stack. A single filter therefore scores exactly as it did before lists.
 
 **The Moon limit.** Away from the Moon its light is mostly Rayleigh-scattered, so the filter's sky-limited gain against moonlight is `f_R / w²`. That, at most 1, replaces k in the Moon-distance rule. At full Moon (100°) through 7 nm bands:
 
@@ -734,6 +741,7 @@ The models above come from the literature. The following are this project's own 
 | OSM obstacle heights | building 8 m (else 3 m a level + 2 m), tree 12 m, wood 20 m | typical two-storey house, mature broadleaf, temperate forest canopy; OSM tags few heights |
 | Canopy floor | trees under 1 m ignored | the canopy map reads a metre or so over open ground |
 | Night-sky spectrum | flat per nm, Moon before scattering and glow | the lamp mix is unknown; the Moon's redness offsets the Sun's fall |
+| Moonlight scattering | aerosol asymmetry g = 0.8, offset δ = 0.078 in V | Winkler's fit at Sutherland (τ = 0.14); clean air, so heavy haze is extrapolated |
 | Broadband filter passbands | `cls` Astronomik's published edges, `lpro` read off Optolong's reference curve (±5 nm); continuum flat per nm over 400–700 nm | one entry per class; under the flat (LED) glow brands within a class score alike |
 | Zodiacal reference direction | 135° from the Sun at ecliptic latitude 45° | a mid-latitude zenith through the night; the zenith brightness given or defaulted includes that much zodiacal light |
 | Galactic light reference | 81 S10, the sky's median by solid angle | a zenith over a year's nights; the zenith brightness given or defaulted includes that much galactic light |
@@ -763,7 +771,7 @@ Treat SCORE as a way to order tonight's options, not as an absolute measure of q
 | Airmass | [Pickering (2002)][pickering], DIO 12, 1 |
 | Rayleigh extinction | [Hayes & Latham (1975)][hayes], ApJ 197, 593; [Bucholtz (1995)][bucholtz], Appl. Opt. 34, 2765 |
 | Aerosols | [CAMS][cams] via Open-Meteo |
-| Sky brightness and moonlight | [Krisciunas & Schaefer (1991)][ks], PASP 103, 1033; opposition surge after [thorsky][thorsky] |
+| Sky brightness and moonlight | [Krisciunas & Schaefer (1991)][ks], PASP 103, 1033 (dark sky, Moon's magnitude law); scattered moonlight: [Winkler (2022)][winkler], MNRAS 514, 208; aerosol asymmetry range: [Andrews et al. (2006)][andrews], JGR 111, D05S04; opposition surge after [thorsky][thorsky] |
 | Zodiacal light | [Leinert et al. (1998)][leinert], A&AS 127, 1, Table 17 (transcribed as in [astrogo](https://github.com/TuSKan/astrogo)); the natural-sky reference of [Falchi et al. (2016)][falchi], Sci. Adv. 2, e1600377 |
 | Galactic light | Pioneer 10 background starlight, Toller (1981), PhD thesis, SUNY Albany, as [Leinert et al. (1998)][leinert], A&AS 127, 1, Tables 35 and 36 give it; the galactic frame: [Blaauw et al. (1960)][blaauw], MNRAS 121, 123 |
 | Filter bands | V band: [Bessell (1990)][bessell], PASP 102, 1181; Ångström exponent: [Ångström (1929)][angstrom]; Moon colour: [Thejll et al. (2014)][moon-colour], A&A 563, A38 |
@@ -792,6 +800,8 @@ Treat SCORE as a way to order tonight's options, not as an absolute measure of q
 [cams]: https://atmosphere.copernicus.eu/
 [ks]: https://doi.org/10.1086/132921
 [leinert]: https://doi.org/10.1051/aas:1998105
+[winkler]: https://doi.org/10.1093/mnras/stac1387
+[andrews]: https://doi.org/10.1029/2004JD005734
 [blaauw]: https://doi.org/10.1093/mnras/121.2.123
 [falchi]: https://doi.org/10.1126/sciadv.1600377
 [thorsky]: https://github.com/jrthorstensen/thorsky

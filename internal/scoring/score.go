@@ -403,7 +403,7 @@ func (fp filterPass) weight(objNL, objRef, glow, rayleigh, mie float64) float64 
 // moonK is the fraction of the moonlight, against the target's own share of
 // light passed, that the filter lets count: rayleigh/w², the sky-limited
 // weight's ratio to broadband under a Moon well away (where Rayleigh
-// scattering dominates K&S's), so it scales the Moon separation limit as k
+// scattering dominates the moonlight), so it scales the Moon separation limit as k
 // does. 1 without a filter, and at most 1: a filter that does not beat the
 // Moon leaves the target to the broadband limit.
 func (fp filterPass) moonK() float64 {

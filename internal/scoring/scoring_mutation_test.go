@@ -39,7 +39,7 @@ func mutSky(n int) *Sky {
 		s.Ext = append(s.Ext, 0)
 		s.ExtRayleigh = append(s.ExtRayleigh, 0)
 		s.ExtAerosol = append(s.ExtAerosol, 0)
-		s.MoonLight = append(s.MoonLight, 0)
+		s.MoonLight = append(s.MoonLight, atmos.Moon{})
 		s.Quality = append(s.Quality, 1)
 	}
 	s.End = s.Grid[n-1].Add(time.Minute)
@@ -480,7 +480,7 @@ func TestMutBuildSky(t *testing.T) {
 		if s.MoonPos[i] != [2]float64{ra, dec} || s.MoonUnit[i] != astro.Unit(ra, dec) || s.MoonAlt[i] != astro.Altitude(ra, dec, s.Grid[i], cfg.Lat, cfg.Lon) {
 			t.Errorf("Moon at %d", i)
 		}
-		if s.Ext[i] != 0.2 || s.MoonLight[i] != atmos.MoonLight(0.2, s.MoonAlt[i], s.MoonPhase, s.MoonDist) {
+		if s.Ext[i] != 0.2 || s.MoonLight[i] != atmos.MoonLight(0.2, s.ExtRayleigh[i], s.ExtAerosol[i], s.MoonAlt[i], s.MoonPhase, s.MoonDist) {
 			t.Errorf("ext/moonlight at %d", i)
 		}
 	}
@@ -662,7 +662,7 @@ func TestMutBandExtinction(t *testing.T) {
 	}
 	lon, lat := astro.Ecliptic(90.5, 0, mutEpoch)
 	zen := max(s.ZenithNL+atmos.ZodiacalExcess(lon-s.SunLon, lat)+mutGalactic(90.5, 0), atmos.ZodiacalPoleNL+atmos.GalacticMinNL)
-	glow, _, _ := atmos.SkyParts(zen, 0.2, 40.5, 180, 0)
+	glow, _, _ := atmos.SkyParts(zen, 0.2, 40.5, 180, atmos.Moon{})
 	band := ray*fp.ray + atmos.OzoneExtinction + aer*fp.aer
 	want := atmos.Transmission(atmos.Airmass(40.5), band) * fp.weight(0, s.RefNL, glow, 0, 0)
 	if math.Abs(r.Weight[41]-want) > 1e-7 || band >= 0.2 {
@@ -707,7 +707,7 @@ func TestMutZodiacal(t *testing.T) {
 	if !ok || math.Abs(r.MaxAlt-23.44) > 0.01 {
 		t.Fatalf("pole target: %v, max alt %v", ok, r.MaxAlt)
 	}
-	glow, _, _ := atmos.SkyParts(floor, 0, r.Alt[90], 180, 0)
+	glow, _, _ := atmos.SkyParts(floor, 0, r.Alt[90], 180, atmos.Moon{})
 	obj := atmos.NanoLamberts(30)
 	if want := min(1, math.Sqrt((obj+s.RefNL)/(obj+glow))); math.Abs(r.Weight[90]-want) > 1e-7 {
 		t.Errorf("weight at the floor %v, want %v", r.Weight[90], want)

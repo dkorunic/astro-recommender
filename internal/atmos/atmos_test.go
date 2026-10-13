@@ -19,10 +19,10 @@ func TestSkyBrightness(t *testing.T) {
 	if m := MagFromNL(SkyBrightness(dark, 0.172, 90, -10, 0, 0, meanMoonDist)); math.Abs(m-22) > 1e-6 {
 		t.Errorf("moonless zenith = %v mag, want 22", m)
 	}
-	// Full Moon at 60°, target at 60° and 90° away: ~18.8 mag/arcsec² from K&S,
-	// 0.33 mag brighter at exact full with the opposition surge.
-	if m := MagFromNL(SkyBrightness(dark, 0.172, 60, 60, 90, 0, meanMoonDist)); math.Abs(m-18.45) > 0.05 {
-		t.Errorf("full-moon sky = %v mag, want ~18.45", m)
+	// Full Moon (with the opposition surge) at 60°, target at 60° and 90°
+	// away: 18.60 mag/arcsec² from Winkler's model, where K&S gave 18.45.
+	if m := MagFromNL(SkyBrightness(dark, 0.172, 60, 60, 90, 0, meanMoonDist)); math.Abs(m-18.60) > 0.01 {
+		t.Errorf("full-moon sky = %v mag, want 18.60", m)
 	}
 	// Moonlight alone: x1.35 at full, tapering to none at 7°; and as distance⁻².
 	moon := func(alpha, dist float64) float64 {
@@ -65,13 +65,17 @@ func TestBortleClass(t *testing.T) {
 // band 2.9 times what an Hα one does.
 func TestSkyPartsBandSky(t *testing.T) {
 	dark := NanoLamberts(19)
-	for _, c := range []struct{ alt, rho, light float64 }{{60, 90, 0}, {40, 20, 1e-6}, {75, 120, 3e-7}} {
-		glow, rayleigh, mie := SkyParts(dark, 0.2, c.alt, c.rho, c.light)
-		if total := SkyBrightnessLit(dark, 0.2, c.alt, c.rho, c.light); math.Abs(glow+rayleigh+mie-total) > 1e-12*total {
+	for _, c := range []struct{ alt, rho, moonAlt float64 }{{60, 90, -5}, {40, 20, 30}, {75, 120, 60}} {
+		m := MoonLight(0.2, 0.1, 0.071, c.moonAlt, 20, 60)
+		glow, rayleigh, mie := SkyParts(dark, 0.2, c.alt, c.rho, m)
+		if total := SkyBrightnessLit(dark, 0.2, c.alt, c.rho, m); math.Abs(glow+rayleigh+mie-total) > 1e-12*total {
 			t.Errorf("%+v: parts %v + %v + %v, total %v", c, glow, rayleigh, mie, total)
 		}
-		if c.light == 0 && (rayleigh != 0 || mie != 0) {
+		if c.moonAlt < 0 && (rayleigh != 0 || mie != 0) {
 			t.Errorf("moonlight without a Moon: %v %v", rayleigh, mie)
+		}
+		if c.moonAlt > 0 && (rayleigh <= 0 || mie <= 0) {
+			t.Errorf("%+v: no moonlight %v %v", c, rayleigh, mie)
 		}
 	}
 	glow, rayleigh, mie := BandSky(vCenter, 8.8)
@@ -272,6 +276,69 @@ func TestGalactic(t *testing.T) {
 	for _, d := range [][2]float64{{0, 0}, {1e300, -1e300}, {-725, 95}, {359.9999999, 7}} {
 		if v := Galactic(d[0], d[1]); math.IsNaN(v) || v < GalacticMinNL*(1-1e-12) {
 			t.Errorf("Galactic%v = %v, below the minimum %v", d, v, GalacticMinNL)
+		}
+	}
+}
+
+// Winkler's (2022) moonlight: the phase functions are normalised over the
+// sphere; against K&S, whose beam is dimmed by the whole column before it
+// scatters, the sky is brighter under a low Moon (Winkler's finding) and
+// near the Moon (the aerosol forward peak), a little darker 90° away; the
+// gradation function is continuous where the Moon and the target share an
+// airmass.
+func TestMoonScatter(t *testing.T) {
+	m := Moon{NL: 1, X: 2, Fade: math.Exp(-tauPerMag * 0.2 * 2)}
+	sum := func(ray float64) float64 {
+		m.Ray = ray
+		s := 0.0
+		const n = 20000
+		for i := range n {
+			rho := (float64(i) + 0.5) * 180 / n
+			r, a := m.scatter(0.2, 2, rho)
+			s += (r + a) * 2 * math.Pi * math.Sin(rho*deg) * math.Pi / n
+		}
+
+		return s
+	}
+	gamma := 2 * tauPerMag * 0.2 * math.Exp(-tauPerMag*0.2*2)
+	for _, ray := range []float64{1, 0} {
+		if s := sum(ray) / gamma; math.Abs(s-1) > 1e-6 {
+			t.Errorf("phase function (Rayleigh share %v) integrates to %v, want 1", ray, s)
+		}
+	}
+	// Against K&S (1991, eqs. 15-21) for full Moon at extinction 0.172.
+	ks91 := func(moonAlt, alt, rho float64) float64 {
+		istar := math.Pow(10, -0.4*3.84) * 1.35 * math.Pow(10, -0.4*0.172*ks(moonAlt))
+		c := math.Cos(rho * deg)
+
+		return (math.Pow(10, 5.36)*(1.06+c*c) + math.Pow(10, 6.15-rho/40)) * istar * (1 - math.Pow(10, -0.4*0.172*ks(alt)))
+	}
+	ray, aer := SplitExtinction(0.172)
+	rss := func(moonAlt, alt, rho float64) float64 {
+		r, a := MoonLight(0.172, ray, aer, moonAlt, 0, meanMoonDist).scatter(0.172, ks(alt), rho)
+
+		return r + a
+	}
+	for _, c := range []struct{ moonAlt, alt, rho, lo, hi float64 }{
+		{5, 60, 80, 1.05, 1.3},  // low Moon: brighter
+		{60, 60, 10, 1.5, 2.5},  // near the Moon: the forward peak
+		{60, 60, 90, 0.8, 0.95}, // 90° away: a little darker
+	} {
+		if r := rss(c.moonAlt, c.alt, c.rho) / ks91(c.moonAlt, c.alt, c.rho); r < c.lo || r > c.hi {
+			t.Errorf("%+v: Winkler/K&S %v, want %v..%v", c, r, c.lo, c.hi)
+		}
+	}
+	// No extinction, no scattering.
+	if r, a := MoonLight(0, 0, 0, 40, 0, meanMoonDist).scatter(0, 1.5, 50); r != 0 || a != 0 {
+		t.Errorf("moonlight without extinction %v %v", r, a)
+	}
+	// Continuity across X = x.
+	moon := MoonLight(0.172, ray, aer, 40, 0, meanMoonDist)
+	x := moon.X
+	at, _ := moon.scatter(0.172, x, 50)
+	for _, d := range []float64{1e-7, -1e-7, 2e-6, -2e-6} {
+		if near, _ := moon.scatter(0.172, x+d, 50); math.Abs(near/at-1) > 1e-5 {
+			t.Errorf("gradation at X%+g: %v against %v at X", d, near, at)
 		}
 	}
 }

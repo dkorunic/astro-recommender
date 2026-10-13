@@ -32,13 +32,13 @@ type Sky struct {
 	MoonPos     [][2]float64 // topocentric RA/Dec of date, degrees
 	MoonUnit    [][3]float64 // astro.Unit of MoonPos, for the per-minute Moon separations
 	MoonAlt     []float64
-	Ext         []float64 // extinction per grid minute, mag per airmass, at 550 nm: ExtRayleigh + atmos.OzoneExtinction + ExtAerosol
-	ExtRayleigh []float64 // its Rayleigh part, which a filter band scales as λ⁻⁴
-	ExtAerosol  []float64 // its aerosol part, scaled as λ^-1.3
-	MoonLight   []float64 // atmos.MoonLight per grid minute
-	Quality     []float64 // clear-sky fraction x rain x dew x gust x transparency, 1 = perfect
-	Elevation   float64   // site elevation in m, from Open-Meteo; NaN if unknown
-	SunLon      float64   // the Sun's ecliptic longitude at mid-window, degrees, for the zodiacal light
+	Ext         []float64    // extinction per grid minute, mag per airmass, at 550 nm: ExtRayleigh + atmos.OzoneExtinction + ExtAerosol
+	ExtRayleigh []float64    // its Rayleigh part, which a filter band scales as λ⁻⁴
+	ExtAerosol  []float64    // its aerosol part, scaled as λ^-1.3
+	MoonLight   []atmos.Moon // atmos.MoonLight per grid minute
+	Quality     []float64    // clear-sky fraction x rain x dew x gust x transparency, 1 = perfect
+	Elevation   float64      // site elevation in m, from Open-Meteo; NaN if unknown
+	SunLon      float64      // the Sun's ecliptic longitude at mid-window, degrees, for the zodiacal light
 	Illum       float64
 	MoonPhase   float64 // phase angle in degrees, 0 = full
 	MoonDist    float64 // geocentric distance in Earth radii
@@ -203,14 +203,14 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 	s.Quality = make([]float64, len(s.Grid))
 	s.Ext = make([]float64, len(s.Grid))
 	s.ExtRayleigh, s.ExtAerosol = make([]float64, len(s.Grid)), make([]float64, len(s.Grid))
-	s.MoonLight = make([]float64, len(s.Grid))
+	s.MoonLight = make([]atmos.Moon, len(s.Grid))
 	// Weather and transparency per minute; ok marks the minutes each forecast covers.
 	sky, skyOK := make([]float64, len(s.Grid)), make([]bool, len(s.Grid))
 	transp, transpOK := make([]float64, len(s.Grid)), make([]bool, len(s.Grid))
 	for i, t := range s.Grid {
 		s.Ext[i] = s.ExtinctionAt(t, cfg.Extinction)
 		s.ExtRayleigh[i], s.ExtAerosol[i] = s.extinctionParts(t, cfg.Extinction)
-		s.MoonLight[i] = atmos.MoonLight(s.Ext[i], s.MoonAlt[i], s.MoonPhase, s.MoonDist)
+		s.MoonLight[i] = atmos.MoonLight(s.Ext[i], s.ExtRayleigh[i], s.ExtAerosol[i], s.MoonAlt[i], s.MoonPhase, s.MoonDist)
 		if h, ok := s.Weather[t.Truncate(time.Hour).Unix()]; ok {
 			// ponytail: guessed ramps; dew (spread 4 -> 1 °C) and gusts (20 -> 40 km/h)
 			// cost up to 30% and 50% of usable frames; rain (0 -> RainGate mm

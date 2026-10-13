@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: MIT
 
 // Package atmos models the atmosphere for imaging: airmass, extinction and
-// night sky brightness (Krisciunas & Schaefer 1991), with Bortle/SQM darkness.
+// night sky brightness (Krisciunas & Schaefer 1991; moonlight after Winkler
+// 2022), with Bortle/SQM darkness.
 package atmos
 
 import "math"
@@ -96,8 +97,8 @@ func Transmission(airmass, k float64) float64 {
 	return exp10(-0.4 * k * (airmass - 1))
 }
 
-// meanMoonDist is the Moon's mean distance in Earth radii, the one K&S's
-// Moon brightness assumes.
+// meanMoonDist is the Moon's mean distance in Earth radii, the one the
+// Moon's magnitude law assumes.
 const meanMoonDist = 60.27
 
 // NanoLamberts converts a surface brightness in V mag/arcsec² to NanoLamberts.
@@ -107,12 +108,15 @@ func NanoLamberts(mag float64) float64 { return 34.08 * math.Exp(20.7233-0.92104
 func MagFromNL(b float64) float64 { return (20.7233 - math.Log(b/34.08)) / 0.92104 }
 
 // SkyBrightness returns the sky surface brightness in nanoLamberts at a target
-// at altitude alt, after Krisciunas & Schaefer (1991): the site's dark zenith
-// brightness brightened towards the horizon, plus moonlight scattered from a
-// Moon at moonAlt, rho degrees away, with phase angle alpha (0 = full) and
-// moonDist Earth radii away.
+// at altitude alt: the site's dark zenith brightness brightened towards the
+// horizon (Krisciunas & Schaefer 1991), plus moonlight scattered from a Moon
+// at moonAlt, rho degrees away, with phase angle alpha (0 = full) and
+// moonDist Earth radii away (Winkler 2022), for extinction k split as
+// SplitExtinction does.
 func SkyBrightness(zenithNL, k, alt, moonAlt, rho, alpha, moonDist float64) float64 {
-	return SkyBrightnessLit(zenithNL, k, alt, rho, MoonLight(k, moonAlt, alpha, moonDist))
+	ray, aer := SplitExtinction(k)
+
+	return SkyBrightnessLit(zenithNL, k, alt, rho, MoonLight(k, ray, aer, moonAlt, alpha, moonDist))
 }
 
 // ks is K&S's airmass for scattering paths.
@@ -122,57 +126,126 @@ func ks(alt float64) float64 {
 	return 1 / math.Sqrt(1-0.96*z*z)
 }
 
-// MoonLight is the target-independent part of SkyBrightness's moonlight: the
-// Moon's brightness through its own airmass for extinction k; 0 while it is
-// down. Scoring computes it once per grid minute rather than per
-// target-minute (two of the moonlit minute's five exp10 calls).
-func MoonLight(k, moonAlt, alpha, moonDist float64) float64 {
-	if moonAlt <= 0 {
-		return 0
-	}
-	moon := exp10(-0.4 * (3.84 + 0.026*alpha + 4e-9*alpha*alpha*alpha*alpha))
-	// K&S give I* at the mean distance (60.27 Earth radii); the Moon is
-	// up to 13% nearer or farther, its light going as distance⁻².
-	r := meanMoonDist / moonDist
-	moon *= r * r
-	// Opposition surge, which K&S's I* leaves out (their p. 1035): 35%
-	// brighter at full, tapering linearly to none at 7°, as in Thorstensen's skycalc.
-	if alpha < 7 {
-		moon *= 1.35 - 0.05*alpha
-	}
+// Scattered moonlight follows Winkler's (2022, MNRAS 514, 208) revised
+// simplified scattering model: the Moon's beam scattered once in a uniform
+// layer, at each height dimmed only by the air above it (K&S dim it by the
+// whole column, which underestimates the moonlit sky, most for a low Moon),
+// the scattered light dimmed on its way down, into a normalised phase
+// function of molecules (Rayleigh) and aerosols (Henyey-Greenstein) weighted
+// by their optical depths; a fitted offset carries the albedo and multiple
+// scattering. In V at Sutherland it reproduces the moonlit sky within about
+// 0.05-0.1 mag.
+// ponytail: g and δ are Winkler's clean-site (Sutherland, τ = 0.14) fit;
+// aerosols range over 0.5 < g < 0.8 (Andrews et al. 2006), so under heavy
+// aerosol the forward peak is likely too narrow and the sky far from the
+// Moon somewhat too dark. A fit at a hazy site would replace them.
+const (
+	// moonChi is the depolarisation term of the Rayleigh phase function
+	// (Bucholtz 1995), K&S's 1.06 + cos²ρ shape.
+	moonChi = 0.0148
+	// moonG is the aerosol asymmetry parameter Winkler fitted.
+	moonG = 0.8
+	// moonDelta is Winkler's V-band offset log10(albedo × multiple
+	// scattering), Table 4.
+	moonDelta = 0.078
+	// arcsec2PerSr converts a radiance per steradian to one per arcsec².
+	arcsec2PerSr = (180 / math.Pi * 3600) * (180 / math.Pi * 3600)
+	// tauPerMag converts an extinction coefficient in mag/airmass to an
+	// optical depth: 0.4 ln 10.
+	tauPerMag = 0.4 * math.Ln10
+	// moonPR and moonPM are the phase functions' constant factors.
+	moonPR = 3 * (1 - moonChi) / (4 * (1 + 2*moonChi)) / (4 * math.Pi)
+	moonRC = (1 + 3*moonChi) / (1 - moonChi)
+	moonPM = (1 - moonG*moonG) / (4 * math.Pi)
+)
 
-	return moon * exp10(-0.4*k*ks(moonAlt))
+// moonFullNL is the full Moon's V flux (magnitude −12.73) as nanoLamberts
+// over one arcsec².
+var moonFullNL = NanoLamberts(-12.73)
+
+// Moon is the target-independent part of a minute's scattered moonlight;
+// the zero value is a Moon below the horizon.
+type Moon struct {
+	NL   float64 // the Moon's light above the atmosphere × 10^moonDelta, nanoLamberts per steradian of phase function
+	X    float64 // its scattering airmass
+	Fade float64 // its beam's transmission through the whole column, e^(−τX)
+	Ray  float64 // the Rayleigh share of the scattering optical depth
 }
 
-// SkyBrightnessLit is SkyBrightness with moonLight = MoonLight(k, moonAlt,
-// alpha, moonDist) precomputed.
-func SkyBrightnessLit(zenithNL, k, alt, rho, moonLight float64) float64 {
+// MoonLight returns the Moon's part of a minute's scattered moonlight for
+// extinction k mag/airmass, of which kRayleigh is Rayleigh scattering and
+// kAerosol aerosol; the zero Moon while it is down. Scoring computes it once
+// per grid minute rather than per target-minute.
+func MoonLight(k, kRayleigh, kAerosol, moonAlt, alpha, moonDist float64) Moon {
+	if moonAlt <= 0 {
+		return Moon{}
+	}
+	// The Moon's V magnitude (Allen, as K&S use it), −12.73 at full and the
+	// mean distance; its light goes as distance⁻², up to 13% either way.
+	r := meanMoonDist / moonDist
+	nl := moonFullNL * exp10(-0.4*(0.026*alpha+4e-9*alpha*alpha*alpha*alpha)) * r * r
+	// Opposition surge, which the magnitude law leaves out (K&S p. 1035):
+	// 35% brighter at full, tapering linearly to none at 7°, as in
+	// Thorstensen's skycalc.
+	if alpha < 7 {
+		nl *= 1.35 - 0.05*alpha
+	}
+	ray := 1.0
+	if s := kRayleigh + kAerosol; s > 0 {
+		ray = kRayleigh / s
+	}
+	x := ks(moonAlt)
+
+	return Moon{NL: nl * exp10(moonDelta) / arcsec2PerSr, X: x, Fade: math.Exp(-tauPerMag * k * x), Ray: ray}
+}
+
+// scatter returns the moonlight m scatters to a target at scattering airmass
+// x, rho degrees from the Moon, for extinction k: Rayleigh and aerosol parts.
+func (m Moon) scatter(k, x, rho float64) (float64, float64) {
+	// Winkler's gradation function: the single scattering integrated down
+	// the line of sight, x (e^(−τx) − e^(−τX)) / (X − x), whose limit at
+	// X = x is τ x e^(−τx).
+	tau := tauPerMag * k
+	e := math.Exp(-tau * x)
+	var gamma float64
+	if d := m.X - x; math.Abs(d) < 1e-6 {
+		gamma = x * tau * e * (1 - tau*d/2)
+	} else {
+		gamma = x * (e - m.Fade) / d
+	}
+	c := math.Cos(rho * deg)
+	t := 1 + moonG*moonG - 2*moonG*c
+	base := m.NL * gamma
+
+	return base * m.Ray * moonPR * (moonRC + c*c), base * (1 - m.Ray) * moonPM / (t * math.Sqrt(t))
+}
+
+// SkyBrightnessLit is SkyBrightness with the Moon's part m = MoonLight(...)
+// precomputed.
+func SkyBrightnessLit(zenithNL, k, alt, rho float64, m Moon) float64 {
 	x := ks(alt)
 	b := zenithNL * exp10(-0.4*k*(x-1)) * x
-	if moonLight > 0 {
-		c := math.Cos(rho * deg)
-		scatter := 2.2908677e5*(1.06+c*c) + exp10(6.15-rho/40) // 10^5.36
-		b += scatter * moonLight * (1 - exp10(-0.4*k*x))
+	if m.NL > 0 {
+		rayleigh, mie := m.scatter(k, x, rho)
+		b += rayleigh + mie
 	}
 
 	return b
 }
 
 // SkyParts is SkyBrightnessLit split by spectrum: the glow (airglow and light
-// pollution, the dark-sky term) and the moonlight K&S scatter by molecules
-// (Rayleigh, the 10^5.36 (1.06 + cos²ρ) term) and by aerosols (Mie, the
-// 10^(6.15 − ρ/40) one). Their sum is SkyBrightnessLit to rounding; BandSky
+// pollution, the dark-sky term) and the moonlight scattered by molecules
+// (Rayleigh) and by aerosols (Mie). Their sum is SkyBrightnessLit; BandSky
 // says how much of each a filter passes.
-func SkyParts(zenithNL, k, alt, rho, moonLight float64) (float64, float64, float64) {
+func SkyParts(zenithNL, k, alt, rho float64, m Moon) (float64, float64, float64) {
 	x := ks(alt)
 	glow := zenithNL * exp10(-0.4*k*(x-1)) * x
-	if moonLight <= 0 {
+	if m.NL <= 0 {
 		return glow, 0, 0
 	}
-	c := math.Cos(rho * deg)
-	lit := moonLight * (1 - exp10(-0.4*k*x))
+	rayleigh, mie := m.scatter(k, x, rho)
 
-	return glow, 2.2908677e5 * (1.06 + c*c) * lit, exp10(6.15-rho/40) * lit
+	return glow, rayleigh, mie
 }
 
 // vCenter and vWidth are the V band's effective wavelength and FWHM in nm
