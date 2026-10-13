@@ -115,6 +115,12 @@ pre#out a { color: inherit; text-decoration: underline dotted; text-underline-of
   border: 1px solid var(--line); border-radius: 8px; background: var(--field); box-shadow: 0 6px 24px rgba(0, 0, 0, .4);
 }
 #alt[hidden] { display: none; }
+#name {
+  position: fixed; z-index: 10; box-sizing: border-box; width: 240px; padding: 3px 8px; pointer-events: none;
+  border: 1px solid var(--line); border-radius: 8px; background: var(--field); box-shadow: 0 6px 24px rgba(0, 0, 0, .4);
+  font: 600 13px/18px system-ui, sans-serif; color: var(--c36); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#name[hidden] { display: none; }
 footer {
   display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px;
   margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted);
@@ -165,6 +171,7 @@ footer a:hover { text-decoration: underline; }
   </form>
   <div id="warn"></div>
   <pre id="out"></pre>
+  <div id="name" hidden></div>
   <img id="thumb" alt="" hidden>
   <canvas id="alt" width="240" height="96" hidden></canvas>
   <footer>
@@ -295,24 +302,28 @@ $("out").addEventListener("mouseover", (e) => {
   const a = e.target.closest("a[data-thumb]"), img = $("thumb");
   if (a === thumbFor) return;
   thumbFor = a;
-  img.hidden = $("alt").hidden = true;
+  img.hidden = $("alt").hidden = $("name").hidden = true;
   if (!a) return;
+  // The name (26px tall, 4px gap) above the thumbnail, the curve below.
   const r = a.getBoundingClientRect(), left = Math.min(r.right + 12, innerWidth - 252);
-  const top = Math.max(8, Math.min(r.top - 100, innerHeight - 352));
-  img.style.left = `${left}px`;
-  img.style.top = `${top}px`;
-  drawAlt(curves?.alt?.[a.dataset.rank - 1], left, top + 248);
+  const top = Math.max(8, Math.min(r.top - 130, innerHeight - 382));
+  Object.assign($("name"), { textContent: a.textContent, hidden: false });
+  $("name").style.left = img.style.left = `${left}px`;
+  $("name").style.top = `${top}px`;
+  img.style.top = `${top + 30}px`;
+  drawAlt(curves?.alt?.[a.dataset.rank - 1], curves?.obs?.[a.dataset.rank - 1] ?? [], left, top + 278);
   img.src = a.dataset.thumb;
   // Back on the same name the src does not change and no load event fires.
   if (img.complete && img.naturalWidth) img.hidden = false;
 });
-$("out").addEventListener("mouseleave", () => { thumbFor = null; $("thumb").hidden = $("alt").hidden = true; });
+$("out").addEventListener("mouseleave", () => { thumbFor = null; $("thumb").hidden = $("alt").hidden = $("name").hidden = true; });
 
 // drawAlt plots one altitude curve (degrees every curves.step seconds
-// from curves.start) from 0° to 90°, the -alt-min/-alt-max band shaded and
-// the curve drawn bold within it, with the window's ends and the peak in
-// curves.zone.
-function drawAlt(alt, left, top) {
+// from curves.start) from 0° to 90°, the -alt-min/-alt-max limits dashed,
+// the observable stretches (obs, [from, to) Unix seconds: the altitude,
+// Moon and horizon limits) shaded and the curve drawn bold within them,
+// with the window's ends and the peak in curves.zone.
+function drawAlt(alt, obs, left, top) {
   const c = $("alt");
   if (!alt?.length) return;
   const css = getComputedStyle(document.documentElement), v = (n) => css.getPropertyValue(n).trim();
@@ -322,22 +333,32 @@ function drawAlt(alt, left, top) {
   g.scale(dpr, dpr);
   const x = (i) => P + (W - 2 * P) * i / Math.max(1, alt.length - 1);
   const y = (d) => H - T - (H - T - P) * Math.max(0, Math.min(90, d)) / 90;
+  // Seconds to x; samples are curves.step apart, so a stretch's ends fall
+  // between them.
+  const xt = (t) => x((t - curves.start) / curves.step);
   g.fillStyle = v("--accent-soft");
-  g.fillRect(P, y(curves.max), W - 2 * P, y(curves.min) - y(curves.max));
+  for (const [from, to] of obs) g.fillRect(xt(from), P, Math.max(1, xt(to) - xt(from)), H - T - P);
   g.strokeStyle = v("--line"); g.lineWidth = 1;
   g.beginPath(); g.moveTo(P, y(0)); g.lineTo(W - P, y(0)); g.stroke();
-  for (const within of [false, true]) {
-    g.strokeStyle = within ? v("--accent") : v("--muted");
-    g.lineWidth = within ? 2 : 1;
-    g.beginPath();
-    alt.forEach((d, i) => {
-      const ok = d >= curves.min && d <= curves.max;
-      const prev = i > 0 && (!within || (alt[i - 1] >= curves.min && alt[i - 1] <= curves.max));
-      if (within && !ok) return;
-      prev ? g.lineTo(x(i), y(d)) : g.moveTo(x(i), y(d));
-    });
-    g.stroke();
-  }
+  g.setLineDash([3, 3]);
+  g.beginPath();
+  for (const d of [curves.min, curves.max]) { g.moveTo(P, y(d)); g.lineTo(W - P, y(d)); }
+  g.stroke();
+  g.setLineDash([]);
+  g.strokeStyle = v("--muted");
+  g.beginPath();
+  alt.forEach((d, i) => i ? g.lineTo(x(i), y(d)) : g.moveTo(x(i), y(d)));
+  g.stroke();
+  // Bold within each stretch, clipped to it.
+  g.save();
+  g.beginPath();
+  for (const [from, to] of obs) g.rect(xt(from), 0, Math.max(1, xt(to) - xt(from)), H);
+  g.clip();
+  g.strokeStyle = v("--accent"); g.lineWidth = 2;
+  g.beginPath();
+  alt.forEach((d, i) => i ? g.lineTo(x(i), y(d)) : g.moveTo(x(i), y(d)));
+  g.stroke();
+  g.restore();
   const clock = (i) => new Date((curves.start + i * curves.step) * 1000)
     .toLocaleTimeString([], { timeZone: curves.zone, hour: "2-digit", minute: "2-digit", hour12: false });
   // The middle of the top: near the meridian a high-declination object holds

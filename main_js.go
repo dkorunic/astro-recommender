@@ -13,6 +13,7 @@ import (
 	"strconv"
 
 	"github.com/dkorunic/astro-recommender/internal/astro"
+	"github.com/dkorunic/astro-recommender/internal/catalog"
 	"github.com/dkorunic/astro-recommender/internal/config"
 	"github.com/dkorunic/astro-recommender/internal/geotz"
 	"github.com/dkorunic/astro-recommender/internal/scoring"
@@ -48,18 +49,20 @@ const altStep = 5
 // in rank order, altitudes to 0.1° every altStep minutes (whole degrees
 // would put a flat top's peak at its first sample) over s.Grid,
 // computed as scoring does (catalogue positions precessed to mid-window,
-// comet tracks as they are).
+// comet tracks as they are), and the [from, to) Unix seconds of each
+// observable stretch, rescored per minute unless -plan already did.
 func altitudes(cfg *config.Config, s *scoring.Sky, results []scoring.Result) {
 	if len(s.Grid) == 0 {
 		return
 	}
 	doc := struct {
-		Zone  string      `json:"zone"`
-		Alt   [][]float64 `json:"alt"`
-		Start int64       `json:"start"`
-		Step  int64       `json:"step"`
-		Min   float64     `json:"min"`
-		Max   float64     `json:"max"`
+		Zone  string       `json:"zone"`
+		Alt   [][]float64  `json:"alt"`
+		Obs   [][][2]int64 `json:"obs"`
+		Start int64        `json:"start"`
+		Step  int64        `json:"step"`
+		Min   float64      `json:"min"`
+		Max   float64      `json:"max"`
 	}{Zone: cfg.Loc.String(), Start: s.Grid[0].Unix(), Step: altStep * 60, Min: cfg.AltMin, Max: cfg.AltMax}
 	mid := s.Grid[len(s.Grid)/2]
 	for _, res := range results[:min(cfg.Top, len(results))] {
@@ -72,6 +75,22 @@ func altitudes(cfg *config.Config, s *scoring.Sky, results []scoring.Result) {
 			curve = append(curve, math.Round(astro.Altitude(ra, dec, s.Grid[i], cfg.Lat, cfg.Lon)*10)/10)
 		}
 		doc.Alt = append(doc.Alt, curve)
+		obs := res.Obs
+		if obs == nil {
+			if rs := scoring.Score(cfg, s, []catalog.Target{res.Target}, true); len(rs) == 1 {
+				obs = rs[0].Obs
+			}
+		}
+		var spans [][2]int64
+		for i, ok := range obs {
+			switch {
+			case ok && (i == 0 || !obs[i-1]):
+				spans = append(spans, [2]int64{s.Grid[i].Unix(), s.End.Unix()})
+			case !ok && i > 0 && obs[i-1]:
+				spans[len(spans)-1][1] = s.Grid[i].Unix()
+			}
+		}
+		doc.Obs = append(doc.Obs, spans)
 	}
 	b, err := json.Marshal(doc)
 	if err != nil {

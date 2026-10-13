@@ -26,6 +26,7 @@ type Result struct { // betteralign:ignore (embedded target first, per embeddeds
 	RunTo   time.Time
 	Alt     []float64     // per grid minute; only from Score with perMinute, for plan.Make
 	Weight  []float64     // per grid minute, 0 when not observable; as Alt
+	Obs     []bool        // per grid minute, observable; as Alt (a minute's weight can be 0 under rain)
 	Runs    int           // continuous observable stretches
 	Foto    float64       // fraction of time observable
 	Score   float64       // foto weighted by clouds, moonlight and framing
@@ -39,15 +40,16 @@ type Result struct { // betteralign:ignore (embedded target first, per embeddeds
 
 // Score scores every target within the size limits and returns the
 // observable ones, best first. perMinute keeps each result's per-minute
-// Alt and Weight, which plan.Make needs.
+// Alt and Weight, which plan.Make needs, and Obs.
 func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool) []Result {
 	var results []Result
 	// Per-minute scratch reused across targets: most are never observable,
 	// and only perMinute needs a Result's own copy (and the altitudes at all).
 	weight := make([]float64, len(s.Grid))
 	var alt []float64
+	var obs []bool
 	if perMinute {
-		alt = make([]float64, len(s.Grid))
+		alt, obs = make([]float64, len(s.Grid)), make([]bool, len(s.Grid))
 	}
 	mosaics := cfg.Mosaics()
 	choices := append(cfg.FilterNames(), "") // "" is no filter
@@ -77,7 +79,7 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 			if (name != "" && fp.w == 0) || (name == "" && found) {
 				continue
 			}
-			r, ok := scoreTarget(cfg, s, tg, fp, mosaics, alt, weight)
+			r, ok := scoreTarget(cfg, s, tg, fp, mosaics, alt, weight, obs)
 			if !ok || (name != "" && r.Filter == "") || (found && r.Score <= best.Score) {
 				continue
 			}
@@ -85,7 +87,7 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 				r.Filter = name
 			}
 			if perMinute {
-				r.Alt, r.Weight = slices.Clone(alt), slices.Clone(weight)
+				r.Alt, r.Weight, r.Obs = slices.Clone(alt), slices.Clone(weight), slices.Clone(obs)
 			}
 			best, found = r, true
 		}
@@ -103,11 +105,11 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 }
 
 // scoreTarget fills weight (len(s.Grid), overwritten) with the target's
-// per-minute weight through fp, and alt with its altitude when alt is not
-// nil. Its Result.Filter is non-empty (a placeholder Score names) when fp
+// per-minute weight through fp, alt with its altitude and obs with whether
+// it is observable when they are not nil. Its Result.Filter is non-empty (a placeholder Score names) when fp
 // mattered: some minute's filtered weight beat the broadband one, or only
 // fp's wider Moon limit let the minute in.
-func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, fp filterPass, mosaics []config.Mosaic, alt, weight []float64) (Result, bool) {
+func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, fp filterPass, mosaics []config.Mosaic, alt, weight []float64, obs []bool) (Result, bool) {
 	var ra, dec float64
 	mid := s.Grid[len(s.Grid)/2]
 	if tg.Track == nil {
@@ -168,6 +170,7 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, fp filterPass, m
 	}
 	objRef := objNL + s.RefNL // the same object under a pristine sky
 	clear(weight)
+	clear(obs)
 	var good int
 	var altSum, weighted, skySum float64
 	maxSin, maxAt := -2.0, 0
@@ -253,6 +256,9 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, fp filterPass, m
 		altSum += a
 		skySum += atmos.MagFromNL(sb)
 		weight[i] = w
+		if obs != nil {
+			obs[i] = true
+		}
 		weighted += w
 	}
 	r.MaxAlt, r.MaxAt = math.Asin(maxSin)/deg, s.Grid[maxAt]
