@@ -17,6 +17,8 @@ import (
 	"reflect"
 	"slices"
 	"strings"
+	"sync"
+	"unicode/utf8"
 
 	"github.com/dkorunic/astro-recommender/internal/astro"
 	"github.com/dkorunic/astro-recommender/internal/constellation"
@@ -43,7 +45,8 @@ import (
 // southern reflection nebulae (vdBH) from VizieR alone.
 //
 // The binary embeds each list as the gob of what Load makes of its YAML
-// (sanitized, checked, positions in degrees, constellations looked up):
+// (sanitized, checked, positions in degrees, constellations looked up; its
+// strings packed into one blob, see packed):
 // decoding OpenNGC that way takes 2 ms and 3 MB instead of YAML's 87 ms and
 // 52 MB (631 ms in the browser build). The YAML stays the source; task lists
 // regenerates the gob files, and TestEmbeddedLists fails when they are stale.
@@ -244,15 +247,7 @@ func (t Target) Lines() [4]float64 {
 	if !EmissionLine(t) {
 		return [4]float64{}
 	}
-	r := [3]float64{Ha: 1, OIII: 0.3, SII: 0.12}
-	typ := strings.ToLower(t.Type)
-	for _, l := range lineRatios {
-		if strings.Contains(typ, l.word) {
-			r = l.ratios
-
-			break
-		}
-	}
+	r := classOf(t.Type).ratios
 	sum := r[Ha] + r[OIII] + r[SII]
 
 	return [4]float64{r[Ha] / sum, r[OIII] / sum, r[SII] / sum, r[Ha] / sum / balmer}
@@ -290,7 +285,47 @@ var kindTypes = map[string]kind{
 // type the names say what is imaged, not what the magnitude measures (R
 // Aquarii is a star), so they do not promote it.
 func (t Target) kind() kind {
-	typ := strings.ToLower(t.Type)
+	k := classOf(t.Type).kind
+	if k == kindCluster && emissionName(t.Name) {
+		return kindClusterNebula
+	}
+
+	return k
+}
+
+// typeClass is what the type text alone decides: kind() before the
+// emissionNames promotion, whether it is in emissionTypes, and Lines' ratios.
+type typeClass struct {
+	ratios   [3]float64
+	kind     kind
+	emission bool
+}
+
+// typeClasses caches classify per Type spelling (a few hundred across the
+// lists): lower-casing the type on every call was most of Score's
+// allocations, several per target per -filter choice.
+var typeClasses sync.Map // Type → typeClass
+
+func classOf(typ string) typeClass {
+	if c, ok := typeClasses.Load(typ); ok {
+		return c.(typeClass) //nolint:forcetypeassert // classOf stores only typeClass
+	}
+	c := classify(typ)
+	typeClasses.Store(typ, c)
+
+	return c
+}
+
+func classify(typ string) typeClass {
+	typ = strings.ToLower(typ)
+	c := typeClass{emission: emissionTypes[typ], ratios: [3]float64{Ha: 1, OIII: 0.3, SII: 0.12}}
+	for _, l := range lineRatios {
+		if strings.Contains(typ, l.word) {
+			c.ratios = l.ratios
+
+			break
+		}
+	}
 	k, ok := kindTypes[typ]
 	if !ok {
 		switch {
@@ -298,18 +333,16 @@ func (t Target) kind() kind {
 			k = kindGroup
 		case strings.Contains(typ, "galax"):
 			k = kindGalaxy
-		case emissionTypes[typ], strings.Contains(typ, "nebul"), strings.Contains(typ, "cloud"):
+		case c.emission, strings.Contains(typ, "nebul"), strings.Contains(typ, "cloud"):
 			k = kindNebula
 			if strings.Contains(typ, "cluster") { // Herschel/MWSC "Cluster Nebulosity"
 				k = kindClusterNebula
 			}
 		}
 	}
-	if k == kindCluster && emissionName(t.Name) {
-		return kindClusterNebula
-	}
+	c.kind = k
 
-	return k
+	return c
 }
 
 // groupWords mark a galaxy type as a group of galaxies.
@@ -497,12 +530,45 @@ func embedded(name string) ([]Target, error) {
 		return nil, err
 	}
 	defer f.Close()
-	var targets []Target
-	if err := gob.NewDecoder(f).Decode(&targets); err != nil {
+	var p packed
+	if err := gob.NewDecoder(f).Decode(&p); err != nil {
 		return nil, fmt.Errorf("embedded list %s: %w", name, err)
+	}
+	strs := p.Strings
+	next := func(n uint32) string {
+		s := strs[:n]
+		strs = strs[n:]
+
+		return s
+	}
+	targets := make([]Target, len(p.Targets))
+	for i, pt := range p.Targets {
+		targets[i] = Target{
+			Name: next(pt.Name), Description: next(pt.Description), Type: next(pt.Type),
+			Constellation: next(pt.Constellation), RA: next(pt.RA), Dec: next(pt.Dec),
+			RADeg: pt.RADeg, DecDeg: pt.DecDeg, Size: pt.Size, Minor: pt.Minor,
+			Mag: pt.Mag, BMag: pt.BMag, SurfBr: pt.SurfBr, BSurfBr: pt.BSurfBr,
+		}
 	}
 
 	return targets, nil
+}
+
+// packed is the embedded gob of a list: every target's strings in one
+// Strings blob, in field order, each target holding their lengths. Gob
+// decodes each string into its own allocation, so a plain []Target cost one
+// per field, 91% of a whole run's allocations with OpenNGC; the targets'
+// strings now share the blob. Track never comes from a list.
+type packed struct {
+	Strings string
+	Targets []packedTarget
+}
+
+type packedTarget struct {
+	// The strings' lengths; separate fields, as gob decodes an array
+	// through a slice header allocated per target.
+	Name, Description, Type, Constellation, RA, Dec        uint32
+	RADeg, DecDeg, Size, Minor, Mag, BMag, SurfBr, BSurfBr float64
 }
 
 // emissionTypes are the lists' spellings (lower case) of emission-line types:
@@ -582,7 +648,7 @@ var emissionNames = map[string]bool{
 
 // EmissionLine reports whether a target shines mainly in Ha/OIII lines.
 func EmissionLine(tg Target) bool {
-	return emissionTypes[strings.ToLower(tg.Type)] || emissionName(tg.Name)
+	return classOf(tg.Type).emission || emissionName(tg.Name)
 }
 
 // emissionKeys is emissionNames keyed by NameKey.
@@ -597,10 +663,32 @@ var emissionKeys = func() map[string]bool {
 
 // emissionName reports whether name is in emissionNames, case and spaces
 // aside, as -skip matches names.
-func emissionName(name string) bool { return emissionKeys[NameKey(name)] }
+func emissionName(name string) bool { return HasKey(emissionKeys, name) }
 
 // NameKey normalizes a designation for matching names typed by hand against
 // the lists': case and spaces do not count, so "ngc7789" is "NGC 7789".
 func NameKey(name string) string {
 	return strings.ToLower(strings.ReplaceAll(name, " ", ""))
+}
+
+// HasKey reports m[NameKey(name)] without building the key on the heap for
+// the short ASCII names the lists use (Score asks for every target); other
+// names go through NameKey.
+func HasKey(m map[string]bool, name string) bool {
+	var buf [32]byte
+	b := buf[:0]
+	for i := range len(name) {
+		c := name[i]
+		switch {
+		case c >= utf8.RuneSelf || len(b) == len(buf):
+			return m[NameKey(name)]
+		case c == ' ':
+			continue
+		case 'A' <= c && c <= 'Z':
+			c += 'a' - 'A'
+		}
+		b = append(b, c)
+	}
+
+	return m[string(b)] // the conversion in a map index does not allocate
 }

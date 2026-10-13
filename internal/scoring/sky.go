@@ -171,7 +171,10 @@ func missingSeeing(f Forecast, start, end time.Time) (int, int) {
 // BuildSky samples the night [start, end) on a 1-minute grid with forecast
 // f; it does no I/O.
 func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
-	s := Sky{Start: start, End: end, Weather: f.Weather, Astro: f.Astro, AOD: f.AOD, Elevation: f.Elevation}
+	s := Sky{
+		Start: start, End: end, Weather: f.Weather, Astro: f.Astro, AOD: f.AOD, Elevation: f.Elevation,
+		Grid: make([]time.Time, 0, end.Sub(start)/time.Minute+1),
+	}
 	for t := start; t.Before(end); t = t.Add(time.Minute) {
 		s.Grid = append(s.Grid, t)
 	}

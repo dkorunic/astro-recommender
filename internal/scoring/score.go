@@ -50,6 +50,7 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 		alt = make([]float64, len(s.Grid))
 	}
 	mosaics := cfg.Mosaics()
+	choices := append(cfg.FilterNames(), "") // "" is no filter
 	for _, tg := range targets {
 		// Comet comae have no catalog size, so size limits do not apply.
 		// An unknown size counts as 0, so -size-min 0 keeps it.
@@ -60,7 +61,7 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 		if tg.Track == nil && (size < cfg.SizeMin || size > cfg.SizeMax) {
 			continue
 		}
-		if !cfg.Near(tg.Position()) || cfg.Skip[catalog.NameKey(tg.Name)] || !cfg.Wanted(tg) {
+		if !cfg.Near(tg.Position()) || catalog.HasKey(cfg.Skip, tg.Name) || !cfg.Wanted(tg) {
 			continue
 		}
 		// Each -filter choice that passes some of the target's light is a
@@ -71,7 +72,7 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 		// unfiltered ones, not their sum of sky parts.
 		var best Result
 		found := false
-		for _, name := range append(cfg.FilterNames(), "") {
+		for _, name := range choices {
 			fp := passes(cfg, tg, name)
 			if (name != "" && fp.w == 0) || (name == "" && found) {
 				continue

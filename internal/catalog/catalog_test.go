@@ -421,3 +421,26 @@ func TestUnknownKeys(t *testing.T) {
 		}
 	}
 }
+
+// TestNoAllocs pins what Score asks of every target to no allocations once
+// the type is cached, and HasKey to NameKey's matching on the names it does
+// not take the fast path for.
+func TestNoAllocs(t *testing.T) {
+	m := map[string]bool{"ngc7789": true, NameKey("LDû 1"): true, NameKey(strings.Repeat("X", 40)): true}
+	for name, want := range map[string]bool{
+		"NGC 7789": true, "ngc7789": true, "N G C 7789": true, "NGC 778": false,
+		"LDû 1": true, "LDÛ 1": true, strings.Repeat("x", 40): true, strings.Repeat("X", 41): false,
+	} {
+		if got := HasKey(m, name); got != want || got != m[NameKey(name)] {
+			t.Errorf("HasKey(%q) = %v, want %v", name, got, want)
+		}
+	}
+	tg := Target{Name: "Cr 375", Type: "Open Cluster", Size: 10, Mag: 6}
+	if n := testing.AllocsPerRun(100, func() {
+		_ = tg.Cluster() || EmissionLine(tg) || tg.Is(classOther)
+		_, _ = tg.SurfaceBrightness()
+		_ = tg.Lines()
+	}); n != 0 {
+		t.Errorf("%v allocations per target, want 0", n)
+	}
+}

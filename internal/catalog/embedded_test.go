@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -27,7 +28,7 @@ func TestEmbeddedLists(t *testing.T) {
 		}
 		if *update {
 			var buf bytes.Buffer
-			if err := gob.NewEncoder(&buf).Encode(want); err != nil {
+			if err := gob.NewEncoder(&buf).Encode(pack(want)); err != nil {
 				t.Fatal(err)
 			}
 			if err := os.WriteFile(filepath.Join("targets", name+".gob"), buf.Bytes(), 0o644); err != nil {
@@ -44,4 +45,25 @@ func TestEmbeddedLists(t *testing.T) {
 			t.Errorf("targets/%s.gob does not match %s; run task lists", name, yamlPath)
 		}
 	}
+}
+
+// pack is the inverse of embedded's decoding, for task lists.
+func pack(targets []Target) packed {
+	var p packed
+	var blob strings.Builder
+	for _, t := range targets {
+		pt := packedTarget{
+			Name: uint32(len(t.Name)), Description: uint32(len(t.Description)), Type: uint32(len(t.Type)),
+			Constellation: uint32(len(t.Constellation)), RA: uint32(len(t.RA)), Dec: uint32(len(t.Dec)),
+			RADeg: t.RADeg, DecDeg: t.DecDeg, Size: t.Size, Minor: t.Minor,
+			Mag: t.Mag, BMag: t.BMag, SurfBr: t.SurfBr, BSurfBr: t.BSurfBr,
+		}
+		for _, s := range []string{t.Name, t.Description, t.Type, t.Constellation, t.RA, t.Dec} {
+			blob.WriteString(s)
+		}
+		p.Targets = append(p.Targets, pt)
+	}
+	p.Strings = blob.String()
+
+	return p
 }
