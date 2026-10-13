@@ -235,8 +235,8 @@ Object.assign(globalThis.fs, {
 // run executes the program once with args and resolves to {out, err, code}.
 let modulePromise = fetch("app.wasm").then((r) => {
   if (!r.ok) throw new Error(`app.wasm: HTTP ${r.status}`);
-  return r.arrayBuffer();
-}).then((b) => WebAssembly.compile(b));
+  return WebAssembly.compileStreaming(r); // compiles while downloading; needs application/wasm
+});
 // Runs share the fs sink, so they queue; argv0 "tz" is main_js.go's lookup.
 let queue = Promise.resolve();
 function run(args, argv0 = "astro-recommender") {
