@@ -130,6 +130,54 @@ tasks:
     cmds:
       - go test ./...
 
+  # Gosentry (LibAFL) fuzzing, one task per fuzz target; extra flags go after
+  # --, e.g. task fuzz-coordinates -- -fuzztime 10m.
+  fuzz:
+    desc: Run every fuzz target in turn with gosentry/LibAFL (pass a time limit, e.g. task fuzz -- -fuzztime 10m)
+    cmds:
+      - task: fuzz-sexagesimal
+      - task: fuzz-zodiacal
+      - task: fuzz-parse-comets
+      - task: fuzz-at
+      - task: fuzz-coordinates
+
+  fuzz-sexagesimal:
+    desc: Fuzz astro.Sexagesimal (FuzzSexagesimal) with gosentry/LibAFL
+    cmds:
+      - task: gosentry
+        vars: { FUZZ: FuzzSexagesimal, PKG: ./internal/astro }
+
+  fuzz-zodiacal:
+    desc: Fuzz atmos.Zodiacal (FuzzZodiacal) with gosentry/LibAFL
+    cmds:
+      - task: gosentry
+        vars: { FUZZ: FuzzZodiacal, PKG: ./internal/atmos }
+
+  fuzz-parse-comets:
+    desc: Fuzz the MPC comet element parser (FuzzParseComets) with gosentry/LibAFL
+    cmds:
+      - task: gosentry
+        vars: { FUZZ: FuzzParseComets, PKG: ./internal/comets }
+
+  fuzz-at:
+    desc: Fuzz horizon.At (FuzzAt) with gosentry/LibAFL
+    cmds:
+      - task: gosentry
+        vars: { FUZZ: FuzzAt, PKG: ./internal/horizon }
+
+  fuzz-coordinates:
+    desc: Fuzz the RA/Dec formatters (FuzzCoordinates) with gosentry/LibAFL
+    cmds:
+      - task: gosentry
+        vars: { FUZZ: FuzzCoordinates, PKG: ./internal/output }
+
+  gosentry:
+    internal: true
+    requires:
+      vars: [FUZZ, PKG]
+    cmds:
+      - gosentry test -fuzz='^{{.FUZZ}}$' --use-libafl --focus-on-new-code=false --catch-races=false --catch-leaks=true {{.CLI_ARGS}} {{.PKG}}
+
   tools:
     desc: Install the formatting tools (gci, gofumpt, betteralign) if missing
     cmds:

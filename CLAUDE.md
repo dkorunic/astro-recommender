@@ -26,6 +26,7 @@ go vet ./...
 go test ./...                       # unit tests beside each package; TestSOFA compares the formulas with SOFA
 go test -run TestSOFA -v ./internal/astro   # prints the worst difference per quantity
 go test ./internal/output -run XXX -fuzz '^FuzzCoordinates$' -fuzztime 30s   # fuzz_test.go per package: FuzzSexagesimal (astro), FuzzParseComets (comets), FuzzAt (horizon), FuzzZodiacal (atmos), FuzzCoordinates (output); go test runs only their seeds, and -fuzz takes one target at a time
+task fuzz-coordinates -- -fuzztime 10m   # one fuzz target under gosentry/LibAFL (fuzz-sexagesimal, fuzz-zodiacal, fuzz-parse-comets, fuzz-at, fuzz-coordinates; task fuzz runs them all in turn, so give it a -fuzztime); flags after -- reach gosentry
 go run . -lat <deg> -lon <deg> [-tz Europe/Zagreb] [-date YYYY-MM-DD] [-origin] [-filter dual|tri|quad|ha|oiii|sii|cls|lpro] [-plan 2h] [-no-weather] [-n 20]
 ```
 
