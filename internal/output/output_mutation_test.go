@@ -567,6 +567,15 @@ func TestMutJSON(t *testing.T) {
 	if _, ok := doc["frame"]; ok {
 		t.Error("frame without framing")
 	}
+	// Broadband filters have their own passbands: no -filter-nm to report.
+	cfg.Filter = "cls,lpro"
+	out = mutCapture(t, func() { _ = JSON(cfg, s, "", nil, res) })
+	var bb map[string]any
+	_ = json.Unmarshal([]byte(out), &bb)
+	if f := bb["sky"].(map[string]any)["filter"]; !reflect.DeepEqual(f, map[string]any{"mode": "cls,lpro"}) {
+		t.Errorf("broadband filter %v, want no bandwidth", f)
+	}
+	cfg.Filter = "oiii"
 	if c := doc["targets"].([]any)[2].(map[string]any); c["comet"] != true || c["ra"] != 3.0 || c["dec"] != 4.0 || c["surfaceBrightness"] != nil || c["size"] != nil {
 		t.Errorf("comet %v", c)
 	}

@@ -132,7 +132,7 @@ func Parse() (Config, error) {
 	flag.StringVar(&cfg.ListName, "list", "GaryImm", "built-in target list: "+strings.Join(catalog.Lists, ", "))
 	flag.StringVar(&cfg.TargetsFile, "targets", "", "custom uptonight-style targets YAML file (overrides -list)")
 	flag.StringVar(&cfg.SkipFile, "skip", "", "file of target names to leave out, one per line (e.g. already imaged), # comments; case and spaces do not matter")
-	flag.StringVar(&types, "type", "", "keep only these object classes, comma-separated: "+strings.Join(catalog.Classes, ", ")+" (emission: what -filter helps; default all)")
+	flag.StringVar(&types, "type", "", "keep only these object classes, comma-separated: "+strings.Join(catalog.Classes, ", ")+" (emission: what the line filters help; default all)")
 	flag.BoolVar(&origin, "origin", false, "frame for the Celestron Origin (IMX678 at 335 mm: 1.32x0.75°, 1.23\"/px): fit the FOV, at least -min-px across")
 	flag.StringVar(&fov, "fov", "", "frame for another telescope: field of view WxH in degrees up to 180, e.g. 2.1x1.4 (default Origin; -scale optional)")
 	flag.Float64Var(&focal, "focal", 0, "frame for another telescope: focal length in mm; with -sensor sets the field of view (instead of -fov), with -pixel the pixel scale (instead of -scale)")
@@ -295,6 +295,12 @@ var Filters = map[string][]catalog.Line{
 var Broadband = map[string][][2]float64{
 	"cls":  {{450, 520}, {640, 690}},
 	"lpro": {{400, 430}, {440, 540}, {555, 575}, {625, 700}},
+}
+
+// LineFilter reports whether -filter lists a line filter (Filters), the
+// kind -filter-nm sizes; broadband ones have passbands of their own.
+func (cfg *Config) LineFilter() bool {
+	return slices.ContainsFunc(cfg.FilterNames(), func(f string) bool { return Filters[f] != nil })
 }
 
 // FilterNames returns the -filter choices in their order; nil for none.
@@ -646,15 +652,19 @@ func (cfg *Config) validateSky() error {
 // -filter-nm without -filter, and validates the result.
 func (cfg *Config) validateFlags(set map[string]bool) error {
 	cfg.Twilight = strings.ToLower(strings.TrimSpace(cfg.Twilight))
+	raw := cfg.Filter
 	var filters []string
 	for f := range strings.SplitSeq(strings.ToLower(cfg.Filter), ",") {
 		if f = strings.TrimSpace(f); !slices.Contains(filters, f) {
 			filters = append(filters, f)
 		}
 	}
-	cfg.Filter = strings.Join(filters, ",") // "" stays "", and an empty item is an unknown filter
-	if set["filter-nm"] && cfg.Filter == "" {
-		return fmt.Errorf("%w: -filter-nm needs -filter", errInvalidFlag)
+	cfg.Filter = strings.Join(filters, ",")               // "" stays "", and an empty item is an unknown filter
+	if cfg.Filter == "" && strings.TrimSpace(raw) != "" { // only commas: every item empty, joined back to ""
+		return fmt.Errorf("%w: -filter %q names no filter", errInvalidFlag, raw)
+	}
+	if set["filter-nm"] && !cfg.LineFilter() {
+		return fmt.Errorf("%w: -filter-nm needs a line filter in -filter (dual, tri, quad, ha, oiii or sii); cls and lpro have fixed passbands", errInvalidFlag)
 	}
 
 	return cfg.validate()

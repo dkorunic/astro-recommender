@@ -69,8 +69,8 @@ type sky struct { // betteralign:ignore
 }
 
 type filter struct { // betteralign:ignore
-	Mode      string  `json:"mode"`      // the -filter list: dual, tri, quad, ha, oiii, sii, cls, lpro, comma-separated
-	Bandwidth float64 `json:"bandwidth"` // nm, each line filter band (not cls/lpro's)
+	Mode      string  `json:"mode"`                // the -filter list: dual, tri, quad, ha, oiii, sii, cls, lpro, comma-separated
+	Bandwidth float64 `json:"bandwidth,omitempty"` // nm, each line filter band; absent with only cls/lpro
 }
 
 type frame struct {
@@ -145,7 +145,10 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 		r.Sky.Bortle = cfg.Bortle
 	}
 	if cfg.Filter != "" {
-		r.Sky.Filter = &filter{Mode: cfg.Filter, Bandwidth: cfg.FilterNM}
+		r.Sky.Filter = &filter{Mode: cfg.Filter}
+		if cfg.LineFilter() {
+			r.Sky.Filter.Bandwidth = cfg.FilterNM
+		}
 	}
 	if cfg.Framing {
 		r.Frame = &frame{FOVLong: cfg.FOVLong, FOVShort: cfg.FOVShort, Scale: cfg.Scale, Rotate: cfg.Rotate}

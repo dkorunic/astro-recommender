@@ -137,7 +137,7 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 	if cfg.Filter != "" {
 		skyDesc += ", filter " + cfg.Filter
 		// -filter-nm sizes only the line filters' bands, not broadband ones.
-		if slices.ContainsFunc(cfg.FilterNames(), func(f string) bool { return config.Filters[f] != nil }) {
+		if cfg.LineFilter() {
 			skyDesc += fmt.Sprintf(" %g nm", cfg.FilterNM)
 		}
 	}

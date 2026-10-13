@@ -335,11 +335,24 @@ out geom;"""
             print(f"overpass: HTTP {e.code}, busy; retrying in {wait} s", file=sys.stderr)
             time.sleep(wait)
     osm = json.loads(data)
+    if err := overpass_error(osm):
+        raise ValueError(f"{err} (not cached; try again later or a smaller --osm-radius)")
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path + ".tmp", "wb") as f:
         f.write(data)
     os.replace(path + ".tmp", path)
     return osm
+
+
+def overpass_error(osm):
+    """The remark of an Overpass answer that hit a limit, "" for a whole one.
+
+    A query that runs out of time or memory still comes back as HTTP 200,
+    with a "runtime error" remark and only the elements found so far: cached,
+    it would hide buildings for OSM_MAX_AGE without a word.
+    """
+    remark = osm.get("remark", "")
+    return remark if "error" in remark.lower() else ""
 
 
 def metres(v):
@@ -527,6 +540,8 @@ def selftest():
     assert abs(alts[90] - math.degrees(math.atan2(9, 10))) < 0.01, alts
     assert abs(alts[0] - math.degrees(math.atan2(10, 30 - TREE_RADIUS))) < 0.01, alts
     assert alts[180] == -90.0, alts
+    assert overpass_error({"remark": "runtime error: Query timed out in \"query\" at line 3 after 26 seconds.", "elements": []})
+    assert overpass_error({"elements": []}) == "" and overpass_error({"remark": "note: partial", "elements": []}) == ""
     assert metres("40'") == 40 * 0.3048 and metres("12 m") == 12 and metres("tall") is None and metres("0") is None
     # A BigTIFF of 3 rows a strip, Deflate with the horizontal predictor,
     # and a classic one uncompressed: both give back the rows asked for.
