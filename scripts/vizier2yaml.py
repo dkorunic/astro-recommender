@@ -176,8 +176,9 @@ def catalog(name, args):
                 continue
             if name == "CG":
                 b = base.get(f"CG {m.group(1)}")
+                # Both positions are needed for the distance: SIMBAD may lack either.
                 if int(m.group(1)) > 99 or (m.group(2) and (t["otype"] == "Y*O" or (
-                        b and num(t["ra"]) is not None and sep(float(b["ra"]), float(b["dec"]), float(t["ra"]), float(t["dec"])) > 300))):
+                        b and None not in (num(b["ra"]), num(b["dec"]), num(t["ra"]), num(t["dec"])) and sep(num(b["ra"]), num(b["dec"]), num(t["ra"]), num(t["dec"])) > 300))):
                     continue
             seen.add(t["id"])
             # SIMBAD's bracketed survey names ([DB2002b] G259.43-12.72) are no help.

@@ -86,7 +86,7 @@ type slot struct { // betteralign:ignore
 
 	Name    string    `json:"name,omitempty"` // empty: no target
 	Score   float64   `json:"score,omitempty"`
-	PeakAlt float64   `json:"peakAlt,omitempty"`
+	PeakAlt *float64  `json:"peakAlt,omitempty"` // nil without a target; a peak of 0° is still shown
 	PeakAt  time.Time `json:"peakAt,omitzero"`
 	Filter  string    `json:"filter,omitempty"` // the target's FILTER
 }
@@ -176,7 +176,7 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 	for _, p := range slots {
 		sl := slot{span: span{p.Start, p.End}}
 		if p.Result != nil {
-			sl.Name, sl.Score, sl.PeakAlt, sl.PeakAt, sl.Filter = p.Result.Name, p.Score, p.PeakAlt, p.PeakAt, p.Result.Filter
+			sl.Name, sl.Score, sl.PeakAlt, sl.PeakAt, sl.Filter = p.Result.Name, p.Score, &p.PeakAlt, p.PeakAt, p.Result.Filter
 		}
 		r.Plan = append(r.Plan, sl)
 	}

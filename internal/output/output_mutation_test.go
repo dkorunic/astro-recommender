@@ -497,7 +497,8 @@ func TestMutJSON(t *testing.T) {
 		h0 + 3600: {Cloud: 30, Temp: 6, DewPoint: 1, Precip: 0.3, Seeing: 1.2345},
 	}
 	res := mutResults(s)
-	slots := []plan.Slot{{Start: s.Grid[0], End: s.Grid[60], Result: &res[0], Score: 0.7, PeakAlt: 66, PeakAt: s.Grid[59]}, {Start: s.Grid[60], End: s.End}}
+	// A peak of exactly 0° (-alt-min below the horizon) is a value, not absent.
+	slots := []plan.Slot{{Start: s.Grid[0], End: s.Grid[60], Result: &res[0], Score: 0.7, PeakAlt: 0, PeakAt: s.Grid[59]}, {Start: s.Grid[60], End: s.End}}
 	out := mutCapture(t, func() {
 		if err := JSON(cfg, s, "Zagreb", slots, res); err != nil {
 			t.Error(err)
@@ -537,7 +538,8 @@ func TestMutJSON(t *testing.T) {
 		t.Errorf("seeingArcsec %v, want 1.23", v)
 	}
 	pl := doc["plan"].([]any)
-	if pl[0].(map[string]any)["name"] != "M 31" || pl[0].(map[string]any)["peakAt"] == nil || pl[1].(map[string]any)["name"] != nil || pl[1].(map[string]any)["peakAt"] != nil {
+	if p0, p1 := pl[0].(map[string]any), pl[1].(map[string]any); p0["name"] != "M 31" || p0["peakAt"] == nil || p0["peakAlt"] != 0.0 ||
+		p1["name"] != nil || p1["peakAt"] != nil || p1["peakAlt"] != nil {
 		t.Errorf("plan %v", pl)
 	}
 	tg := doc["targets"].([]any)
