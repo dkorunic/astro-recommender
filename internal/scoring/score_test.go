@@ -327,9 +327,13 @@ func TestScoreFilter(t *testing.T) {
 		order []string        // strictly best first
 		equal map[string]bool // filters that score as none
 	}{
-		{"HII Region", []string{"ha", "dual", ""}, map[string]bool{"oiii": true}},
-		{"Planetary Nebula", []string{"oiii", ""}, map[string]bool{"ha": true}},
-		{"Spiral Galaxy", []string{""}, map[string]bool{"ha": true, "oiii": true, "sii": true, "dual": true, "tri": true, "quad": true}},
+		// Broadband filters fall between the line filters and none on
+		// nebulae, the narrower first; continuum (a galaxy, a cluster) loses
+		// as much light as sky through them, so they never help it.
+		{"HII Region", []string{"ha", "dual", "cls", "lpro", ""}, map[string]bool{"oiii": true}},
+		{"Planetary Nebula", []string{"oiii", "cls", "lpro", ""}, map[string]bool{"ha": true}},
+		{"Spiral Galaxy", []string{""}, map[string]bool{"ha": true, "oiii": true, "sii": true, "dual": true, "tri": true, "quad": true, "cls": true, "lpro": true}},
+		{"Globular Cluster", []string{""}, map[string]bool{"cls": true, "lpro": true}},
 	} {
 		for i := 1; i < len(c.order); i++ {
 			if a, b := score(c.order[i-1], c.typ), score(c.order[i], c.typ); a <= b {
@@ -337,7 +341,7 @@ func TestScoreFilter(t *testing.T) {
 			}
 		}
 		none := score("", c.typ)
-		if c.typ != "Spiral Galaxy" {
+		if c.typ != "Spiral Galaxy" && c.typ != "Globular Cluster" {
 			for _, f := range []string{"dual", "tri", "quad"} {
 				if score(f, c.typ) <= none {
 					t.Errorf("%s: %s-band does not beat no filter", c.typ, f)
@@ -347,9 +351,10 @@ func TestScoreFilter(t *testing.T) {
 		// A filter that passes too little of the light scores as none, to
 		// within the band's lower extinction, which tips the minutes where
 		// the two weights were within a few percent (a planetary through
-		// Hα near the Moon); a galaxy, never filtered, scores exactly so.
+		// Hα near the Moon); a galaxy or cluster, never filtered, scores
+		// exactly so.
 		for f := range c.equal {
-			if got := score(f, c.typ); got < none || got > none*1.001 || c.typ == "Spiral Galaxy" && got != none {
+			if got := score(f, c.typ); got < none || got > none*1.001 || len(c.order) == 1 && got != none {
 				t.Errorf("%s through %q: %v, want the unfiltered %v", c.typ, f, got, none)
 			}
 		}
@@ -367,6 +372,16 @@ func TestScoreFilter(t *testing.T) {
 	ha, dual, o3 := passes(cfg, hii, "ha").moonK(), passes(cfg, hii, "dual").moonK(), passes(cfg, hii, "oiii").moonK()
 	if !(ha < dual && dual < 1 && o3 == 1) {
 		t.Errorf("moonK H II: ha %v, dual %v, oiii %v", ha, dual, o3)
+	}
+
+	// Through a broadband filter passing every line an emission-line
+	// target keeps all its light (Hβ included), a galaxy the passbands'
+	// share of the camera band.
+	if w := passes(cfg, hii, "lpro").w; math.Abs(w-1) > 1e-12 {
+		t.Errorf("lpro passes %v of an H II region, want 1", w)
+	}
+	if w := passes(cfg, catalog.Target{Type: "Spiral Galaxy"}, "cls").w; math.Abs(w-0.4) > 1e-12 {
+		t.Errorf("cls passes %v of a galaxy, want 0.4", w)
 	}
 
 	// A list scores each target with each choice and keeps the best: the
@@ -389,6 +404,8 @@ func TestScoreFilter(t *testing.T) {
 		{"ha,oiii,dual", "Spiral Galaxy", ""},
 		{"oiii", "HII Region", ""},
 		{"dual", "HII Region", "dual"},
+		{"lpro,cls", "HII Region", "cls"},
+		{"cls,lpro", "Spiral Galaxy", ""},
 	} {
 		r := result(c.list, c.typ)
 		single := result(cmp.Or(c.want, "oiii"), c.typ)

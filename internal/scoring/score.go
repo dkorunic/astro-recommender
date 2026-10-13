@@ -65,18 +65,19 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 		}
 		// Each -filter choice that passes some of the target's light is a
 		// candidate, scored once (each minute already takes the better of it
-		// and no filter); the best wins, the first of equals. A target no
-		// choice helps, a galaxy, is scored once without.
+		// and no filter); the best that helped wins, the first of equals. A
+		// target no choice helps (a galaxy, which a broadband filter dims as
+		// much as the sky) is scored without, so its weights are exactly the
+		// unfiltered ones, not their sum of sky parts.
 		var best Result
-		found, tried := false, false
+		found := false
 		for _, name := range append(cfg.FilterNames(), "") {
 			fp := passes(cfg, tg, name)
-			if (name != "" && fp.w == 0) || (name == "" && tried) {
+			if (name != "" && fp.w == 0) || (name == "" && found) {
 				continue
 			}
-			tried = true
 			r, ok := scoreTarget(cfg, s, tg, fp, mosaics, alt, weight)
-			if !ok || (found && r.Score <= best.Score) {
+			if !ok || (name != "" && r.Filter == "") || (found && r.Score <= best.Score) {
 				continue
 			}
 			if r.Filter != "" {
@@ -226,7 +227,7 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, fp filterPass, m
 			sb = glow + rayleigh + mie
 			broad := ext * min(1, math.Sqrt(objRef/(objNL+k*sb)))
 			filtered := atmos.Transmission(air, s.ExtRayleigh[i]*fp.ray+atmos.OzoneExtinction+s.ExtAerosol[i]*fp.aer) *
-				fp.weight(objNL, objRef, glow, rayleigh, mie)
+				fp.weight(objNL, objRef, k*glow, k*rayleigh, k*mie)
 			helped = helped || filtered > broad
 			w = s.Quality[i] * max(broad, filtered)
 		} else {
@@ -313,7 +314,7 @@ func frameFill(fill float64) float64 {
 // target's light (the lines in the filter's bands, catalog.Target.Lines), and
 // glow, rayleigh and mie, the shares of atmos.SkyParts' parts (atmos.BandSky,
 // summed over the bands, which a dual-band filter takes onto one frame). w is
-// 0 without a filter or for a target without lines. ray and aer scale the
+// 0 without a filter or, for a line filter, a target without lines. ray and aer scale the
 // extinction's Rayleigh and aerosol parts to the bands: (λ/551)⁻⁴ and
 // (λ/551)^-1.3, each line's weighted by its share of the light passed.
 type filterPass struct{ w, glow, rayleigh, mie, ray, aer float64 }
@@ -326,6 +327,9 @@ func passes(cfg *config.Config, tg catalog.Target, name string) filterPass {
 		return fp
 	}
 	lines := tg.Lines()
+	if bands := config.Broadband[name]; bands != nil {
+		return broadPasses(tg, lines, bands)
+	}
 	for _, l := range config.Filters[name] {
 		glow, rayleigh, mie := atmos.BandSky(catalog.LineNM[l], cfg.FilterNM)
 		fp.w += lines[l]
@@ -338,6 +342,46 @@ func passes(cfg *config.Config, tg catalog.Target, name string) filterPass {
 	}
 	if fp.w > 0 {
 		fp.ray, fp.aer = fp.ray/fp.w, fp.aer/fp.w
+	}
+
+	return fp
+}
+
+// broadPasses is passes for a broadband filter's bands, against the
+// unfiltered camera band (atmos.BroadSky) rather than the V band a line
+// filter's width is a share of: an emission-line target's w is its passed
+// lines' share of all of them, Hβ included (so passing every line is 1, as
+// unfiltered), anything else's its continuum's, taken flat per nm.
+func broadPasses(tg catalog.Target, lines [4]float64, bands [][2]float64) filterPass {
+	var fp filterPass
+	emission := catalog.EmissionLine(tg)
+	for _, b := range bands {
+		glow, rayleigh, mie := atmos.BroadSky(b[0], b[1])
+		fp.glow += glow
+		fp.rayleigh += rayleigh
+		fp.mie += mie
+		if !emission {
+			ray, aer := atmos.BandMean(b[0], b[1])
+			fp.w += glow
+			fp.ray += glow * ray
+			fp.aer += glow * aer
+
+			continue
+		}
+		for l, nm := range catalog.LineNM {
+			if nm >= b[0] && nm <= b[1] {
+				ray, aer := atmos.BandScale(nm)
+				fp.w += lines[l]
+				fp.ray += lines[l] * ray
+				fp.aer += lines[l] * aer
+			}
+		}
+	}
+	if fp.w > 0 {
+		fp.ray, fp.aer = fp.ray/fp.w, fp.aer/fp.w
+	}
+	if emission {
+		fp.w /= lines[catalog.Ha] + lines[catalog.OIII] + lines[catalog.SII] + lines[catalog.Hb]
 	}
 
 	return fp

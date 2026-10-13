@@ -67,7 +67,7 @@ type Config struct {
 	SkipFile       string          // -skip: file of names to leave out, shown in the header
 	Skip           map[string]bool // its names as catalog.NameKey
 	Types          []string        // -type: catalog.Classes to keep, nil = all
-	Filter         string          // -filter: comma-separated Filters keys, lowercased, without repeats; "" = none
+	Filter         string          // -filter: comma-separated Filters or Broadband keys, lowercased, without repeats; "" = none
 	Horizon        horizon.Horizon
 	Plan           time.Duration
 	MinRun         time.Duration // -min-run: shortest continuous observable stretch a target needs; 0 = any
@@ -142,8 +142,8 @@ func Parse() (Config, error) {
 	flag.Float64Var(&minPx, "min-px", 200, "with framing, minimum object size in pixels; 0 or more")
 	flag.IntVar(&cfg.Mosaic, "mosaic", 1, "with framing, most mosaic panels per object, 1-25; an object's score is divided among its panels")
 	flag.BoolVar(&cfg.Rotate, "rotate", false, "with framing, the camera can be rotated to frame the major axis along the long side, so the minor axis counts (not the Origin)")
-	flag.StringVar(&cfg.Filter, "filter", "", "nebula filters you own for emission-line targets, comma-separated: dual (Ha + OIII at once), tri (+ Hb), quad (+ Hb and SII), ha, oiii, sii; each target is scored with each and without, the best shown in FILTER (default none)")
-	flag.Float64Var(&cfg.FilterNM, "filter-nm", 7, "with -filter, the width of each band in nm, 1-30")
+	flag.StringVar(&cfg.Filter, "filter", "", "filters you own, comma-separated: for emission-line targets dual (Ha + OIII at once), tri (+ Hb), quad (+ Hb and SII), ha, oiii, sii; broadband light pollution filters cls (Astronomik CLS) and lpro (Optolong L-Pro) for any target; each target is scored with each and without, the best shown in FILTER (default none)")
+	flag.Float64Var(&cfg.FilterNM, "filter-nm", 7, "with -filter, the width of each line filter band in nm, 1-30")
 	flag.IntVar(&cfg.Bortle, "bortle", 0, "Bortle class 1-9 of the site, sets the zenith sky brightness (0 = dark sky)")
 	flag.Float64Var(&cfg.SQM, "sqm", 0, "measured zenith sky brightness in mag/arcsec² (SQM meter or light pollution map); overrides -bortle; default: looked up on DarkSkySites when a key is available (CLI: $DARKSKYSITES_API_KEY; browser: always) and -bortle is not")
 	flag.Float64Var(&cfg.Extinction, "extinction", 0.2, "atmospheric extinction in mag per airmass; default: estimated per hour from elevation and CAMS aerosols, this value if unavailable")
@@ -282,6 +282,19 @@ var Filters = map[string][]catalog.Line{
 	"ha":   {catalog.Ha},
 	"oiii": {catalog.OIII},
 	"sii":  {catalog.SII},
+}
+
+// Broadband are the broadband light-pollution -filter choices and their
+// passbands in nm, within atmos.CameraLo–CameraHi. cls is Astronomik's
+// published CLS (Optolong's CLS and IDAS's LPS-D2 are close); lpro the
+// Optolong L-Pro (IDAS LPS-D1/P2/D3 and Baader's Moon & Skyglow alike),
+// passing all but notches at the Hg 435.8/546.1/577-578 and Na 589/598/616
+// lines.
+// ponytail: the L-Pro's edges are read off Optolong's reference-only curve,
+// ±5 nm; replace them with measured edges if any are published.
+var Broadband = map[string][][2]float64{
+	"cls":  {{450, 520}, {640, 690}},
+	"lpro": {{400, 430}, {440, 540}, {555, 575}, {625, 700}},
 }
 
 // FilterNames returns the -filter choices in their order; nil for none.
@@ -611,8 +624,8 @@ func parseWxH(name, unit, example, s string) (float64, float64, error) {
 // validateSky checks the sky flags: brightness, extinction, filter and twilight.
 func (cfg *Config) validateSky() error {
 	switch {
-	case cfg.Filter != "" && slices.ContainsFunc(cfg.FilterNames(), func(f string) bool { return Filters[f] == nil }):
-		return fmt.Errorf("%w: -filter must be dual, tri, quad, ha, oiii or sii, or a comma-separated list of them", errInvalidFlag)
+	case cfg.Filter != "" && slices.ContainsFunc(cfg.FilterNames(), func(f string) bool { return Filters[f] == nil && Broadband[f] == nil }):
+		return fmt.Errorf("%w: -filter must be dual, tri, quad, ha, oiii, sii, cls or lpro, or a comma-separated list of them", errInvalidFlag)
 	case cfg.Filter != "" && (cfg.FilterNM < 1 || cfg.FilterNM > 30):
 		return fmt.Errorf("%w: -filter-nm must be 1 to 30 nm", errInvalidFlag)
 	case cfg.Bortle < 0 || cfg.Bortle > 9:

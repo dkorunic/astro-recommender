@@ -200,6 +200,40 @@ func BandSky(center, width float64) (float64, float64, float64) {
 	return f, f * rayleigh, f * mie
 }
 
+// CameraLo and CameraHi (nm) bound an unfiltered camera's band (UV/IR cut),
+// against which BroadSky takes a broadband filter's passbands; the
+// unfiltered weight's V sky stands for it.
+const (
+	CameraLo = 400.0
+	CameraHi = 700.0
+)
+
+// BroadSky returns the fractions of SkyParts' glow, Rayleigh and Mie
+// brightness a broadband filter's passband [lo, hi] nm passes against the
+// unfiltered CameraLo–CameraHi: its share of the camera's nm, the moonlight
+// weighted by each scattering's λ dependence (BandMean), so cutting the
+// blue cuts more of the Rayleigh moonlight. The camera band itself is 1, 1, 1.
+func BroadSky(lo, hi float64) (float64, float64, float64) {
+	f := (hi - lo) / (CameraHi - CameraLo)
+	r, m := BandMean(lo, hi)
+	cr, cm := BandMean(CameraLo, CameraHi)
+
+	return f, f * r / cr, f * m / cm
+}
+
+// BandMean returns the means of BandScale's Rayleigh and Mie factors over
+// [lo, hi] nm.
+func BandMean(lo, hi float64) (float64, float64) {
+	return powMean(lo, hi, -4), powMean(lo, hi, -angstrom)
+}
+
+// powMean is the mean of (λ/vCenter)^n over [lo, hi] nm.
+func powMean(lo, hi, n float64) float64 {
+	a, b := lo/vCenter, hi/vCenter
+
+	return vCenter * (math.Pow(b, n+1) - math.Pow(a, n+1)) / (n + 1) / (hi - lo)
+}
+
 // BandScale returns how Rayleigh and Mie scattering at center nm compare
 // with the V band's: (λ/551)⁻⁴ and (λ/551)^-angstrom. BandSky's moonlight
 // shares and a filter band's extinction (RayleighExtinction and

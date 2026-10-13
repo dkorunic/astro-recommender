@@ -161,3 +161,21 @@ func TestExtinctionParts(t *testing.T) {
 		t.Errorf("Transmission %v, Extinction %v", got, want)
 	}
 }
+
+func TestBroadSky(t *testing.T) {
+	// The camera band is the unfiltered sky; halves add up to it.
+	g, r, m := BroadSky(CameraLo, CameraHi)
+	if math.Abs(g-1) > 1e-12 || math.Abs(r-1) > 1e-12 || math.Abs(m-1) > 1e-12 {
+		t.Errorf("camera band: %v %v %v, want 1 1 1", g, r, m)
+	}
+	g1, r1, m1 := BroadSky(CameraLo, 550)
+	g2, r2, m2 := BroadSky(550, CameraHi)
+	if math.Abs(g1+g2-1) > 1e-12 || math.Abs(r1+r2-1) > 1e-12 || math.Abs(m1+m2-1) > 1e-12 {
+		t.Errorf("halves: %v %v %v", g1+g2, r1+r2, m1+m2)
+	}
+	// The blue half holds more of the scattered moonlight than of the
+	// glow, Rayleigh's λ⁻⁴ more than Mie's.
+	if !(r1 > m1 && m1 > g1) {
+		t.Errorf("blue half: glow %v, Mie %v, Rayleigh %v", g1, m1, r1)
+	}
+}

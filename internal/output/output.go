@@ -135,7 +135,11 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 	}
 	skyDesc += ", extinction " + paint(scale(hi, 0.25, 0.4), extDesc) + " mag/airmass"
 	if cfg.Filter != "" {
-		skyDesc += fmt.Sprintf(", filter %s %g nm", cfg.Filter, cfg.FilterNM)
+		skyDesc += ", filter " + cfg.Filter
+		// -filter-nm sizes only the line filters' bands, not broadband ones.
+		if slices.ContainsFunc(cfg.FilterNames(), func(f string) bool { return config.Filters[f] != nil }) {
+			skyDesc += fmt.Sprintf(" %g nm", cfg.FilterNM)
+		}
 	}
 	fmt.Printf("%s %s\n\n", label("Sky:     "), skyDesc)
 }
