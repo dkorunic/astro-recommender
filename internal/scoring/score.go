@@ -332,8 +332,9 @@ func passes(cfg *config.Config, tg catalog.Target, name string) filterPass {
 		fp.glow += glow
 		fp.rayleigh += rayleigh
 		fp.mie += mie
-		fp.ray += lines[l] * rayleigh / glow
-		fp.aer += lines[l] * mie / glow
+		ray, aer := atmos.BandScale(catalog.LineNM[l])
+		fp.ray += lines[l] * ray
+		fp.aer += lines[l] * aer
 	}
 	if fp.w > 0 {
 		fp.ray, fp.aer = fp.ray/fp.w, fp.aer/fp.w

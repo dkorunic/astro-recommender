@@ -194,7 +194,18 @@ const angstrom = 1.3
 // lamps' mix (sodium, white LEDs) vary by site, unknown here; a per-site
 // spectrum would replace the first return.
 func BandSky(center, width float64) (float64, float64, float64) {
-	f, x := width/vWidth, center/vCenter
+	f := width / vWidth
+	rayleigh, mie := BandScale(center)
 
-	return f, f * math.Pow(x, -4), f * math.Pow(x, -angstrom)
+	return f, f * rayleigh, f * mie
+}
+
+// BandScale returns how Rayleigh and Mie scattering at center nm compare
+// with the V band's: (λ/551)⁻⁴ and (λ/551)^-angstrom. BandSky's moonlight
+// shares and a filter band's extinction (RayleighExtinction and
+// AerosolExtinction scaled by these) both use them.
+func BandScale(center float64) (float64, float64) {
+	x := center / vCenter
+
+	return math.Pow(x, -4), math.Pow(x, -angstrom)
 }
