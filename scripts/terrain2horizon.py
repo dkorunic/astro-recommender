@@ -304,7 +304,9 @@ def overpass(lat, lon, radius, cache):
     path = os.path.join(cache, "osm", f"{lat:.5f}_{lon:.5f}_{radius:g}.json")
     if os.path.exists(path) and time.time() - os.path.getmtime(path) < OSM_MAX_AGE:
         with open(path, "rb") as f:
-            return json.load(f)
+            cached = json.load(f)
+        if not overpass_error(cached):  # one cached before errors were refused is fetched again
+            return cached
     around = f"(around:{radius:g},{lat:.6f},{lon:.6f})"
     # Small limits: a busy Overpass refuses (504) a query whose declared time
     # or memory it cannot reserve, and the defaults (180 s, 512 MiB) were
