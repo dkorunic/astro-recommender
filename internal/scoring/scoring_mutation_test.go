@@ -23,8 +23,8 @@ var mutEpoch = time.Date(2000, 1, 1, 12, 0, 0, 0, time.UTC)
 // mutSky is a synthetic night of n minutes at an equatorial site whose
 // sidereal time advances 1° a minute from 0: an equatorial target at RA r
 // stands at altitude 90 − |i − r| at minute i. No extinction, no Moon above
-// the horizon, perfect weather, a pristine sky (plus the zodiacal light
-// where the target stands, mutZenith).
+// the horizon, perfect weather, a pristine sky (plus the zodiacal and
+// galactic light where the target stands, mutZenith).
 func mutSky(n int) *Sky {
 	s := &Sky{Start: mutEpoch, ZenithNL: atmos.NanoLamberts(22), RefNL: atmos.NanoLamberts(22), MoonSep: 50, SunLon: astro.SunLongitude(mutEpoch)}
 	for i := range n {
@@ -49,12 +49,15 @@ func mutSky(n int) *Sky {
 
 // mutZenith is mutSky's dark zenith sky in nanoLamberts for a target at
 // ra/dec (J2000 = of date at mutEpoch): the pristine 22 plus the zodiacal
-// excess where it stands.
+// and galactic excesses where it stands.
 func mutZenith(ra, dec float64) float64 {
 	lon, lat := astro.Ecliptic(ra, dec, mutEpoch)
 
-	return max(atmos.NanoLamberts(22)+atmos.ZodiacalExcess(lon-astro.SunLongitude(mutEpoch), lat), atmos.ZodiacalPoleNL)
+	return max(atmos.NanoLamberts(22)+atmos.ZodiacalExcess(lon-astro.SunLongitude(mutEpoch), lat)+mutGalactic(ra, dec), atmos.ZodiacalPoleNL+atmos.GalacticMinNL)
 }
+
+// mutGalactic is the galactic light's excess at ra/dec (J2000), nanoLamberts.
+func mutGalactic(ra, dec float64) float64 { return atmos.GalacticExcess(astro.Galactic(ra, dec)) }
 
 func mutCfg() *config.Config {
 	return &config.Config{Lat: 0, Lon: 0, AltMin: 30, AltMax: 80, SizeMin: 0, SizeMax: 300, Top: 20, FilterNM: 7}
@@ -369,8 +372,12 @@ func TestMutSortAndClone(t *testing.T) {
 	cfg := mutCfg()
 	// Same declination, transits at different minutes: "mid" has both its
 	// 50-minute runs in the grid, "late" loses 10 minutes at the end, "early"
-	// more at the start.
+	// more at the start. Bright surfaces, so the sky (the Milky Way's light
+	// behind "late") hardly matters next to the minutes lost.
 	in := []catalog.Target{mutTarget("early", 40.5, 0), mutTarget("mid", 70.5, 0), mutTarget("late", 90.5, 0)}
+	for i := range in {
+		in[i].SurfBr = 12
+	}
 	r := Score(cfg, s, in, true)
 	if len(r) != 3 || r[0].Name != "mid" || r[1].Name != "late" || r[2].Name != "early" || !(r[0].Score > r[1].Score && r[1].Score > r[2].Score) {
 		for _, x := range r {
@@ -654,7 +661,7 @@ func TestMutBandExtinction(t *testing.T) {
 		t.Fatalf("H II region through Hα: %v, filter %q", ok, r.Filter)
 	}
 	lon, lat := astro.Ecliptic(90.5, 0, mutEpoch)
-	zen := max(s.ZenithNL+atmos.ZodiacalExcess(lon-s.SunLon, lat), atmos.ZodiacalPoleNL)
+	zen := max(s.ZenithNL+atmos.ZodiacalExcess(lon-s.SunLon, lat)+mutGalactic(90.5, 0), atmos.ZodiacalPoleNL+atmos.GalacticMinNL)
 	glow, _, _ := atmos.SkyParts(zen, 0.2, 40.5, 180, 0)
 	band := ray*fp.ray + atmos.OzoneExtinction + aer*fp.aer
 	want := atmos.Transmission(atmos.Airmass(40.5), band) * fp.weight(0, s.RefNL, glow, 0, 0)
@@ -678,7 +685,9 @@ func TestMutZodiacal(t *testing.T) {
 	// mutEpoch is J2000, so J2000 positions are of date: the June solstice
 	// point (RA 90°, Dec 23.44°) lies on the ecliptic 170° from the January
 	// Sun, the south ecliptic pole at RA 90°, Dec −66.56°.
-	ecl, pole := mutZenith(90, 23.44), mutZenith(90, -66.56)
+	// The galactic light differs between the two (the anticentre's edge, the
+	// LMC's); take it out to compare the zodiacal light alone.
+	ecl, pole := mutZenith(90, 23.44)-mutGalactic(90, 23.44), mutZenith(90, -66.56)-mutGalactic(90, -66.56)
 	if _, lat := astro.Ecliptic(90, -66.56, mutEpoch); math.Abs(lat+90) > 0.01 {
 		t.Fatalf("south ecliptic pole at latitude %v", lat)
 	}
@@ -689,14 +698,16 @@ func TestMutZodiacal(t *testing.T) {
 		t.Errorf("pole zenith %v: want 22 mag/arcsec² less the reference's zodiacal light plus the pole's", pole)
 	}
 	// The pole target transits at 23.44° at minute 90; a configured sky
-	// darker than the pole's zodiacal light is held at it.
+	// darker than the pole's zodiacal light and the darkest galactic light
+	// is held at their sum.
 	cfg.AltMin = -90
-	s.ZenithNL = atmos.ZodiacalPoleNL / 2
+	floor := atmos.ZodiacalPoleNL + atmos.GalacticMinNL
+	s.ZenithNL = floor/2 - mutGalactic(90, -66.56)
 	r, ok := mutOne(t, cfg, s, catalog.Target{Name: "Z", Type: "Galaxy", RADeg: 90, DecDeg: -66.56, Size: 20, SurfBr: 30}, true)
 	if !ok || math.Abs(r.MaxAlt-23.44) > 0.01 {
 		t.Fatalf("pole target: %v, max alt %v", ok, r.MaxAlt)
 	}
-	glow, _, _ := atmos.SkyParts(atmos.ZodiacalPoleNL, 0, r.Alt[90], 180, 0)
+	glow, _, _ := atmos.SkyParts(floor, 0, r.Alt[90], 180, 0)
 	obj := atmos.NanoLamberts(30)
 	if want := min(1, math.Sqrt((obj+s.RefNL)/(obj+glow))); math.Abs(r.Weight[90]-want) > 1e-7 {
 		t.Errorf("weight at the floor %v, want %v", r.Weight[90], want)

@@ -500,7 +500,7 @@ var resultColumns = []column{
 	{"SCORE", "0-1 imaging quality: 1 = every minute observable under a perfect, pristine dark sky"},
 	{"OBSERVABLE", "longest stretch within the limits without a break (+ there are others; +1d a whole day)"},
 	{"MAX ALT", "highest altitude in the window, and when"},
-	{"SKY", "mean sky brightness at the object, mag/arcsec², with the zodiacal light of its direction (higher is darker; no filter)"},
+	{"SKY", "mean sky brightness at the object, mag/arcsec², with the zodiacal and galactic light of its direction (higher is darker; no filter)"},
 	{"SB", "the object's own surface brightness, mag/arcsec², set against the sky it sees: SKY, cut by the chosen -filter to its bands' share for emission-line objects when that scores better, or halved for star clusters without nebulosity, whose own brightness is then not used (~ estimated from the magnitude and size or from a B value and a typical colour; - unknown, scored as sky-limited)"},
 	{filterColumn, "with -filter: the filter of the list that scores the object best, each minute taking the better of it and none (- when none helps: not emission-line, or the filter passes too little of its light)"},
 	{"PX", "size in pixels at the frame's pixel scale, and the mosaic (columns along the long side x rows) when more than one panel scores best (- without framing)"},

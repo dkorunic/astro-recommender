@@ -52,7 +52,7 @@ N is the number of minutes in the window. Each factor lies between 0 and 1, so a
 | Q | weather quality (cloud, rain, dew, gusts, transparency) | [Weather](#weather) |
 | κ | extinction coefficient, mag per airmass | [Atmosphere and sky](#atmosphere-and-sky) |
 | T | fraction of light surviving extinction, relative to the zenith | [Atmosphere and sky](#atmosphere-and-sky) |
-| B | sky brightness at the target (light pollution + zodiacal light + moonlight) | [Atmosphere and sky](#atmosphere-and-sky) |
+| B | sky brightness at the target (light pollution + zodiacal and galactic light + moonlight) | [Atmosphere and sky](#atmosphere-and-sky) |
 | S | the object's own surface brightness | [Object surface brightness](#object-surface-brightness) |
 | k | fraction of sky glow that counts against the target | [Scoring a target](#scoring-a-target) |
 | w, f | through a `-filter`: the target's share of light in its bands, and the bands' share of each part of the sky (replacing k) | [Nebula filters](#nebula-filters), [Broadband filters](#broadband-filters) |
@@ -122,6 +122,15 @@ A = \mathrm{atan2}\!\big(-\sin H\cos\delta,\ \sin\delta\cos\varphi - \cos\delta\
 The azimuth is measured from north through east. Thousands of targets are evaluated at hundreds of minutes, so the scoring loop computes this in a cheaper but equivalent form. `sin φ`, `cos φ`, `sin δ` and `cos δ` are computed once per target (`astro.Horizontal`). `cos H` comes from the difference formula `cos(LST − α) = cos LST cos α + sin LST sin α`, with the LST sines stored per grid minute. The altitude limits are compared as sines (`sin h` rises with h), so `arcsin` runs only for the minutes that pass. The azimuth is computed only when a horizon profile needs it.
 
 **Angular separation.** Separations use the spherical law of cosines ([Meeus][meeus] eq. 17.1). In the scoring loop they are dot products of unit vectors, `u = (cos δ cos α, cos δ sin α, sin δ)`. The cosine is compared against the limit before any `arccos` runs.
+
+**Galactic coordinates**, for the Milky Way's light, rotate the J2000 position into the IAU 1958 galactic frame ([Blaauw et al. 1960][blaauw]): the north galactic pole at α_P = 192.85948°, δ_P = 27.12825°, and the north celestial pole at galactic longitude l_NCP = 122.93192° (`astro.Galactic`):
+
+```math
+\sin b = \sin\delta\sin\delta_P + \cos\delta\cos\delta_P\cos(\alpha-\alpha_P) ,\qquad
+l = l_{\text{NCP}} - \operatorname{atan2}\big(\cos\delta\sin(\alpha-\alpha_P),\ \sin\delta\cos\delta_P - \cos\delta\sin\delta_P\cos(\alpha-\alpha_P)\big)
+```
+
+The frame is FK5's; SOFA's ICRS-based `Icrs2g` agrees within 0.005″ (`TestSOFAGalactic`).
 
 ## The night window
 
@@ -299,7 +308,15 @@ B_{\text{dark}}(h) = B_{\text{zen}}\cdot 10^{-0.4\,\kappa\,(X_s-1)}\cdot X_s
 B_{\text{zen}}(\text{target}) = \max\big(B_{\text{zen}} + Z(\Delta\lambda,\beta) - Z(135^\circ, 45^\circ),\ Z_{\text{pole}}\big)
 ```
 
-in nanoLamberts, bilinearly interpolated in the table, with the pole value past β = 75° and the blank cells near the Sun (which no night-time direction reaches) filled from the row's first tabulated latitude. The target's ecliptic coordinates come from its mid-window position of date (a comet's too) and the Sun's longitude at mid-window. On a pristine sky this makes the ecliptic 90° from the Sun 0.5 mag/arcsec² brighter than the reference and the pole 0.06 darker: a faint galaxy in Virgo or Leo in the evening sees a brighter sky than one in Ursa Major, and its sky-limited weight is 15–25% lower. Under light pollution the same nanoLamberts hardly show. The floor is the pole's own light: no configured sky gets darker than that.
+in nanoLamberts, bilinearly interpolated in the table, with the pole value past β = 75° and the blank cells near the Sun (which no night-time direction reaches) filled from the row's first tabulated latitude. The target's ecliptic coordinates come from its mid-window position of date (a comet's too) and the Sun's longitude at mid-window. On a pristine sky this makes the ecliptic 90° from the Sun 0.5 mag/arcsec² brighter than the reference and the pole 0.06 darker: a faint galaxy in Virgo or Leo in the evening sees a brighter sky than one in Ursa Major, and its sky-limited weight is 15–25% lower. Under light pollution the same nanoLamberts hardly show. The floor is the pole's own light: no configured sky gets darker than that (with the galactic light below, than the pole's light plus the darkest galactic light).
+
+**Galactic light.** The Milky Way's unresolved stars, and the starlight its dust scatters (the diffuse galactic light, 20–30% of it), are the natural sky's other large variation. Pioneer 10 mapped them from beyond 2.8 AU, where the zodiacal light has gone: [Leinert et al. (1998)][leinert] Tables 35 and 36 (from Toller 1981) give that background starlight G(l, b) in blue (440 nm) and red (640 nm), every 10° of galactic longitude l by galactic latitude b (±80° in steps of 4° near the plane, 10° beyond), in S10⊙ units with the stars brighter than V 6.5 removed, as an imaging camera resolves them. A source of solar colour reads the same in both, so V (550 nm) is taken between them by wavelength in log brightness, G_V = G_blue^0.45 · G_red^0.55 (red reads 1.3 times blue at high latitude, the galactic light being redder than the Sun). Pioneer's spin axis kept it off 28 cells around the Sun (l 180–240°, b 16–50°); they are filled along each row's latitude, log-linearly between the nearest measured cells, where the light falls off smoothly towards the anticentre. G_V runs from 29 S10 at the galactic poles (23.4 mag/arcsec²) to 900 in the Sagittarius star clouds (20.4), against 205 for a whole 22.0 mag/arcsec² sky. The zenith brightness is taken to include the table's median over the sky by solid angle, 81 S10, what a zenith sees over a year's nights, and is corrected per target by the difference (`atmos.GalacticExcess`), the zodiacal light's beside it:
+
+```math
+B_{\text{zen}}(\text{target}) = \max\big(B_{\text{zen}} + Z(\Delta\lambda,\beta) - Z(135^\circ, 45^\circ) + G_V(l,b) - G_{\text{ref}},\ Z_{\text{pole}} + G_{\min}\big)
+```
+
+bilinearly interpolated, the ±80° rows going to their mean at the poles. The galactic coordinates come from the target's mid-window position (`astro.Galactic`, the IAU 1958 frame in J2000, within 0.005″ of SOFA's). On a pristine sky the galactic poles are 0.3 mag/arcsec² darker than the reference, the plane 0.5–1.1 brighter, the Sagittarius clouds 1.7 and the LMC 0.4: a faint galaxy at high galactic latitude sees the darkest natural sky, and a nebula in the Cassiopeia Milky Way about a magnitude brighter one. Under light pollution, again, it hardly shows. Pioneer's ~2° beam smooths the star clouds, and its red band carries some Hα, so the brightest H II regions' cells read high. The floor adds the darkest galactic light to the zodiacal pole's.
 
 **Scattered moonlight** is added while the Moon is above the horizon. The Moon's brightness outside the atmosphere depends on its phase angle α (degrees, 0 = full):
 
@@ -327,7 +344,7 @@ B_{\text{moon}} = f(\rho)\cdot I^*\cdot 10^{-0.4\,\kappa\,X_s(h_\text{moon})}\cd
 B = B_{\text{dark}} + B_{\text{moon}}
 ```
 
-The table's SKY column is this B (with the zodiacal light) converted back to mag/arcsec² and averaged over the observable minutes. The part of B_moon that does not depend on the target (I* times the Moon's extinction) is computed once per grid minute (`atmos.MoonLight`).
+The table's SKY column is this B (with the zodiacal and galactic light) converted back to mag/arcsec² and averaged over the observable minutes. The part of B_moon that does not depend on the target (I* times the Moon's extinction) is computed once per grid minute (`atmos.MoonLight`).
 
 ## Object surface brightness
 
@@ -719,6 +736,8 @@ The models above come from the literature. The following are this project's own 
 | Night-sky spectrum | flat per nm, Moon before scattering and glow | the lamp mix is unknown; the Moon's redness offsets the Sun's fall |
 | Broadband filter passbands | `cls` Astronomik's published edges, `lpro` read off Optolong's reference curve (±5 nm); continuum flat per nm over 400–700 nm | one entry per class; under the flat (LED) glow brands within a class score alike |
 | Zodiacal reference direction | 135° from the Sun at ecliptic latitude 45° | a mid-latitude zenith through the night; the zenith brightness given or defaulted includes that much zodiacal light |
+| Galactic light reference | 81 S10, the sky's median by solid angle | a zenith over a year's nights; the zenith brightness given or defaulted includes that much galactic light |
+| Galactic light in V | blue^0.45 · red^0.55 | 550 nm between Pioneer's 440 and 640 nm bands by wavelength, in log brightness |
 | Ozone in a filter band | the 550 nm value | within 0.02 mag/airmass at every nebula line |
 | High cloud weight | ½ | thin cirrus dims rather than blocks |
 | Dew ramp | spread 4 → 1 °C, × 1 → 0.7 | dew on optics ends sessions |
@@ -746,6 +765,7 @@ Treat SCORE as a way to order tonight's options, not as an absolute measure of q
 | Aerosols | [CAMS][cams] via Open-Meteo |
 | Sky brightness and moonlight | [Krisciunas & Schaefer (1991)][ks], PASP 103, 1033; opposition surge after [thorsky][thorsky] |
 | Zodiacal light | [Leinert et al. (1998)][leinert], A&AS 127, 1, Table 17 (transcribed as in [astrogo](https://github.com/TuSKan/astrogo)); the natural-sky reference of [Falchi et al. (2016)][falchi], Sci. Adv. 2, e1600377 |
+| Galactic light | Pioneer 10 background starlight, Toller (1981), PhD thesis, SUNY Albany, as [Leinert et al. (1998)][leinert], A&AS 127, 1, Tables 35 and 36 give it; the galactic frame: [Blaauw et al. (1960)][blaauw], MNRAS 121, 123 |
 | Filter bands | V band: [Bessell (1990)][bessell], PASP 102, 1181; Ångström exponent: [Ångström (1929)][angstrom]; Moon colour: [Thejll et al. (2014)][moon-colour], A&A 563, A38 |
 | Broadband filter passbands | [Astronomik CLS][astronomik-cls] (published edges); [Optolong L-Pro][optolong-lpro] (blocked lines, reference curve) |
 | Emission line ratios | SNR criterion: [Mathewson & Clarke (1973)][mathewson], ApJ 180, 725; Magellanic Cloud PN [O III]/Hβ: [Stanghellini et al. (2003)][stanghellini], ApJ 596, 997; the criterion against H II regions: [Kopsacheili et al. (2020)][kopsacheili], MNRAS 491, 889; case-B Hα/Hβ: [Osterbrock & Ferland (2006)][agn2], *Astrophysics of Gaseous Nebulae and AGN*, 2nd ed. |
@@ -772,6 +792,7 @@ Treat SCORE as a way to order tonight's options, not as an absolute measure of q
 [cams]: https://atmosphere.copernicus.eu/
 [ks]: https://doi.org/10.1086/132921
 [leinert]: https://doi.org/10.1051/aas:1998105
+[blaauw]: https://doi.org/10.1093/mnras/121.2.123
 [falchi]: https://doi.org/10.1126/sciadv.1600377
 [thorsky]: https://github.com/jrthorstensen/thorsky
 [bortle]: https://skyandtelescope.org/astronomy-resources/light-pollution-and-astronomy-the-bortle-dark-sky-scale/

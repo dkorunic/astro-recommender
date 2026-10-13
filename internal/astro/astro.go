@@ -261,6 +261,27 @@ func Ecliptic(ra, dec float64, t time.Time) (float64, float64) {
 	return math.Mod(math.Atan2(y, x)/deg+360, 360), math.Asin(z) / deg
 }
 
+// The galactic frame in J2000 (IAU 1958, as SOFA's Icrs2g gives it to 0.3″):
+// the north galactic pole's right ascension and declination, and the
+// galactic longitude of the north celestial pole, degrees.
+const (
+	galPoleRA  = 192.85948
+	galPoleDec = 27.12825
+	galNCPLon  = 122.93192
+)
+
+// Galactic converts J2000 equatorial coordinates (degrees) to galactic
+// longitude [0, 360) and latitude in degrees.
+func Galactic(ra, dec float64) (float64, float64) {
+	sinH, cosH := math.Sincos((ra - galPoleRA) * deg)
+	sinD, cosD := math.Sincos(dec * deg)
+	sinP, cosP := math.Sincos(galPoleDec * deg)
+	z := max(-1, min(1, sinD*sinP+cosD*cosP*cosH))
+	l := galNCPLon - math.Atan2(cosD*sinH, sinD*cosP-cosD*sinP*cosH)/deg
+
+	return math.Mod(math.Mod(l, 360)+360, 360), math.Asin(z) / deg
+}
+
 // MoonHorizon is the topocentric altitude of the Moon's centre, degrees, at
 // moonrise and moonset as the almanacs define them: the upper limb on the
 // refracted horizon, 34′ of refraction and 16′ of semi-diameter below 0°.

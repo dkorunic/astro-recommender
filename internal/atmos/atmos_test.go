@@ -4,7 +4,9 @@
 package atmos
 
 import (
+	"cmp"
 	"math"
+	"slices"
 	"testing"
 )
 
@@ -177,5 +179,99 @@ func TestBroadSky(t *testing.T) {
 	// glow, Rayleigh's λ⁻⁴ more than Mie's.
 	if !(r1 > m1 && m1 > g1) {
 		t.Errorf("blue half: glow %v, Mie %v, Rayleigh %v", g1, m1, r1)
+	}
+}
+
+// Galactic reads Pioneer 10's tables: a grid cell is V between the blue and
+// red values, Pioneer's gap is filled log-linearly along the row, the poles
+// take the ±80° rows' mean, longitude wraps, and the reference is the sky's
+// median by solid angle.
+func TestGalactic(t *testing.T) {
+	// Transcription spot checks (Leinert et al. 1998, Tables 35 and 36):
+	// the Sagittarius peak, the LMC cell, and the gaps in the same cells of
+	// both tables.
+	if galacticBlue[0][11] != 569 || galacticRed[0][11] != 1306 || galacticBlue[28][5] != 213 || galacticRed[28][5] != 230 {
+		t.Error("transcription spot checks")
+	}
+	gaps := 0
+	for i := range galacticBlue {
+		for j := range galacticBlue[i] {
+			if (galacticBlue[i][j] == 0) != (galacticRed[i][j] == 0) {
+				t.Errorf("gap at l %d, b %v in one table only", i*10, galacticB[j])
+			}
+			if galacticBlue[i][j] == 0 {
+				gaps++
+			}
+		}
+	}
+	if gaps != 28 {
+		t.Errorf("%d gaps, want 28", gaps)
+	}
+	// On the grid: V from blue and red.
+	want := s10NL(math.Pow(569, 0.45) * math.Pow(1306, 0.55))
+	if got := Galactic(0, -4); math.Abs(got-want) > 1e-9*want {
+		t.Errorf("Galactic(0, -4) = %v, want %v", got, want)
+	}
+	// A gap (l 210°, b 30°) between its row's measured 16° and 60°.
+	lo, hi := galacticV[21][16], galacticV[21][22]
+	f := (30.0 - 16) / (60 - 16)
+	if got := galacticV[21][19]; math.Abs(got-math.Exp(math.Log(lo)*(1-f)+math.Log(hi)*f)) > 1e-9 || !(got < lo && got > hi) {
+		t.Errorf("gap fill %v between %v and %v", got, lo, hi)
+	}
+	// Poles: one value whatever the longitude; latitude clamps; longitude wraps.
+	for _, l := range []float64{0, 90, 255} {
+		if Galactic(l, 90) != s10NL(galacticPole[1]) || Galactic(l, -90) != s10NL(galacticPole[0]) || Galactic(l, 95) != Galactic(l, 90) {
+			t.Errorf("poles at l %v", l)
+		}
+		if a, b := Galactic(l+360, 12), Galactic(l, 12); math.Abs(a-b) > 1e-9*b {
+			t.Errorf("l %v + 360: %v, want %v", l, a, b)
+		}
+	}
+	if a, b := Galactic(-5, 3), Galactic(355, 3); math.Abs(a-b) > 1e-9*b {
+		t.Errorf("l -5: %v, want l 355's %v", a, b)
+	}
+	// The reference is the solid-angle median of the V table (the ±80° rows
+	// standing for the caps).
+	type cell struct{ v, w float64 }
+	var cells []cell
+	total := 0.0
+	for i := range galacticV {
+		for j, b := range galacticB {
+			lo, hi := -90.0, 90.0
+			if j > 0 {
+				lo = (galacticB[j-1] + b) / 2
+			}
+			if j < len(galacticB)-1 {
+				hi = (galacticB[j+1] + b) / 2
+			}
+			w := math.Sin(hi*math.Pi/180) - math.Sin(lo*math.Pi/180)
+			cells = append(cells, cell{galacticV[i][j], w})
+			total += w
+		}
+	}
+	slices.SortFunc(cells, func(a, b cell) int { return cmp.Compare(a.v, b.v) })
+	acc, median := 0.0, 0.0
+	for _, c := range cells {
+		if acc += c.w; acc >= total/2 {
+			median = c.v
+
+			break
+		}
+	}
+	if math.Abs(median-galacticRefS10) > 1 {
+		t.Errorf("sky median %v S10, reference %v", median, galacticRefS10)
+	}
+	// On a pristine sky: the galactic poles 0.3 mag/arcsec² darker, the
+	// Sagittarius clouds 1.7 brighter; nothing below the minimum.
+	sky := NanoLamberts(22)
+	for _, c := range []struct{ l, b, want float64 }{{0, 90, 22.29}, {0, -4, 20.26}, {180, 0, 21.50}} {
+		if got := MagFromNL(sky + GalacticExcess(c.l, c.b)); math.Abs(got-c.want) > 0.02 {
+			t.Errorf("pristine sky at (%v, %v): %.2f, want %.2f", c.l, c.b, got, c.want)
+		}
+	}
+	for _, d := range [][2]float64{{0, 0}, {1e300, -1e300}, {-725, 95}, {359.9999999, 7}} {
+		if v := Galactic(d[0], d[1]); math.IsNaN(v) || v < GalacticMinNL*(1-1e-12) {
+			t.Errorf("Galactic%v = %v, below the minimum %v", d, v, GalacticMinNL)
+		}
 	}
 }

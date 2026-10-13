@@ -129,3 +129,33 @@ func TestSOFA(t *testing.T) {
 		}
 	}
 }
+
+// TestSOFAGalactic checks Galactic against SOFA's Icrs2g, whose ICRS frame
+// sits a few milliarcseconds from the FK5 J2000 one the constants are of.
+func TestSOFAGalactic(t *testing.T) {
+	const arcsec = 1.0 / 3600
+	r := rand.New(rand.NewPCG(3, 4))
+	worst := 0.0
+	for range 3000 {
+		ra, dec := r.Float64()*360, math.Asin(2*r.Float64()-1)/deg
+		var l, b float64
+		gofa.Icrs2g(ra*deg, dec*deg, &l, &b)
+		gl, gb := Galactic(ra, dec)
+		if gl < 0 || gl >= 360 {
+			t.Fatalf("Galactic(%v, %v) longitude %v outside [0, 360)", ra, dec, gl)
+		}
+		worst = max(worst, Separation(gl, gb, l/deg, b/deg))
+	}
+	if worst > 0.05*arcsec { // 0.004″ seen
+		t.Errorf("galactic coordinates: worst difference from SOFA %g° exceeds 0.05″", worst)
+	} else {
+		t.Logf("galactic coordinates: worst %.3g″", worst/arcsec)
+	}
+	// The galactic centre and the north galactic pole.
+	if l, b := Galactic(266.40499, -28.93617); math.Abs(math.Remainder(l, 360)) > 0.001 || math.Abs(b) > 0.001 {
+		t.Errorf("galactic centre at (%v, %v)", l, b)
+	}
+	if _, b := Galactic(galPoleRA, galPoleDec); math.Abs(b-90) > 1e-9 {
+		t.Errorf("north galactic pole at b = %v", b)
+	}
+}

@@ -115,16 +115,18 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, fp filterPass, m
 		ra, dec = astro.Precess(tg.RADeg, tg.DecDeg, mid)
 	}
 	hz := astro.NewHorizontal(cfg.Lat, dec)
-	// The zodiacal light where the target stands (its mid-window position of
-	// date, a comet's too) against the reference direction the zenith
+	// The zodiacal and galactic light where the target stands (its
+	// mid-window position of date, a comet's too) against what the zenith
 	// brightness includes: half a magnitude more on the ecliptic 90° from
-	// the Sun, a little less at the ecliptic pole, and never below the pole's.
+	// the Sun, a little less at the ecliptic pole; up to 1.7 more in the
+	// Milky Way, 0.3 less at the galactic poles; never below both minima.
 	mra, mdec := ra, dec
 	if tg.Track != nil {
 		mra, mdec = tg.Track[len(s.Grid)/2][0], tg.Track[len(s.Grid)/2][1]
 	}
 	lon, lat := astro.Ecliptic(mra, mdec, mid)
-	zenithNL := max(s.ZenithNL+atmos.ZodiacalExcess(lon-s.SunLon, lat), atmos.ZodiacalPoleNL)
+	gl, gb := astro.Galactic(mra, mdec) // of date for J2000: 0.4°, against 10° cells
+	zenithNL := max(s.ZenithNL+atmos.ZodiacalExcess(lon-s.SunLon, lat)+atmos.GalacticExcess(gl, gb), atmos.ZodiacalPoleNL+atmos.GalacticMinNL)
 	// cos(LST - ra) by the difference formula: one Sincos per target instead
 	// of a Cos per target-minute.
 	sinRA, cosRA := math.Sincos(ra * deg)
