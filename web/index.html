@@ -323,8 +323,9 @@ $("out").addEventListener("mouseleave", () => { thumbFor = null; $("thumb").hidd
 // from curves.start) from 0° to 90°, the -alt-min/-alt-max limits dashed,
 // the observable stretches (obs, [from, to) Unix seconds: the altitude,
 // Moon and horizon limits) shaded and the curve drawn bold within them,
-// with the window's ends and the peak in curves.zone; with a forecast, a
-// ribbon of its hours under the plot, grey by cloud cover, blue for rain.
+// a red line at the peak, with the window's ends and the peak in
+// curves.zone; with a forecast, a ribbon of its hours under the plot, grey
+// by cloud cover, blue for rain.
 function drawAlt(alt, obs, left, top) {
   const c = $("alt");
   if (!alt?.length) return;
@@ -356,6 +357,12 @@ function drawAlt(alt, obs, left, top) {
     g.fillRect(a, H - 26, b - a - 1, 8);
   }
   g.globalAlpha = 1;
+  // The middle of the top: near the meridian a high-declination object holds
+  // its altitude to 0.1° for half an hour.
+  const hi = Math.max(...alt), peak = Math.round((alt.indexOf(hi) + alt.lastIndexOf(hi)) / 2);
+  // The peak's time, under the curve.
+  g.strokeStyle = v("--c31");
+  g.beginPath(); g.moveTo(x(peak), P); g.lineTo(x(peak), y(0)); g.stroke();
   g.strokeStyle = v("--muted");
   g.beginPath();
   alt.forEach((d, i) => i ? g.lineTo(x(i), y(d)) : g.moveTo(x(i), y(d)));
@@ -372,9 +379,6 @@ function drawAlt(alt, obs, left, top) {
   g.restore();
   const clock = (i) => new Date((curves.start + i * curves.step) * 1000)
     .toLocaleTimeString([], { timeZone: curves.zone, hour: "2-digit", minute: "2-digit", hour12: false });
-  // The middle of the top: near the meridian a high-declination object holds
-  // its altitude to 0.1° for half an hour.
-  const hi = Math.max(...alt), peak = Math.round((alt.indexOf(hi) + alt.lastIndexOf(hi)) / 2);
   g.fillStyle = v("--muted"); g.font = "10px ui-monospace, Menlo, monospace"; g.textBaseline = "alphabetic";
   g.textAlign = "left"; g.fillText(clock(0), P, H - 4);
   g.textAlign = "right"; g.fillText(clock(alt.length - 1), W - P, H - 4);
