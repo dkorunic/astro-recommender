@@ -305,9 +305,9 @@ $("out").addEventListener("mouseover", (e) => {
   img.hidden = $("alt").hidden = $("name").hidden = true;
   if (!a) return;
   // The name (26px tall, 4px gap) above the thumbnail, the curve (up to
-  // 108px) below.
+  // 122px with its key) below.
   const r = a.getBoundingClientRect(), left = Math.min(r.right + 12, innerWidth - 252);
-  const top = Math.max(8, Math.min(r.top - 130, innerHeight - 394));
+  const top = Math.max(8, Math.min(r.top - 130, innerHeight - 408));
   Object.assign($("name"), { textContent: a.textContent, hidden: false });
   $("name").style.left = img.style.left = `${left}px`;
   $("name").style.top = `${top}px`;
@@ -325,15 +325,16 @@ $("out").addEventListener("mouseleave", () => { thumbFor = null; $("thumb").hidd
 // Moon and horizon limits) shaded and the curve drawn bold within them,
 // a red line at the peak, with the window's ends and the peak in
 // curves.zone; with a forecast, a ribbon of its hours under the plot, grey
-// by cloud cover, blue for rain.
+// by cloud cover (the text colour), blue for rain; a key under it all.
 function drawAlt(alt, obs, left, top) {
   const c = $("alt");
   if (!alt?.length) return;
   const css = getComputedStyle(document.documentElement), v = (n) => css.getPropertyValue(n).trim();
   const wx = curves.wx ?? [];
-  const dpr = devicePixelRatio || 1, W = 240, H = wx.length ? 108 : 96, P = 6, T = wx.length ? 28 : 16;
-  c.width = W * dpr; c.height = H * dpr;
-  c.style.height = `${H}px`;
+  // L: the key's row under the plot.
+  const dpr = devicePixelRatio || 1, W = 240, H = wx.length ? 108 : 96, P = 6, T = wx.length ? 28 : 16, L = 14;
+  c.width = W * dpr; c.height = (H + L) * dpr;
+  c.style.height = `${H + L}px`;
   const g = c.getContext("2d");
   g.scale(dpr, dpr);
   const x = (i) => P + (W - 2 * P) * i / Math.max(1, alt.length - 1);
@@ -352,7 +353,7 @@ function drawAlt(alt, obs, left, top) {
   g.setLineDash([]);
   for (const h of wx) {
     const a = Math.max(P, xt(h.t)), b = Math.min(W - P, xt(h.t + 3600));
-    g.fillStyle = v(h.rain ? "--c34" : "--muted");
+    g.fillStyle = v(h.rain ? "--c34" : "--fg");
     g.globalAlpha = h.rain ? 1 : 0.15 + 0.7 * h.cloud / 100;
     g.fillRect(a, H - 26, b - a - 1, 8);
   }
@@ -383,6 +384,22 @@ function drawAlt(alt, obs, left, top) {
   g.textAlign = "left"; g.fillText(clock(0), P, H - 4);
   g.textAlign = "right"; g.fillText(clock(alt.length - 1), W - P, H - 4);
   g.textAlign = "center"; g.fillText(`${Math.round(alt[peak])}° @ ${clock(peak)}`, W / 2, H - 4);
+  // The key: a swatch drawn like its mark, then its name.
+  const keys = [
+    ["observable", (k) => { g.fillStyle = v("--accent-soft"); g.fillRect(k, H + 2, 10, 8); g.strokeStyle = v("--accent"); g.lineWidth = 2; g.beginPath(); g.moveTo(k, H + 6); g.lineTo(k + 10, H + 6); g.stroke(); }],
+    ["limits", (k) => { g.strokeStyle = v("--line"); g.lineWidth = 1; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(k, H + 6); g.lineTo(k + 10, H + 6); g.stroke(); g.setLineDash([]); }],
+    ["peak", (k) => { g.strokeStyle = v("--c31"); g.lineWidth = 1; g.beginPath(); g.moveTo(k + 5, H + 1); g.lineTo(k + 5, H + 11); g.stroke(); }],
+  ];
+  if (wx.length) keys.push(
+    ["cloud", (k) => { g.fillStyle = v("--fg"); g.globalAlpha = 0.5; g.fillRect(k, H + 2, 10, 8); g.globalAlpha = 1; }],
+    ["rain", (k) => { g.fillStyle = v("--c34"); g.fillRect(k, H + 2, 10, 8); }]);
+  g.font = "9px system-ui, sans-serif"; g.textAlign = "left";
+  let k = P;
+  for (const [name, mark] of keys) {
+    mark(k);
+    g.fillStyle = v("--muted"); g.fillText(name, k + 13, H + 10);
+    k += 13 + g.measureText(name).width + 8;
+  }
   c.style.left = `${left}px`;
   c.style.top = `${top}px`;
   c.hidden = false;
