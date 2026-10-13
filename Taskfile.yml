@@ -94,7 +94,7 @@ tasks:
       - go build -trimpath -pgo=auto -ldflags="-s -w -extldflags '-static' -X main.GitTag={{.GIT_LAST_TAG}} -X main.GitCommit={{.GIT_HEAD_COMMIT}} -X main.GitDirty={{.GIT_MODIFIED}} -X main.BuildTime={{.BUILD_DATE}}" -o {{.TARGET}}
 
   web:
-    desc: Build the browser version into web/ (app.wasm + wasm_exec.js); serve the directory, e.g. python3 -m http.server -d web
+    desc: Build the browser version into web/ (app.wasm + wasm_exec.js + lists/); serve the directory, e.g. python3 -m http.server -d web
     vars: *build-vars
     env:
       GOOS: js
@@ -103,6 +103,9 @@ tasks:
       - task: lists
       - go build -trimpath -ldflags="-s -w -X main.GitTag={{.GIT_LAST_TAG}} -X main.GitCommit={{.GIT_HEAD_COMMIT}} -X main.GitDirty={{.GIT_MODIFIED}} -X main.BuildTime={{.BUILD_DATE}}" -o web/app.wasm
       - cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" web/
+      # The lists the wasm does not embed (internal/catalog/list_js.go).
+      - rm -rf web/lists && mkdir web/lists
+      - for f in internal/catalog/targets/*.gob; do gzip -9nc "$f" > "web/lists/${f##*/}.gz"; done
 
   build-debug:
     desc: Build the race-enabled debug binary (CGO on, slower)

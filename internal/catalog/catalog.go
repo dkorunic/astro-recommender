@@ -7,7 +7,6 @@ package catalog
 
 import (
 	"bytes"
-	"embed"
 	"encoding/gob"
 	"errors"
 	"fmt"
@@ -50,9 +49,8 @@ import (
 // decoding OpenNGC that way takes 2 ms and 3 MB instead of YAML's 87 ms and
 // 52 MB (631 ms in the browser build). The YAML stays the source; task lists
 // regenerates the gob files, and TestEmbeddedLists fails when they are stale.
-//
-//go:embed targets/*.gob
-var targetFS embed.FS
+// The browser build embeds only the default list and fetches the others
+// (list_js.go), so the page does not download every list up front.
 
 type Target struct {
 	Name          string `yaml:"name"`
@@ -525,7 +523,7 @@ func unknownKeys(doc *yaml.Node) []string {
 // rather than ReadFile: the decoder reads the embedded data in place
 // instead of a copy.
 func embedded(name string) ([]Target, error) {
-	f, err := targetFS.Open("targets/" + name + ".gob")
+	f, err := openList(name)
 	if err != nil {
 		return nil, err
 	}
