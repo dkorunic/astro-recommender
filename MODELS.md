@@ -302,6 +302,8 @@ X_s(h) = \big(1 - 0.96\sin^2 Z\big)^{-1/2} ,\qquad
 B_{\text{dark}}(h) = B_{\text{zen}}\cdot 10^{-0.4\,\kappa\,(X_s-1)}\cdot X_s
 ```
 
+(The zodiacal and galactic light of the target's direction then add a term of their own, below.)
+
 **Zodiacal light.** The natural sky is not the same in every direction: sunlight scattered by interplanetary dust brightens it along the ecliptic, most towards the Sun, and least at the ecliptic poles. [Leinert et al. (1998)][leinert] Table 17 gives its brightness Z(Δλ, β) at 500 nm by the ecliptic longitude from the Sun Δλ and the ecliptic latitude β, from 77 (in 10⁻⁸ W m⁻² sr⁻¹ µm⁻¹) at the pole to 259 on the ecliptic 90° from the Sun; 1 S10 unit is 1.28 of those and 27.78 mag/arcsec² in V, so the pole reads 23.3 mag/arcsec², the ecliptic at 90° 22.0, and the gegenschein opposite the Sun 22.2. The zenith brightness above already includes the zodiacal light of a typical zenith: a mid-latitude site's zenith runs over β = 45° ± 23.4° and Δλ from 90° at dusk to 180° at midnight, so the value is taken to include Z at the reference direction (Δλ, β) = (135°, 45°), which reads 90, and is corrected per target by the difference (`atmos.ZodiacalExcess`; the heliocentric ±7% and seasonal ±10% factors are left out):
 
 ```math
@@ -317,6 +319,14 @@ B_{\text{zen}}(\text{target}) = \max\big(B_{\text{zen}} + Z(\Delta\lambda,\beta)
 ```
 
 bilinearly interpolated, the ±80° rows going to their mean at the poles. The galactic coordinates come from the target's mid-window position (`astro.Galactic`, the IAU 1958 frame in J2000, within 0.005″ of SOFA's). On a pristine sky the galactic poles are 0.3 mag/arcsec² darker than the reference, the plane 0.5–1.1 brighter, the Sagittarius clouds 1.7 and the LMC 0.4: a faint galaxy at high galactic latitude sees the darkest natural sky, and a nebula in the Cassiopeia Milky Way about a magnitude brighter one. Under light pollution, again, it hardly shows. Pioneer's ~2° beam smooths the star clouds, and its red band carries some Hα, so the brightest H II regions' cells read high. The floor adds the darkest galactic light to the zodiacal pole's.
+
+**Off the zenith** the two are not brightened as the rest of the dark sky is. K&S's X_s stands for the longer path through glowing air (the airglow, and the light pollution scattered in it), while the zodiacal and galactic light come from beyond the atmosphere, which only dims them. So their excess over what the configured zenith includes, E = B_zen(target) − B_zen, is added outside the dark-sky term and dimmed by extinction alone, at the Pickering airmass X of the target's own light:
+
+```math
+B_{\text{dark}}(h) = B_{\text{zen}}\cdot 10^{-0.4\,\kappa\,(X_s-1)}\cdot X_s + E\cdot 10^{-0.4\,\kappa\,(X-1)}
+```
+
+The share the configured zenith already includes stays in K&S's term, as their fit had it. At 30° altitude, where X_s is 1.9, scaling E like the glow would roughly double it: the Cassiopeia Milky Way's sky there would read 0.25 mag/arcsec² brighter on a pristine sky (0.07 at 60°), the galactic and ecliptic poles' deficit likewise. At the zenith the two agree, and the floor holds there.
 
 **Scattered moonlight** is added while the Moon is above the horizon, after [Winkler (2022)][winkler]'s revised simplified scattering model. The Moon's V flux outside the atmosphere comes from its magnitude, which depends on its phase angle α (degrees, 0 = full):
 
@@ -475,7 +485,7 @@ A faint galaxy 30° from a bright Moon therefore scores much lower than one 120�
 
 **The sky in a band.** The sky splits into three parts with different spectra:
 
-- the **glow** (airglow and light pollution, the dark-sky term),
+- the **glow** (airglow and light pollution, with the zodiacal and galactic light: the dark-sky term B_dark),
 - moonlight scattered by **molecules** (Rayleigh, the χ term of p(ρ)), going as λ⁻⁴,
 - moonlight scattered by **aerosols** (Mie, the Henyey–Greenstein term), going as λ^−1.3 ([Ångström][angstrom]).
 
@@ -745,6 +755,7 @@ The models above come from the literature. The following are this project's own 
 | Broadband filter passbands | `cls` Astronomik's published edges, `lpro` read off Optolong's reference curve (±5 nm); continuum flat per nm over 400–700 nm | one entry per class; under the flat (LED) glow brands within a class score alike |
 | Zodiacal reference direction | 135° from the Sun at ecliptic latitude 45° | a mid-latitude zenith through the night; the zenith brightness given or defaulted includes that much zodiacal light |
 | Galactic light reference | 81 S10, the sky's median by solid angle | a zenith over a year's nights; the zenith brightness given or defaulted includes that much galactic light |
+| Zodiacal and galactic light off the zenith | their excess E dimmed by extinction alone, outside K&S's X_s | light from beyond the atmosphere is not brightened by a longer path through glowing air; the share the configured zenith includes stays in K&S's term, as they fitted it |
 | Galactic light in V | blue^0.45 · red^0.55 | 550 nm between Pioneer's 440 and 640 nm bands by wavelength, in log brightness |
 | Ozone in a filter band | the 550 nm value | within 0.02 mag/airmass at every nebula line |
 | High cloud weight | ½ | thin cirrus dims rather than blocks |

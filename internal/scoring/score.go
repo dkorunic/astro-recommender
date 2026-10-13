@@ -119,14 +119,17 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, fp filterPass, m
 	// mid-window position of date, a comet's too) against what the zenith
 	// brightness includes: half a magnitude more on the ecliptic 90° from
 	// the Sun, a little less at the ecliptic pole; up to 1.7 more in the
-	// Milky Way, 0.3 less at the galactic poles; never below both minima.
+	// Milky Way, 0.3 less at the galactic poles; at the zenith never below
+	// both minima. It comes from beyond the atmosphere, so extinction dims
+	// it and, unlike the glow K&S brighten along a longer path through the
+	// air, nothing adds to it: it stays outside their dark-sky term.
 	mra, mdec := ra, dec
 	if tg.Track != nil {
 		mra, mdec = tg.Track[len(s.Grid)/2][0], tg.Track[len(s.Grid)/2][1]
 	}
 	lon, lat := astro.Ecliptic(mra, mdec, mid)
 	gl, gb := astro.Galactic(mra, mdec) // of date for J2000: 0.4°, against 10° cells
-	zenithNL := max(s.ZenithNL+atmos.ZodiacalExcess(lon-s.SunLon, lat)+atmos.GalacticExcess(gl, gb), atmos.ZodiacalPoleNL+atmos.GalacticMinNL)
+	extra := max(atmos.ZodiacalExcess(lon-s.SunLon, lat)+atmos.GalacticExcess(gl, gb), atmos.ZodiacalPoleNL+atmos.GalacticMinNL-s.ZenithNL)
 	// cos(LST - ra) by the difference formula: one Sincos per target instead
 	// of a Cos per target-minute.
 	sinRA, cosRA := math.Sincos(ra * deg)
@@ -226,7 +229,8 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, fp filterPass, m
 		air := atmos.Airmass(a)
 		ext := atmos.Transmission(air, s.Ext[i])
 		if fp.w > 0 {
-			glow, rayleigh, mie := atmos.SkyParts(zenithNL, s.Ext[i], a, rho, s.MoonLight[i])
+			glow, rayleigh, mie := atmos.SkyParts(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i])
+			glow += extra * ext
 			sb = glow + rayleigh + mie
 			broad := ext * min(1, math.Sqrt(objRef/(objNL+k*sb)))
 			filtered := atmos.Transmission(air, s.ExtRayleigh[i]*fp.ray+atmos.OzoneExtinction+s.ExtAerosol[i]*fp.aer) *
@@ -234,7 +238,7 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, fp filterPass, m
 			helped = helped || filtered > broad
 			w = s.Quality[i] * max(broad, filtered)
 		} else {
-			sb = atmos.SkyBrightnessLit(zenithNL, s.Ext[i], a, rho, s.MoonLight[i])
+			sb = atmos.SkyBrightnessLit(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i]) + extra*ext
 			w = s.Quality[i] * ext * min(1, math.Sqrt(objRef/(objNL+k*sb)))
 		}
 		if i != prev+1 {
