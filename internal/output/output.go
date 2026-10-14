@@ -635,7 +635,9 @@ func Legend(cfg *config.Config, s *scoring.Sky, tableWidth int) {
 			indent = max(indent, len("    "+c.name))
 		}
 	}
-	width := cmp.Or(tableWidth, legendWidth) - indent - legendPad
+	// Floored: on a terminal narrower than the indent the width would go
+	// negative and wrap() would put one word per line.
+	width := max(20, cmp.Or(tableWidth, legendWidth)-indent-legendPad)
 	var buf bytes.Buffer
 	w := tabwriter.NewWriter(&buf, 0, 0, legendPad, ' ', 0)
 	for _, sec := range sections {
