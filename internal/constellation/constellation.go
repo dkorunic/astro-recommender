@@ -73,6 +73,18 @@ func FullName(abbr string) (string, bool) {
 	return "", false
 }
 
+// Abbr returns the IAU abbreviation for a constellation name as Of returns
+// it, or the name itself when it is not one ("-").
+func Abbr(full string) string {
+	for _, n := range constellationNames {
+		if n.full == full {
+			return n.abbr
+		}
+	}
+
+	return full
+}
+
 // windsAroundNorthPole reports whether a closed boundary encircles the north
 // celestial pole (Ursa Minor), by summing the signed RA travelled round it.
 func windsAroundNorthPole(poly []boundaryPoint) bool {

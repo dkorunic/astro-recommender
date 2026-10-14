@@ -102,6 +102,8 @@ type target struct { // betteralign:ignore
 	Dec           float64   `json:"dec"`
 	Size          *float64  `json:"size,omitempty"`
 	Minor         *float64  `json:"minor,omitempty"`
+	Mag           *float64  `json:"mag,omitempty"`
+	BMag          *float64  `json:"bmag,omitempty"`
 	Foto          float64   `json:"foto"`
 	Score         float64   `json:"score"`
 	Frame         float64   `json:"frame"`
@@ -197,6 +199,12 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 				px := res.Size * 60 / cfg.Scale
 				tg.Px = &px
 			}
+		}
+		if res.HasMag() {
+			tg.Mag = &res.Mag
+		}
+		if res.BMag > 0 {
+			tg.BMag = &res.BMag
 		}
 		if m := res.Mosaic; m.Panels() > 1 {
 			tg.Mosaic = &mosaic{Cols: m.Cols, Rows: m.Rows}

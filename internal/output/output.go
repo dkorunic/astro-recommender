@@ -25,6 +25,7 @@ import (
 	"github.com/dkorunic/astro-recommender/internal/atmos"
 	"github.com/dkorunic/astro-recommender/internal/catalog"
 	"github.com/dkorunic/astro-recommender/internal/config"
+	"github.com/dkorunic/astro-recommender/internal/constellation"
 	"github.com/dkorunic/astro-recommender/internal/plan"
 	"github.com/dkorunic/astro-recommender/internal/scoring"
 	"github.com/dkorunic/astro-recommender/internal/weather"
@@ -225,7 +226,7 @@ func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) int {
 	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', 0)
 	row(w, "01", names(columns(cfg, resultColumns))...)
 	for i, r := range results[:min(cfg.Top, len(results))] {
-		px := "-" // without framing there is no pixel scale to measure against
+		var px string
 		if cfg.Framing {
 			px = sizeText(r.Target, "%.0f", r.Size*60/cfg.Scale)
 			if m := r.Mosaic; m.Panels() > 1 {
@@ -240,18 +241,22 @@ func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) int {
 		ra, dec := position(r.Position())
 		cells := []string{
 			paint("39", strconv.Itoa(i+1)), paint("36", r.Name), paint("39", shortDesc(r.Description)), paint(typeColor(r.Target), r.Type),
-			paint("39", r.Constellation), paint("39", ra), paint("39", dec), paint("39", size),
+			paint("39", constellation.Abbr(r.Constellation)), paint("39", ra), paint("39", dec), paint("39", size),
 			paint(scale(r.Foto, 0.66, 0.33), fmt.Sprintf("%.2f", r.Foto)),
 			paint(scale(r.Score, 0.66, 0.33), fmt.Sprintf("%.2f", r.Score)),
 			paint("39", runText(s, r)),
 			paint("39", fmt.Sprintf("%.0f° @ %s", r.MaxAlt, clock(s, r.MaxAt))),
 			paint(scale(r.SkyMag, 20.5, 19), fmt.Sprintf("%.1f", r.SkyMag)),
+			paint("39", magText(r.Target)),
 			paint("39", sbText(r)),
 		}
 		if cfg.Filter != "" {
 			cells = append(cells, paint("39", filterText(r)))
 		}
-		row(w, "", append(cells, paint("39", px))...)
+		if cfg.Framing {
+			cells = append(cells, paint("39", px))
+		}
+		row(w, "", cells...)
 	}
 	w.Flush()
 	width := 0
@@ -325,6 +330,19 @@ func shortDesc(s string) string {
 // filterText is the FILTER cell: the -filter choice that scored best, "-"
 // when none beat no filter.
 func filterText(r scoring.Result) string { return cmp.Or(r.Filter, "-") }
+
+// magText is the MAG column: the integrated V magnitude, else the B one
+// marked B, - when unknown.
+func magText(tg catalog.Target) string {
+	switch {
+	case tg.HasMag():
+		return fmt.Sprintf("%4.1f", tg.Mag) // decimals aligned
+	case tg.BMag > 0:
+		return fmt.Sprintf("%4.1fB", tg.BMag)
+	}
+
+	return "-"
+}
 
 // sbText is the SB column: the object's surface brightness, ~ when estimated
 // (from its magnitude and size, or a B value moved to V by a typical colour),
@@ -477,6 +495,9 @@ const sameAsTargets = "as in the target list"
 // filterColumn is shown only with -filter (columns).
 const filterColumn = "FILTER"
 
+// pxColumn is shown only with framing (columns).
+const pxColumn = "PX"
+
 var planColumns = []column{
 	{"TIME", "imaging block"},
 	{"NAME", sameAsTargets},
@@ -492,7 +513,7 @@ var resultColumns = []column{
 	{"NAME", "catalog designation"},
 	{"DESCRIPTION", "common name, long lists cut with …; comets: magnitude, Sun distance r, Earth distance Δ"},
 	{"TYPE", "object type"},
-	{"CONSTELLATION", "IAU constellation, from the official boundaries"},
+	{"CON", "IAU constellation abbreviation, from the official boundaries"},
 	{"RA", "J2000 right ascension, hh mm.m (comets: mid-window position)"},
 	{"DEC", "J2000 declination, ±dd mm (comets: mid-window position)"},
 	{"SIZE", "major axis in arcminutes, with -rotate major x minor where the minor axis is known (- unknown or comet)"},
@@ -501,18 +522,18 @@ var resultColumns = []column{
 	{"OBSERVABLE", "longest stretch within the limits without a break (+ there are others; +1d a whole day)"},
 	{"MAX ALT", "highest altitude in the window, and when"},
 	{"SKY", "mean sky brightness at the object, mag/arcsec², with the zodiacal and galactic light of its direction (higher is darker; no filter)"},
+	{"MAG", "integrated V magnitude (B marks a B magnitude where V is unknown; comets: mid-window estimate; - unknown)"},
 	{"SB", "the object's own surface brightness, mag/arcsec², set against the sky it sees: SKY, cut by the chosen -filter to its bands' share for emission-line objects when that scores better, or halved for star clusters without nebulosity, whose own brightness is then not used (~ estimated from the magnitude and size or from a B value and a typical colour; - unknown, scored as sky-limited)"},
 	{filterColumn, "with -filter: the filter of the list that scores the object best, each minute taking the better of it and none (- when none helps: not emission-line, or the filter passes too little of its light)"},
-	{"PX", "size in pixels at the frame's pixel scale, and the mosaic (columns along the long side x rows) when more than one panel scores best (- without framing)"},
+	{pxColumn, "with framing: size in pixels at the frame's pixel scale, and the mosaic (columns along the long side x rows) when more than one panel scores best"},
 }
 
-// columns returns cols without FILTER when there is no -filter.
+// columns returns cols without FILTER when there is no -filter and without
+// PX when there is no framing.
 func columns(cfg *config.Config, cols []column) []column {
-	if cfg.Filter != "" {
-		return cols
-	}
-
-	return slices.DeleteFunc(slices.Clone(cols), func(c column) bool { return c.name == filterColumn })
+	return slices.DeleteFunc(slices.Clone(cols), func(c column) bool {
+		return c.name == filterColumn && cfg.Filter == "" || c.name == pxColumn && !cfg.Framing
+	})
 }
 
 func names(cols []column) []string {

@@ -142,12 +142,12 @@ HOUR   CLOUD  LOW/MID/HIGH  TRANSP  EXT   SEEING   DEW SPREAD  WIND/GUST
 04:00  100%   0/100/1%      2/8     0.24  1-1.25"  5.1°C       3/6 km/h
 05:00  82%    0/82/0%       2/8     0.24  1-1.25"  4.1°C       2/5 km/h
 
-#  NAME      DESCRIPTION                  TYPE             CONSTELLATION  RA       DEC     SIZE  FOTO  SCORE  OBSERVABLE   MAX ALT      SKY   SB     FILTER  PX
-1  NGC 7380  Wizard Nebula                Emission Nebula  Cepheus        22 47.4  +58 08  25'   0.98  0.43   19:53-05:24  78° @ 22:15  18.6  ~22.8  dual    1218
-2  NGC 281   PacMan Nebula                Emission Nebula  Cassiopeia     00 52.9  +56 37  35'   1.00  0.38   19:53-05:33  79° @ 00:21  18.7  -      dual    1705
-3  IC 63     Gamma Cassiopeia Nebula      Emission Nebula  Cassiopeia     00 59.5  +60 55  20'   1.00  0.38   19:53-05:33  75° @ 00:27  18.7  -      dual    974
-4  Sh2-173   Phantom of the Opera Nebula  Emission Nebula  Cassiopeia     00 21.3  +61 44  25'   1.00  0.38   19:53-05:33  74° @ 23:49  18.7  -      dual    1218
-5  NGC 7635  Bubble Nebula                Emission Nebula  Cassiopeia     23 20.8  +61 13  15'   1.00  0.38   19:53-05:33  74° @ 22:48  18.6  -      dual    731
+#  NAME      DESCRIPTION                  TYPE             CON  RA       DEC     SIZE  FOTO  SCORE  OBSERVABLE   MAX ALT      SKY   MAG  SB     FILTER  PX
+1  NGC 7380  Wizard Nebula                Emission Nebula  Cep  22 47.4  +58 08  25'   0.98  0.43   19:53-05:24  78° @ 22:15  18.6  7.2  ~22.8  dual    1218
+2  NGC 281   PacMan Nebula                Emission Nebula  Cas  00 52.9  +56 37  35'   1.00  0.38   19:53-05:33  79° @ 00:21  18.7  -    -      dual    1705
+3  IC 63     Gamma Cassiopeia Nebula      Emission Nebula  Cas  00 59.5  +60 55  20'   1.00  0.38   19:53-05:33  75° @ 00:27  18.7  -    -      dual    974
+4  Sh2-173   Phantom of the Opera Nebula  Emission Nebula  Cas  00 21.3  +61 44  25'   1.00  0.38   19:53-05:33  74° @ 23:49  18.7  -    -      dual    1218
+5  NGC 7635  Bubble Nebula                Emission Nebula  Cas  23 20.8  +61 13  15'   1.00  0.38   19:53-05:33  74° @ 22:48  18.6  -    -      dual    731
 ```
 
 The output ends with a legend explaining every column of the tables shown and the colours. In short:
@@ -160,11 +160,13 @@ The output ends with a legend explaining every column of the tables shown and th
 - **SKY**: the average sky brightness at the object while it is observable, in V mag/arcsec², with the zodiacal and galactic light of its direction. Higher is darker: about 22 is pristine and 18–19 is a suburb or a bright Moon. The filter isn't included.
 - **SB**: the object's own surface brightness in the same units, which the score sets against the sky the object sees: SKY, cut by `-filter` to its bands' share when that scores better than without it (emission-line objects; a broadband filter never helps continuum) or halved for star clusters without nebulosity, whose own surface brightness is then not used. `~` marks an estimate (derived from the magnitude and size, or a B value moved to V by a typical colour) rather than a measurement, `-` an object with no brightness data, which is scored as if far fainter than the sky.
 - **SIZE**: the major axis in arcminutes; with `-rotate`, `major x minor` where the minor axis is known.
-- **PX**: the object's size in pixels at the frame's pixel scale; `-` without framing (`-origin`, `-fov`, `-scale`, `-focal`), since there is no frame to measure against. With `-mosaic`, a grid such as `2x1` (columns along the frame's long side × rows) follows when more than one panel scores best.
+- **MAG**: the integrated V magnitude from the catalogue; a trailing `B` marks a B magnitude where no V is known, and a comet shows its estimated magnitude mid-window. `-` when unknown. Scoring uses it only through the derived surface brightness (SB).
+- **CON**: the IAU constellation abbreviation (JSON keeps the full name).
+- **PX**: the object's size in pixels at the frame's pixel scale, shown only with framing (`-origin`, `-fov`, `-scale`, `-focal`), since without it there is no frame to measure against. With `-mosaic`, a grid such as `2x1` (columns along the frame's long side × rows) follows when more than one panel scores best.
 
 On a colour-capable terminal the output is colour-coded green/yellow/red. Colours are turned off when output is piped, when `NO_COLOR` is set or when `TERM=dumb`. `CLICOLOR_FORCE=1` turns them on regardless.
 
-`-json` replaces the tables with one JSON document holding the same report: `location`, `window` (RFC 3339 times in `-tz`), `moon` (illumination 0–1 and when it is up), `sky`, `frame` (with framing), `forecast` per hour (its `seeing` is 7Timer's range and `seeingArcsec` the upper-air estimate, which replaced the `seeingClass` of versions up to 0.9), `plan` (with `-plan`) and `targets` (RA/Dec in J2000 degrees, size and `minor` axis in arcminutes, `surfaceBrightness` in mag/arcsec² with `surfaceBrightnessEstimated` for the `~` values, `frame` as the framing factor, `observable` as the longest run and the number of runs, `mosaic` as `cols` and `rows` when more than one panel scored best; `frame` adds `maxPanels` and `rotate` when set). Unknown values are left out rather than written as null. A night with nothing to plan (no night at that twilight, or a window already past) gives `{"message": "…", "targets": []}`. Warnings still go to stderr.
+`-json` replaces the tables with one JSON document holding the same report: `location`, `window` (RFC 3339 times in `-tz`), `moon` (illumination 0–1 and when it is up), `sky`, `frame` (with framing), `forecast` per hour (its `seeing` is 7Timer's range and `seeingArcsec` the upper-air estimate, which replaced the `seeingClass` of versions up to 0.9), `plan` (with `-plan`) and `targets` (RA/Dec in J2000 degrees, size and `minor` axis in arcminutes, `mag` and `bmag` (V and B magnitudes), `surfaceBrightness` in mag/arcsec² with `surfaceBrightnessEstimated` for the `~` values, `frame` as the framing factor, `observable` as the longest run and the number of runs, `mosaic` as `cols` and `rows` when more than one panel scored best; `frame` adds `maxPanels` and `rotate` when set). Unknown values are left out rather than written as null. A night with nothing to plan (no night at that twilight, or a window already past) gives `{"message": "…", "targets": []}`. Warnings still go to stderr.
 
 `-csv` replaces the tables with the targets as CSV in Telescopius's observing-list format, which [N.I.N.A.](https://nighttime-imaging.eu/)'s simple sequencer imports (Sequencer → Import targets): `Catalogue Entry` (the name), an empty `Familiar Name` and the J2000 position to the second; a comet's is its mid-window position, moved back from the equinox of date the RA/DEC columns use to J2000, since N.I.N.A. slews to it. It lists the top `-n`, or with `-plan` the planned targets in plan order, each once. A night with nothing to plan prints the header alone, the message on stderr. N.I.N.A. sets each target's position angle to 0, and a mosaic is laid out in its Framing Assistant.
 
@@ -174,7 +176,7 @@ astro-recommender -lat 45.815 -lon 15.982 -origin -plan 2h -csv > tonight.csv
 
 ### Examples
 
-**Only the location is required.** This ranks Gary Imm's top targets for tonight under a dark sky, with tonight's weather, the comets brighter than magnitude 12 and **no framing, so SIZE is the catalogue size and PX stays `-`**:
+**Only the location is required.** This ranks Gary Imm's top targets for tonight under a dark sky, with tonight's weather, the comets brighter than magnitude 12 and **no framing, so SIZE is the catalogue size and there is no PX column**:
 
 ```sh
 astro-recommender -lat 45.815 -lon 15.982
@@ -508,7 +510,7 @@ The binary embeds a pre-decoded copy of each list (`internal/catalog/targets/*.g
 
 Objects with unknown size (`-9999` in the list, or `0.0` in a few LDN entries) count as size 0: they are dropped by the default `-size-min`, and `-size-min 0` keeps them (with no framing penalty, since there is nothing to judge).
 
-The CONSTELLATION column is computed from the official IAU boundaries for every target, comets included, rather than taken from the list. Across the ~18,000 entries of the lists that carry a constellation (the hand-made lists and OpenNGC/OpenIC; the other generated lists have none, and the Compendium's labels are too unreliable to compare) the two agree except for spelling variants ("Ophiucus", "Se1") and five objects. Three of those are list errors, such as R Aquarii listed in Aquila; the other two sit right on a boundary.
+The CON column is computed from the official IAU boundaries for every target, comets included, rather than taken from the list. Across the ~18,000 entries of the lists that carry a constellation (the hand-made lists and OpenNGC/OpenIC; the other generated lists have none, and the Compendium's labels are too unreliable to compare) the two agree except for spelling variants ("Ophiucus", "Se1") and five objects. Three of those are list errors, such as R Aquarii listed in Aquila; the other two sit right on a boundary.
 
 ### Comets
 

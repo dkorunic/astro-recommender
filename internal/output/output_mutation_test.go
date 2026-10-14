@@ -222,6 +222,9 @@ func TestMutSmallCells(t *testing.T) {
 	if got := spanText(s, s.Grid[0], s.Grid[0].Add(24*time.Hour-time.Minute)); got != "20:00-19:59" {
 		t.Errorf("spanText(24h-1m) = %q", got)
 	}
+	if magText(catalog.Target{Mag: 8.24}) != " 8.2" || magText(catalog.Target{Mag: -9999, BMag: 12.3}) != "12.3B" || magText(catalog.Target{Mag: -9999}) != "-" {
+		t.Error("magText")
+	}
 	if sizeText(catalog.Target{Size: -9999}, "%.0f'", -9999) != "-" || sizeText(catalog.Target{Size: 12.4}, "%.0f'", 12.4) != "12'" {
 		t.Error("sizeText")
 	}

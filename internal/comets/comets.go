@@ -69,7 +69,7 @@ func (e Elements) Targets(grid []time.Time, maxMag float64) []catalog.Target {
 		if mag > maxMag {
 			continue
 		}
-		tg := catalog.Target{Type: "Comet", Constellation: constellation.Of(ra, dec), Track: make([][2]float64, len(grid))}
+		tg := catalog.Target{Mag: mag, Type: "Comet", Constellation: constellation.Of(ra, dec), Track: make([][2]float64, len(grid))}
 		tg.Name, tg.Description, _ = strings.Cut(c.name, " (")
 		tg.Description = strings.TrimSuffix(tg.Description, ")")
 		tg.Description = strings.TrimSpace(fmt.Sprintf("%s mag %.1f, r %.2f AU, Δ %.2f AU", tg.Description, mag, r, delta))
