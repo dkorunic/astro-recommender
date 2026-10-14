@@ -363,7 +363,7 @@ func TestScoreFilter(t *testing.T) {
 	// filtered weight is the broadband one at that k.
 	fp := filterPass{w: 1, glow: 0.3, rayleigh: 0.3, mie: 0.3}
 	objNL, objRef := atmos.NanoLamberts(21), atmos.NanoLamberts(21)+s.RefNL
-	if got, want := fp.weight(objNL, objRef, 400, 500, 100), math.Sqrt(objRef/(objNL+0.3*1000)); math.Abs(got-want) > 1e-12 {
+	if got, want := min(1, fp.gain(objNL, objRef, 400, 500, 100)), math.Sqrt(objRef/(objNL+0.3*1000)); math.Abs(got-want) > 1e-12 {
 		t.Errorf("weight = %v, want the broadband %v", got, want)
 	}
 	// The Moon limit: through a 7 nm Hα or dual-band filter an H II region
@@ -428,7 +428,10 @@ func TestScoreFilterUncapped(t *testing.T) {
 	s := BuildSky(cfg, NoForecast(), start, end)
 	for typ, want := range map[string]string{"Planetary Nebula": "oiii", "HII Region": "ha"} {
 		r := Score(cfg, &s, []catalog.Target{{Name: "T", Type: typ, RADeg: 300, DecDeg: 40, Size: 20}}, false)
-		if len(r) != 1 || r[0].Filter != want {
+		if len(r) != 1 {
+			t.Fatalf("%s: %d results, want 1", typ, len(r))
+		}
+		if r[0].Filter != want {
 			t.Errorf("%s: filter %q, want %q", typ, r[0].Filter, want)
 		}
 		if r[0].Score > 1 {
@@ -465,5 +468,74 @@ func TestScoreFilterCamera(t *testing.T) {
 	}
 	if r[0].Filter != fewest || fewest != "cls" {
 		t.Errorf("filter %q, fewest subs %q (%d)", r[0].Filter, fewest, best)
+	}
+
+	// Under the first-quarter Moon of 26 January 2026 the choices' minute
+	// sets diverge from their sub counts: ~30° from the Moon a bright H II
+	// region (SurfBr 20) is observable unfiltered only in the ~50 Moon-down
+	// minutes (the separation limit is ~59°), while Hα's moonK floor keeps
+	// most of the night — yet unfiltered it needs fewer subs (~12 against
+	// ~18: bright enough that the filter only costs light). The choice is the
+	// fewest-subs one, the mean per-sub SNR² over each choice's own minutes;
+	// the total over its minutes would pick Hα on minutes alone. Subs with a
+	// nil Obs must also rescore through the result's own filter, not Score's
+	// re-chosen one: the two choices' Max must differ.
+	cfg.Filter = "ha"
+	start, end, _ = astro.Window(time.Date(2026, 1, 26, 12, 0, 0, 0, time.UTC), cfg.Lat, cfg.Lon, astro.Astronomical)
+	s = BuildSky(cfg, NoForecast(), start, end)
+	moon := s.MoonPos[len(s.Grid)/2]
+	neb = catalog.Target{Name: "N", Type: "HII Region", RADeg: moon[0] + 45, DecDeg: moon[1] + 15, Size: 20, SurfBr: 20}
+	r = Score(cfg, &s, []catalog.Target{neb}, false)
+	if len(r) != 1 {
+		t.Fatal("moonlit: not observable")
+	}
+	goods := map[string]int{}
+	var none, ha Estimate
+	for f, e := range map[string]*Estimate{"": &none, "ha": &ha} {
+		rr := r[0]
+		rr.Filter, rr.Obs = f, nil
+		*e = Subs(cfg, &s, rr, 0)
+		goods[f] = e.Good
+		t.Logf("moonlit %4q: good %d, max %d", f, e.Good, e.Max)
+	}
+	if none.Max == ha.Max {
+		t.Error("moonlit: both choices rescored to the same minutes; Subs must count r.Filter's own, not Score's choice")
+	}
+	if none.Good == 0 || ha.Good == 0 || none.Good >= ha.Good {
+		t.Fatalf("moonlit: unfiltered needs %d subs, Hα %d; the geometry no longer separates them", none.Good, ha.Good)
+	}
+	if r[0].Filter != "" {
+		t.Errorf("moonlit: chose %q (%d subs) over no filter (%d): the total won over the mean", r[0].Filter, goods[r[0].Filter], none.Good)
+	}
+}
+
+// A wide -filter-nm overlaps tri/quad's neighbouring bands (Hβ meets [O III]
+// past 14.6 nm, Hα meets [S II] past 16.1): lineBands clips them at the
+// lines' midpoint, so passes charges the merged unions' sky once, as a
+// physical filter's merged bands would pass it; the default 7 nm bands stay
+// untouched.
+func TestLineBandsClip(t *testing.T) {
+	quad := config.Filters["quad"]
+	for i, l := range quad {
+		if b, nm := lineBands(quad, 7)[i], catalog.LineNM[l]; b[0] != nm-3.5 || b[1] != nm+3.5 {
+			t.Errorf("7 nm band %d: %v, want λ ± 3.5", i, b)
+		}
+	}
+	bands := lineBands(quad, 30)
+	var g, r, m float64
+	for i := range quad {
+		glow, ray, mie := atmos.BroadSky(bands[i][0], bands[i][1])
+		g, r, m = g+glow, r+ray, m+mie
+	}
+	// BroadSky is additive over wavelength, so the clipped bands summing to
+	// the unions carry exactly the unions' sky, wherever the cut falls.
+	g1, r1, m1 := atmos.BroadSky(486.1-15, 500.7+15)
+	g2, r2, m2 := atmos.BroadSky(656.3-15, 672.4+15)
+	if math.Abs(g-(g1+g2)) > 1e-12 || math.Abs(r-(r1+r2)) > 1e-12 || math.Abs(m-(m1+m2)) > 1e-12 {
+		t.Errorf("quad at 30 nm: %v %v %v, want the unions' %v %v %v", g, r, m, g1+g2, r1+r2, m1+m2)
+	}
+	fp := passes(&config.Config{FilterNM: 30}, catalog.Target{Type: "HII Region"}, "quad")
+	if fp.glow != g || fp.rayleigh != r || fp.mie != m {
+		t.Errorf("passes: %v %v %v, want the clipped bands' %v %v %v", fp.glow, fp.rayleigh, fp.mie, g, r, m)
 	}
 }

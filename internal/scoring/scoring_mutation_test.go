@@ -671,7 +671,7 @@ func TestMutBandExtinction(t *testing.T) {
 	glow, _, _ := atmos.SkyParts(s.ZenithNL, 0.2, 40.5, 180, atmos.Moon{})
 	glow += extra * atmos.Extinction(40.5, 0.2)
 	band := ray*fp.ray + atmos.OzoneExtinction + aer*fp.aer
-	want := atmos.Transmission(atmos.Airmass(40.5), band) * fp.weight(0, s.RefNL, glow, 0, 0)
+	want := atmos.Transmission(atmos.Airmass(40.5), band) * min(1, fp.gain(0, s.RefNL, glow, 0, 0))
 	if math.Abs(r.Weight[41]-want) > 1e-7 || band >= 0.2 {
 		t.Errorf("weight %v, want %v through the band's %.4f mag/airmass", r.Weight[41], want, band)
 	}
@@ -767,7 +767,7 @@ func TestMutFilterAllNight(t *testing.T) {
 	glow, _, _ := atmos.SkyParts(s.ZenithNL, 0, 40.5, 180, atmos.Moon{})
 	glow += mutExtra(90.5, 0)
 	obj := lightNL(tg, 14) / atmos.CameraBand
-	want := atmos.Transmission(atmos.Airmass(40.5), atmos.OzoneExtinction) * fp.weight(obj, obj+s.RefNL, glow, 0, 0)
+	want := atmos.Transmission(atmos.Airmass(40.5), atmos.OzoneExtinction) * min(1, fp.gain(obj, obj+s.RefNL, glow, 0, 0))
 	plain, _ := mutOne(t, mutCfg(), s, tg, true)
 	if math.Abs(weight[41]-want) > 1e-7 || weight[41] >= plain.Weight[41] {
 		t.Errorf("filtered weight %v, want %v, below the unfiltered %v", weight[41], want, plain.Weight[41])

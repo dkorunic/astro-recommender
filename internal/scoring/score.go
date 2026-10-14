@@ -86,11 +86,15 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 		// beat no filter; a target none beats (a galaxy, which a broadband
 		// filter dims as much as the sky) keeps exactly its unfiltered
 		// weights. Gains most: with a camera and a surface brightness to
-		// estimate subs from (catalog.Target.ExposureSB), the most SNR² the
-		// sub-exposure model stacks tonight, read noise included, so FILTER
-		// and SUBS agree; else the most uncapped weight, since under a dark
-		// sky every helpful filter's capped weight is 1 and the band's
-		// extinction alone would choose (Hα's, even for a planetary).
+		// estimate subs from (catalog.Target.ExposureSB), the best mean
+		// per-sub SNR² of the sub-exposure model, read noise included, over
+		// the choice's own observable minutes — Subs' count for a level is
+		// level²/mean, so FILTER is the fewest-subs choice SUBS promises (the
+		// total would let a narrowband filter win on minutes alone: its
+		// moonK admits moonlit, poor minutes no filter keeps); else the most
+		// uncapped weight, since under a dark sky every helpful filter's
+		// capped weight is 1 and the band's extinction alone would choose
+		// (Hα's, even for a planetary).
 		var camNL float64
 		if camOK {
 			if sb, _ := tg.ExposureSB(); sb > 0 {
@@ -115,7 +119,9 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 		}
 		gains := func(t *tally) float64 {
 			if camNL > 0 {
-				return t.snr2
+				// Mean per-sub SNR², the fewest-subs choice; t.good > 0, since
+				// gains runs only for a tally whose result held.
+				return t.snr2 / float64(t.good)
 			}
 
 			return t.raw
@@ -461,9 +467,10 @@ func passes(cfg *config.Config, tg catalog.Target, name string) filterPass {
 	// Against the camera band, as a broadband filter: a line filter's bands
 	// were once shares of V's 88 nm, which charged them CameraBand times the
 	// sky per nm a broadband filter is charged against the same unfiltered sky.
-	for _, l := range config.Filters[name] {
-		nm := catalog.LineNM[l]
-		glow, rayleigh, mie := atmos.BroadSky(nm-cfg.FilterNM/2, nm+cfg.FilterNM/2)
+	ls := config.Filters[name]
+	bands := lineBands(ls, cfg.FilterNM)
+	for i, l := range ls {
+		glow, rayleigh, mie := atmos.BroadSky(bands[i][0], bands[i][1])
 		fp.w += lines[l]
 		fp.glow += glow
 		fp.rayleigh += rayleigh
@@ -477,6 +484,32 @@ func passes(cfg *config.Config, tg catalog.Target, name string) filterPass {
 	}
 
 	return fp
+}
+
+// lineBands returns each of ls's passbands, λ ± width/2 nm, clipped at the
+// midpoint between two lines whose bands would overlap (-filter-nm goes to
+// 30: Hβ meets [O III] past 14.6 nm, Hα meets [S II] past 16.1), so the
+// shared wavelengths charge the sky once, as a physical filter's merged
+// bands pass them once, each side at its own line's response. An array:
+// at most 4 lines (quad), and passes runs per target in Score's loop.
+func lineBands(ls []catalog.Line, width float64) [4][2]float64 {
+	var bands [4][2]float64
+	for i, l := range ls {
+		nm := catalog.LineNM[l]
+		bands[i] = [2]float64{nm - width/2, nm + width/2}
+	}
+	for i := range ls {
+		for j := range ls {
+			ci, cj := catalog.LineNM[ls[i]], catalog.LineNM[ls[j]]
+			if ci < cj && bands[i][1] > bands[j][0] {
+				mid := (ci + cj) / 2
+				bands[i][1] = min(bands[i][1], mid)
+				bands[j][0] = max(bands[j][0], mid)
+			}
+		}
+	}
+
+	return bands
 }
 
 // lineV is the V band's transmission at each line, how much of it a V
@@ -531,11 +564,13 @@ func broadPasses(tg catalog.Target, lines [4]float64, bands [][2]float64) filter
 			fp.w += glow
 			fp.ray += glow * ray
 			fp.aer += glow * aer
-
-			continue
 		}
+	}
+	if emission {
+		// inBands (the channels' test too), so a line counts once however
+		// many passbands reach it.
 		for l, nm := range catalog.LineNM {
-			if nm >= b[0] && nm <= b[1] {
+			if inBands(nm, bands) {
 				ray, aer := atmos.BandScale(nm)
 				fp.w += lines[l]
 				fp.ray += lines[l] * ray
@@ -550,17 +585,12 @@ func broadPasses(tg catalog.Target, lines [4]float64, bands [][2]float64) filter
 	return fp
 }
 
-// weight is the sky weight through the filter, the counterpart of the
-// broadband min(1, √(objRef/(objNL + k·sky))): gain capped at 1, a minute
-// as good as unfiltered under a pristine sky.
-func (fp filterPass) weight(objNL, objRef, glow, rayleigh, mie float64) float64 {
-	return min(1, fp.gain(objNL, objRef, glow, rayleigh, mie))
-}
-
 // gain is the filter's SNR against the same object unfiltered under a
 // pristine sky, uncapped: the target's signal is w of it, the sky the bands'
 // share of each part, so SNR² goes as (w·S)²/(w·S + sky in the bands)
-// against S²/(S + RefNL) for the reference.
+// against S²/(S + RefNL) for the reference. scoreTarget caps it at 1, the
+// counterpart of the broadband min(1, √(objRef/(objNL + k·sky))): a minute
+// as good as unfiltered under a pristine sky.
 func (fp filterPass) gain(objNL, objRef, glow, rayleigh, mie float64) float64 {
 	sky := fp.glow*glow + fp.rayleigh*rayleigh + fp.mie*mie
 

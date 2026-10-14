@@ -123,9 +123,13 @@ func (c camera) channels(name string, width float64, lines [4]float64, fp filter
 		return &chans[lineChannel[l]]
 	}
 	emission := lines != [4]float64{}
-	if bands := config.Filters[name]; bands != nil {
-		for _, l := range bands {
-			glow, rayleigh, mie := atmos.BandSky(catalog.LineNM[l], width)
+	if ls := config.Filters[name]; ls != nil {
+		// Each band clipped where a wide -filter-nm would overlap its
+		// neighbour (lineBands), so the shared sky is charged once; BandSky
+		// scatters at the line's centre, so only the width matters.
+		bands := lineBands(ls, width)
+		for i, l := range ls {
+			glow, rayleigh, mie := atmos.BandSky(catalog.LineNM[l], bands[i][1]-bands[i][0])
 			ch, r := at(l), g*lineQE[l]
 			ch.sky[0] += glow * r
 			ch.sky[1] += rayleigh * r
@@ -153,6 +157,9 @@ func (c camera) channels(name string, width float64, lines [4]float64, fp filter
 		}
 	}
 	if emission {
+		// A zero share adds nothing here, and minuteSNR2's ch.obj > 0 gate is
+		// where a channel that sees none of the object drops out, read noise
+		// included: change the two together.
 		for l, share := range lines {
 			if passes := config.Broadband[name]; passes == nil || inBands(catalog.LineNM[l], passes) {
 				at(catalog.Line(l)).obj += share * g * lineQE[l]
@@ -200,7 +207,8 @@ func (c camera) minuteSNR2(chans []channel, obj, glow, rayleigh, mie float64) fl
 
 // Subs estimates the subs r needs tonight through r.Filter for each of
 // Levels: an optimally weighted stack adds the per-sub SNR², so the mean
-// over r's observable minutes (r.Obs; rescored when nil), each weighted by
+// over r's observable minutes (r.Obs; rescored through r.Filter when nil,
+// whose Moon limit sets them), each weighted by
 // the share of its subs the weather (Quality) lets through, sets the count.
 // Counts are per panel of r.Mosaic. planned is the time -plan gives r (0: its observable
 // time), which with the panels sets Max. The zero Estimate means none: no
@@ -213,15 +221,23 @@ func Subs(cfg *config.Config, s *Sky, r Result, planned time.Duration) Estimate 
 	if !ok || sb <= 0 {
 		return Estimate{}
 	}
+	fp := passes(cfg, r.Target, r.Filter)
 	obs := r.Obs
 	if obs == nil {
-		rs := Score(cfg, s, []catalog.Target{r.Target}, true)
-		if len(rs) != 1 {
+		// Rescore through r.Filter itself, not Score, which would choose its
+		// own filter: another choice's Moon limit (moonK) admits a different
+		// set of minutes, and the estimate must count r.Filter's.
+		ta := &tally{weight: make([]float64, len(s.Grid)), obs: make([]bool, len(s.Grid))}
+		ta.reset(fp)
+		base, ok := scoreTarget(cfg, s, r.Target, []*tally{ta}, cfg.Mosaics(), nil, &c, 0)
+		if !ok {
 			return Estimate{}
 		}
-		obs = rs[0].Obs
+		if _, ok := ta.result(cfg, s, base); !ok {
+			return Estimate{}
+		}
+		obs = ta.obs
 	}
-	fp := passes(cfg, r.Target, r.Filter)
 	lines := r.Lines()
 	chans := c.channels(r.Filter, cfg.FilterNM, lines, fp)
 	if !slices.ContainsFunc(chans, func(ch channel) bool { return ch.obj > 0 }) {
