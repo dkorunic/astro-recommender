@@ -48,7 +48,7 @@ type Estimate struct { // betteralign:ignore
 	Best      int     `json:"best"`                               // Levels[2]
 	Max       int     `json:"max"`                                // subs tonight's time allows per panel (with -plan, its blocks)
 	Sub       float64 `json:"sub"`                                // sub length, s
-	SNRPerSub float64 `json:"snrPerSub"`                          // per arcsec², √ of the mean SNR² the stack adds
+	SNRPerSub float64 `json:"snrPerSub"`                          // per arcsec², √ of the mean SNR² the stack adds, weather included
 	Panels    int     `json:"panels"`                             // the mosaic the counts are per panel of
 	Assumed   bool    `json:"assumedSurfaceBrightness,omitempty"` // the surface brightness is its class's typical one
 }
@@ -131,9 +131,9 @@ func (c camera) perSub(obj, sky float64) float64 {
 
 // Subs estimates the subs r needs tonight through r.Filter for each of
 // Levels: an optimally weighted stack adds the per-sub SNR², so the mean
-// over r's observable minutes (r.Obs; rescored when nil) sets the count,
-// divided by the mean weather quality, which loses subs. Counts are per
-// panel of r.Mosaic. planned is the time -plan gives r (0: its observable
+// over r's observable minutes (r.Obs; rescored when nil), each weighted by
+// the share of its subs the weather (Quality) lets through, sets the count.
+// Counts are per panel of r.Mosaic. planned is the time -plan gives r (0: its observable
 // time), which with the panels sets Max. The zero Estimate means none: no
 // camera, no surface brightness (catalog.Target.ExposureSB), or no minute
 // the target is up and the weather lets subs through.
@@ -152,15 +152,24 @@ func Subs(cfg *config.Config, s *Sky, r Result, planned time.Duration) Estimate 
 		obs = rs[0].Obs
 	}
 	fp := passes(cfg, r.Target, r.Filter)
-	objGain, skyGain := c.gains(r.Filter, r.Lines())
+	lines := r.Lines()
+	objGain, skyGain := c.gains(r.Filter, lines)
 	if objGain == 0 {
 		return Estimate{}
+	}
+	// The object's share a line filter passes: scoring's w counts Hβ beyond
+	// the lines' sum (so tri and quad left the other filters' scores alone),
+	// which as an absolute count would be light from nowhere; broadPasses'
+	// is already a share of all four.
+	share := fp.w
+	if config.Filters[r.Filter] != nil {
+		share /= lines[catalog.Ha] + lines[catalog.OIII] + lines[catalog.SII] + lines[catalog.Hb]
 	}
 	objNL := atmos.NanoLamberts(sb)
 	ra, dec, extra := where(s, r.Target)
 	hz := astro.NewHorizontal(cfg.Lat, dec)
 	unit := astro.Unit(ra, dec)
-	var snr2, quality float64
+	var snr2 float64
 	n := 0
 	for i, up := range obs {
 		if !up {
@@ -180,25 +189,27 @@ func Subs(cfg *config.Config, s *Sky, r Result, planned time.Duration) Estimate 
 			glow, rayleigh, mie := atmos.SkyParts(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i])
 			glow += extra * ext
 			sky = fp.glow*glow + fp.rayleigh*rayleigh + fp.mie*mie
-			obj = fp.w * objNL * atmos.Transmission(air, s.ExtRayleigh[i]*fp.ray+atmos.OzoneExtinction+s.ExtAerosol[i]*fp.aer)
+			obj = share * objNL * atmos.Transmission(air, s.ExtRayleigh[i]*fp.ray+atmos.OzoneExtinction+s.ExtAerosol[i]*fp.aer)
 		} else {
 			sky = atmos.SkyBrightnessLit(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i]) + extra*ext
 			obj = objNL * ext
 		}
-		snr2 += c.perSub(objGain*obj, skyGain*sky)
-		quality += s.Quality[i]
+		// The weather loses the minute's subs in proportion, so it weighs
+		// that minute's SNR², not the night's mean: cloud during the best
+		// minutes costs more than the same cloud during the worst.
+		snr2 += s.Quality[i] * c.perSub(objGain*obj, skyGain*sky)
 		n++
 	}
-	if n == 0 || quality == 0 {
+	if snr2 == 0 {
 		return Estimate{}
 	}
-	mean, q := snr2/float64(n), quality/float64(n)
+	mean := snr2 / float64(n)
 	panels := max(1, r.Mosaic.Panels())
 	minutes := float64(n)
 	if planned > 0 {
 		minutes = planned.Minutes()
 	}
-	need := func(level float64) int { return int(min(math.Ceil(level*level/(mean*q)), maxSubs)) }
+	need := func(level float64) int { return int(min(math.Ceil(level*level/mean), maxSubs)) }
 
 	return Estimate{
 		Modest: need(Levels[0]), Good: need(Levels[1]), Best: need(Levels[2]),

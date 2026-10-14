@@ -637,7 +637,7 @@ R = \frac{884\,400\;x}{\mathrm{NL}(0)}\;\frac{\pi}{4}\left(D^2 - d^2\right)\;QE_
 The relative response q depends on what the light is:
 
 - **The sky and continuum objects**, unfiltered or through `cls`/`lpro`, are spread flat per nm over the camera's 400–700 nm (× 300/88 against V) at q = 0.8 for a mono sensor or 0.34 for a colour one, whose every pixel's dye passes about a third of the band (the RGGB mean of Sony's colour curves). The sky's share through a broadband filter is `BroadSky`'s, as in the score.
-- **Through a line filter** the sky model's shares are already the bands' own (`BandSky` against V), at each line's response (Hα 0.95, [O III] 0.85, [S II] 0.9, Hβ 0.8 of peak, read off Sony's IMX678 curve) times the Bayer share of pixels that see it (red Hα and [S II] ¼, green [O III] and Hβ ½; 1 for mono), weighted by the object's light per line.
+- **Through a line filter** the sky model's shares are already the bands' own (`BandSky` against V), at each line's response (Hα 0.95, [O III] 0.85, [S II] 0.9, Hβ 0.8 of peak, read off Sony's IMX678 curve) times the Bayer share of pixels that see it (red Hα and [S II] ¼, green [O III] and Hβ ½; 1 for mono), weighted by the object's light per line. The object's share is the score's w divided by its lines' sum with Hβ (1 + Hα/2.86), since the score's w counts Hβ on top and through `tri` or `quad` would otherwise collect more light than the nebula gives with no filter.
 - **An emission-line object's** light is its lines, which any band that passes them collects once: it uses the line response unfiltered and through broadband filters too, rather than the sky's flat spread, which would count it 3.4 times.
 
 The object and sky per minute are the score's own (the sky with moonlight, zodiacal and galactic light, through a filter its bands' shares; the object dimmed by its band's extinction), with the surface brightness from `ExposureSB`.
@@ -648,10 +648,10 @@ The object and sky per minute are the score's own (the sky with moonlight, zodia
 \mathrm{SNR}^2_\mathrm{sub} = \frac{(S t)^2}{S t + B t + RN^2}\;\frac{1}{\Omega}\quad\text{per arcsec}^2
 ```
 
-Dark current is left out. An optimally weighted stack adds SNR², so a night half dark and half moonlit is the mean of its minutes' SNR², not the SNR of mean rates. Subs lost to the weather (the mean quality $\bar q$ of the score: cloud, transparency, rain, dew, gusts) must be shot again:
+Dark current is left out. An optimally weighted stack adds SNR², so a night half dark and half moonlit is the mean of its minutes' SNR², not the SNR of mean rates. Subs lost to the weather (each minute's quality $q_i$ of the score: cloud, transparency, rain, dew, gusts) must be shot again, so the weather weighs each minute's SNR², and cloud during the target's best minutes costs more than the same cloud during its worst:
 
 ```math
-N_L = \left\lceil \frac{L^2}{\overline{\mathrm{SNR}^2_\mathrm{sub}}\;\bar q} \right\rceil ,\qquad L = 5,\ 10,\ 20
+N_L = \left\lceil \frac{L^2}{\overline{q_i\,\mathrm{SNR}^2_{\mathrm{sub},i}}} \right\rceil ,\qquad L = 5,\ 10,\ 20
 ```
 
 capped at 10⁹. For a mosaic the counts are per panel, and the subs that fit tonight (the observable time, or the planned blocks with `-plan`, divided by the sub length) are shared among the panels.

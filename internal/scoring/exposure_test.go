@@ -283,3 +283,67 @@ func TestSubsEmissionLines(t *testing.T) {
 		t.Errorf("dual %d, unfiltered %d", f, n)
 	}
 }
+
+// Through tri or quad, whose lines are all of an emission nebula's light,
+// it collects no more than with no filter: scoring's w counts Hβ beyond the
+// lines' sum (above 1), which as an absolute count would be photons from
+// nowhere. Object-limited (bright object, no read noise, no extinction) the
+// counts go as 1/S, so they must match.
+func TestSubsLineShare(t *testing.T) {
+	s := mutSky(141)
+	// Short subs keep the count large enough to resolve.
+	neb := catalog.Target{Name: "N", Type: "HII region", RADeg: 90.5, Size: 20, SurfBr: 16}
+	plain, quad := expCfg(), expCfg()
+	plain.Mono, plain.ReadNoise, plain.Sub = true, 0, 0.05
+	quad.Mono, quad.ReadNoise, quad.Sub, quad.Filter = true, 0, 0.05, "quad"
+	r := expResult(t, quad, s, neb)
+	r.Filter = "quad"
+	n, q := Subs(plain, s, expResult(t, plain, s, neb), 0).Best, Subs(quad, s, r, 0).Best
+	if float64(q) < 0.98*float64(n) {
+		t.Errorf("quad %d subs, unfiltered %d: quad collects more than every line", q, n)
+	}
+}
+
+// Weather weighs each minute's SNR², not the night's mean: cloud during the
+// target's best (dark) minutes only must cost what losing them costs.
+func TestSubsWeatherPerMinute(t *testing.T) {
+	cfg, s := expCfg(), mutSky(141)
+	for i := 70; i < len(s.Grid); i++ {
+		moonlit(s, i)
+	}
+	s.MoonSep = 0
+	r := expResult(t, cfg, s, expGalaxy(22))
+	dark := r
+	dark.Obs = make([]bool, len(r.Obs))
+	copy(dark.Obs[:70], r.Obs[:70])
+	nd, n := 0, 0
+	for i, ok := range r.Obs {
+		if ok {
+			n++
+			if i < 70 {
+				nd++
+			}
+		}
+	}
+	darkOnly := Subs(cfg, s, dark, 0).Best
+	// Clear only while moonlit: the dark minutes' subs are all lost.
+	for i := range s.Quality {
+		if i < 70 {
+			s.Quality[i] = 0
+		}
+	}
+	lit := r
+	lit.Obs = make([]bool, len(r.Obs))
+	copy(lit.Obs[70:], r.Obs[70:])
+	s2 := *s
+	s2.Quality = make([]float64, len(s.Quality))
+	for i := range s2.Quality {
+		s2.Quality[i] = 1
+	}
+	litOnly := Subs(cfg, &s2, lit, 0).Best
+	// Over the whole night, only the lit minutes count, each at 1/n of it.
+	want := float64(litOnly) * float64(n) / float64(n-nd)
+	if got := Subs(cfg, s, r, 0).Best; math.Abs(float64(got)/want-1) > 0.02 {
+		t.Errorf("clouded dark half: %d subs, want %.0f (dark-only %d)", got, want, darkOnly)
+	}
+}

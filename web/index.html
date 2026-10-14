@@ -323,6 +323,10 @@ $("out").addEventListener("mouseover", (e) => {
   drawAlt(curves?.alt?.[a.dataset.rank - 1], curves?.obs?.[a.dataset.rank - 1] ?? [], left, top + 278);
   const alt = $("alt");
   showSubs(curves?.subs?.[a.dataset.rank - 1], left, top + 278 + (alt.hidden ? 0 : alt.getBoundingClientRect().height + 4));
+  // The box's height follows its text (a mosaic, hours, a typical SB wrap
+  // it to five lines): lift the whole stack when it runs past the window.
+  const box = $("subs"), lift = box.hidden ? 0 : Math.min(top - 8, box.getBoundingClientRect().bottom - (innerHeight - 8));
+  if (lift > 0) for (const el of [$("name"), img, alt, box]) el.style.top = `${parseFloat(el.style.top) - lift}px`;
   img.src = a.dataset.thumb;
   // Back on the same name the src does not change and no load event fires.
   if (img.complete && img.naturalWidth) img.hidden = false;

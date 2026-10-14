@@ -58,6 +58,10 @@ const maxSensorPx = 20000
 // ~100"/px for wide camera lenses, with margin either side.
 const minScale, maxScale = 0.01, 1000.0
 
+// minSub and maxSub bound -sub, in seconds: beyond them the counts overflow
+// or the per-sub SNR does, and no camera takes such subs.
+const minSub, maxSub = 0.001, 3600.0
+
 // maxMosaic bounds -mosaic; mosaicOverlap is the fraction of a frame side
 // shared with the next panel, for registration.
 const (
@@ -159,7 +163,7 @@ func Parse() (Config, error) {
 	flag.BoolVar(&cfg.Rotate, "rotate", false, "with framing, the camera can be rotated to frame the major axis along the long side, so the minor axis counts (not the Origin)")
 	flag.Float64Var(&cfg.Aperture, "aperture", 0, "with framing, the telescope's aperture in mm, for the sub-exposure estimate (SUBS); Origin 152")
 	flag.Float64Var(&cfg.Obstruction, "obstruction", 0, "with framing, the central obstruction's diameter in mm; Origin 63, otherwise 0 when -aperture is given")
-	flag.Float64Var(&cfg.Sub, "sub", 0, "with framing, the sub-exposure length in seconds; Origin 15")
+	flag.Float64Var(&cfg.Sub, "sub", 0, "with framing, the sub-exposure length in seconds, 0.001-3600; Origin 15")
 	flag.Float64Var(&cfg.QE, "qe", 0, "with framing, the camera's peak quantum efficiency, above 0 and at most 1; Origin (IMX678) 0.83")
 	flag.Float64Var(&cfg.ReadNoise, "read-noise", 0, "with framing, the camera's read noise in electrons, 0 or more; Origin (IMX678) 2.15")
 	flag.BoolVar(&cfg.Mono, "mono", false, "with framing, the camera is monochrome, so every pixel sees every filter band (the Origin's is colour)")
@@ -543,8 +547,8 @@ func (cfg *Config) camera(set map[string]bool) error {
 	switch {
 	case cfg.Obstruction < 0 || cfg.Aperture <= cfg.Obstruction:
 		return fmt.Errorf("%w: -aperture must be above -obstruction, which must be 0 or more", errInvalidFlag)
-	case cfg.Sub <= 0:
-		return fmt.Errorf("%w: -sub must be above 0 seconds", errInvalidFlag)
+	case cfg.Sub < minSub || cfg.Sub > maxSub:
+		return fmt.Errorf("%w: -sub must be %g to %g seconds", errInvalidFlag, minSub, maxSub)
 	case cfg.QE <= 0 || cfg.QE > 1:
 		return fmt.Errorf("%w: -qe must be above 0 and at most 1", errInvalidFlag)
 	case cfg.ReadNoise < 0:
