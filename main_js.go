@@ -67,14 +67,15 @@ func altitudes(cfg *config.Config, s *scoring.Sky, results []scoring.Result) {
 		return
 	}
 	doc := struct {
-		Zone  string       `json:"zone"`
-		Alt   [][]float64  `json:"alt"`
-		Obs   [][][2]int64 `json:"obs"`
-		Wx    []wxHour     `json:"wx"`
-		Start int64        `json:"start"`
-		Step  int64        `json:"step"`
-		Min   float64      `json:"min"`
-		Max   float64      `json:"max"`
+		Zone  string              `json:"zone"`
+		Alt   [][]float64         `json:"alt"`
+		Obs   [][][2]int64        `json:"obs"`
+		Subs  []*scoring.Estimate `json:"subs"` // per result, null without one
+		Wx    []wxHour            `json:"wx"`
+		Start int64               `json:"start"`
+		Step  int64               `json:"step"`
+		Min   float64             `json:"min"`
+		Max   float64             `json:"max"`
 	}{Zone: cfg.Loc.String(), Start: s.Grid[0].Unix(), Step: altStep * 60, Min: cfg.AltMin, Max: cfg.AltMax}
 	for t := s.Start.Truncate(time.Hour); t.Before(s.End); t = t.Add(time.Hour) {
 		if h, ok := s.Weather[t.Unix()]; ok {
@@ -108,6 +109,7 @@ func altitudes(cfg *config.Config, s *scoring.Sky, results []scoring.Result) {
 			}
 		}
 		doc.Obs = append(doc.Obs, spans)
+		doc.Subs = append(doc.Subs, res.Exposure)
 	}
 	b, err := json.Marshal(doc)
 	if err != nil {

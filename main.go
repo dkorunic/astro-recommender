@@ -124,6 +124,14 @@ func main() {
 	if cfg.Plan > 0 {
 		slots = plan.Make(&s, results, cfg.Plan)
 	}
+	// The sub-exposure estimate needs a camera, which framing describes.
+	if cfg.Framing {
+		for i := range results[:min(cfg.Top, len(results))] {
+			if e := scoring.Subs(&cfg, &s, results[i], planned(slots, &results[i])); e.Good > 0 {
+				results[i].Exposure = &e
+			}
+		}
+	}
 
 	if cfg.JSON {
 		if err := output.JSON(&cfg, &s, place, slots, results); err != nil {
@@ -180,4 +188,17 @@ func nothing(cfg *config.Config, msg string) {
 func fatal(msg string) {
 	fmt.Fprintln(os.Stderr, "error:", msg)
 	os.Exit(1)
+}
+
+// planned returns the time the plan gives r, its blocks' length; 0 without
+// -plan or for a listed target it does not plan.
+func planned(slots []plan.Slot, r *scoring.Result) time.Duration {
+	var d time.Duration
+	for _, sl := range slots {
+		if sl.Result == r {
+			d += sl.End.Sub(sl.Start)
+		}
+	}
+
+	return d
 }

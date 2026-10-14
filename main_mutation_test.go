@@ -7,6 +7,10 @@ import (
 	"runtime/debug"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/dkorunic/astro-recommender/internal/plan"
+	"github.com/dkorunic/astro-recommender/internal/scoring"
 )
 
 func mutSetVersion(t *testing.T, tag, commit, dirty, built string) {
@@ -44,5 +48,26 @@ func TestMutDescribe(t *testing.T) {
 	mutSetVersion(t, "", "", "", "")
 	if got = describe(&debug.BuildInfo{Main: debug.Module{Version: "(devel)"}}); !strings.HasPrefix(got, "astro-recommender dev (commit unknown, ") {
 		t.Errorf("describe(devel) = %q", got)
+	}
+}
+
+func TestPlanned(t *testing.T) {
+	results := make([]scoring.Result, 3)
+	t0 := time.Date(2026, 10, 14, 20, 0, 0, 0, time.UTC)
+	slots := []plan.Slot{
+		{Start: t0, End: t0.Add(time.Hour), Result: &results[0]},
+		{Start: t0.Add(time.Hour), End: t0.Add(2 * time.Hour), Result: &results[1]},
+		{Start: t0.Add(2 * time.Hour), End: t0.Add(150 * time.Minute), Result: &results[0]},
+		{Start: t0.Add(150 * time.Minute), End: t0.Add(3 * time.Hour)}, // empty block
+	}
+	if got := planned(slots, &results[0]); got != 90*time.Minute {
+		t.Errorf("two blocks: %v", got)
+	}
+	// Listed but not planned: 0, so Subs takes its whole observable time.
+	if got := planned(slots, &results[2]); got != 0 {
+		t.Errorf("unplanned: %v", got)
+	}
+	if got := planned(nil, &results[0]); got != 0 {
+		t.Errorf("no -plan: %v", got)
 	}
 }
