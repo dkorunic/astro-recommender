@@ -121,6 +121,13 @@ pre#out a { color: inherit; text-decoration: underline dotted; text-underline-of
   font: 600 13px/18px system-ui, sans-serif; color: var(--c36); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 #name[hidden] { display: none; }
+#subs {
+  position: fixed; z-index: 10; box-sizing: border-box; width: 240px; padding: 4px 8px; pointer-events: none;
+  border: 1px solid var(--line); border-radius: 8px; background: var(--field); box-shadow: 0 6px 24px rgba(0, 0, 0, .4);
+  font: 12px/17px system-ui, sans-serif; color: var(--fg);
+}
+#subs[hidden] { display: none; }
+#subs .over { color: var(--c90); }
 footer {
   display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px;
   margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted);
@@ -174,6 +181,7 @@ footer a:hover { text-decoration: underline; }
   <div id="name" hidden></div>
   <img id="thumb" alt="" hidden>
   <canvas id="alt" width="240" height="96" hidden></canvas>
+  <div id="subs" hidden></div>
   <footer>
     <span>© 2026 Dinko Korunic</span>
     <span>Code: <a rel="license" href="https://github.com/dkorunic/astro-recommender/blob/main/LICENSE">MIT</a> · <a href="https://github.com/dkorunic/astro-recommender/blob/main/README.md">README</a> · <a href="https://github.com/dkorunic/astro-recommender/">GitHub</a><span id="version"></span></span>
@@ -302,22 +310,41 @@ $("out").addEventListener("mouseover", (e) => {
   const a = e.target.closest("a[data-thumb]"), img = $("thumb");
   if (a === thumbFor) return;
   thumbFor = a;
-  img.hidden = $("alt").hidden = $("name").hidden = true;
+  img.hidden = $("alt").hidden = $("name").hidden = $("subs").hidden = true;
   if (!a) return;
   // The name (26px tall, 4px gap) above the thumbnail, the curve (up to
-  // 122px with its key) below.
+  // 122px with its key) and the subs box (up to 78px) below.
   const r = a.getBoundingClientRect(), left = Math.min(r.right + 12, innerWidth - 252);
-  const top = Math.max(8, Math.min(r.top - 130, innerHeight - 408));
+  const top = Math.max(8, Math.min(r.top - 130, innerHeight - 478));
   Object.assign($("name"), { textContent: a.textContent, hidden: false });
   $("name").style.left = img.style.left = `${left}px`;
   $("name").style.top = `${top}px`;
   img.style.top = `${top + 30}px`;
   drawAlt(curves?.alt?.[a.dataset.rank - 1], curves?.obs?.[a.dataset.rank - 1] ?? [], left, top + 278);
+  const alt = $("alt");
+  showSubs(curves?.subs?.[a.dataset.rank - 1], left, top + 278 + (alt.hidden ? 0 : alt.getBoundingClientRect().height + 4));
   img.src = a.dataset.thumb;
   // Back on the same name the src does not change and no load event fires.
   if (img.complete && img.naturalWidth) img.hidden = false;
 });
-$("out").addEventListener("mouseleave", () => { thumbFor = null; $("thumb").hidden = $("alt").hidden = $("name").hidden = true; });
+$("out").addEventListener("mouseleave", () => { thumbFor = null; $("thumb").hidden = $("alt").hidden = $("name").hidden = $("subs").hidden = true; });
+
+// showSubs fills the sub-exposure box under the curve: per level the subs
+// and their time, the levels past tonight's limit greyed; per panel for a
+// mosaic. e is main_js.go's estimate for the result, null without one.
+// The values are numbers from our own JSON, so innerHTML takes no
+// untrusted text.
+function showSubs(e, left, top) {
+  const box = $("subs");
+  if (!e) { box.hidden = true; return; }
+  const dur = (n) => { const m = n * e.sub / 60; return m < 60 ? `${Math.max(1, Math.round(m))} min` : `${(m / 60).toFixed(1)} h`; };
+  const lvl = (name, n) => `<span${n > e.max ? ' class="over"' : ""}>${name} ${n} (${dur(n)})</span>`;
+  box.innerHTML = `Subs of ${e.sub} s${e.panels > 1 ? `, per panel of ${e.panels}` : ""}${e.assumedSB ? ", typical SB" : ""}:<br>` +
+    `${lvl("modest", e.modest)} · ${lvl("good", e.good)}<br>${lvl("best", e.best)} · ${e.max} fit tonight`;
+  box.style.left = `${left}px`;
+  box.style.top = `${top}px`;
+  box.hidden = false;
+}
 
 // drawAlt plots one altitude curve (degrees every curves.step seconds
 // from curves.start) from 0° to 90°, the -alt-min/-alt-max limits dashed,
