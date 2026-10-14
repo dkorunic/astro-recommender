@@ -27,6 +27,7 @@ import (
 )
 
 func main() {
+	config.UsageWidth = output.TerminalWidth()
 	cfg, err := config.Parse()
 	if err != nil {
 		fatal(err.Error())

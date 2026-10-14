@@ -69,6 +69,7 @@ func altitudes(cfg *config.Config, s *scoring.Sky, results []scoring.Result) {
 	doc := struct {
 		Zone  string              `json:"zone"`
 		Alt   [][]float64         `json:"alt"`
+		Pos   [][3]float64        `json:"pos"` // per result: RA and Dec as listed (degrees), size (arcmin, 0 unknown)
 		Obs   [][][2]int64        `json:"obs"`
 		Subs  []*scoring.Estimate `json:"subs"` // per result, null without one
 		Wx    []wxHour            `json:"wx"`
@@ -93,6 +94,14 @@ func altitudes(cfg *config.Config, s *scoring.Sky, results []scoring.Result) {
 			curve = append(curve, math.Round(astro.Altitude(ra, dec, s.Grid[i], cfg.Lat, cfg.Lon)*10)/10)
 		}
 		doc.Alt = append(doc.Alt, curve)
+		// sky() links each row by its rank from these, so narrow tables may
+		// drop the RA and DEC columns.
+		pra, pdec := res.Position()
+		size := 0.0
+		if res.HasSize() {
+			size = res.Size
+		}
+		doc.Pos = append(doc.Pos, [3]float64{math.Round(pra*1e4) / 1e4, math.Round(pdec*1e4) / 1e4, size})
 		obs := res.Obs
 		if obs == nil {
 			if rs := scoring.Score(cfg, s, []catalog.Target{res.Target}, true); len(rs) == 1 {

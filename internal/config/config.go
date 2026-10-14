@@ -181,6 +181,7 @@ func Parse() (Config, error) {
 	flag.BoolVar(&cfg.NoComets, "no-comets", false, "skip comets (MPC orbital elements, cached for a day)")
 	flag.Float64Var(&cfg.CometMag, "comet-mag", 12, "include comets brighter than this total visual magnitude")
 	version := flag.Bool("version", false, "print the version and exit")
+	setUsage()
 	flag.Parse()
 	// flag stops at the first argument that is not a flag, so everything
 	// after a stray word (-origin true: a bool takes -origin=false) would be
@@ -749,8 +750,12 @@ func (cfg *Config) validate() error {
 	}
 	switch {
 	// NaN is Parse's "not given" sentinel here, not user input (visited rejects that).
-	case math.IsNaN(cfg.Lat) || math.IsNaN(cfg.Lon) || math.Abs(cfg.Lat) > 90 || math.Abs(cfg.Lon) > 180:
-		return fmt.Errorf("%w: valid -lat and -lon are required", errInvalidFlag)
+	case math.IsNaN(cfg.Lat) || math.IsNaN(cfg.Lon):
+		return fmt.Errorf("%w: -lat and -lon are required", errInvalidFlag)
+	case math.Abs(cfg.Lat) > 90:
+		return fmt.Errorf("%w: -lat must be between -90 and 90", errInvalidFlag)
+	case math.Abs(cfg.Lon) > 180:
+		return fmt.Errorf("%w: -lon must be between -180 and 180", errInvalidFlag)
 	case cfg.Plan != 0 && cfg.Plan < 10*time.Minute:
 		return fmt.Errorf("%w: -plan must be at least 10m", errInvalidFlag)
 	case cfg.Plan%time.Minute != 0:

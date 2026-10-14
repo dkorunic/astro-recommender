@@ -68,6 +68,8 @@ func mutZone(t *testing.T) *time.Location {
 // at 20:30 and setting at 21:15.
 func mutSky(t *testing.T) (*config.Config, *scoring.Sky) {
 	t.Helper()
+	// Results and Plan leave what they printed for the legend; start clean.
+	noTargets, emptyPlan = false, false
 	loc := mutZone(t)
 	cfg := &config.Config{
 		Lat: 45.81, Lon: 15.98, Loc: loc, Twilight: "astronomical", ListName: "GaryImm", Top: 20,
@@ -287,6 +289,18 @@ func mutResults(s *scoring.Sky) []scoring.Result {
 
 func mutStrip(s string) string { return sgr.ReplaceAllString(s, "") }
 
+// mutTable splits a table's output into lines after its title line, which
+// it checks.
+func mutTable(t *testing.T, out, title string) []string {
+	t.Helper()
+	lines := strings.Split(strings.TrimRight(mutStrip(out), "\n"), "\n")
+	if lines[0] != title {
+		t.Fatalf("title %q, want %q:\n%s", lines[0], title, out)
+	}
+
+	return lines[1:]
+}
+
 // mutCol is the screen column of byte offset i in line: "°" is two bytes.
 func mutCol(line string, i int) int { return utf8.RuneCountInString(line[:i]) }
 
@@ -318,7 +332,7 @@ func TestMutResultsAlignment(t *testing.T) {
 	if plainW != colorW || plainW == 0 {
 		t.Errorf("widths %d %d", plainW, colorW)
 	}
-	lines := strings.Split(strings.TrimRight(plain, "\n"), "\n")
+	lines := mutTable(t, plain, "Targets, ranked by SCORE")
 	maxLen := 0
 	for _, l := range lines {
 		maxLen = max(maxLen, len([]rune(strings.TrimRight(l, " "))))
@@ -332,7 +346,7 @@ func TestMutResultsAlignment(t *testing.T) {
 	// Columns of the first row: rank 1, PX 190·60/2 = 5700.
 	f := strings.Fields(lines[1])
 	// SUBS last: more than the 100 subs tonight allows, assumed SB.
-	if f[0] != "1" || f[len(f)-1] != "~>100" || f[len(f)-2] != "5700" || f[len(f)-3] != "21.0" {
+	if f[0] != "1" || f[len(f)-1] != ">100" || f[len(f)-2] != "5700" || f[len(f)-3] != "21.0" {
 		t.Errorf("row %q", f)
 	}
 	if !strings.Contains(lines[2], " -  ") || !strings.HasSuffix(strings.TrimRight(lines[3], " "), "-") {
@@ -347,7 +361,7 @@ func TestMutResultsAlignment(t *testing.T) {
 	if colored := mutCapture(t, func() { Results(cfg, s, res) }); mutStrip(colored) != plain {
 		t.Errorf("colored table with FILTER misaligned:\n%s\nvs\n%s", mutStrip(colored), plain)
 	}
-	lines = strings.Split(strings.TrimRight(plain, "\n"), "\n")
+	lines = mutTable(t, plain, "Targets, ranked by SCORE")
 	h, f0, f1 := strings.Fields(lines[0]), strings.Fields(lines[1]), strings.Fields(lines[2])
 	if h[len(h)-3] != "FILTER" || f0[len(f0)-3] != "dual" || f1[len(f1)-3] != "-" {
 		t.Errorf("FILTER cells:\n%s", plain)
@@ -357,7 +371,7 @@ func TestMutResultsAlignment(t *testing.T) {
 	}
 	cfg.Filter = ""
 	cfg.Top = 2
-	if out := mutCapture(t, func() { Results(cfg, s, res) }); strings.Count(out, "\n") != 3 {
+	if out := mutCapture(t, func() { Results(cfg, s, res) }); strings.Count(out, "\n") != 4 {
 		t.Errorf("-n 2 printed:\n%s", out)
 	}
 	if out := mutCapture(t, func() {
@@ -390,7 +404,7 @@ func TestMutWeatherTable(t *testing.T) {
 	s.Astro = map[int64]weather.AstroBlock{weather.AstroKey(s.Start.Add(time.Hour)): {Seeing: 3, Transparency: 2}}
 	mutColor(t, false)
 	out := mutCapture(t, func() { Weather(cfg, s) })
-	lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
+	lines := mutTable(t, out, "Forecast")
 	if len(lines) != 3 {
 		t.Fatalf("weather table:\n%s", out)
 	}
@@ -434,7 +448,7 @@ func TestMutPlanTable(t *testing.T) {
 	cfg.Filter, res[0].Filter = "dual,ha", "ha"
 	mutColor(t, false)
 	out = mutCapture(t, func() { Plan(cfg, s, slots) })
-	lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
+	lines := mutTable(t, out, "Night plan")
 	if f := strings.Fields(lines[0]); f[len(f)-1] != "FILTER" || !strings.HasSuffix(strings.TrimRight(lines[1], " "), "  ha") || !strings.HasSuffix(strings.TrimRight(lines[2], " "), "  -") {
 		t.Errorf("plan with FILTER:\n%s", out)
 	}
@@ -454,11 +468,11 @@ func TestMutHeader(t *testing.T) {
 	out := mutCapture(t, func() { Header(cfg, s, "Zagreb") })
 	for _, want := range []string{
 		"Location: 45.8100, 15.9800 (Zagreb), Europe/Zagreb",
-		"Window:   2026-01-15 20:00 - 2026-01-15 22:00 (2h0m0s)\n",
-		"Moon:     42% illuminated, min separation 42°, rises 20:30, sets 21:15",
+		"Window:   2026-01-15 20:00 - 2026-01-15 22:00 (2h 00m)\n",
+		"Moon:     42% illuminated, targets kept at least 42° away, rises 20:30, sets 21:15",
 		"Size:     10.0' - 300.0'",
 		"0 comets brighter than mag 12.0",
-		"Bortle not set (dark sky, 22.0 mag/arcsec²), extinction 0.20-0.24 (default) mag/airmass",
+		"dark, 22.0 mag/arcsec² (default), extinction 0.20-0.24 (default) mag/airmass",
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("header lacks %q:\n%s", want, out)
@@ -472,12 +486,12 @@ func TestMutHeader(t *testing.T) {
 	out = mutCapture(t, func() { Header(cfg, s, "") })
 	for _, want := range []string{
 		"Location: 45.8100, 15.9800, Europe/Zagreb",
-		"(2h0m0s, nautical night)",
+		"(2h 00m, nautical night)",
 		"SQM 21.60 mag/arcsec² (DSS, ≈ Bortle 2)",
 		"extinction 0.20 (set) mag/airmass, filter dual 7 nm",
 		"GaryImm, comets off",
 		"Region:   within 5° of RA 12 30.0",
-		"Min run:  at least 1h0m0s",
+		"Min run:  at least 1h 00m",
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("header lacks %q:\n%s", want, out)
@@ -522,7 +536,7 @@ func TestMutHeader(t *testing.T) {
 		"Targets:  mine.yaml, comets unavailable, only galaxy, nebula, skipping 2 names from done.txt\n",
 		"Frame:    6.67° x 5.00°, 2.00\"/px (12000 x 9000 px), mosaics of up to 4 panels, rotatable\n",
 		"Horizon:  3 points, 5° - 25°\n",
-		"Sky:      Bortle/SQM off (dark sky, 22.0 mag/arcsec²)",
+		"Sky:      dark, 22.0 mag/arcsec² (-bortle/-sqm 0)",
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("header lacks %q:\n%s", want, out)
@@ -664,7 +678,7 @@ func TestMutSubsText(t *testing.T) {
 		{&scoring.Estimate{Good: 120, Max: 400}, "39", "120"},
 		{&scoring.Estimate{Good: 120, Max: 400, Assumed: true}, "39", "~120"},
 		{&scoring.Estimate{Good: 500, Max: 400}, "33", ">400"},
-		{&scoring.Estimate{Good: 500, Max: 400, Assumed: true}, "33", "~>400"},
+		{&scoring.Estimate{Good: 500, Max: 400, Assumed: true}, "33", ">400"},
 	} {
 		if code, text := subsText(c.e); code != c.code || text != c.text {
 			t.Errorf("%+v: %q %q, want %q %q", c.e, code, text, c.code, c.text)
@@ -700,6 +714,42 @@ func TestMutResultsFit(t *testing.T) {
 	if w != 20 || !strings.Contains(got, " "+strings.Repeat("x", minDesc-1)+"… ") {
 		t.Errorf("floor: width %d, want the legend's 20, descriptions at %d:\n%s", w, minDesc, got)
 	}
+	// Below descKeep RA and DEC go first, from the table and its legend.
+	header := func(out string) []string { return strings.Fields(mutTable(t, out, "Targets, ranked by SCORE")[0]) }
+	h20 := header(got)
+	if h := h20; slices.Contains(h, "RA") || slices.Contains(h, "DEC") {
+		t.Errorf("RA/DEC kept on a 20-column terminal: %q", h)
+	}
+	if l := mutCapture(t, func() { Legend(cfg, s, 20) }); strings.Contains(l, "    RA ") {
+		t.Errorf("legend explains a dropped RA:\n%s", l)
+	}
+	// Every column of dropOrder goes before the names fall below descKeep.
+	for _, g := range dropOrder {
+		if slices.ContainsFunc(h20, func(c string) bool { return slices.Contains(g, c) }) {
+			t.Errorf("%v kept on a 20-column terminal: %q", g, h20)
+		}
+	}
+	TermWidth = full - 10 // descriptions still above descKeep
+	if h := header(mutCapture(t, func() { Results(cfg, s, res) })); !slices.Contains(h, "RA") {
+		t.Errorf("RA dropped with room for the descriptions: %q", h)
+	}
+}
+
+// SCORE keeps its absolute colour on every row; TYPE goes plain when every
+// row shares one.
+func TestMutColumnColors(t *testing.T) {
+	cfg, s := mutSky(t)
+	res := mutResults(s)[:2]
+	res[0].Type, res[1].Type = "HII region", "Emission Nebula"
+	res[0].Score, res[1].Score = 0.1, 0.2
+	mutColor(t, true)
+	out := mutCapture(t, func() { Results(cfg, s, res) })
+	if strings.Contains(out, "\x1b[35mHII region") || !strings.Contains(out, "\x1b[39mHII region") {
+		t.Errorf("uniform TYPE coloured:\n%q", out)
+	}
+	if !strings.Contains(out, "\x1b[31m0.10") || !strings.Contains(out, "\x1b[31m0.20") {
+		t.Errorf("poor SCORE not red on every row:\n%q", out)
+	}
 }
 
 // The legend explains only the tables that were printed, each description
@@ -708,12 +758,12 @@ func TestMutLegend(t *testing.T) {
 	cfg, s := mutSky(t)
 	mutColor(t, false)
 	out := mutCapture(t, func() { Legend(cfg, s, 0) })
-	for _, absent := range []string{"Forecast table:", "Night plan:", "    FILTER", "    PX", "    SUBS"} {
+	for _, absent := range []string{"Forecast:", "Night plan:", "    FILTER", "    PX", "    SUBS"} {
 		if strings.Contains(out, absent) {
 			t.Errorf("legend has %q without its table or flag:\n%s", absent, out)
 		}
 	}
-	if !strings.HasPrefix(out, "\nLegend\n  Targets:\n    #  ") || !strings.Contains(out, "  Colors: green good, yellow fair, red poor;") {
+	if !strings.HasPrefix(out, "\nLegend\n  Targets:\n    #  ") || !strings.Contains(out, "green good, yellow fair, red poor\n") || !strings.Contains(out, "UP, SKY and TYPE are plain when every row is alike") {
 		t.Errorf("legend:\n%s", out)
 	}
 	// width: every line within it, the Colors lines aside (fixed text).
@@ -741,7 +791,7 @@ func TestMutLegend(t *testing.T) {
 	cfg.Filter, cfg.Framing = "dual", true
 	lines := check(100)
 	text := strings.Join(lines, "\n")
-	f, p, tg := strings.Index(text, "  Forecast table:"), strings.Index(text, "  Night plan:"), strings.Index(text, "  Targets:")
+	f, p, tg := strings.Index(text, "  Forecast:"), strings.Index(text, "  Night plan:"), strings.Index(text, "  Targets:")
 	if f < 0 || p < f || tg < p {
 		t.Errorf("sections missing or out of order:\n%s", text)
 	}
@@ -750,23 +800,144 @@ func TestMutLegend(t *testing.T) {
 			t.Errorf("legend lacks %q:\n%s", want, text)
 		}
 	}
+	narrow := check(60)
+	if len(narrow) <= len(lines) {
+		t.Errorf("60 columns gave %d lines, 100 gave %d", len(narrow), len(lines))
+	}
 	// Continuation lines start in the description column of the first.
-	desc := strings.Index(lines[3], "local hour")
-	for _, l := range lines[3:] {
+	desc := strings.Index(narrow[3], "local hour")
+	for _, l := range narrow[3:] {
 		if !strings.HasSuffix(l, ":") && (len(l) <= desc || l[desc-1] != ' ' || l[desc] == ' ') {
 			t.Errorf("description not in column %d: %q", desc, l)
 		}
 	}
 	// The name is written once, on a description's first line.
-	if !slices.ContainsFunc(lines[3:], func(l string) bool { return len(l) > desc && strings.TrimSpace(l[:desc]) == "" }) {
-		t.Errorf("no continuation line with a blank name:\n%s", text)
-	}
-	if narrow := check(60); len(narrow) <= len(lines) {
-		t.Errorf("60 columns gave %d lines, 100 gave %d", len(narrow), len(lines))
+	if !slices.ContainsFunc(narrow[3:], func(l string) bool { return len(l) > desc && strings.TrimSpace(l[:desc]) == "" }) {
+		t.Errorf("no continuation line with a blank name:\n%s", strings.Join(narrow, "\n"))
 	}
 	// A terminal narrower than the names still leaves 20 runes of words.
 	out = mutCapture(t, func() { Legend(cfg, s, 1) })
 	if !strings.Contains(out, "local hour") {
 		t.Errorf("legend under the floor broke short descriptions:\n%s", out)
+	}
+}
+
+// A colour every row shares is dropped, a varied one kept, and one row
+// keeps its colour.
+func TestVaried(t *testing.T) {
+	code := func(v float64) string { return scale(v, 0.66, 0.33) }
+	if got := varied([]float64{0.1, 0.2}, code); !slices.Equal(got, []string{"39", "39"}) {
+		t.Errorf("uniform red = %q, want plain", got)
+	}
+	if got := varied([]float64{0.9, 0.2}, code); !slices.Equal(got, []string{"32", "31"}) {
+		t.Errorf("varied = %q, want green, red", got)
+	}
+	if got := varied([]float64{0.1}, code); !slices.Equal(got, []string{"31"}) {
+		t.Errorf("one row = %q, want red", got)
+	}
+}
+
+// A narrow terminal drops the plan's TYPE, then PEAK ALT, from the table and
+// its legend, before cutting names; what to shoot when, and how well, stay.
+func TestMutPlanFit(t *testing.T) {
+	cfg, s := mutSky(t)
+	res := mutResults(s)
+	res[0].Description = "Andromeda Galaxy"
+	cfg.Plan = time.Hour
+	slots := []plan.Slot{{Start: s.Grid[0], End: s.Grid[60], Result: &res[0], Score: 0.7, PeakAlt: 66, PeakAt: s.Grid[59]}, {Start: s.Grid[60], End: s.End}}
+	mutColor(t, false)
+	t.Cleanup(func() { TermWidth = 0 })
+	header := func() []string {
+		return strings.Fields(mutTable(t, mutCapture(t, func() { Plan(cfg, s, slots) }), "Night plan")[0])
+	}
+	full := header()
+	if !slices.Contains(full, "TYPE") || !slices.Contains(full, "PEAK") {
+		t.Fatalf("wide plan lacks columns: %q", full)
+	}
+	TermWidth = 56
+	h := header()
+	if slices.Contains(h, "TYPE") || slices.Contains(h, "PEAK") {
+		t.Errorf("TYPE/PEAK ALT kept on a 56-column terminal: %q", h)
+	}
+	for _, want := range []string{"TIME", "NAME", "BLOCK", "SCORE"} {
+		if !slices.Contains(h, want) {
+			t.Errorf("%s dropped: %q", want, h)
+		}
+	}
+	if out := mutCapture(t, func() { Plan(cfg, s, slots) }); !strings.Contains(out, "Andromeda Galaxy") {
+		t.Errorf("name cut while columns could go:\n%s", out)
+	}
+	if l := mutCapture(t, func() { Legend(cfg, s, 0) }); strings.Contains(l, "PEAK ALT") {
+		t.Errorf("legend explains a dropped PEAK ALT:\n%s", l)
+	}
+}
+
+// Header values wrap at the terminal under their own first column.
+func TestMutHeaderWrap(t *testing.T) {
+	cfg, s := mutSky(t)
+	mutColor(t, true)
+	t.Cleanup(func() { TermWidth = 0 })
+	TermWidth = 60
+	out := mutStrip(mutCapture(t, func() { Header(cfg, s, "") }))
+	lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
+	wrapped := false
+	for _, l := range lines {
+		if n := utf8.RuneCountInString(l); n > 60 {
+			t.Errorf("%d-column line on a 60-column terminal: %q", n, l)
+		}
+		if strings.HasPrefix(l, " ") {
+			wrapped = true
+			if !strings.HasPrefix(l, strings.Repeat(" ", headerIndent)) || l[headerIndent] == ' ' {
+				t.Errorf("continuation not under the values: %q", l)
+			}
+		}
+	}
+	if !wrapped {
+		t.Errorf("nothing wrapped on 60 columns:\n%s", out)
+	}
+}
+
+// With no target the output says which limits to loosen, and the legend
+// explains no table that was not printed; an empty plan is one line.
+func TestMutEmptyState(t *testing.T) {
+	cfg, s := mutSky(t)
+	cfg.SizeMin, cfg.SizeMax, cfg.AltMin, cfg.AltMax, cfg.Types = 290, 300, 30, 80, []string{"galaxy"}
+	mutColor(t, false)
+	out := mutCapture(t, func() { Results(cfg, s, nil) })
+	for _, want := range []string{"No objects within the limits", "size 290.0'-300.0'", "altitude 30-80°", "type galaxy", "-size-min/-size-max", "-type"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("empty state lacks %q: %q", want, out)
+		}
+	}
+	if strings.Contains(out, "-min-run") || strings.Contains(out, "-tol") {
+		t.Errorf("empty state names unset limits: %q", out)
+	}
+	if l := mutCapture(t, func() { Legend(cfg, s, 0) }); l != "" {
+		t.Errorf("legend with no table printed:\n%s", l)
+	}
+	cfg.Plan = time.Hour
+	empty := mutCapture(t, func() { Plan(cfg, s, []plan.Slot{{Start: s.Grid[0], End: s.End}}) })
+	if empty != "Night plan\nNo target fits any block.\n\n" {
+		t.Errorf("empty plan: %q", empty)
+	}
+}
+
+// With a mosaic listed PX stays, as it carries the grid SUBS counts per panel.
+func TestMutMosaicKeepsPX(t *testing.T) {
+	cfg, s := mutSky(t)
+	cfg.Framing, cfg.Scale, cfg.FOVShort, cfg.FOVLong = true, 2, 300, 400
+	res := mutResults(s)
+	res[0].Mosaic = config.Mosaic{Cols: 2, Rows: 1}
+	mutColor(t, false)
+	t.Cleanup(func() { TermWidth = 0 })
+	TermWidth = 60
+	out := mutCapture(t, func() { Results(cfg, s, res) })
+	if h := strings.Fields(mutTable(t, out, "Targets, ranked by SCORE")[0]); !slices.Contains(h, "PX") || !strings.Contains(out, " 2x1") {
+		t.Errorf("PX dropped with a mosaic listed:\n%s", out)
+	}
+	res[0].Mosaic = config.Mosaic{}
+	out = mutCapture(t, func() { Results(cfg, s, res) })
+	if h := strings.Fields(mutTable(t, out, "Targets, ranked by SCORE")[0]); slices.Contains(h, "PX") {
+		t.Errorf("PX kept on 60 columns without a mosaic:\n%s", out)
 	}
 }

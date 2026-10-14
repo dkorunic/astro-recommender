@@ -111,4 +111,17 @@ func TestShortDesc(t *testing.T) {
 			t.Errorf("shortDesc(%q) = %q, want %q", in, got, want)
 		}
 	}
+	// Without a comma the cut falls on a word when that keeps half.
+	for _, c := range []struct {
+		in    string
+		width int
+		want  string
+	}{
+		{"ET or Owl or Dragonfly Cluster", 22, "ET or Owl or…"},
+		{"Gamma Cassiopeia Nebula", 15, "Gamma Cassiope…"},
+	} {
+		if got := shortDesc(c.in, c.width); got != c.want {
+			t.Errorf("shortDesc(%q, %d) = %q, want %q", c.in, c.width, got, c.want)
+		}
+	}
 }

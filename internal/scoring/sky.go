@@ -265,10 +265,10 @@ func fillGaps(what string, v []float64, ok []bool, fetched bool, window time.Dur
 	case !fetched || n == len(v):
 	case n == 0:
 		fmt.Fprintf(os.Stderr, "warning: the %s forecast does not cover the %s window; perfect sky assumed\n",
-			what, window.Round(time.Minute))
+			what, hm(window))
 	default:
 		fmt.Fprintf(os.Stderr, "warning: no %s forecast for %s of the %s window; those hours get the rest's mean (%.0f%%)\n",
-			what, time.Duration(len(v)-n)*time.Minute, window.Round(time.Minute), 100*mean)
+			what, hm(time.Duration(len(v)-n)*time.Minute), hm(window), 100*mean)
 	}
 }
 
@@ -309,4 +309,11 @@ func (s *Sky) aodAt(t time.Time) float64 {
 	}
 
 	return atmos.TypicalAOD
+}
+
+// hm formats a duration as the report's header does, "10h 05m".
+func hm(d time.Duration) string {
+	m := int(d.Round(time.Minute) / time.Minute)
+
+	return fmt.Sprintf("%dh %02dm", m/60, m%60)
 }

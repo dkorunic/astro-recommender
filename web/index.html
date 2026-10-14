@@ -23,7 +23,7 @@
   color-scheme: light;
   --bg: #f2f4f8; --panel: #fff; --field: #f7f8fb; --fg: #151b29; --muted: #5f6878; --line: #d6dbe6;
   --accent: #a8690f; --accent-fg: #fff; --accent-soft: rgba(168, 105, 15, .12); --focus: #c98a1f;
-  --c31: #c0392b; --c32: #1f8a4c; --c33: #a8690f; --c34: #1f6fd0; --c35: #9b3fc4; --c36: #0f7f8c; --c90: #7a8294;
+  --c31: #c0392b; --c32: #1f8a4c; --c33: #a8690f; --c34: #1f6fd0; --c35: #9b3fc4; --c36: #0f7f8c; --c90: #697184;
   --title: linear-gradient(90deg, #22305e 0%, #4a4f8a 45%, #a8690f 100%);
 }
 /* Night vision: dim pure red on black, nothing blue or white to spoil dark
@@ -33,7 +33,7 @@
   color-scheme: dark;
   --bg: #000; --panel: #0a0101; --field: #050000; --fg: #c8281d; --muted: #7a1810; --line: #2e0805;
   --accent: #d93225; --accent-fg: #000; --accent-soft: rgba(217, 50, 37, .16); --focus: #f04434;
-  --c31: #6a140d; --c32: #ff4d3d; --c33: #b8281d; --c34: #a52418; --c35: #a52418; --c36: #e03a2c; --c90: #5c120c;
+  --c31: #6a140d; --c32: #ff4d3d; --c33: #b8281d; --c34: #a52418; --c35: #a52418; --c36: #e03a2c; --c90: #7a1810;
   --dusk: linear-gradient(90deg, #200403 0%, #5c0f09 50%, #a52418 100%);
   --title: linear-gradient(90deg, #7a1810 0%, #d93225 100%);
 }
@@ -51,6 +51,8 @@ body {
 }
 main { max-width: 1400px; margin: 0 auto; padding: 28px 20px 48px; }
 header { margin-bottom: 22px; }
+header .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+#theme { flex: none; padding: 6px 12px; font-size: 13px; white-space: nowrap; }
 h1 {
   display: flex; align-items: center; gap: 12px; margin: 0 0 6px;
   font-size: clamp(1.7rem, 1.2rem + 1.6vw, 2.4rem); font-weight: 750; letter-spacing: -.03em; line-height: 1.1;
@@ -59,21 +61,34 @@ h1 .mark { flex: none; width: 1.15em; height: 1.15em; filter: drop-shadow(0 0 6p
 h1 .word { background: var(--title); -webkit-background-clip: text; background-clip: text; color: transparent; padding-right: .05em; }
 header p { margin: 0; color: var(--muted); max-width: 72ch; }
 form { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+/* The main fields in groups by purpose, each as wide as its fields need. */
+.groups { display: flex; flex-wrap: wrap; gap: 18px 28px; }
+.groups fieldset {
+  flex: var(--n) 1 calc(var(--n) * 160px); min-width: 0; margin: 0; padding: 0; border: 0;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px 18px; align-content: start;
+}
+.groups legend { padding: 0; margin-bottom: 10px; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+label > span .req { font: 500 11px system-ui, sans-serif; color: var(--accent); margin-left: 6px; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px 18px; }
 label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; min-width: 0; }
-label > span { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 600; white-space: nowrap; }
-label small { color: var(--muted); line-height: 1.35; }
-label.check { display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 10px; }
-label.check small { grid-column: 1 / -1; }
+label > span { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+label > span code { font: 500 12px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); margin-left: 6px; }
+label > span.flag code { font-weight: 600; font-size: 13px; color: var(--fg); margin-left: 0; }
+/* Two lines of help, all of it while the field has focus (and in its tooltip). */
+label small { font-size: 12px; color: var(--muted); line-height: 1.35; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+label:focus-within small { -webkit-line-clamp: unset; }
+/* A checkbox sits where the other fields have their input, so help text
+   lines up along a row. */
+label.check .control { display: flex; align-items: center; min-height: 40px; }
 input, select {
-  font: inherit; padding: 7px 9px; border: 1px solid var(--line); border-radius: 7px;
+  font: inherit; padding: 8px 10px; min-height: 40px; border: 1px solid var(--line); border-radius: 7px;
   background: var(--field); color: var(--fg); width: 100%; transition: border-color .12s, box-shadow .12s;
 }
 input::placeholder { color: var(--muted); }
 input:focus-visible, select:focus-visible, button:focus-visible, summary:focus-visible {
   outline: none; border-color: var(--focus); box-shadow: 0 0 0 3px var(--accent-soft);
 }
-input[type=checkbox] { width: 17px; height: 17px; margin: 0; accent-color: var(--accent); }
+input[type=checkbox] { width: 18px; height: 18px; min-height: 0; margin: 0; accent-color: var(--accent); }
 input[type=file] { padding: 5px; }
 input[type=file]::file-selector-button {
   font: inherit; font-size: 13px; padding: 3px 9px; margin-right: 8px; border: 1px solid var(--line);
@@ -82,15 +97,16 @@ input[type=file]::file-selector-button {
 details { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 12px; }
 summary { cursor: pointer; color: var(--accent); font-weight: 500; width: max-content; border-radius: 5px; padding: 2px 4px; margin-left: -4px; }
 summary::marker { color: var(--muted); }
-details .grid { margin-top: 14px; }
+details .groups { margin-top: 16px; }
 .bar { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; align-items: center; }
 button {
-  font: inherit; font-weight: 600; padding: 8px 18px; border-radius: 8px; cursor: pointer;
+  font: inherit; font-weight: 600; padding: 9px 18px; min-height: 40px; border-radius: 8px; cursor: pointer;
   border: 1px solid var(--accent); background: var(--accent); color: var(--accent-fg); transition: filter .12s, background .12s;
 }
 button:hover:not(:disabled) { filter: brightness(1.08); }
-button.ghost { background: transparent; color: var(--accent); font-weight: 500; }
-button.ghost:hover:not(:disabled) { background: var(--accent-soft); filter: none; }
+/* Secondary actions step back: accent text on a quiet border, so Run leads. */
+button.ghost { background: transparent; color: var(--accent); font-weight: 500; border-color: var(--line); }
+button.ghost:hover:not(:disabled) { background: var(--accent-soft); border-color: var(--accent); filter: none; }
 button:disabled { opacity: .5; cursor: default; }
 #status { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; margin-left: auto; }
 #warn { white-space: pre-wrap; color: var(--c33); font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; margin: 18px 0 0; }
@@ -101,37 +117,38 @@ pre#out {
   overflow-x: auto; font: 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; tab-size: 4;
 }
 pre#out:empty { display: none; }
+#out, #warn { scroll-margin-top: 16px; }
 .b { font-weight: 700; }
 .c31 { color: var(--c31); } .c32 { color: var(--c32); } .c33 { color: var(--c33); } .c34 { color: var(--c34); }
 .c35 { color: var(--c35); } .c36 { color: var(--c36); } .c90 { color: var(--c90); }
 pre#out a { color: inherit; text-decoration: underline dotted; text-underline-offset: 2px; }
-#thumb {
-  position: fixed; z-index: 10; width: 240px; height: 240px; pointer-events: none;
-  border: 1px solid var(--line); border-radius: 8px; background: var(--field); box-shadow: 0 6px 24px rgba(0, 0, 0, .4);
+/* The theme's own ring, not the system's near-white one, which would be
+   the brightest mark on the night theme's screen. */
+pre#out a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 2px; }
+/* One card beside the hovered or focused name: its name, the DSS2 picture
+   (its slot held while it loads), the altitude curve and the subs. */
+#card {
+  position: fixed; z-index: 10; width: 242px; pointer-events: none; overflow: hidden;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--field); box-shadow: 0 8px 28px rgba(0, 0, 0, .45);
 }
-#thumb[hidden] { display: none; }
-#alt {
-  position: fixed; z-index: 10; width: 240px; height: 96px; pointer-events: none;
-  border: 1px solid var(--line); border-radius: 8px; background: var(--field); box-shadow: 0 6px 24px rgba(0, 0, 0, .4);
-}
-#alt[hidden] { display: none; }
+#card[hidden] { display: none; }
 #name {
-  position: fixed; z-index: 10; box-sizing: border-box; width: 240px; padding: 3px 8px; pointer-events: none;
-  border: 1px solid var(--line); border-radius: 8px; background: var(--field); box-shadow: 0 6px 24px rgba(0, 0, 0, .4);
-  font: 600 13px/18px system-ui, sans-serif; color: var(--c36); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  padding: 6px 10px; font: 600 13px/18px system-ui, sans-serif; color: var(--c36);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-#name[hidden] { display: none; }
-#subs {
-  position: fixed; z-index: 10; box-sizing: border-box; width: 240px; padding: 4px 8px; pointer-events: none;
-  border: 1px solid var(--line); border-radius: 8px; background: var(--field); box-shadow: 0 6px 24px rgba(0, 0, 0, .4);
-  font: 12px/17px system-ui, sans-serif; color: var(--fg);
-}
+#shot { width: 240px; height: 240px; background: var(--panel); border-block: 1px solid var(--line); }
+#thumb { display: block; width: 240px; height: 240px; }
+#thumb[hidden] { display: none; }
+#alt { display: block; width: 240px; margin-top: 4px; }
+#alt[hidden] { display: none; }
+#subs { padding: 6px 10px 8px; border-top: 1px solid var(--line); font: 12px/17px system-ui, sans-serif; color: var(--fg); }
 #subs[hidden] { display: none; }
 #subs .over { color: var(--c90); }
 footer {
   display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px;
   margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted);
 }
+footer .privacy { flex-basis: 100%; margin: 0; }
 footer a { color: var(--accent); text-decoration: none; }
 footer a:hover { text-decoration: underline; }
 @media (max-width: 600px) {
@@ -161,28 +178,34 @@ footer a:hover { text-decoration: underline; }
 <body>
 <main>
   <header>
-    <h1><img class="mark" src="favicon.svg" alt=""><span class="word">Astro Recommender</span></h1>
-    <p>Ranks deep sky objects for tonight at your location. Runs entirely in your browser; the only network requests go to the forecast, sky brightness, geocoding and comet services, to CDS for the DSS2 thumbnail when you point at a result, and to Cloudflare Web Analytics, a cookieless visit counter that sees the page address (your form, after a run). Leave a field empty for its default.</p>
+    <div class="top">
+      <h1><img class="mark" src="favicon.svg" alt=""><span class="word">Astro Recommender</span></h1>
+      <button type="button" class="ghost" id="theme" title="Switch between the browser's theme, light, dark and red night vision"></button>
+    </div>
+    <p>Ranks deep sky objects for tonight at your location. Enter your latitude and longitude, or use your location, and press Run; an empty field keeps its default. Point at or tap a result for its picture and altitude through the night.</p>
   </header>
   <form id="form">
-    <div class="grid" id="main"></div>
-    <details><summary>All options</summary><div class="grid" id="more"></div></details>
+    <div class="groups" id="main"></div>
+    <details><summary>All options</summary><div class="groups" id="more"></div></details>
     <div class="bar">
       <button type="submit" id="run" disabled>Loading…</button>
       <button type="button" class="ghost" id="here">Use my location</button>
       <button type="button" class="ghost" id="link" title="Copy a link that fills this form and runs it">Copy link</button>
       <button type="button" class="ghost" id="clear">Reset</button>
-      <button type="button" class="ghost" id="theme" title="Switch between the browser's theme, light, dark and red night vision"></button>
+      <button type="button" class="ghost" id="save" hidden>Download</button>
       <span id="status"></span>
     </div>
   </form>
   <div id="warn"></div>
   <pre id="out"></pre>
-  <div id="name" hidden></div>
-  <img id="thumb" alt="" hidden>
-  <canvas id="alt" width="240" height="96" hidden></canvas>
-  <div id="subs" hidden></div>
+  <div id="card" role="tooltip" hidden>
+    <div id="name"></div>
+    <div id="shot"><img id="thumb" alt="" hidden></div>
+    <canvas id="alt" width="240" height="96" hidden></canvas>
+    <div id="subs" hidden></div>
+  </div>
   <footer>
+    <p class="privacy">Runs entirely in your browser. The only network requests go to the forecast, sky brightness, geocoding and comet services, to CDS for the DSS2 thumbnail when you point at a result, and to Cloudflare Web Analytics, a cookieless visit counter that sees the page address (your form, after a run).</p>
     <span>© 2026 Dinko Korunic</span>
     <span>Code: <a rel="license" href="https://github.com/dkorunic/astro-recommender/blob/main/LICENSE">MIT</a> · <a href="https://github.com/dkorunic/astro-recommender/blob/main/README.md">README</a> · <a href="https://github.com/dkorunic/astro-recommender/">GitHub</a><span id="version"></span></span>
   </footer>
@@ -192,9 +215,19 @@ footer a:hover { text-decoration: underline; }
 "use strict";
 // The Go program runs unchanged: argv comes from the form, stdout/stderr and
 // the -targets/-horizon/-skip files go through the fs shim that wasm_exec.js calls.
-const MAIN = ["lat", "lon", "date", "tz", "list", "n", "plan", "origin", "filter", "bortle", "sqm"];
+// The groups of -h (config.usageGroups) whose flags fill the main form;
+// every other group goes under All options.
+const MAIN_GROUPS = ["Where and when", "What to list", "Equipment", "Sky"];
+// Examples where a required field has no default to show.
+const EXAMPLES = { lat: "e.g. 45.81", lon: "e.g. 15.98" };
 const FILES = ["targets", "horizon", "skip"];
 const HIDDEN = ["version"]; // nothing to show
+// Readable names for the main fields; the flag stays beside them, since the
+// help text and the CLI speak in flags.
+const LABELS = {
+  lat: "Latitude", lon: "Longitude", date: "Date", tz: "Time zone", list: "Target list", n: "Results",
+  plan: "Night plan", origin: "Celestron Origin", filter: "Filters", bortle: "Bortle class", sqm: "Sky brightness",
+};
 const KEY = "astro-recommender-form";
 const $ = (id) => document.getElementById(id);
 
@@ -259,12 +292,22 @@ async function runNow(args, argv0) {
   const go = new Go();
   let code = 0;
   go.argv = [argv0, ...args];
-  go.env = { CLICOLOR_FORCE: "1" };
+  go.env = { CLICOLOR_FORCE: "1", COLUMNS: columns() };
   go.exit = (c) => { code = c; };
   const inst = await WebAssembly.instantiate(await modulePromise, go.importObject);
   await go.run(inst);
   sink = null;
   return { out: text[1] + dec[1].decode(), err: text[2] + dec[2].decode(), alt: text[ALT] + dec[ALT].decode(), code };
+}
+
+// columns is the output panel's width in characters, which the target table
+// is fitted to (the descriptions give way first) and the legend wraps at.
+function columns() {
+  const cs = getComputedStyle($("out"));
+  const g = document.createElement("canvas").getContext("2d");
+  g.font = cs.font;
+  const w = $("form").clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  return String(Math.max(40, Math.floor(w / g.measureText("0").width)));
 }
 
 // ansi turns the SGR codes paint() writes into spans; codes may nest.
@@ -280,65 +323,88 @@ function ansi(s) {
   return html + "</span>".repeat(depth);
 }
 
-// sky links each result's name to Aladin Lite at the row's RA/Dec, with a
-// DSS2 thumbnail (CDS hips2fits) and the altitude curve of its rank shown on
-// hover. Only result rows carry "hh mm.m ±dd mm size'" cells; the plan
-// table's names stay plain.
+// sky links each result's name to Aladin Lite at its position, with a
+// DSS2 thumbnail (CDS hips2fits) and the altitude curve of its rank shown
+// on hover. Result rows open with their rank, which indexes main_js.go's
+// curves.pos, so a narrow table may drop the RA and DEC columns.
 const survey = "CDS%2FP%2FDSS2%2Fcolor";
 function sky(html) {
-  return html.split("\n").map((line) => {
-    const m = line.replace(/<[^>]+>/g, "")
-      .match(/ (\d\d) (\d\d\.\d)  +([+-])(\d\d) (\d\d)  +(?:(\d+)(?:x\d+)?'|-) /);
-    if (!m) return line;
-    const rank = line.replace(/<[^>]+>/g, "").match(/^\s*(\d+) /)?.[1] ?? "";
-    const ra = (+m[1] + m[2] / 60) * 15, dec = (m[3] === "-" ? -1 : 1) * (+m[4] + m[5] / 60);
+  const links = new Map(); // escaped name -> its result row's anchor attributes
+  const lines = html.split("\n").map((line) => {
+    const rank = line.replace(/<[^>]+>/g, "").match(/^(\d+) +\S/)?.[1];
+    const pos = rank && curves?.pos?.[rank - 1];
+    if (!pos) return line;
+    const [ra, dec, size] = pos;
     // Half again the object, within 0.1-5°; unknown sizes (comets) get 0.5°.
-    const fov = m[6] ? Math.min(5, Math.max(0.1, m[6] * 1.5 / 60)) : 0.5;
+    const fov = size ? Math.min(5, Math.max(0.1, size * 1.5 / 60)) : 0.5;
     const href = `https://aladin.cds.unistra.fr/AladinLite/?target=${ra.toFixed(4)}%20${dec.toFixed(4)}&fov=${fov.toFixed(2)}&survey=${survey}`;
     const thumb = `https://alaskybis.cds.unistra.fr/hips-image-services/hips2fits?hips=${survey}&width=240&height=240&projection=TAN` +
       `&fov=${fov.toFixed(2)}&ra=${ra.toFixed(4)}&dec=${dec.toFixed(4)}&format=jpg`;
-    return line.replace(/<span class="c36">([^<]*)<\/span>/,
-      `<span class="c36"><a href="${href}" target="_blank" rel="noopener" data-thumb="${thumb}" data-rank="${rank}">$1</a></span>`);
-  }).join("\n");
+    const attrs = `href="${href}" target="_blank" rel="noopener" data-thumb="${thumb}" data-rank="${rank}" aria-describedby="card"`;
+    return line.replace(/<span class="c36">([^<]*)<\/span>/, (_, name) => {
+      links.set(name, attrs);
+      return `<span class="c36"><a ${attrs}>${name}</a></span>`;
+    });
+  });
+  // The plan's names have no position of their own: one the results list
+  // gets that row's link and card, the rest go plain, as cyan reads as a
+  // link on this page.
+  return lines.map((line) => line.includes("<a ") ? line : line.replace(/<span class="c36">([^<]*)<\/span>/,
+    (_, name) => links.has(name) ? `<span class="c36"><a ${links.get(name)}>${name}</a></span>` : `<span>${name}</span>`)).join("\n");
 }
 // The thumbnail shows once its own image has loaded, never the previous
 // name's image or an empty box: a load event the previous image queued before
 // the pointer moved on would otherwise show it under the new name.
 let thumbFor = null, curves = null;
 $("thumb").addEventListener("load", (e) => { if (thumbFor && e.target.src === thumbFor.dataset.thumb) e.target.hidden = false; });
-$("out").addEventListener("mouseover", (e) => {
-  const a = e.target.closest("a[data-thumb]"), img = $("thumb");
+// show fills the card for the result link a and puts it beside a, clear of
+// the window's edges; a null hides it.
+function show(a) {
   if (a === thumbFor) return;
   thumbFor = a;
-  img.hidden = $("alt").hidden = $("name").hidden = $("subs").hidden = true;
-  if (!a) return;
-  // The name (26px tall, 4px gap) above the thumbnail, the curve (up to
-  // 122px with its key) and the subs box (up to 78px) below.
-  const r = a.getBoundingClientRect(), left = Math.min(r.right + 12, innerWidth - 252);
-  const top = Math.max(8, Math.min(r.top - 130, innerHeight - 478));
-  Object.assign($("name"), { textContent: a.textContent, hidden: false });
-  $("name").style.left = img.style.left = `${left}px`;
-  $("name").style.top = `${top}px`;
-  img.style.top = `${top + 30}px`;
-  drawAlt(curves?.alt?.[a.dataset.rank - 1], curves?.obs?.[a.dataset.rank - 1] ?? [], left, top + 278);
-  const alt = $("alt");
-  showSubs(curves?.subs?.[a.dataset.rank - 1], left, top + 278 + (alt.hidden ? 0 : alt.getBoundingClientRect().height + 4));
-  // The box's height follows its text (a mosaic, hours, a typical SB wrap
-  // it to five lines): lift the whole stack when it runs past the window.
-  const box = $("subs"), lift = box.hidden ? 0 : Math.min(top - 8, box.getBoundingClientRect().bottom - (innerHeight - 8));
-  if (lift > 0) for (const el of [$("name"), img, alt, box]) el.style.top = `${parseFloat(el.style.top) - lift}px`;
+  const card = $("card"), img = $("thumb");
+  img.hidden = true;
+  if (!a) { card.hidden = true; return; }
+  $("name").textContent = a.textContent;
+  drawAlt(curves?.alt?.[a.dataset.rank - 1], curves?.obs?.[a.dataset.rank - 1] ?? []);
+  showSubs(curves?.subs?.[a.dataset.rank - 1]);
+  card.hidden = false;
+  const r = a.getBoundingClientRect();
+  card.style.left = `${Math.max(8, Math.min(r.right + 12, innerWidth - card.offsetWidth - 8))}px`;
+  // The picture level with the row where the window allows.
+  card.style.top = `${Math.max(8, Math.min(r.top - 130, innerHeight - card.offsetHeight - 8))}px`;
   img.src = a.dataset.thumb;
   // Back on the same name the src does not change and no load event fires.
   if (img.complete && img.naturalWidth) img.hidden = false;
+}
+const link = (el) => el?.closest?.("#out a[data-thumb]") ?? null;
+// Pointer, keyboard and touch all reach the card. A touch also fires
+// mouseover and focus before its click, so after one only the click counts:
+// the first tap on a name shows its card, a second follows the link.
+let touched = false;
+$("out").addEventListener("pointerdown", (e) => { touched = e.pointerType === "touch"; });
+$("out").addEventListener("mouseover", (e) => { if (!touched) show(link(e.target)); });
+$("out").addEventListener("mouseleave", () => { if (!touched) show(null); });
+$("out").addEventListener("focusin", (e) => { if (!touched) show(link(e.target)); });
+$("out").addEventListener("focusout", (e) => { if (!touched && !link(e.relatedTarget)) show(null); });
+$("out").addEventListener("click", (e) => {
+  const a = link(e.target);
+  if (!touched || !a || a === thumbFor) return;
+  e.preventDefault();
+  show(a);
 });
-$("out").addEventListener("mouseleave", () => { thumbFor = null; $("thumb").hidden = $("alt").hidden = $("name").hidden = $("subs").hidden = true; });
+document.addEventListener("pointerdown", (e) => { if (e.pointerType === "touch" && !link(e.target)) show(null); });
+document.addEventListener("keydown", (e) => {
+  touched = false;
+  if (e.key === "Escape") show(null);
+});
 
 // showSubs fills the sub-exposure box under the curve: per level the subs
 // and their time, the levels past tonight's limit greyed; per panel for a
 // mosaic. e is main_js.go's estimate for the result, null without one.
 // The values are numbers from our own JSON, so innerHTML takes no
 // untrusted text.
-function showSubs(e, left, top) {
+function showSubs(e) {
   const box = $("subs");
   if (!e) { box.hidden = true; return; }
   const dur = (n) => { const m = n * e.sub / 60; return m < 60 ? `${Math.max(1, Math.round(m))} min` : `${(m / 60).toFixed(1)} h`; };
@@ -347,8 +413,6 @@ function showSubs(e, left, top) {
   box.innerHTML = !e.snrPerSub ? `Subs of ${e.sub} s: none tonight, the forecast loses them all` :
     `Subs of ${e.sub} s${e.panels > 1 ? `, per panel of ${e.panels}` : ""}${e.assumedSurfaceBrightness ? ", typical SB" : ""}:<br>` +
     `${lvl("modest", e.modest)} · ${lvl("good", e.good)}<br>${lvl("best", e.best)} · ${e.max} fit tonight`;
-  box.style.left = `${left}px`;
-  box.style.top = `${top}px`;
   box.hidden = false;
 }
 
@@ -359,8 +423,9 @@ function showSubs(e, left, top) {
 // a red line at the peak, with the window's ends and the peak in
 // curves.zone; with a forecast, a ribbon of its hours under the plot, grey
 // by cloud cover (the text colour), blue for rain; a key under it all.
-function drawAlt(alt, obs, left, top) {
+function drawAlt(alt, obs) {
   const c = $("alt");
+  c.hidden = true;
   if (!alt?.length) return;
   const css = getComputedStyle(document.documentElement), v = (n) => css.getPropertyValue(n).trim();
   const wx = curves.wx ?? [];
@@ -433,18 +498,24 @@ function drawAlt(alt, obs, left, top) {
     g.fillStyle = v("--muted"); g.fillText(name, k + 13, H + 10);
     k += 13 + g.measureText(name).width + 8;
   }
-  c.style.left = `${left}px`;
-  c.style.top = `${top}px`;
   c.hidden = false;
 }
 
 // parseUsage reads the flag list from -h, so the form follows the program.
 function parseUsage(text) {
   const flags = [];
+  let group = "";
   for (const line of text.split("\n")) {
+    // A heading ("Where and when:") groups the flags under it.
+    const h = line.match(/^(\S[^:]*):$/);
+    if (h) { group = h[1]; continue; }
     const m = line.match(/^  -(\S+)(?: (\S+))?$/);
-    if (m) { flags.push({ name: m[1], type: m[2] || "bool", desc: "" }); continue; }
-    if (flags.length && line.startsWith("    \t")) flags.at(-1).desc += line.slice(5);
+    if (m) { flags.push({ name: m[1], type: m[2] || "bool", desc: "", group }); continue; }
+    // -h wraps long help over several lines.
+    if (flags.length && line.startsWith("    \t")) {
+      const f = flags.at(-1);
+      f.desc += (f.desc ? " " : "") + line.slice(5);
+    }
   }
   for (const f of flags) {
     // Go quotes string defaults; an unquoted one is part of the help (-date).
@@ -454,6 +525,16 @@ function parseUsage(text) {
   return flags.filter((f) => !HIDDEN.includes(f.name));
 }
 
+// caption is a field's name: its readable label with the flag beside it, or
+// the flag alone.
+function caption(f) {
+  const span = document.createElement("span");
+  if (LABELS[f.name]) span.append(LABELS[f.name]); else span.className = "flag";
+  span.append(Object.assign(document.createElement("code"), { textContent: "-" + f.name }));
+  if (f.desc.includes("(required)")) span.append(Object.assign(document.createElement("span"), { className: "req", textContent: "required" }));
+  return span;
+}
+
 function field(f) {
   const label = document.createElement("label");
   label.title = f.desc;
@@ -461,7 +542,9 @@ function field(f) {
   if (f.type === "bool") {
     label.className = "check";
     input = Object.assign(document.createElement("input"), { type: "checkbox" });
-    label.append(input, Object.assign(document.createElement("span"), { textContent: "-" + f.name }));
+    const control = Object.assign(document.createElement("span"), { className: "control" });
+    control.append(input);
+    label.append(caption(f), control);
   } else {
     if (FILES.includes(f.name)) {
       input = Object.assign(document.createElement("input"), { type: "file" });
@@ -471,13 +554,17 @@ function field(f) {
       if (!names.includes(f.def)) throw new Error(`-list help has no "name, name" list: ${f.desc}`);
       for (const n of names) input.add(new Option(n, n === f.def ? "" : n, n === f.def));
     } else {
-      input = Object.assign(document.createElement("input"), { type: "text", placeholder: f.def ?? "" });
+      input = Object.assign(document.createElement("input"), { type: "text", placeholder: EXAMPLES[f.name] ?? f.def ?? "" });
       if (f.name === "date") input.type = "date";
     }
-    label.append(Object.assign(document.createElement("span"), { textContent: "-" + f.name }), input);
+    label.append(caption(f), input);
   }
-  label.append(Object.assign(document.createElement("small"), { textContent: f.desc }));
+  // The select lists the names already; the caption marks a required field.
+  const help = f.name === "list" ? f.desc.split(": ")[0] : f.desc.replace(" (required)", "");
+  label.append(Object.assign(document.createElement("small"), { textContent: help }));
   input.name = f.name;
+  // The browser's own check: it blocks the run, focuses the field and says why.
+  input.required = f.desc.includes("(required)");
   return label;
 }
 
@@ -568,12 +655,21 @@ function zone() {
 async function init() {
   const { err } = await run(["-h"]);
   const flags = parseUsage(err);
-  const byName = Object.fromEntries(flags.map((f) => [f.name, f]));
-  for (const n of MAIN) {
-    if (!byName[n]) throw new Error(`-h lists no -${n}`);
-    $("main").append(field(byName[n]));
+  // -h's groups, in its order: MAIN_GROUPS fill the main form, the rest
+  // All options.
+  const groups = Map.groupBy(flags, (f) => f.group);
+  const group = (box, title, fs) => {
+    const set = document.createElement("fieldset");
+    set.style.setProperty("--n", fs.length);
+    set.append(Object.assign(document.createElement("legend"), { textContent: title }));
+    for (const f of fs) set.append(field(f));
+    box.append(set);
+  };
+  for (const title of MAIN_GROUPS) {
+    if (!groups.has(title)) throw new Error(`-h has no "${title}" group`);
+    group($("main"), title, groups.get(title));
   }
-  for (const f of flags) if (!MAIN.includes(f.name)) $("more").append(field(f));
+  for (const [title, fs] of groups) if (!MAIN_GROUPS.includes(title)) group($("more"), title, fs);
   restore();
   const shared = fromURL();
   const el = $("form").elements;
@@ -584,6 +680,18 @@ async function init() {
   $("run").textContent = "Run";
   if (shared) { skipSave = true; $("form").requestSubmit(); }
 }
+
+// saved is the last run's -csv or -json output, which Download saves.
+let saved = null;
+$("save").addEventListener("click", () => {
+  if (!saved) return;
+  const type = saved.kind === "csv" ? "text/csv" : "application/json";
+  const url = URL.createObjectURL(new Blob([saved.text], { type }));
+  const link = Object.assign(document.createElement("a"), { href: url, download: `astro-recommender.${saved.kind}` });
+  link.click();
+  // Some browsers start the download after click() returns.
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
 
 // A shared link's first run must not replace the visitor's own saved form.
 let skipSave = false;
@@ -600,9 +708,21 @@ $("form").addEventListener("submit", async (e) => {
     const { out, err, alt, code } = await run(a);
     try { curves = alt ? JSON.parse(alt) : null; } catch { curves = null; }
     $("out").innerHTML = sky(ansi(out));
+    // -csv and -json are meant for other programs (N.I.N.A. imports the
+    // CSV): offer the output as a file, not only as text to copy.
+    const kind = code ? null : a.includes("-csv") ? "csv" : a.includes("-json") ? "json" : null;
+    saved = kind && { kind, text: out };
+    $("save").hidden = !kind;
+    if (kind) $("save").textContent = `Download ${kind.toUpperCase()}`;
     $("warn").textContent = err.trim();
     $("warn").className = code ? "error" : "";
-    $("status").textContent = code ? `exit status ${code}` : `done in ${((performance.now() - t0) / 1000).toFixed(1)} s`;
+    $("status").textContent = code ? "Failed: see the message below" : `done in ${((performance.now() - t0) / 1000).toFixed(1)} s`;
+    // The answer leads: bring the report (or its warnings) up once the form
+    // has done its job, unless it is already in view.
+    const first = $("warn").textContent ? $("warn") : $("out");
+    if (first.getBoundingClientRect().top > innerHeight * 0.6) {
+      first.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    }
   } catch (ex) {
     $("warn").className = "error";
     $("warn").textContent = String(ex);
@@ -626,7 +746,10 @@ $("here").addEventListener("click", () => {
 const THEME = "astro-recommender-theme";
 function themeLabel() {
   const choice = document.documentElement.dataset.themeChoice;
-  $("theme").textContent = choice === "auto" ? `Theme: auto (${document.documentElement.dataset.theme})` : `Theme: ${choice}`;
+  const shown = document.documentElement.dataset.theme;
+  const icon = { light: "☀", dark: "☾", night: "●" }[shown];
+  $("theme").textContent = `${icon} ${choice === "auto" ? "Auto" : choice[0].toUpperCase() + choice.slice(1)}`;
+  $("theme").setAttribute("aria-label", choice === "auto" ? `Theme: auto (${shown})` : `Theme: ${choice}`);
 }
 $("theme").addEventListener("click", () => {
   const next = { auto: "light", light: "dark", dark: "night", night: null }[document.documentElement.dataset.themeChoice];

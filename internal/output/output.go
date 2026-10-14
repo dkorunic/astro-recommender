@@ -36,11 +36,10 @@ import (
 // Header prints the site, window, Moon and sky; place is the reverse
 // geocoded name, empty if unknown.
 func Header(cfg *config.Config, s *scoring.Sky, place string) {
-	label := func(s string) string { return paint("01", s) }
 	if place != "" {
 		place = " (" + place + ")"
 	}
-	fmt.Printf("%s %.4f, %.4f%s, %s\n", label("Location:"), cfg.Lat, cfg.Lon, place, cfg.Loc)
+	headerLine("Location:", fmt.Sprintf("%.4f, %.4f%s, %s", cfg.Lat, cfg.Lon, place, cfg.Loc))
 	layout := clockLayout(s)
 	night := ""
 	switch {
@@ -49,13 +48,13 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 	case cfg.Twilight != "astronomical":
 		night = ", " + cfg.Twilight + " night"
 	}
-	fmt.Printf("%s %s - %s (%s%s)\n", label("Window:  "), s.Start.Format("2006-01-02 "+layout), s.End.Format("2006-01-02 "+layout),
-		s.End.Sub(s.Start).Round(time.Minute), night)
-	fmt.Printf("%s %s illuminated, min separation %.0f°, %s\n", label("Moon:    "), paint(scale(s.Illum, 0.3, 0.7), fmt.Sprintf("%.0f%%", s.Illum*100)),
-		s.MoonSep, moonText(s))
-	fmt.Printf("%s %.1f' - %.1f'\n", label("Size:    "), cfg.SizeMin, cfg.SizeMax)
+	headerLine("Window:  ", fmt.Sprintf("%s - %s (%s%s)", s.Start.Format("2006-01-02 "+layout), s.End.Format("2006-01-02 "+layout),
+		durText(s.End.Sub(s.Start)), night))
+	headerLine("Moon:    ", fmt.Sprintf("%s illuminated, targets kept at least %.0f° away, %s", paint(scale(s.Illum, 0.3, 0.7), fmt.Sprintf("%.0f%%", s.Illum*100)),
+		s.MoonSep, moonText(s)))
+	headerLine("Size:    ", fmt.Sprintf("%.1f' - %.1f'", cfg.SizeMin, cfg.SizeMax))
 	if cfg.MinRun > 0 {
-		fmt.Printf("%s at least %s observable without a break\n", label("Min run: "), cfg.MinRun)
+		headerLine("Min run: ", fmt.Sprintf("at least %s observable without a break", durText(cfg.MinRun)))
 	}
 	if cfg.RASet || cfg.DecSet {
 		ra, dec := position(cfg.RA, cfg.Dec)
@@ -66,7 +65,7 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 		if cfg.DecSet {
 			region = append(region, "Dec "+dec)
 		}
-		fmt.Printf("%s within %g° of %s\n", label("Region:  "), cfg.Tol, strings.Join(region, ", "))
+		headerLine("Region:  ", fmt.Sprintf("within %g° of %s", cfg.Tol, strings.Join(region, ", ")))
 	}
 	targetsDesc := cfg.ListName
 	if cfg.TargetsFile != "" {
@@ -78,7 +77,11 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 	case s.CometsLost:
 		targetsDesc += ", comets unavailable"
 	default:
-		targetsDesc += fmt.Sprintf(", %d comets brighter than mag %.1f", s.Comets, cfg.CometMag)
+		noun := "comets"
+		if s.Comets == 1 {
+			noun = "comet"
+		}
+		targetsDesc += fmt.Sprintf(", %d %s brighter than mag %.1f", s.Comets, noun, cfg.CometMag)
 	}
 	if cfg.Types != nil {
 		targetsDesc += ", only " + strings.Join(cfg.Types, ", ")
@@ -86,7 +89,7 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 	if cfg.SkipFile != "" {
 		targetsDesc += fmt.Sprintf(", skipping %d names from %s", len(cfg.Skip), cfg.SkipFile)
 	}
-	fmt.Printf("%s %s\n", label("Targets: "), targetsDesc)
+	headerLine("Targets: ", targetsDesc)
 	if cfg.Framing {
 		pxLong, pxShort := cfg.FramePx()
 		extra := ""
@@ -96,17 +99,17 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 		if cfg.Rotate {
 			extra += ", rotatable"
 		}
-		fmt.Printf("%s %.2f° x %.2f°, %.2f\"/px (%.0f x %.0f px)%s\n", label("Frame:   "), cfg.FOVLong/60, cfg.FOVShort/60,
-			cfg.Scale, pxLong, pxShort, extra)
+		headerLine("Frame:   ", fmt.Sprintf("%.2f° x %.2f°, %.2f\"/px (%.0f x %.0f px)%s", cfg.FOVLong/60, cfg.FOVShort/60,
+			cfg.Scale, pxLong, pxShort, extra))
 	}
 	if len(cfg.Horizon) > 0 {
-		fmt.Printf("%s %d points, %.0f° - %.0f°\n", label("Horizon: "), len(cfg.Horizon),
+		headerLine("Horizon: ", fmt.Sprintf("%d points, %.0f° - %.0f°", len(cfg.Horizon),
 			slices.MinFunc(cfg.Horizon, func(a, b [2]float64) int { return cmp.Compare(a[1], b[1]) })[1],
-			slices.MaxFunc(cfg.Horizon, func(a, b [2]float64) int { return cmp.Compare(a[1], b[1]) })[1])
+			slices.MaxFunc(cfg.Horizon, func(a, b [2]float64) int { return cmp.Compare(a[1], b[1]) })[1]))
 	}
-	skyDesc := fmt.Sprintf("Bortle not set (dark sky, %.1f mag/arcsec²)", atmos.RefZenithMag)
+	skyDesc := fmt.Sprintf("dark, %.1f mag/arcsec² (default)", atmos.RefZenithMag)
 	if cfg.SkySet { // -bortle 0 or -sqm 0: asked for, not defaulted
-		skyDesc = fmt.Sprintf("Bortle/SQM off (dark sky, %.1f mag/arcsec²)", atmos.RefZenithMag)
+		skyDesc = fmt.Sprintf("dark, %.1f mag/arcsec² (-bortle/-sqm 0)", atmos.RefZenithMag)
 	}
 	switch {
 	case cfg.SQM != 0:
@@ -143,7 +146,25 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 			skyDesc += fmt.Sprintf(" %g nm", cfg.FilterNM)
 		}
 	}
-	fmt.Printf("%s %s\n\n", label("Sky:     "), skyDesc)
+	headerLine("Sky:     ", skyDesc)
+	fmt.Println()
+}
+
+// headerIndent is where header values start, after the padded label.
+const headerIndent = len("Location: ")
+
+// headerLine prints a header label and its value, the value wrapped at
+// TermWidth under its own first column: a line run back under the labels
+// reads as a new one.
+func headerLine(name, value string) {
+	lines := []string{value}
+	if TermWidth > 0 {
+		lines = wrap(value, max(20, TermWidth-headerIndent))
+	}
+	fmt.Println(paint("01", name), lines[0])
+	for _, l := range lines[1:] {
+		fmt.Println(strings.Repeat(" ", headerIndent) + l)
+	}
 }
 
 // forecastFetched reports whether any forecast came back, so there is a
@@ -154,6 +175,7 @@ func Weather(cfg *config.Config, s *scoring.Sky) {
 	if !forecastFetched(s) {
 		return
 	}
+	fmt.Println(paint("01", "Forecast"))
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	row(w, "01", names(weatherColumns)...)
 	na := paint("39", "-")
@@ -187,48 +209,134 @@ func Weather(cfg *config.Config, s *scoring.Sky) {
 }
 
 func Plan(cfg *config.Config, s *scoring.Sky, slots []plan.Slot) {
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	cols := columns(cfg, planColumns)
-	row(w, "01", names(cols)...)
-	for _, p := range slots {
-		when := paint("39", spanText(s, p.Start, p.End))
-		if p.Result == nil {
-			cells := []string{when, paint("39", "no target")}
-			for range len(cols) - len(cells) {
-				cells = append(cells, paint("39", "-"))
-			}
-			row(w, "", cells...)
+	emptyPlan = !slices.ContainsFunc(slots, func(p plan.Slot) bool { return p.Result != nil })
+	if emptyPlan {
+		// A grid of "no target" rows says less than one line.
+		fmt.Println(paint("01", "Night plan"))
+		fmt.Println("No target fits any block.")
+		fmt.Println()
 
-			continue
-		}
-		cells := []string{
-			when, paint("36", p.Result.Name), paint("39", shortDesc(p.Result.Description, descWidth)), paint(typeColor(p.Result.Target), p.Result.Type),
-			paint(scale(p.Score, 0.66, 0.33), fmt.Sprintf("%.2f", p.Score)),
-			paint("39", altText(s, p.PeakAlt, p.PeakAt)),
-		}
-		if cfg.Filter != "" {
-			cells = append(cells, paint("39", filterText(*p.Result)))
-		}
-		row(w, "", cells...)
+		return
 	}
-	w.Flush()
+	var table string
+	table, _, planDropped = fit(planDropOrder, func(drop map[string]bool, desc int) (string, int, int) {
+		return planTable(cfg, s, slots, drop, desc)
+	})
+	fmt.Println(paint("01", "Night plan"))
+	fmt.Print(table)
 	fmt.Println()
 }
 
+// planTable renders the plan without the columns in drop, descriptions cut
+// to desc runes, and returns it, its width and the widest description.
+func planTable(cfg *config.Config, s *scoring.Sky, slots []plan.Slot, drop map[string]bool, desc int) (string, int, int) {
+	var buf bytes.Buffer
+	widest := 0
+	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', 0)
+	cols := columns(cfg, planColumns, drop)
+	row(w, "01", names(cols)...)
+	types := varied(slots, func(p plan.Slot) string {
+		if p.Result == nil {
+			return "39"
+		}
+
+		return typeColor(p.Result.Target)
+	})
+	for i, p := range slots {
+		// Every column's cell, in planColumns' order; cols picks those shown.
+		all := []string{paint("39", spanText(s, p.Start, p.End)), paint("39", "no target")}
+		for range len(planColumns) - len(all) {
+			all = append(all, paint("39", "-"))
+		}
+		if p.Result != nil {
+			d := shortDesc(p.Result.Description, desc)
+			widest = max(widest, utf8.RuneCountInString(d))
+			all = []string{
+				all[0], paint("36", p.Result.Name), paint("39", d), paint(types[i], p.Result.Type),
+				paint(scale(p.Score, 0.66, 0.33), fmt.Sprintf("%.2f", p.Score)),
+				paint("39", altText(s, p.PeakAlt, p.PeakAt)), paint("39", filterText(*p.Result)),
+			}
+		}
+		row(w, "", pick(all, planColumns, cols)...)
+	}
+	w.Flush()
+
+	return buf.String(), tableWidth(buf.String()), widest
+}
+
+// pick returns the cells of row, one per column of all, for the columns
+// shown.
+func pick(row []string, all, shown []column) []string {
+	cells := make([]string, len(shown))
+	for j, c := range shown {
+		cells[j] = row[slices.IndexFunc(all, func(a column) bool { return a.name == c.name })]
+	}
+
+	return cells
+}
+
+// tableWidth is the widest line of table in columns.
+func tableWidth(table string) int {
+	width := 0
+	for line := range strings.Lines(table) {
+		width = max(width, visible(strings.TrimRight(line, " \n")))
+	}
+
+	return width
+}
+
+// fit renders a table with render, which leaves out the columns in drop
+// and cuts descriptions to desc runes. On a terminal narrower than the
+// table it drops the column groups of order, least needed first, while the
+// descriptions would otherwise go below descKeep, as a common name cut that
+// far is lost; then it cuts the descriptions, down to minDesc. It returns
+// the table, its width and the columns left out.
+func fit(order [][]string, render func(drop map[string]bool, desc int) (string, int, int)) (string, int, map[string]bool) {
+	drop := map[string]bool{}
+	table, width, widest := render(drop, descWidth)
+	for over := width - TermWidth; TermWidth > 0 && over > 0; over = width - TermWidth {
+		if widest-over < descKeep && len(order) > 0 {
+			for _, c := range order[0] {
+				drop[c] = true
+			}
+			order = order[1:]
+			table, width, widest = render(drop, descWidth)
+
+			continue
+		}
+		if widest > minDesc {
+			table, width, _ = render(drop, max(minDesc, widest-over))
+		}
+
+		break
+	}
+
+	return table, width, drop
+}
+
 // Results prints the target table and returns its width in columns (0 when
-// empty), which the legend wraps to: at most TermWidth when that is set. On a
-// terminal narrower than the table the descriptions give way first, down to
-// minDesc runes.
+// empty): at most TermWidth when that is set. On a terminal narrower than
+// the table, fit drops the columns of dropOrder, then cuts descriptions.
 func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) int {
-	if len(results) == 0 {
-		fmt.Println("No objects within constraints.")
+	noTargets = len(results) == 0
+	if noTargets {
+		for _, l := range wrapped(emptyText(cfg)) {
+			fmt.Println(l)
+		}
 
 		return 0
 	}
-	table, width, widest := resultsTable(cfg, s, results, descWidth)
-	if over := width - TermWidth; TermWidth > 0 && over > 0 && widest > minDesc {
-		table, width, _ = resultsTable(cfg, s, results, max(minDesc, widest-over))
+	order := dropOrder
+	// PX carries a mosaic's grid, without which SUBS, per panel, reads short.
+	if slices.ContainsFunc(results[:min(cfg.Top, len(results))], func(r scoring.Result) bool { return r.Mosaic.Panels() > 1 }) {
+		order = slices.DeleteFunc(slices.Clone(order), func(g []string) bool { return slices.Contains(g, pxColumn) })
 	}
+	var table string
+	var width int
+	table, width, dropped = fit(order, func(drop map[string]bool, desc int) (string, int, int) {
+		return resultsTable(cfg, s, results, drop, desc)
+	})
+	fmt.Println(paint("01", "Targets, ranked by SCORE"))
 	fmt.Print(table)
 	if TermWidth > 0 {
 		width = min(width, TermWidth)
@@ -237,14 +345,47 @@ func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) int {
 	return width
 }
 
-// resultsTable renders the target table with descriptions cut to desc runes,
-// and returns it, its width in columns and the widest description in it.
-func resultsTable(cfg *config.Config, s *scoring.Sky, results []scoring.Result, desc int) (string, int, int) {
+// emptyText says that no target passed and which limits to loosen: the
+// size and altitude always apply, the others only when set.
+func emptyText(cfg *config.Config) string {
+	limits := []string{fmt.Sprintf("size %.1f'-%.1f'", cfg.SizeMin, cfg.SizeMax), fmt.Sprintf("altitude %.0f-%.0f°", cfg.AltMin, cfg.AltMax)}
+	flags := []string{"-size-min/-size-max", "-alt-min/-alt-max"}
+	if cfg.Types != nil {
+		limits, flags = append(limits, "type "+strings.Join(cfg.Types, ", ")), append(flags, "-type")
+	}
+	if cfg.MinRun > 0 {
+		limits, flags = append(limits, "runs of "+durText(cfg.MinRun)), append(flags, "-min-run")
+	}
+	if cfg.RASet || cfg.DecSet {
+		limits, flags = append(limits, fmt.Sprintf("within %g° of the region", cfg.Tol)), append(flags, "-tol")
+	}
+
+	return fmt.Sprintf("No objects within the limits (%s). Loosen %s, or try another -list.", strings.Join(limits, ", "), strings.Join(flags, ", "))
+}
+
+// wrapped splits text at TermWidth when that is set, else returns it whole.
+func wrapped(text string) []string {
+	if TermWidth > 0 {
+		return wrap(text, max(20, TermWidth))
+	}
+
+	return []string{text}
+}
+
+// resultsTable renders the target table without the columns in drop, with
+// descriptions cut to desc runes, and returns it, its width in columns and
+// the widest description in it.
+func resultsTable(cfg *config.Config, s *scoring.Sky, results []scoring.Result, drop map[string]bool, desc int) (string, int, int) {
 	var buf bytes.Buffer
-	width, widest := 0, 0
+	widest := 0
 	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', 0)
-	row(w, "01", names(columns(cfg, resultColumns))...)
-	for i, r := range results[:min(cfg.Top, len(results))] {
+	cols := columns(cfg, resultColumns, drop)
+	row(w, "01", names(cols)...)
+	shown := results[:min(cfg.Top, len(results))]
+	up := varied(shown, func(r scoring.Result) string { return scale(r.Foto, 0.66, 0.33) })
+	types := varied(shown, func(r scoring.Result) string { return typeColor(r.Target) })
+	sky := varied(shown, func(r scoring.Result) string { return scale(r.SkyMag, 20.5, 19) })
+	for i, r := range shown {
 		var px string
 		if cfg.Framing {
 			px = sizeText(r.Target, "%.0f", r.Size*60/cfg.Scale)
@@ -260,37 +401,33 @@ func resultsTable(cfg *config.Config, s *scoring.Sky, results []scoring.Result, 
 		ra, dec := position(r.Position())
 		d := shortDesc(r.Description, desc)
 		widest = max(widest, utf8.RuneCountInString(d))
-		cells := []string{
-			paint("39", strconv.Itoa(i+1)), paint("36", r.Name), paint("39", d), paint(typeColor(r.Target), r.Type),
+		code, subs := subsText(r.Exposure)
+		// Every column's cell, in resultColumns' order; cols picks those shown.
+		all := []string{
+			paint("39", strconv.Itoa(i+1)), paint("36", r.Name), paint("39", d), paint(types[i], r.Type),
 			paint("39", constellation.Abbr(r.Constellation)), paint("39", ra), paint("39", dec), paint("39", size),
-			paint(scale(r.Foto, 0.66, 0.33), fmt.Sprintf("%.2f", r.Foto)),
-			paint(scale(r.Score, 0.66, 0.33), fmt.Sprintf("%.2f", r.Score)),
-			paint("39", runText(s, r)),
-			paint("39", altText(s, r.MaxAlt, r.MaxAt)),
-			paint(scale(r.SkyMag, 20.5, 19), fmt.Sprintf("%.1f", r.SkyMag)),
-			paint("39", magText(r.Target)),
-			paint("39", sbText(r)),
+			paint(up[i], fmt.Sprintf("%.2f", r.Foto)), paint(scale(r.Score, 0.66, 0.33), fmt.Sprintf("%.2f", r.Score)),
+			paint("39", runText(s, r)), paint("39", altText(s, r.MaxAlt, r.MaxAt)),
+			paint(sky[i], fmt.Sprintf("%.1f", r.SkyMag)), paint("39", magText(r.Target)), paint("39", sbText(r)),
+			paint("39", filterText(r)), paint("39", px), paint(code, subs),
 		}
-		if cfg.Filter != "" {
-			cells = append(cells, paint("39", filterText(r)))
-		}
-		if cfg.Framing {
-			code, text := subsText(r.Exposure)
-			cells = append(cells, paint("39", px), paint(code, text))
-		}
-		row(w, "", cells...)
+		row(w, "", pick(all, resultColumns, cols)...)
 	}
 	w.Flush()
-	for line := range strings.Lines(buf.String()) {
-		width = max(width, utf8.RuneCountInString(strings.TrimRight(sgr.ReplaceAllString(line, ""), " \n")))
-	}
 
-	return buf.String(), width, widest
+	return buf.String(), tableWidth(buf.String()), widest
 }
 
 // altText is the MAX ALT and PEAK cell: the altitude and when it is reached.
 func altText(s *scoring.Sky, alt float64, at time.Time) string {
 	return fmt.Sprintf("%.0f° %s", alt, clock(s, at))
+}
+
+// durText formats a duration as "10h 05m": Go's own "10h5m0s" reads poorly.
+func durText(d time.Duration) string {
+	m := int(d.Round(time.Minute) / time.Minute)
+
+	return fmt.Sprintf("%dh %02dm", m/60, m%60)
 }
 
 // sgr matches the escapes paint writes.
@@ -302,10 +439,14 @@ var UseColor bool
 // when it can; 0 (not a terminal) leaves the table as wide as it is.
 var TermWidth int
 
-// TerminalWidth returns stdout's width in columns, 0 when it is not a
-// terminal (a pipe, a file, the browser build).
+// TerminalWidth returns stdout's width in columns, else $COLUMNS (which the
+// web page sets from its output panel), 0 when neither is known (a pipe, a
+// file).
 func TerminalWidth() int {
 	if w, _, err := term.GetSize(int(os.Stdout.Fd())); err == nil {
+		return w
+	}
+	if w, err := strconv.Atoi(os.Getenv("COLUMNS")); err == nil && w > 0 {
 		return w
 	}
 
@@ -353,6 +494,32 @@ func moonText(s *scoring.Sky) string {
 // how far a narrow terminal may cut it, past which a common name is lost.
 const descWidth, minDesc = 40, 15
 
+// descKeep is the description width below which a narrow terminal drops the
+// columns of dropOrder first.
+const descKeep = 22
+
+// dropOrder is the order a narrow terminal drops target columns in, least
+// needed for choosing tonight's target first: the position is for the mount
+// (-csv carries it), then detail the score already weighs; UP repeats what
+// OBSERVABLE shows, and most descriptions name the type.
+var dropOrder = [][]string{{raColumn, decColumn}, {"CON"}, {"MAG"}, {"SB"}, {"SKY"}, {sizeColumn}, {pxColumn}, {"UP"}, {typeColumn}}
+
+// planDropOrder is dropOrder for the night plan: what to shoot when, and
+// how well, stay.
+var planDropOrder = [][]string{{typeColumn}, {peakColumn}}
+
+// raColumn, decColumn, sizeColumn, typeColumn and peakColumn are named by
+// the drop orders.
+const raColumn, decColumn, sizeColumn, typeColumn, peakColumn = "RA", "DEC", "SIZE", "TYPE", "PEAK ALT"
+
+// dropped and planDropped hold the columns Results and Plan left out, and
+// noTargets and emptyPlan that they printed no table, so the legend leaves
+// those out too.
+var (
+	dropped, planDropped map[string]bool
+	noTargets, emptyPlan bool
+)
+
 // shortDesc truncates a description to width runes, the ellipsis included,
 // at the last comma-separated name that fits when there is one.
 func shortDesc(s string, width int) string {
@@ -360,7 +527,12 @@ func shortDesc(s string, width int) string {
 		return s
 	}
 	prefix := string([]rune(s)[:width-1])
+	// At the last name that fits, else the last word when that keeps at
+	// least half: "Gamma Cassiope…" reads worse than "Gamma…" only when
+	// the cut throws most of it away.
 	if cut := strings.LastIndex(prefix, ", "); cut > 0 {
+		prefix = prefix[:cut]
+	} else if cut := strings.LastIndex(prefix, " "); cut >= len(prefix)/2 {
 		prefix = prefix[:cut]
 	}
 
@@ -378,15 +550,16 @@ func subsText(e *scoring.Estimate) (string, string) {
 	if e == nil {
 		return "39", "-"
 	}
-	prefix := ""
-	if e.Assumed {
-		prefix = "~"
-	}
+	// N in >N is what tonight allows, which no assumed surface brightness
+	// enters, so it takes no ~.
 	if e.Good > e.Max {
-		return "33", prefix + ">" + strconv.Itoa(e.Max)
+		return "33", ">" + strconv.Itoa(e.Max)
+	}
+	if e.Assumed {
+		return "39", "~" + strconv.Itoa(e.Good)
 	}
 
-	return "39", prefix + strconv.Itoa(e.Good)
+	return "39", strconv.Itoa(e.Good)
 }
 
 // magText is the MAG column: the integrated V magnitude, else the B one
@@ -533,22 +706,41 @@ func scale(v, okAt, badAt float64) string {
 	return "33"
 }
 
+// varied returns each row's colour code, or "39" for every row when they all
+// share one: a colour no row differs in tells nothing apart (at a bright site
+// SKY would be red on every row).
+func varied[T any](rows []T, code func(T) string) []string {
+	codes := make([]string, len(rows))
+	for i, r := range rows {
+		codes[i] = code(r)
+	}
+	if len(codes) > 1 && !slices.ContainsFunc(codes, func(c string) bool { return c != codes[0] }) {
+		for i := range codes {
+			codes[i] = "39"
+		}
+	}
+
+	return codes
+}
+
 // column is a table column and its legend entry; tables build their headers
 // from these so the legend cannot drift from the output.
 type column struct{ name, desc string }
 
 var weatherColumns = []column{
 	{"HOUR", "local hour"},
-	{"CLOUD", "effective cloud cover (thin high cloud counts half), with the rain in the hour when any"},
+	{"CLOUD", "effective cloud cover (high cloud counts half), and rain when any"},
 	{"LOW/MID/HIGH", "cloud cover per layer"},
 	{"TRANSP", "7Timer transparency, 1 best to 8 worst"},
 	{"EXT", "atmospheric extinction, mag per airmass"},
-	{"SEEING", "7Timer seeing (star FWHM); ~n\" without it: the FWHM estimated from the upper-air profile"},
+	{"SEEING", "7Timer seeing (star FWHM); ~n\" estimated from the upper air"},
 	{"DEW SPREAD", "temperature minus dew point; dew forms below ~2-3 °C"},
 	{"WIND/GUST", "mean wind / gusts, km/h"},
 }
 
-const sameAsTargets = "as in the target list"
+// sameAsTargets marks a plan column the target legend already explains, so
+// Legend leaves it out.
+const sameAsTargets = ""
 
 // filterColumn is shown only with -filter (columns).
 const filterColumn = "FILTER"
@@ -563,38 +755,41 @@ var planColumns = []column{
 	{"TIME", "imaging block"},
 	{"NAME", sameAsTargets},
 	{"DESCRIPTION", sameAsTargets},
-	{"TYPE", sameAsTargets},
-	{"SCORE", "the target's score within this block"},
-	{"PEAK ALT", "highest altitude within the block, and when"},
+	{typeColumn, sameAsTargets},
+	{"BLOCK SCORE", "the target's score within its block"},
+	{peakColumn, "highest altitude within the block, and when"},
 	{filterColumn, sameAsTargets},
 }
 
+// resultColumns' descriptions stay one short line each: the reasoning behind
+// a value belongs in README.md and MODELS.md, not in every run's output.
 var resultColumns = []column{
 	{"#", "rank by SCORE"},
 	{"NAME", "catalog designation"},
-	{"DESCRIPTION", "common name, long lists cut with …; comets: magnitude, Sun distance r, Earth distance Δ"},
-	{"TYPE", "object type"},
-	{"CON", "IAU constellation abbreviation, from the official boundaries"},
-	{"RA", "J2000 right ascension, hh mm.m (comets: mid-window position)"},
-	{"DEC", "J2000 declination, ±dd mm (comets: mid-window position)"},
-	{"SIZE", "major axis in arcminutes, with -rotate major x minor where the minor axis is known (- unknown or comet)"},
-	{"FOTO", "fraction of the window within the altitude, horizon and Moon-distance limits"},
-	{"SCORE", "0-1 imaging quality: 1 = every minute observable under a perfect, pristine dark sky"},
-	{"OBSERVABLE", "longest stretch within the limits without a break (+ there are others; +1d a whole day)"},
-	{"MAX ALT", "highest altitude in the window, and when"},
-	{"SKY", "mean sky brightness at the object, mag/arcsec², with the zodiacal and galactic light of its direction (higher is darker; no filter)"},
-	{"MAG", "integrated V magnitude (B marks a B magnitude where V is unknown; comets: mid-window estimate; - unknown)"},
-	{"SB", "the object's own surface brightness, mag/arcsec², set against the sky it sees: SKY, cut by the chosen -filter to its bands' share for emission-line objects when that scores better, or halved for star clusters without nebulosity, whose own brightness is then not used (~ estimated from the magnitude and size or from a B value and a typical colour; - unknown, scored as sky-limited)"},
-	{filterColumn, "with -filter: the filter of the list, worn all night, that gains the object most (with framing, the one SUBS needs fewest subs through); - when none beats no filter: not emission-line, or wearing it costs more light than it cuts sky"},
-	{pxColumn, "with framing: size in pixels at the frame's pixel scale, and the mosaic (columns along the long side x rows) when more than one panel scores best"},
-	{subsColumn, "with framing: subs of -sub seconds for a good image (stacked SNR 10 per arcsec² at the object's surface brightness) through FILTER, counting those the forecast loses, per panel of a mosaic (~ a typical surface brightness for the type assumed; >N more than the N that fit in its observable time, or with -plan its blocks, also a night the forecast clouds out; - none applies: clusters, comets, dark nebulae and molecular clouds). -json and the web page add SNR 5 and 20"},
+	{"DESCRIPTION", "common name; comets: magnitude, Sun distance r, Earth Δ"},
+	{typeColumn, "object type"},
+	{"CON", "constellation"},
+	{raColumn, "J2000 right ascension, hh mm.m"},
+	{decColumn, "J2000 declination, ±dd mm"},
+	{sizeColumn, "major axis in arcminutes (with -rotate: major x minor)"},
+	{"UP", "fraction of the night observable (altitude, horizon, Moon)"},
+	{"SCORE", "imaging quality 0-1; 1 = all night under a perfect dark sky"},
+	{"OBSERVABLE", "longest unbroken observable stretch (+ there are more)"},
+	{"MAX ALT", "highest altitude, and when"},
+	{"SKY", "sky brightness at the object, mag/arcsec² (higher is darker)"},
+	{"MAG", "integrated magnitude, V (B where only blue is known)"},
+	{"SB", "object surface brightness, mag/arcsec² (higher is fainter)"},
+	{filterColumn, "the filter of yours that helps most, worn all night"},
+	{pxColumn, "size in pixels (NxM: mosaic panels needed)"},
+	{subsColumn, "-sub second subs for a good image, per panel; >N: only N fit"},
 }
 
 // columns returns cols without FILTER when there is no -filter and without
 // PX and SUBS when there is no framing.
-func columns(cfg *config.Config, cols []column) []column {
+func columns(cfg *config.Config, cols []column, drop map[string]bool) []column {
 	return slices.DeleteFunc(slices.Clone(cols), func(c column) bool {
-		return c.name == filterColumn && cfg.Filter == "" || (c.name == pxColumn || c.name == subsColumn) && !cfg.Framing
+		return c.name == filterColumn && cfg.Filter == "" || (c.name == pxColumn || c.name == subsColumn) && !cfg.Framing ||
+			drop[c.name]
 	})
 }
 
@@ -610,8 +805,6 @@ func names(cols []column) []string {
 // Legend explains the columns of the tables that were printed and the colors,
 // wrapped to tableWidth (legendWidth when 0).
 func Legend(cfg *config.Config, s *scoring.Sky, tableWidth int) {
-	fmt.Println()
-	fmt.Println(paint("01", "Legend"))
 	// One tabwriter for all sections keeps them aligned; the buffer lets the
 	// padding after section titles be trimmed.
 	type section struct {
@@ -620,43 +813,62 @@ func Legend(cfg *config.Config, s *scoring.Sky, tableWidth int) {
 	}
 	var sections []section
 	if forecastFetched(s) {
-		sections = append(sections, section{"Forecast table:", weatherColumns})
+		sections = append(sections, section{"Forecast:", weatherColumns})
 	}
-	if cfg.Plan > 0 {
-		sections = append(sections, section{"Night plan:", columns(cfg, planColumns)})
+	if cfg.Plan > 0 && !emptyPlan {
+		sections = append(sections, section{"Night plan:", columns(cfg, planColumns, planDropped)})
 	}
-	sections = append(sections, section{"Targets:", columns(cfg, resultColumns)})
+	if !noTargets {
+		sections = append(sections, section{"Targets:", columns(cfg, resultColumns, dropped)})
+	}
+	if len(sections) == 0 { // no table printed, nothing to explain
+		return
+	}
+	fmt.Println()
+	fmt.Println(paint("01", "Legend"))
 	// Descriptions start where tabwriter puts the second column: after the
 	// widest first cell (titles included) and the padding.
 	indent := 0
 	for _, sec := range sections {
 		indent = max(indent, len("  "+sec.title))
 		for _, c := range sec.cols {
-			indent = max(indent, len("    "+c.name))
+			if c.desc != sameAsTargets {
+				indent = max(indent, len("    "+c.name))
+			}
 		}
 	}
 	// Floored: on a terminal narrower than the indent the width would go
 	// negative and wrap() would put one word per line.
-	width := max(20, cmp.Or(tableWidth, legendWidth)-indent-legendPad)
+	// The terminal's width when known: tables narrowed to fit it would
+	// otherwise wrap the legend shorter than the screen.
+	width := max(20, cmp.Or(TermWidth, tableWidth, legendWidth)-indent-legendPad)
 	var buf bytes.Buffer
 	w := tabwriter.NewWriter(&buf, 0, 0, legendPad, ' ', 0)
 	for _, sec := range sections {
 		fmt.Fprintln(w, "  "+sec.title+"\t")
 		for _, c := range sec.cols {
+			if c.desc == sameAsTargets {
+				continue
+			}
 			// Continuation lines go under the first, in the same column.
 			name := c.name
 			for _, line := range wrap(c.desc, width) {
-				fmt.Fprintf(w, "    %s\t%s\n", name, line)
+				fmt.Fprintf(w, "    %s\t%s\n", name, paint("90", line))
 				name = ""
 			}
 		}
 	}
+	// The colours are the last cells, so their escapes do not shift the
+	// description column.
+	dim := func(s string) string { return paint("90", s) }
+	fmt.Fprintf(w, "  Marks:\t%s\n", dim("~ estimated, - unknown or not applicable"))
+	fmt.Fprintf(w, "  Colors:\t%s%s%s%s%s%s\n", paint("32", "green"), dim(" good, "), paint("33", "yellow"), dim(" fair, "), paint("31", "red"), dim(" poor"))
+	fmt.Fprintf(w, "\t%s%s%s%s%s\n", dim("TYPE: "), paint("35", "magenta"), dim(" emission-line (helped by -filter), "), paint("33", "yellow"), dim(" comet"))
+	fmt.Fprintf(w, "\t%s\n", dim("UP, SKY and TYPE are plain when every row is alike"))
 	w.Flush()
 	for line := range strings.Lines(buf.String()) {
 		fmt.Println(strings.TrimRight(line, " \n"))
 	}
-	fmt.Printf("  Colors: %s good, %s fair, %s poor;\n    TYPE in %s is emission-line (helped by -filter), in %s a comet.\n",
-		paint("32", "green"), paint("33", "yellow"), paint("31", "red"), paint("35", "magenta"), paint("33", "yellow"))
 }
 
 // legendWidth is the width the legend wraps to without a target table;
@@ -683,7 +895,7 @@ func wrap(text string, width int) []string {
 		switch {
 		case line == "":
 			line = word
-		case utf8.RuneCountInString(line)+1+utf8.RuneCountInString(word) <= width:
+		case visible(line)+1+visible(word) <= width:
 			line += " " + word
 		default:
 			lines = append(lines, line)
@@ -693,5 +905,8 @@ func wrap(text string, width int) []string {
 
 	return append(lines, line)
 }
+
+// visible is s's width in columns, without paint's escapes.
+func visible(s string) int { return utf8.RuneCountInString(sgr.ReplaceAllString(s, "")) }
 
 func isAlnum(r rune) bool { return unicode.IsLetter(r) || unicode.IsDigit(r) }
