@@ -8,6 +8,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -449,5 +450,65 @@ func TestNoAllocs(t *testing.T) {
 		_ = tg.Lines()
 	}); n != 0 {
 		t.Errorf("%v allocations per target, want 0", n)
+	}
+}
+
+// TestTypicalSB recomputes typicalSB: the median known surface brightness per
+// class over every embedded list, each name once. A list regeneration that
+// moves one by more than 0.3 mag/arcsec² fails here; update the constant.
+func TestTypicalSB(t *testing.T) {
+	vals := map[string][]float64{}
+	seen := map[string]bool{}
+	for _, name := range Lists {
+		ts, _, err := Load(name, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, tg := range ts {
+			if seen[NameKey(tg.Name)] {
+				continue
+			}
+			seen[NameKey(tg.Name)] = true
+			if sb, _ := tg.SurfaceBrightness(); sb > 0 && tg.sbClass() != "" {
+				vals[tg.sbClass()] = append(vals[tg.sbClass()], sb)
+			}
+		}
+	}
+	for class, want := range typicalSB {
+		v := vals[class]
+		if len(v) == 0 {
+			t.Errorf("%s: no data", class)
+
+			continue
+		}
+		slices.Sort(v)
+		if got := v[len(v)/2]; math.Abs(got-want) > 0.3 {
+			t.Errorf("%s: median %.2f over %d objects, typicalSB %.2f", class, got, len(v), want)
+		}
+	}
+}
+
+func TestExposureSB(t *testing.T) {
+	for _, c := range []struct {
+		tg      Target
+		sb      float64
+		assumed bool
+	}{
+		{Target{Type: "Galaxy", SurfBr: 21.3}, 21.3, false},
+		{Target{Type: "Galaxy"}, typicalSB["galaxy"], true},
+		{Target{Type: "Planetary Nebula"}, typicalSB["planetary"], true},
+		{Target{Type: "HII region"}, typicalSB["emission"], true},
+		{Target{Type: "Reflection Nebula"}, typicalSB["reflection"], true},
+		{Target{Type: "Nebula"}, typicalSB["nebula"], true},
+		{Target{Type: "Dark Nebula"}, 0, false},
+		{Target{Type: "Open Cluster", SurfBr: 20}, 0, false},
+		{Target{Type: "Galaxy Group", SurfBr: 22}, 0, false},
+		{Target{Type: "Comet", Track: [][2]float64{{0, 0}}}, 0, false},
+		// The Horsehead is a dark nebula imaged for IC 434's Hα (emissionNames).
+		{Target{Name: "Barnard 33", Type: "Dark Nebula"}, typicalSB["emission"], true},
+	} {
+		if sb, assumed := c.tg.ExposureSB(); sb != c.sb || assumed != c.assumed {
+			t.Errorf("%s %q: %v %v, want %v %v", c.tg.Name, c.tg.Type, sb, assumed, c.sb, c.assumed)
+		}
 	}
 }

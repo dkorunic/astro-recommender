@@ -188,6 +188,58 @@ func (t Target) SurfaceBrightness() (float64, bool) {
 	return mag + 2.5*math.Log10(math.Pi/4*(60*t.Size)*(60*t.Size)), true
 }
 
+// typicalSB is the median V surface brightness per sbClass over the embedded
+// lists' objects that have one (TestTypicalSB recomputes it), for the
+// sub-exposure estimate of an object without one; scoring never uses it.
+// Brighter objects are the ones measured, so it likely flatters the object
+// it stands in for.
+var typicalSB = map[string]float64{
+	"galaxy":     22.52,
+	"planetary":  21.75,
+	"emission":   22.82,
+	"reflection": 22.03,
+	"nebula":     20.91,
+}
+
+// sbClass is t's class for typicalSB; "" when an exposure estimate does not
+// apply: clusters (point sources), galaxy groups (one member's magnitude over
+// the group's size), comets, stars, and dark nebulae (no light of their own)
+// unless imaged for an emission line behind them.
+func (t Target) sbClass() string {
+	typ := strings.ToLower(t.Type)
+	switch k := t.kind(); {
+	case k == kindGalaxy:
+		return "galaxy"
+	case k != kindNebula && k != kindClusterNebula:
+		return ""
+	case strings.Contains(typ, "planetary"):
+		return "planetary"
+	case EmissionLine(t):
+		return "emission"
+	case strings.Contains(typ, "dark"):
+		return ""
+	case strings.Contains(typ, "reflection"):
+		return "reflection"
+	}
+
+	return "nebula"
+}
+
+// ExposureSB returns the surface brightness the sub-exposure estimate uses:
+// the object's own (SurfaceBrightness), else its class's typical one with
+// assumed true; 0 when no estimate applies (sbClass).
+func (t Target) ExposureSB() (sb float64, assumed bool) {
+	class := t.sbClass()
+	if class == "" {
+		return 0, false
+	}
+	if sb, _ := t.SurfaceBrightness(); sb > 0 {
+		return sb, false
+	}
+
+	return typicalSB[class], true
+}
+
 // Position returns the RA and Dec in degrees that stand for the target: the
 // J2000 catalog position, or for a comet its mid-track one (of date, within
 // 0.4° of J2000). The -ra/-dec filter and the RA/DEC columns both use it, so
