@@ -200,7 +200,7 @@ const sbPlanetary = "planetary"
 // it stands in for.
 var typicalSB = map[string]float64{
 	"galaxy":     22.52,
-	sbPlanetary:  21.75,
+	sbPlanetary:  21.73,
 	"emission":   22.82,
 	"reflection": 22.03,
 	"nebula":     20.91,

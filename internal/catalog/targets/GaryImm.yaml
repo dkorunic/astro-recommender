@@ -566,7 +566,7 @@
 - constellation: Vulpecula
   dec: 22 43 15
   description: Dumbbell or Apple Core Nebula
-  mag: 14.1
+  mag: 7.40
   name: M 27
   ra: 19 59 36
   size: 6.0
@@ -648,7 +648,7 @@
 - constellation: Lyr
   dec: +33 01 44
   description: Ring Nebula
-  mag: 15.8
+  mag: 8.80
   name: M 57
   ra: 18 53 35
   size: 2.5
@@ -689,7 +689,7 @@
 - constellation: Perseus
   dec: +51 34 15
   description: Little Dumbbell Nebula
-  mag: 17.5
+  mag: 10.10
   name: M 76
   ra: 01 42 18
   size: 2.0
@@ -769,7 +769,7 @@
 - constellation: Ursa Major
   dec: +55 01 08
   description: Owl Nebula
-  mag: 15.8
+  mag: 9.90
   name: M 97
   ra: 11 14 48
   size: 3.0

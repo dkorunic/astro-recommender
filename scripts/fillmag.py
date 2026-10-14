@@ -39,6 +39,12 @@ def main():
     minor_only = sys.argv[1] == "--minor-only"
     tables = {} if minor_only else {field: lookup(field) for field in ("mag", "surfbr", "bsurfbr")}
     nebular = {} if minor_only else lookup("mag", ("OpenIC.yaml", "OpenNGC.yaml"))
+    if not minor_only:
+        # Also by the Messier number OpenNGC's description starts with, which
+        # GaryImm's M 27, 57, 76 and 97 go by (their descriptions carry no NGC).
+        for f in (f for name in ("OpenIC.yaml", "OpenNGC.yaml") for f in entries(name) if float(f.get("mag", -9999)) > 0):
+            for k in re.findall(r"^M \d+\b", f.get("description", "")):
+                nebular.setdefault(k, f["mag"])
     axes = {}
     for f in (f for name in ("OpenIC.yaml", "OpenNGC.yaml") for f in entries(name) if "minor" in f):
         # OpenNGC's description starts with the Messier number, which GaryImm's M 31 goes by.
