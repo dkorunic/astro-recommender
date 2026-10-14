@@ -167,7 +167,7 @@ func Parse() (Config, error) {
 	flag.Float64Var(&cfg.QE, "qe", 0, "with framing, the camera's peak quantum efficiency, above 0 and at most 1; Origin (IMX678) 0.83")
 	flag.Float64Var(&cfg.ReadNoise, "read-noise", 0, "with framing, the camera's read noise in electrons, 0 or more; Origin (IMX678) 2.15")
 	flag.BoolVar(&cfg.Mono, "mono", false, "with framing, the camera is monochrome, so every pixel sees every filter band (the Origin's is colour)")
-	flag.StringVar(&cfg.Filter, "filter", "", "filters you own, comma-separated: for emission-line targets dual (Ha + OIII at once), tri (+ Hb), quad (+ Hb and SII), ha, oiii, sii; broadband light pollution filters cls (Astronomik CLS) and lpro (Optolong L-Pro) for any target; each target is scored with each and without, the best shown in FILTER (default none)")
+	flag.StringVar(&cfg.Filter, "filter", "", "filters you own, comma-separated: for emission-line targets dual (Ha + OIII at once), tri (+ Hb), quad (+ Hb and SII), ha, oiii, sii; broadband light pollution filters cls (Astronomik CLS) and lpro (Optolong L-Pro) for any target; each target is scored without and with each worn all night, and FILTER shows the one that gains it most (with framing, the one SUBS needs fewest subs through) (default none)")
 	flag.Float64Var(&cfg.FilterNM, "filter-nm", 7, "with -filter, the width of each line filter band in nm, 1-30")
 	flag.IntVar(&cfg.Bortle, "bortle", 0, "Bortle class 1-9 of the site, sets the zenith sky brightness (0 = dark sky)")
 	flag.Float64Var(&cfg.SQM, "sqm", 0, "measured zenith sky brightness in mag/arcsec² (SQM meter or light pollution map); overrides -bortle; default: looked up on DarkSkySites when a key is available (CLI: $DARKSKYSITES_API_KEY; browser: always) and -bortle is not")

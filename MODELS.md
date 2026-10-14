@@ -641,7 +641,7 @@ F_{\text{frame}} = \max_{\text{grids}}\ \frac{F_{\text{fill}}}{\text{panels}}
 
 `scoring.Subs`, `catalog.Target.ExposureSB`, `internal/config`
 
-With framing, each listed target gets the number of sub-exposures needed tonight for a modest, good and best image: a stacked SNR of 5, 10 and 20 per arcsec² at the object's mean surface brightness, through the `-filter` choice that scored it best. It shows in the SUBS column (the good level), in `-json` (`subs`) and in the web page's hover box.
+With framing, each listed target gets the number of sub-exposures needed tonight for a modest, good and best image: a stacked SNR of 5, 10 and 20 per arcsec² at the object's mean surface brightness, through its FILTER: with framing the `-filter` choice is made by this model, the one needing fewest subs tonight ([Nebula filters](#nebula-filters)). It shows in the SUBS column (the good level), in `-json` (`subs`) and in the web page's hover box.
 
 **Camera.** The Origin's defaults, each overridden by its flag: aperture D = 152 mm with a d = 63 mm central obstruction (Celestron, 41% of the aperture); the IMX678's 0.83 peak QE and 2.15 e⁻ read noise (a vendor sheet for the same sensor, at 8.5 dB gain, the middle of its 0.6–3.5 e⁻; the Origin's ISO 1000 has no published gain); 15 s subs; a colour (RGGB) sensor unless `-mono`. `-aperture` alone describes another telescope, so its obstruction is then 0.
 
@@ -807,7 +807,7 @@ The models above come from the literature. The following are this project's own 
 | Heuristic | Value | Reasoning |
 |---|---|---|
 | Moon-distance rule | ≥ illumination % in degrees, × k (filtered: × f_R/w², 0.3–1) | uptonight's rule; skipped with the Moon down; the floor is the halo and gradients near the Moon, which no scattering model here holds |
-| A filter for the whole night | each choice scored as worn every minute, the best total kept | a filter changed mid-target means a second set of flats and a split stack |
+| A filter for the whole night | each choice scored as worn every minute, the one that gains most kept (the most uncapped weight; with a camera, the most SNR² the sub-exposure model stacks) | a filter changed mid-target means a second set of flats and a split stack |
 | Altitude window | 30°–80° | uptonight's limits; ≥ 30° keeps the airmass ≤ 2 |
 | Cluster sky fraction | k = 0.5 | point sources stand out of the glow |
 | Emission line ratios | one set per type ([Nebula filters](#nebula-filters)) | single objects scatter by factors of a few; no list has line fluxes |
