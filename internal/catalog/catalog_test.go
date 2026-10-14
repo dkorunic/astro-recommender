@@ -501,6 +501,8 @@ func TestExposureSB(t *testing.T) {
 		{Target{Type: "Reflection Nebula"}, typicalSB["reflection"], true},
 		{Target{Type: "Nebula"}, typicalSB["nebula"], true},
 		{Target{Type: "Dark Nebula"}, 0, false},
+		{Target{Type: "DN"}, 0, false},              // Pensack's dark nebula
+		{Target{Type: "Molecular Cloud"}, 0, false}, // the Compendium's dusty clouds
 		{Target{Type: "Open Cluster", SurfBr: 20}, 0, false},
 		{Target{Type: "Galaxy Group", SurfBr: 22}, 0, false},
 		{Target{Type: "Comet", Track: [][2]float64{{0, 0}}}, 0, false},
@@ -510,5 +512,16 @@ func TestExposureSB(t *testing.T) {
 		if sb, assumed := c.tg.ExposureSB(); sb != c.sb || assumed != c.assumed {
 			t.Errorf("%s %q: %v %v, want %v %v", c.tg.Name, c.tg.Type, sb, assumed, c.sb, c.assumed)
 		}
+	}
+}
+
+// A comet's magnitude is computed, so it is known even brighter than 0, where
+// a catalogue object's would be the unknown sentinel.
+func TestHasMagComet(t *testing.T) {
+	if !(Target{Mag: -4.1, Track: [][2]float64{{0, 0}}}).HasMag() {
+		t.Error("a mag -4.1 comet has no magnitude")
+	}
+	if (Target{Mag: -9999}).HasMag() {
+		t.Error("the -9999 sentinel is a magnitude")
 	}
 }

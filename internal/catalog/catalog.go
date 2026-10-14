@@ -95,8 +95,10 @@ func (t Target) Axes() (float64, float64) {
 
 // HasMag reports whether the magnitude is known. No deep sky object is
 // brighter than 0, so like Size the sentinel is 0 or negative (-9999 in the
-// lists; LBN.yaml's upstream value was Lynds' brightness class, blanked).
-func (t Target) HasMag() bool { return t.Mag > 0 }
+// lists; LBN.yaml's upstream value was Lynds' brightness class, blanked). A
+// comet's is computed (comets.Elements.Targets), so always known: a bright
+// one is below 0.
+func (t Target) HasMag() bool { return t.Mag > 0 || t.Track != nil }
 
 // minBV..maxBV bound a plausible deep sky B−V; OpenNGC/OpenIC pair
 // inconsistent magnitudes for ~100 objects (IC 127: V 9.2, B 15.4).
@@ -297,7 +299,9 @@ func (t Target) sbClass() string {
 		return sbPlanetary
 	case EmissionLine(t):
 		return "emission"
-	case strings.Contains(typ, "dark"):
+	case strings.Contains(typ, "dark") || strings.Contains(typ, "molecular") || typ == "dn":
+		// Dark nebulae, the Compendium's dusty molecular clouds and Pensack's
+		// DN: the median of bright nebulae would make the faintest objects quick.
 		return ""
 	case strings.Contains(typ, "reflection"):
 		return "reflection"
