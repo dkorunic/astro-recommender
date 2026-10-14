@@ -4,7 +4,9 @@
 package scoring
 
 import (
+	"fmt"
 	"math"
+	"os"
 	"testing"
 	"time"
 
@@ -50,7 +52,10 @@ func expGalaxy(sb float64) catalog.Target {
 // The photon zero point, area, QE, pixel and band pinned: e⁻/s per pixel
 // per nanoLambert for the Origin, unfiltered, colour.
 func TestCameraGain(t *testing.T) {
-	gain := func(c camera, name string, lines [4]float64) float64 { obj, _ := c.gains(name, lines); return obj }
+	gain := func(c camera, name string, lines [4]float64) float64 {
+		obj, _ := c.gains(name, 7, lines, filterPass{})
+		return obj
+	}
 	c, ok := newCamera(expCfg())
 	if !ok {
 		t.Fatal("no camera")
@@ -75,6 +80,22 @@ func TestCameraGain(t *testing.T) {
 	}
 	if gain(c, "ha", [4]float64{}) != 0 {
 		t.Error("a line filter passes nothing of an object without lines")
+	}
+	// Each band's sky falls on its own pixels: through dual-band on a colour
+	// sensor, 7 nm of glow at Hα on the red quarter and 7 nm at [O III] on
+	// the green half, whatever the object's mix of the two lines.
+	g := area * 0.83 * 1.2314 * 1.2314 * 1005 * 880 / atmos.NanoLamberts(0)
+	for _, lines := range [][4]float64{catalog.Target{Type: "HII region"}.Lines(), catalog.Target{Type: "Planetary Nebula"}.Lines()} {
+		_, sky := c.gains("dual", 7, lines, filterPass{})
+		if want := g * 7 / 88 * (0.95*0.25 + 0.85*0.5); math.Abs(sky[0]/want-1) > 1e-9 {
+			t.Errorf("dual-band glow gain %v, want %v", sky[0], want)
+		}
+	}
+	// Unfiltered, the camera band's moonlight is bluer than V's: its
+	// Rayleigh part per nm is the λ⁻⁴ mean over 400-700 nm, 1.30 of V's.
+	_, sky := c.gains("", 7, [4]float64{}, filterPass{})
+	if r := sky[1] / sky[0]; math.Abs(r-1.302) > 0.001 || sky[2] <= sky[0] {
+		t.Errorf("camera-band Rayleigh/glow %v, Mie %v", r, sky[2]/sky[0])
 	}
 }
 
@@ -247,7 +268,8 @@ func TestSubsNoCamera(t *testing.T) {
 func TestSubsEmissionLines(t *testing.T) {
 	c, _ := newCamera(expCfg())
 	lines := catalog.Target{Type: "HII region"}.Lines()
-	obj, sky := c.gains("", lines)
+	obj, skies := c.gains("", 7, lines, filterPass{})
+	sky := skies[0]
 	var resp, sum float64
 	for l, w := range lines {
 		resp += w * lineQE[l] * bayer[l]
@@ -257,7 +279,7 @@ func TestSubsEmissionLines(t *testing.T) {
 	if math.Abs(obj/(g*resp/sum)-1) > 1e-12 || math.Abs(sky/(g*broadQEColour*300/88)-1) > 1e-12 {
 		t.Errorf("unfiltered emission gains %v %v", obj, sky)
 	}
-	if obj, sky := c.gains("", [4]float64{}); obj != sky {
+	if obj, sky := c.gains("", 7, [4]float64{}, filterPass{}); obj != sky[0] {
 		t.Errorf("a continuum object shares the sky's gain: %v %v", obj, sky)
 	}
 	s := mutSky(141)
@@ -352,5 +374,47 @@ func TestSubsCloudedOut(t *testing.T) {
 	e := Subs(cfg, s, r, 0)
 	if e.Good != maxSubs || e.Max <= 0 || e.Good <= e.Max || e.SNRPerSub != 0 {
 		t.Errorf("clouded out: %+v, want good %d past a positive max, no SNR", e, maxSubs)
+	}
+}
+
+// An emission-line target's V surface brightness measures its lines only as
+// far as the V passband reaches them, and its catalogue magnitude also counts
+// stars and continuum (vContinuum, fitted by scripts/calibrate_lines.py):
+// an H II region's lines are 1.19 mag brighter than its V, a planetary's,
+// [O III] inside V, as bright; a galaxy's light is its V.
+func TestLightNL(t *testing.T) {
+	for _, c := range []struct {
+		typ   string
+		boost float64
+	}{{"HII region", 1.19}, {"Supernova Remnant", 1.10}, {"Wolf-Rayet Nebula", 0.52}, {"Planetary Nebula", 0.03}, {"Galaxy", 0}} {
+		tg := catalog.Target{Type: c.typ}
+		if got := atmos.MagFromNL(atmos.NanoLamberts(22)) - atmos.MagFromNL(lightNL(tg, 22)); math.Abs(got-c.boost) > 0.01 {
+			t.Errorf("%s: lines %.3f mag brighter than V, want %.2f", c.typ, got, c.boost)
+		}
+	}
+}
+
+// TestCalibrationSample prints the emission nebulae scripts/calibrate_lines.py
+// fits vContinuum on: at least 30' across (the Hα map's beam is 6'), with a
+// surface brightness as scoring derives it. Run only by the script.
+func TestCalibrationSample(t *testing.T) {
+	if os.Getenv("CALIBRATE_LINES") == "" {
+		t.Skip("run by scripts/calibrate_lines.py")
+	}
+	seen := map[string]bool{}
+	for _, l := range []string{"GaryImm", "Messier", "OpenNGC", "OpenIC", "Sharpless", "Caldwell"} {
+		ts, _, err := catalog.Load(l, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, x := range ts {
+			sb, _ := x.SurfaceBrightness()
+			if !catalog.EmissionLine(x) || x.Size < 30 || sb <= 0 || seen[catalog.NameKey(x.Name)] {
+				continue
+			}
+			seen[catalog.NameKey(x.Name)] = true
+			ln := x.Lines()
+			fmt.Printf("ROW|%s|%s|%s|%.4f|%.4f|%.1f|%.2f|%.4f|%.4f|%.4f|%.4f\n", l, x.Name, x.Type, x.RADeg, x.DecDeg, x.Size, sb, ln[0], ln[1], ln[2], ln[3])
+		}
 	}
 }

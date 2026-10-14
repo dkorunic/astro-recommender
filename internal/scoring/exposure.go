@@ -76,48 +76,69 @@ func newCamera(cfg *config.Config) (camera, bool) {
 // allLines are the lines an unfiltered or broadband camera collects.
 var allLines = []catalog.Line{catalog.Ha, catalog.OIII, catalog.SII, catalog.Hb}
 
-// gains returns e⁻/s per pixel per nanoLambert of the object and of the sky
-// through the -filter choice name ("" none). The sky, and an object without
-// emission lines (lines zero, Target.Lines), are continuum: unfiltered and
-// broadband the sky model's V-band shares spread over the camera band, flat
-// per nm, at the band's mean response. A line filter's shares are already
-// its bands' own, and an emission-line object's light is its lines wherever
-// the band passes them, collected once: each line at its response and Bayer
-// share, weighted by the object's light in it. The object's gain is 0 when a
-// line filter passes none of its lines.
-func (c camera) gains(name string, lines [4]float64) (float64, float64) {
+// gains returns e⁻/s per pixel per nanoLambert of the object, and of each
+// of atmos.SkyParts' glow, Rayleigh and Mie parts, through the -filter
+// choice name ("" none) with fp what it passes and width the line bands'
+// width. The sky, and an object without emission lines (lines zero,
+// Target.Lines), are continuum: unfiltered and broadband spread over the
+// camera band, the glow flat per nm and the moonlight as it scatters
+// (atmos.BandMean against V's), at the band's mean response, through a
+// broadband filter its passbands' shares (fp). Through a line filter each
+// band passes its own share of the sky (atmos.BandSky, against V) at its own
+// line's response and Bayer share: on a colour sensor the [O III] band's sky
+// falls on twice the pixels the Hα band's does. An emission-line object's
+// light is its lines wherever the band passes them, collected once: each
+// line at its response and Bayer share, weighted by the object's light in
+// it. The object's gain is 0 when a line filter passes none of its lines.
+func (c camera) gains(name string, width float64, lines [4]float64, fp filterPass) (float64, [3]float64) {
 	g := c.area * c.qe * c.omega * photonsV0 / atmos.NanoLamberts(0)
+	resp := func(l catalog.Line) float64 {
+		if c.mono {
+			return g * lineQE[l]
+		}
+
+		return g * lineQE[l] * bayer[l]
+	}
 	line := func(ls []catalog.Line) float64 {
-		var resp, w float64
+		var r, w float64
 		for _, l := range ls {
-			b := bayer[l]
-			if c.mono {
-				b = 1
-			}
-			resp += lines[l] * lineQE[l] * b
+			r += lines[l] * resp(l)
 			w += lines[l]
 		}
 		if w == 0 {
 			return 0
 		}
 
-		return g * resp / w
+		return r / w
 	}
 	if bands := config.Filters[name]; bands != nil {
-		r := line(bands)
+		var sky [3]float64
+		for _, l := range bands {
+			glow, rayleigh, mie := atmos.BandSky(catalog.LineNM[l], width)
+			r := resp(l)
+			sky[0] += glow * r
+			sky[1] += rayleigh * r
+			sky[2] += mie * r
+		}
 
-		return r, r
+		return line(bands), sky
 	}
 	qe := broadQEColour
 	if c.mono {
 		qe = broadQEMono
 	}
-	sky := g * qe * (atmos.CameraHi - atmos.CameraLo) / atmos.VWidth
+	cont := g * qe * atmos.CameraBand
+	shares := [3]float64{1, 1, 1}
+	if fp.w > 0 {
+		shares = [3]float64{fp.glow, fp.rayleigh, fp.mie}
+	}
+	ray, aer := atmos.BandMean(atmos.CameraLo, atmos.CameraHi)
+	sky := [3]float64{cont * shares[0], cont * ray * shares[1], cont * aer * shares[2]}
 	if obj := line(allLines); obj > 0 {
 		return obj, sky
 	}
 
-	return sky, sky
+	return cont, sky
 }
 
 // perSub is one sub's SNR² per arcsec² for object and sky rates in e⁻/s
@@ -154,19 +175,18 @@ func Subs(cfg *config.Config, s *Sky, r Result, planned time.Duration) Estimate 
 	}
 	fp := passes(cfg, r.Target, r.Filter)
 	lines := r.Lines()
-	objGain, skyGain := c.gains(r.Filter, lines)
+	objGain, skyGain := c.gains(r.Filter, cfg.FilterNM, lines, fp)
 	if objGain == 0 {
 		return Estimate{}
 	}
-	// The object's share a line filter passes: scoring's w counts Hβ beyond
-	// the lines' sum (so tri and quad left the other filters' scores alone),
-	// which as an absolute count would be light from nowhere; broadPasses'
-	// is already a share of all four.
-	share := fp.w
-	if config.Filters[r.Filter] != nil {
-		share /= lines[catalog.Ha] + lines[catalog.OIII] + lines[catalog.SII] + lines[catalog.Hb]
+	// Unfiltered, an emission-line object's lines are dimmed at their own
+	// wavelengths, as scoreTarget dims them (0, 0: V's, for a continuum).
+	var lineRay, lineAer float64
+	if catalog.EmissionLine(r.Target) {
+		all := broadPasses(r.Target, lines, cameraBand)
+		lineRay, lineAer = all.ray-1, all.aer-1
 	}
-	objNL := atmos.NanoLamberts(sb)
+	objNL := lightNL(r.Target, sb)
 	ra, dec, extra := where(s, r.Target)
 	hz := astro.NewHorizontal(cfg.Lat, dec)
 	unit := astro.Unit(ra, dec)
@@ -182,23 +202,24 @@ func Subs(cfg *config.Config, s *Sky, r Result, planned time.Duration) Estimate 
 			m := &s.MoonUnit[i]
 			rho = math.Acos(max(-1, min(1, unit[0]*m[0]+unit[1]*m[1]+unit[2]*m[2]))) / deg
 		}
-		// The sky and the object as scoreTarget sets them against each other.
+		// The sky's parts and the object as scoreTarget sets them, in
+		// absolute photons: the object's lines are not moved against the
+		// camera band, which skyGain already spans.
 		air := atmos.Airmass(a)
 		ext := atmos.Transmission(air, s.Ext[i])
-		var obj, sky float64
+		glow, rayleigh, mie := atmos.SkyParts(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i])
+		glow += extra * ext
+		sky := skyGain[0]*glow + skyGain[1]*rayleigh + skyGain[2]*mie
+		var obj float64
 		if fp.w > 0 {
-			glow, rayleigh, mie := atmos.SkyParts(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i])
-			glow += extra * ext
-			sky = fp.glow*glow + fp.rayleigh*rayleigh + fp.mie*mie
-			obj = share * objNL * atmos.Transmission(air, s.ExtRayleigh[i]*fp.ray+atmos.OzoneExtinction+s.ExtAerosol[i]*fp.aer)
+			obj = fp.w * objNL * atmos.Transmission(air, s.ExtRayleigh[i]*fp.ray+atmos.OzoneExtinction+s.ExtAerosol[i]*fp.aer)
 		} else {
-			sky = atmos.SkyBrightnessLit(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i]) + extra*ext
-			obj = objNL * ext
+			obj = objNL * atmos.Transmission(air, s.Ext[i]+s.ExtRayleigh[i]*lineRay+s.ExtAerosol[i]*lineAer)
 		}
 		// The weather loses the minute's subs in proportion, so it weighs
 		// that minute's SNR², not the night's mean: cloud during the best
 		// minutes costs more than the same cloud during the worst.
-		snr2 += s.Quality[i] * c.perSub(objGain*obj, skyGain*sky)
+		snr2 += s.Quality[i] * c.perSub(objGain*obj, sky)
 		n++
 	}
 	// A night the weather loses entirely still has its observable time: the

@@ -384,18 +384,19 @@ func TestIs(t *testing.T) {
 
 // Lines shares an emission-line target's light by its type's line ratios:
 // Hα for H II regions, [O III] for planetaries, more [S II] for remnants;
-// Hβ at the case-B Hα/Hβ, outside the sum; nothing for a target without lines.
+// Hβ at the case-B Hα/Hβ; all four sum to 1, the whole of what an unfiltered
+// camera collects; nothing for a target without lines.
 func TestLines(t *testing.T) {
 	hii, pn, snr := Target{Type: "HII Region"}.Lines(), Target{Type: "Planetary Nebula"}.Lines(), Target{Type: "Supernova Remnant"}.Lines()
 	for _, l := range [][4]float64{hii, pn, snr, Target{Name: "IC 1396", Type: "Dark Nebula"}.Lines()} {
-		if sum := l[Ha] + l[OIII] + l[SII]; math.Abs(sum-1) > 1e-12 {
+		if sum := l[Ha] + l[OIII] + l[SII] + l[Hb]; math.Abs(sum-1) > 1e-12 {
 			t.Errorf("shares %v sum to %v", l, sum)
 		}
 		if math.Abs(l[Ha]/l[Hb]-2.86) > 1e-12 {
 			t.Errorf("shares %v: Hα/Hβ %v, want 2.86", l, l[Ha]/l[Hb])
 		}
 	}
-	if hii[Ha] < 0.6 || pn[OIII] < 0.6 || snr[SII] <= hii[SII] || snr[SII]/snr[Ha] < 0.4 {
+	if hii[Ha] < 0.5 || pn[OIII] < 0.6 || snr[SII] <= hii[SII] || snr[SII]/snr[Ha] < 0.4 {
 		t.Errorf("H II %v, PN %v, SNR %v", hii, pn, snr)
 	}
 	if (Target{Type: "Spiral Galaxy"}).Lines() != [4]float64{} {

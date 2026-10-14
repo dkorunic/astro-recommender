@@ -269,19 +269,20 @@ var lineRatios = []struct {
 	{"wolf", [3]float64{Ha: 1, OIII: 1, SII: 0.2}},
 }
 
-// Lines returns the shares of an emission-line target's light in Hα, [O III]
-// and [S II] (summing to 1), from its type's typical ratios (lineRatios; H II
-// regions, and the dark nebulae and clusters emissionNames lists, otherwise),
-// and Hβ on top at Hα/balmer, outside the sum so that adding it left the
-// other filters' scores unchanged; all 0 when it is not EmissionLine.
+// Lines returns the shares of an emission-line target's light in Hα, [O III],
+// [S II] and Hβ (at Hα/balmer), summing to 1: all of it is what a camera
+// collects unfiltered, so no filter passes more. From its type's typical
+// ratios (lineRatios; H II regions, and the dark nebulae and clusters
+// emissionNames lists, otherwise); all 0 when it is not EmissionLine.
 func (t Target) Lines() [4]float64 {
 	if !EmissionLine(t) {
 		return [4]float64{}
 	}
 	r := classOf(t.Type).ratios
-	sum := r[Ha] + r[OIII] + r[SII]
+	hb := r[Ha] / balmer
+	sum := r[Ha] + r[OIII] + r[SII] + hb
 
-	return [4]float64{r[Ha] / sum, r[OIII] / sum, r[SII] / sum, r[Ha] / sum / balmer}
+	return [4]float64{r[Ha] / sum, r[OIII] / sum, r[SII] / sum, hb / sum}
 }
 
 // sbClass is t's class for typicalSB; "" when an exposure estimate does not

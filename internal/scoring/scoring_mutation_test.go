@@ -675,11 +675,15 @@ func TestMutBandExtinction(t *testing.T) {
 	if math.Abs(r.Weight[41]-want) > 1e-7 || band >= 0.2 {
 		t.Errorf("weight %v, want %v through the band's %.4f mag/airmass", r.Weight[41], want, band)
 	}
-	// Without the filter: the V coefficient and the broadband weight.
+	// Without the filter: the broadband weight, the lines still dimmed at
+	// their own wavelengths (V's coefficient with its Rayleigh and aerosol
+	// parts moved to them), less than V's: Hα dominates.
 	cfg.Filter = ""
 	r, _ = mutOne(t, cfg, s, tg, true)
-	if want := atmos.Extinction(40.5, 0.2) * min(1, math.Sqrt(s.RefNL/glow)); math.Abs(r.Weight[41]-want) > 1e-7 {
-		t.Errorf("broadband weight %v, want %v", r.Weight[41], want)
+	all := broadPasses(tg, lines, cameraBand)
+	lineExt := 0.2 + ray*(all.ray-1) + aer*(all.aer-1)
+	if want := atmos.Transmission(atmos.Airmass(40.5), lineExt) * min(1, math.Sqrt(s.RefNL/glow)); math.Abs(r.Weight[41]-want) > 1e-7 || lineExt >= 0.2 {
+		t.Errorf("broadband weight %v, want %v through the lines' %.4f mag/airmass", r.Weight[41], want, lineExt)
 	}
 }
 
@@ -721,5 +725,54 @@ func TestMutZodiacal(t *testing.T) {
 	obj := atmos.NanoLamberts(30)
 	if want := min(1, math.Sqrt((obj+s.RefNL)/(obj+glow))); math.Abs(r.Weight[90]-want) > 1e-7 {
 		t.Errorf("weight at the floor %v, want %v", r.Weight[90], want)
+	}
+}
+
+// An emission nebula's lines (lightNL of its V) are collected once while the
+// camera band holds CameraBand V bands of sky, so against the V sky that
+// stands for it the nebula is that much fainter; a galaxy's continuum is not
+// moved.
+func TestMutEmissionCameraBand(t *testing.T) {
+	s, cfg := mutSky(141), mutCfg()
+	extra := mutExtra(90.5, 0)
+	glow, _, _ := atmos.SkyParts(s.ZenithNL, 0, 40.5, 180, atmos.Moon{})
+	glow += extra
+	neb := catalog.Target{Name: "N", Type: "Emission Nebula", RADeg: 90.5, Size: 20, SurfBr: 18}
+	obj := lightNL(neb, 18) / atmos.CameraBand
+	r, _ := mutOne(t, cfg, s, neb, true)
+	if want := math.Sqrt((obj + s.RefNL) / (obj + glow)); math.Abs(r.Weight[41]-want) > 1e-7 {
+		t.Errorf("nebula weight %v, want %v", r.Weight[41], want)
+	}
+	if r, _ := mutOne(t, cfg, s, catalog.Target{Name: "G", Type: "Galaxy", RADeg: 90.5, Size: 20, SurfBr: 18}, true); math.Abs(r.Weight[41]-mutWeight(40.5, 18, 1, extra)) > 1e-7 {
+		t.Errorf("galaxy weight %v, want %v", r.Weight[41], mutWeight(40.5, 18, 1, extra))
+	}
+}
+
+// A filter is worn all night, as it is shot: a bright nebula under a dark
+// sky, object-limited, loses light through Hα every minute and keeps no
+// filter, where a per-minute choice would have credited each minute the
+// better of the two.
+func TestMutFilterAllNight(t *testing.T) {
+	s, cfg := mutSky(141), mutCfg()
+	cfg.Filter = "ha"
+	tg := catalog.Target{Name: "N", Type: "Emission Nebula", RADeg: 90.5, Size: 20, SurfBr: 14}
+	fp := passes(cfg, tg, "ha")
+	ta := tally{weight: make([]float64, len(s.Grid))}
+	ta.reset(fp)
+	base, ok := scoreTarget(cfg, s, tg, []*tally{&ta}, cfg.Mosaics(), nil)
+	if _, counted := ta.result(cfg, s, base); !ok || !counted {
+		t.Fatal("not observable")
+	}
+	weight := ta.weight
+	glow, _, _ := atmos.SkyParts(s.ZenithNL, 0, 40.5, 180, atmos.Moon{})
+	glow += mutExtra(90.5, 0)
+	obj := lightNL(tg, 14) / atmos.CameraBand
+	want := atmos.Transmission(atmos.Airmass(40.5), atmos.OzoneExtinction) * fp.weight(obj, obj+s.RefNL, glow, 0, 0)
+	plain, _ := mutOne(t, mutCfg(), s, tg, true)
+	if math.Abs(weight[41]-want) > 1e-7 || weight[41] >= plain.Weight[41] {
+		t.Errorf("filtered weight %v, want %v, below the unfiltered %v", weight[41], want, plain.Weight[41])
+	}
+	if r, _ := mutOne(t, cfg, s, tg, true); r.Filter != "" || r.Score != plain.Score {
+		t.Errorf("filter %q score %v, want none and the unfiltered %v", r.Filter, r.Score, plain.Score)
 	}
 }

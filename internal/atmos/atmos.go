@@ -264,7 +264,9 @@ const angstrom = 1.3
 // brightness that a filter band width nm wide at center nm passes: its share
 // of the V band's width, with the moonlight scattered as λ⁻⁴ (Rayleigh) and
 // λ^-angstrom (Mie) relative to V, so a band at [O III] 500.7 nm passes 2.9
-// times the Rayleigh moonlight per nm that one at Hα 656.3 nm does.
+// times the Rayleigh moonlight per nm that one at Hα 656.3 nm does. Against
+// V, so absolute: the sub-exposure estimate's photons; the score compares a
+// band with the unfiltered camera band instead (BroadSky).
 // ponytail: moonlight is taken as flat per nm before scattering: the Moon is
 // 0.25 mag redder in B−V than the Sun, which roughly cancels the Sun's fall
 // from 500 to 670 nm (within ~7%). The glow is flat too: airglow and the
@@ -284,6 +286,12 @@ const (
 	CameraLo = 400.0
 	CameraHi = 700.0
 )
+
+// CameraBand is how many V bands' sky the camera band holds, flat per nm:
+// 300/88. An emission line, collected once whatever the band, is that much
+// fainter against it than a continuum, which the band holds as it holds the
+// sky.
+const CameraBand = (CameraHi - CameraLo) / VWidth
 
 // BroadSky returns the fractions of SkyParts' glow, Rayleigh and Mie
 // brightness a broadband filter's passband [lo, hi] nm passes against the

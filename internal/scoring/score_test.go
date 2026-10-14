@@ -301,14 +301,16 @@ func TestScoreRuns(t *testing.T) {
 	}
 }
 
-// Through a filter an emission-line target scores by the share of its light
-// in the bands against the bands' share of each part of the sky, or as
-// without it when that is better. Under the first-quarter Moon of 26 January
-// 2026 from a Bortle 6 site, a target in Ursa Major: an H II region gains most from Hα (and less from dual-band,
-// whose [O III] half lets in three times the moonlight per nm for a fifth of
-// its light), nothing from [O III]; a planetary gains from [O III] and
-// dual-band (which of the two more depends on the sky: Hα adds a quarter of
-// its light and a band of sky), nothing from Hα; a galaxy is never filtered.
+// Through a filter, worn all night, an emission-line target scores by the
+// share of its light in the bands against the bands' share of each part of
+// the camera band's sky; no filter wins unless one beats it. Under the
+// first-quarter Moon of 26 January 2026 from a Bortle 6 site, a sky-limited
+// target in Ursa Major: an H II region gains most from Hα (and less from
+// dual-band, whose [O III] half lets in three times the moonlight per nm for
+// a fifth of its light), a little from [O III], nothing from [S II]; a
+// planetary most from [O III], a little from Hα (a quarter of its light in a
+// 7 nm band, against 300 nm of sky); a remnant from [S II], its defining
+// line, and most from quad-band; a galaxy or a cluster is never filtered.
 func TestScoreFilter(t *testing.T) {
 	cfg := &config.Config{Lat: 45.8, Lon: 16, AltMin: 30, AltMax: 80, SizeMax: 300, NoWeather: true, ExtinctionSet: true, Extinction: 0.2, Bortle: 6, FilterNM: 7}
 	start, end, _ := astro.Window(time.Date(2026, 1, 26, 12, 0, 0, 0, time.UTC), cfg.Lat, cfg.Lon, astro.Astronomical)
@@ -330,8 +332,9 @@ func TestScoreFilter(t *testing.T) {
 		// Broadband filters fall between the line filters and none on
 		// nebulae, the narrower first; continuum (a galaxy, a cluster) loses
 		// as much light as sky through them, so they never help it.
-		{"HII Region", []string{"ha", "dual", "cls", "lpro", ""}, map[string]bool{"oiii": true}},
-		{"Planetary Nebula", []string{"oiii", "cls", "lpro", ""}, map[string]bool{"ha": true}},
+		{"HII Region", []string{"ha", "dual", "cls", "lpro", "oiii", ""}, map[string]bool{"sii": true}},
+		{"Planetary Nebula", []string{"oiii", "dual", "cls", "lpro", ""}, map[string]bool{"sii": true}},
+		{"Supernova Remnant", []string{"quad", "ha", "sii", "oiii", ""}, nil},
 		{"Spiral Galaxy", []string{""}, map[string]bool{"ha": true, "oiii": true, "sii": true, "dual": true, "tri": true, "quad": true, "cls": true, "lpro": true}},
 		{"Globular Cluster", []string{""}, map[string]bool{"cls": true, "lpro": true}},
 	} {
@@ -348,13 +351,10 @@ func TestScoreFilter(t *testing.T) {
 				}
 			}
 		}
-		// A filter that passes too little of the light scores as none, to
-		// within the band's lower extinction, which tips the minutes where
-		// the two weights were within a few percent (a planetary through
-		// Hα near the Moon); a galaxy or cluster, never filtered, scores
-		// exactly so.
+		// A filter that passes too little of the light loses to none, which
+		// then scores exactly as without -filter.
 		for f := range c.equal {
-			if got := score(f, c.typ); got < none || got > none*1.001 || len(c.order) == 1 && got != none {
+			if got := score(f, c.typ); got != none {
 				t.Errorf("%s through %q: %v, want the unfiltered %v", c.typ, f, got, none)
 			}
 		}
@@ -366,11 +366,13 @@ func TestScoreFilter(t *testing.T) {
 	if got, want := fp.weight(objNL, objRef, 400, 500, 100), math.Sqrt(objRef/(objNL+0.3*1000)); math.Abs(got-want) > 1e-12 {
 		t.Errorf("weight = %v, want the broadband %v", got, want)
 	}
-	// The Moon limit: Hα beats the Moon best on an H II region, [O III]
-	// not at all.
+	// The Moon limit: through a 7 nm Hα or dual-band filter an H II region
+	// would beat the Moon to within a few degrees, which its halo does not
+	// allow, so both hold at the floor; [O III], a fifth of its light in
+	// the band the Moon scatters most into, hardly beats it.
 	hii := catalog.Target{Type: "HII Region"}
 	ha, dual, o3 := passes(cfg, hii, "ha").moonK(), passes(cfg, hii, "dual").moonK(), passes(cfg, hii, "oiii").moonK()
-	if !(ha < dual && dual < 1 && o3 == 1) {
+	if !(ha == minMoonK && dual == minMoonK && o3 > 0.8 && o3 < 1) {
 		t.Errorf("moonK H II: ha %v, dual %v, oiii %v", ha, dual, o3)
 	}
 
@@ -387,7 +389,7 @@ func TestScoreFilter(t *testing.T) {
 	// A list scores each target with each choice and keeps the best: the
 	// same score as that filter alone, named in Filter, whatever the order;
 	// "" when no choice beats no filter (a galaxy, an H II region through
-	// [O III]).
+	// [S II]).
 	result := func(filter, typ string) Result {
 		cfg.Filter = filter
 		r := Score(cfg, &s, []catalog.Target{{Name: "T", Type: typ, RADeg: 150, DecDeg: 60, Size: 60}}, true)
@@ -402,13 +404,13 @@ func TestScoreFilter(t *testing.T) {
 		{"oiii,ha,dual", "HII Region", "ha"},
 		{"ha,oiii", "Planetary Nebula", "oiii"},
 		{"ha,oiii,dual", "Spiral Galaxy", ""},
-		{"oiii", "HII Region", ""},
+		{"sii", "HII Region", ""},
 		{"dual", "HII Region", "dual"},
 		{"lpro,cls", "HII Region", "cls"},
 		{"cls,lpro", "Spiral Galaxy", ""},
 	} {
 		r := result(c.list, c.typ)
-		single := result(cmp.Or(c.want, "oiii"), c.typ)
+		single := result(cmp.Or(c.want, "sii"), c.typ)
 		if r.Filter != c.want || r.Score != single.Score || !slices.Equal(r.Weight, single.Weight) {
 			t.Errorf("%s through %q: filter %q score %v, want %q and the single filter's %v", c.typ, c.list, r.Filter, r.Score, c.want, single.Score)
 		}

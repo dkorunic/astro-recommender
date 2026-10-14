@@ -47,16 +47,23 @@ type Result struct { // betteralign:ignore (embedded target first, per embeddeds
 // Alt and Weight, which plan.Make needs, and Obs.
 func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool) []Result {
 	var results []Result
-	// Per-minute scratch reused across targets: most are never observable,
-	// and only perMinute needs a Result's own copy (and the altitudes at all).
-	weight := make([]float64, len(s.Grid))
-	var alt []float64
-	var obs []bool
-	if perMinute {
-		alt, obs = make([]float64, len(s.Grid)), make([]bool, len(s.Grid))
-	}
 	mosaics := cfg.Mosaics()
-	choices := append(cfg.FilterNames(), "") // "" is no filter
+	names := append([]string{""}, cfg.FilterNames()...) // "" is no filter
+	// Per-minute scratch per choice, reused across targets: most are never
+	// observable, and only perMinute needs a Result's own copy (and the
+	// altitudes at all).
+	tallies := make([]tally, len(names))
+	for c := range tallies {
+		tallies[c].weight = make([]float64, len(s.Grid))
+		if perMinute {
+			tallies[c].obs = make([]bool, len(s.Grid))
+		}
+	}
+	var alt []float64
+	if perMinute {
+		alt = make([]float64, len(s.Grid))
+	}
+	active, choice := make([]*tally, 0, len(names)), make([]int, 0, len(names))
 	for _, tg := range targets {
 		// Comet comae have no catalog size, so size limits do not apply.
 		// An unknown size counts as 0, so -size-min 0 keeps it.
@@ -70,28 +77,36 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 		if !cfg.Near(tg.Position()) || catalog.HasKey(cfg.Skip, tg.Name) || !cfg.Wanted(tg) {
 			continue
 		}
-		// Each -filter choice that passes some of the target's light is a
-		// candidate, scored once (each minute already takes the better of it
-		// and no filter); the best that helped wins, the first of equals. A
-		// target no choice helps (a galaxy, which a broadband filter dims as
-		// much as the sky) is scored without, so its weights are exactly the
-		// unfiltered ones, not their sum of sky parts.
+		// No filter, then each -filter choice that passes some of the
+		// target's light, scored as worn all night, as it is shot: a filter
+		// that costs a bright nebula under a dark sky costs it every minute.
+		// All in one pass over the grid, which shares the geometry. The best
+		// total wins, the first of equals, so a filter must beat no filter;
+		// a target none beats (a galaxy, which a broadband filter dims as
+		// much as the sky) keeps exactly its unfiltered weights.
+		active, choice = active[:0], choice[:0]
+		for c, name := range names {
+			fp := passes(cfg, tg, name)
+			if c > 0 && fp.w == 0 {
+				continue
+			}
+			tallies[c].reset(fp)
+			active, choice = append(active, &tallies[c]), append(choice, c)
+		}
+		base, ok := scoreTarget(cfg, s, tg, active, mosaics, alt)
+		if !ok {
+			continue
+		}
 		var best Result
 		found := false
-		for _, name := range choices {
-			fp := passes(cfg, tg, name)
-			if (name != "" && fp.w == 0) || (name == "" && found) {
+		for j, t := range active {
+			r, ok := t.result(cfg, s, base)
+			if !ok || (found && r.Score <= best.Score) {
 				continue
 			}
-			r, ok := scoreTarget(cfg, s, tg, fp, mosaics, alt, weight, obs)
-			if !ok || (name != "" && r.Filter == "") || (found && r.Score <= best.Score) {
-				continue
-			}
-			if r.Filter != "" {
-				r.Filter = name
-			}
+			r.Filter = names[choice[j]]
 			if perMinute {
-				r.Alt, r.Weight, r.Obs = slices.Clone(alt), slices.Clone(weight), slices.Clone(obs)
+				r.Alt, r.Weight, r.Obs = slices.Clone(alt), slices.Clone(t.weight), slices.Clone(t.obs)
 			}
 			best, found = r, true
 		}
@@ -108,12 +123,82 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 	return results
 }
 
-// scoreTarget fills weight (len(s.Grid), overwritten) with the target's
-// per-minute weight through fp, alt with its altitude and obs with whether
-// it is observable when they are not nil. Its Result.Filter is non-empty (a placeholder Score names) when fp
-// mattered: some minute's filtered weight beat the broadband one, or only
-// fp's wider Moon limit let the minute in.
-func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, fp filterPass, mosaics []config.Mosaic, alt, weight []float64, obs []bool) (Result, bool) {
+// tally is one -filter choice's running score in scoreTarget: what it
+// passes, its Moon limit, and the observable minutes it has counted.
+type tally struct {
+	weight                   []float64 // per-minute weight, len(s.Grid)
+	obs                      []bool    // per-minute observable; nil unless perMinute
+	fp                       filterPass
+	cosMoon                  float64 // the Moon limit's cosine: a minute closer is not observable
+	altSum, weighted, skySum float64
+	good, runs, prev         int
+	// Continuous observable stretches: the current one starts at runStart
+	// and the longest so far is [best, best+bestLen).
+	runStart, best, bestLen int
+}
+
+// reset starts t over for a target through fp.
+func (t *tally) reset(fp filterPass) {
+	weight, obs := t.weight, t.obs
+	clear(weight)
+	clear(obs)
+	*t = tally{weight: weight, obs: obs, fp: fp, prev: -2}
+}
+
+// add counts minute i, observable at altitude a under a sky of sb with
+// weight w.
+func (t *tally) add(i int, a, w, sb float64) {
+	if i != t.prev+1 {
+		t.runStart = i
+		t.runs++
+	}
+	t.prev = i
+	if n := i - t.runStart + 1; n > t.bestLen {
+		t.best, t.bestLen = t.runStart, n
+	}
+	t.good++
+	t.altSum += a
+	t.skySum += atmos.MagFromNL(sb)
+	t.weight[i] = w
+	if t.obs != nil {
+		t.obs[i] = true
+	}
+	t.weighted += w
+}
+
+// result completes base (scoreTarget's frame, mosaic and peak) with what t
+// counted; false when it counted no minute or its longest stretch is shorter
+// than -min-run.
+func (t *tally) result(cfg *config.Config, s *Sky, base Result) (Result, bool) {
+	r := base
+	if t.good == 0 {
+		return r, false
+	}
+	// The grid is minute-aligned from Start, so the run ends a minute after
+	// its last minute, or at End for the last grid minute (which End may cut
+	// short, so -min-run judges the clock span, not the minute count).
+	r.Runs = t.runs
+	r.RunFrom, r.RunTo = s.Grid[t.best], s.End
+	if t.best+t.bestLen < len(s.Grid) {
+		r.RunTo = s.Grid[t.best+t.bestLen]
+	}
+	if r.RunTo.Sub(r.RunFrom) < cfg.MinRun {
+		return r, false
+	}
+	r.Foto = float64(t.good) / float64(len(s.Grid))
+	r.MeanAlt = t.altSum / float64(t.good)
+	r.SkyMag = t.skySum / float64(t.good)
+	r.Score = t.weighted / float64(len(s.Grid)) * r.Frame
+
+	return r, true
+}
+
+// scoreTarget counts the target's observable minutes and their weights into
+// each of ts (reset, a filterPass each; fp.w 0 is no filter) in one pass over
+// the grid, and fills alt with its altitude when not nil. It returns the
+// result every tally shares (frame, mosaic, peak) for tally.result, false
+// when no mosaic holds the target.
+func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, ts []*tally, mosaics []config.Mosaic, alt []float64) (Result, bool) {
 	ra, dec, extra := where(s, tg)
 	hz := astro.NewHorizontal(cfg.Lat, dec)
 	// cos(LST - ra) by the difference formula: one Sincos per target instead
@@ -121,17 +206,19 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, fp filterPass, m
 	sinRA, cosRA := math.Sincos(ra * deg)
 
 	// Fraction of sky glow (moonlight, light pollution) that counts against
-	// this target unfiltered; with what a -filter passes, it scales the Moon
-	// separation limit.
+	// this target; with what a choice passes, it scales its Moon separation
+	// limit.
 	k := skyK(tg)
 	// The Moon separation is the Acos of a dot product of unit vectors, and a
-	// minute closer than the limit (at most 100°, where the cosine still
+	// minute closer than every limit (at most 100°, where the cosine still
 	// falls) is rejected on the cosine alone. On a moonlit night with low
 	// altitude limits Separation's trigonometry was 40% of scoring.
 	unit := astro.Unit(ra, dec) // a comet's is redone per minute
-	cosMoonSep := math.Cos(min(k, fp.moonK()) * s.MoonSep * deg)
-	cosMoonSepK := math.Cos(k * s.MoonSep * deg) // the limit without fp
-	helped := false
+	loosest := -1.0
+	for _, t := range ts {
+		t.cosMoon = math.Cos(min(k, t.fp.moonK()) * s.MoonSep * deg)
+		loosest = max(loosest, t.cosMoon)
+	}
 
 	// The limits compare as sines, so the Asin runs only for the minutes
 	// that pass them (and for alt): the bulk of the minutes do not.
@@ -146,21 +233,27 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, fp filterPass, m
 			return r, false
 		}
 	}
-	// The object's own surface brightness, in the sky's units; 0 when unknown,
+	// The object's own light (lightNL), in the sky's units; 0 when unknown,
 	// which scores it as sky-limited, as every target was before SB existed.
 	var objNL float64
 	if sb, _ := tg.SurfaceBrightness(); sb > 0 {
-		objNL = atmos.NanoLamberts(sb)
+		objNL = lightNL(tg, sb)
+	}
+	// An emission-line target's light is its lines, which the camera collects
+	// once while its band holds CameraBand times the V band's sky: against the
+	// V sky that stands for the camera's, it is that much fainter (a continuum
+	// scales with the band, as the sky does). Unfiltered its lines are dimmed
+	// at their own wavelengths, as through a filter: V's coefficient, with the
+	// Rayleigh and aerosol parts moved to the lines (0, 0 for a continuum).
+	var lineRay, lineAer float64
+	emission := catalog.EmissionLine(tg)
+	if emission {
+		objNL /= atmos.CameraBand
+		all := broadPasses(tg, tg.Lines(), cameraBand)
+		lineRay, lineAer = all.ray-1, all.aer-1
 	}
 	objRef := objNL + s.RefNL // the same object under a pristine sky
-	clear(weight)
-	clear(obs)
-	var good int
-	var altSum, weighted, skySum float64
 	maxSin, maxAt := -2.0, 0
-	// Continuous observable stretches: the current one starts at runStart and
-	// the longest so far is [best, best+bestLen).
-	runStart, prev, best, bestLen := 0, -2, 0, 0
 	for i := range s.Grid {
 		if tg.Track != nil {
 			ra, dec = tg.Track[i][0], tg.Track[i][1]
@@ -191,81 +284,57 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, fp filterPass, m
 		if len(cfg.Horizon) > 0 && a < cfg.Horizon.At(hz.Az(ha)) {
 			continue
 		}
-		rho := 180.0
+		// c is the cosine of the Moon separation, -1 (no limit) with the
+		// Moon down.
+		rho, c := 180.0, -1.0
 		if s.MoonAlt[i] > 0 {
 			if tg.Track != nil {
 				unit = astro.Unit(ra, dec)
 			}
 			m := &s.MoonUnit[i]
-			c := max(-1, min(1, unit[0]*m[0]+unit[1]*m[1]+unit[2]*m[2]))
-			if c > cosMoonSep {
+			c = max(-1, min(1, unit[0]*m[0]+unit[1]*m[1]+unit[2]*m[2]))
+			if c > loosest {
 				continue
 			}
-			helped = helped || c > cosMoonSepK
 			rho = math.Acos(c) / deg
 		}
 		// SNR in a fixed time goes as signal/sqrt(signal+sky), relative to the
 		// same object under a pristine dark sky: an object much brighter than
 		// the sky loses nothing, a faint or unknown one (objNL = 0) is
-		// sky-limited, sqrt(RefNL/(k·sky)). Through a filter, the better of
-		// that and the filtered weight, each with its own extinction (the
-		// bands' Rayleigh and aerosol parts scale with wavelength); the sky
-		// is then the sum of its parts (SkyBrightnessLit's to rounding), not
-		// computed twice.
-		var sb, w float64
+		// sky-limited, sqrt(RefNL/(k·sky)). Through a filter, the filtered
+		// weight with the bands' own extinction (their Rayleigh and aerosol
+		// parts scale with wavelength); the sky is then the sum of its parts
+		// (SkyBrightnessLit's to rounding), computed once for every filter.
 		air := atmos.Airmass(a)
 		ext := atmos.Transmission(air, s.Ext[i])
-		if fp.w > 0 {
-			glow, rayleigh, mie := atmos.SkyParts(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i])
-			glow += extra * ext
-			sb = glow + rayleigh + mie
-			broad := ext * min(1, math.Sqrt(objRef/(objNL+k*sb)))
-			filtered := atmos.Transmission(air, s.ExtRayleigh[i]*fp.ray+atmos.OzoneExtinction+s.ExtAerosol[i]*fp.aer) *
-				fp.weight(objNL, objRef, k*glow, k*rayleigh, k*mie)
-			helped = helped || filtered > broad
-			w = s.Quality[i] * max(broad, filtered)
-		} else {
-			sb = atmos.SkyBrightnessLit(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i]) + extra*ext
-			w = s.Quality[i] * ext * min(1, math.Sqrt(objRef/(objNL+k*sb)))
+		var glow, rayleigh, mie float64
+		parts := false
+		for _, t := range ts {
+			if c > t.cosMoon {
+				continue
+			}
+			var sb, w float64
+			if t.fp.w > 0 {
+				if !parts {
+					glow, rayleigh, mie = atmos.SkyParts(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i])
+					glow += extra * ext
+					parts = true
+				}
+				sb = glow + rayleigh + mie
+				w = s.Quality[i] * atmos.Transmission(air, s.ExtRayleigh[i]*t.fp.ray+atmos.OzoneExtinction+s.ExtAerosol[i]*t.fp.aer) *
+					t.fp.weight(objNL, objRef, k*glow, k*rayleigh, k*mie)
+			} else {
+				sb = atmos.SkyBrightnessLit(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i]) + extra*ext
+				objExt := ext
+				if emission {
+					objExt = atmos.Transmission(air, s.Ext[i]+s.ExtRayleigh[i]*lineRay+s.ExtAerosol[i]*lineAer)
+				}
+				w = s.Quality[i] * objExt * min(1, math.Sqrt(objRef/(objNL+k*sb)))
+			}
+			t.add(i, a, w, sb)
 		}
-		if i != prev+1 {
-			runStart = i
-			r.Runs++
-		}
-		prev = i
-		if n := i - runStart + 1; n > bestLen {
-			best, bestLen = runStart, n
-		}
-		good++
-		altSum += a
-		skySum += atmos.MagFromNL(sb)
-		weight[i] = w
-		if obs != nil {
-			obs[i] = true
-		}
-		weighted += w
 	}
 	r.MaxAlt, r.MaxAt = math.Asin(maxSin)/deg, s.Grid[maxAt]
-	if good == 0 {
-		return r, false
-	}
-	// The grid is minute-aligned from Start, so the run ends a minute after
-	// its last minute, or at End for the last grid minute (which End may cut
-	// short, so -min-run judges the clock span, not the minute count).
-	r.RunFrom, r.RunTo = s.Grid[best], s.End
-	if best+bestLen < len(s.Grid) {
-		r.RunTo = s.Grid[best+bestLen]
-	}
-	if r.RunTo.Sub(r.RunFrom) < cfg.MinRun {
-		return r, false
-	}
-	r.Foto = float64(good) / float64(len(s.Grid))
-	r.MeanAlt = altSum / float64(good)
-	r.SkyMag = skySum / float64(good)
-	r.Score = weighted / float64(len(s.Grid)) * r.Frame
-	if helped {
-		r.Filter = "+"
-	}
 
 	return r, true
 }
@@ -331,12 +400,13 @@ func frameFill(fill float64) float64 {
 	return 1
 }
 
-// filterPass is what one -filter choice passes for one target: w, its share of the
-// target's light (the lines in the filter's bands, catalog.Target.Lines), and
-// glow, rayleigh and mie, the shares of atmos.SkyParts' parts (atmos.BandSky,
-// summed over the bands, which a dual-band filter takes onto one frame). w is
-// 0 without a filter or, for a line filter, a target without lines. ray and aer scale the
-// extinction's Rayleigh and aerosol parts to the bands: (λ/551)⁻⁴ and
+// filterPass is what one -filter choice passes for one target: w, its share
+// of the target's light (the lines in the filter's bands, catalog.Target.Lines),
+// and glow, rayleigh and mie, the shares of atmos.SkyParts' parts against the
+// unfiltered camera band (atmos.BroadSky over each band, summed over the
+// bands, which a dual-band filter takes onto one frame). w is 0 without a
+// filter or, for a line filter, a target without lines. ray and aer scale
+// the extinction's Rayleigh and aerosol parts to the bands: (λ/551)⁻⁴ and
 // (λ/551)^-1.3, each line's weighted by its share of the light passed.
 type filterPass struct{ w, glow, rayleigh, mie, ray, aer float64 }
 
@@ -351,8 +421,12 @@ func passes(cfg *config.Config, tg catalog.Target, name string) filterPass {
 	if bands := config.Broadband[name]; bands != nil {
 		return broadPasses(tg, lines, bands)
 	}
+	// Against the camera band, as a broadband filter: a line filter's bands
+	// were once shares of V's 88 nm, which charged them CameraBand times the
+	// sky per nm a broadband filter is charged against the same unfiltered sky.
 	for _, l := range config.Filters[name] {
-		glow, rayleigh, mie := atmos.BandSky(catalog.LineNM[l], cfg.FilterNM)
+		nm := catalog.LineNM[l]
+		glow, rayleigh, mie := atmos.BroadSky(nm-cfg.FilterNM/2, nm+cfg.FilterNM/2)
 		fp.w += lines[l]
 		fp.glow += glow
 		fp.rayleigh += rayleigh
@@ -368,11 +442,45 @@ func passes(cfg *config.Config, tg catalog.Target, name string) filterPass {
 	return fp
 }
 
+// lineV is the V band's transmission at each line, how much of it a V
+// surface brightness measures: Bessell (1990)'s curve, linear between its
+// 10 nm points, [O III] with 495.9 nm at a third of 500.7's flux added and
+// [S II] the doublet's mean. V straddles [O III] and misses Hα.
+var lineV = [4]float64{catalog.Ha: 0.0324, catalog.OIII: 0.5929, catalog.SII: 0.0161, catalog.Hb: 0.1111}
+
+// vContinuum (mag) is the share of an emission nebula's catalogued V light
+// that is not its lines (the stars inside it, scattered continuum), fitted by
+// scripts/calibrate_lines.py: the median over 29 nebulae of 30' and more of
+// Finkbeiner (2003)'s Hα map against their lines derived from V by lineV
+// (interquartile range 0.02-1.45 mag).
+const vContinuum = 0.93
+
+// lightNL returns the light in nanoLamberts of tg at V surface brightness
+// sb: a continuum's is its V; an emission-line target's is its lines, which
+// V measures only as far as its passband reaches them (lineV) less what of
+// it is continuum (vContinuum): 1.19 mag brighter than V for an H II region,
+// as bright for a planetary, whose [O III] V holds.
+func lightNL(tg catalog.Target, sb float64) float64 {
+	nl := atmos.NanoLamberts(sb)
+	var fv float64
+	for l, w := range tg.Lines() {
+		fv += w * lineV[l]
+	}
+	if fv == 0 {
+		return nl
+	}
+
+	return nl / fv * math.Pow(10, -0.4*vContinuum)
+}
+
+// cameraBand is the unfiltered camera's one passband.
+var cameraBand = [][2]float64{{atmos.CameraLo, atmos.CameraHi}}
+
 // broadPasses is passes for a broadband filter's bands, against the
-// unfiltered camera band (atmos.BroadSky) rather than the V band a line
-// filter's width is a share of: an emission-line target's w is its passed
-// lines' share of all of them, Hβ included (so passing every line is 1, as
-// unfiltered), anything else's its continuum's, taken flat per nm.
+// unfiltered camera band (atmos.BroadSky): an emission-line target's w is
+// its passed lines' share of them (Target.Lines sum to 1, so passing every
+// line is 1, as unfiltered), anything else's its continuum's, taken flat per
+// nm.
 func broadPasses(tg catalog.Target, lines [4]float64, bands [][2]float64) filterPass {
 	var fp filterPass
 	emission := catalog.EmissionLine(tg)
@@ -401,9 +509,6 @@ func broadPasses(tg catalog.Target, lines [4]float64, bands [][2]float64) filter
 	if fp.w > 0 {
 		fp.ray, fp.aer = fp.ray/fp.w, fp.aer/fp.w
 	}
-	if emission {
-		fp.w /= lines[catalog.Ha] + lines[catalog.OIII] + lines[catalog.SII] + lines[catalog.Hb]
-	}
 
 	return fp
 }
@@ -418,18 +523,24 @@ func (fp filterPass) weight(objNL, objRef, glow, rayleigh, mie float64) float64 
 	return min(1, math.Sqrt(fp.w*fp.w*objRef/(fp.w*objNL+sky)))
 }
 
+// minMoonK floors moonK: near the Moon its halo and the gradients across the
+// frame, which no λ⁻⁴ scattering model holds, limit narrowband imagers to
+// some 30° from a full Moon however narrow the band.
+const minMoonK = 0.3
+
 // moonK is the fraction of the moonlight, against the target's own share of
 // light passed, that the filter lets count: rayleigh/w², the sky-limited
 // weight's ratio to broadband under a Moon well away (where Rayleigh
-// scattering dominates the moonlight), so it scales the Moon separation limit as k
-// does. 1 without a filter, and at most 1: a filter that does not beat the
-// Moon leaves the target to the broadband limit.
+// scattering dominates the moonlight), so it scales the Moon separation
+// limit as k does; no less than minMoonK. 1 without a filter, and at most 1:
+// a filter that does not beat the Moon leaves the target to the broadband
+// limit.
 func (fp filterPass) moonK() float64 {
 	if fp.w == 0 {
 		return 1
 	}
 
-	return min(1, fp.rayleigh/(fp.w*fp.w))
+	return max(minMoonK, min(1, fp.rayleigh/(fp.w*fp.w)))
 }
 
 // skyK returns the fraction of sky glow (moonlight, light pollution) that
