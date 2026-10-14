@@ -339,7 +339,7 @@ function showSubs(e, left, top) {
   if (!e) { box.hidden = true; return; }
   const dur = (n) => { const m = n * e.sub / 60; return m < 60 ? `${Math.max(1, Math.round(m))} min` : `${(m / 60).toFixed(1)} h`; };
   const lvl = (name, n) => `<span${n > e.max ? ' class="over"' : ""}>${name} ${n} (${dur(n)})</span>`;
-  box.innerHTML = `Subs of ${e.sub} s${e.panels > 1 ? `, per panel of ${e.panels}` : ""}${e.assumedSB ? ", typical SB" : ""}:<br>` +
+  box.innerHTML = `Subs of ${e.sub} s${e.panels > 1 ? `, per panel of ${e.panels}` : ""}${e.assumedSurfaceBrightness ? ", typical SB" : ""}:<br>` +
     `${lvl("modest", e.modest)} · ${lvl("good", e.good)}<br>${lvl("best", e.best)} · ${e.max} fit tonight`;
   box.style.left = `${left}px`;
   box.style.top = `${top}px`;

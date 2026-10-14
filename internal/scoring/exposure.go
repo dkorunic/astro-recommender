@@ -43,14 +43,14 @@ const maxSubs = 1_000_000_000
 // Estimate is one result's sub-exposure estimate; the zero value (Good 0)
 // means none.
 type Estimate struct { // betteralign:ignore
-	Modest    int     `json:"modest"`              // subs to shoot for Levels[0], per panel
-	Good      int     `json:"good"`                // Levels[1]
-	Best      int     `json:"best"`                // Levels[2]
-	Max       int     `json:"max"`                 // subs tonight's time allows per panel (with -plan, its blocks)
-	Sub       float64 `json:"sub"`                 // sub length, s
-	SNRPerSub float64 `json:"snrPerSub"`           // per arcsec², √ of the mean SNR² the stack adds
-	Panels    int     `json:"panels"`              // the mosaic the counts are per panel of
-	Assumed   bool    `json:"assumedSB,omitempty"` // the surface brightness is its class's typical one
+	Modest    int     `json:"modest"`                             // subs to shoot for Levels[0], per panel
+	Good      int     `json:"good"`                               // Levels[1]
+	Best      int     `json:"best"`                               // Levels[2]
+	Max       int     `json:"max"`                                // subs tonight's time allows per panel (with -plan, its blocks)
+	Sub       float64 `json:"sub"`                                // sub length, s
+	SNRPerSub float64 `json:"snrPerSub"`                          // per arcsec², √ of the mean SNR² the stack adds
+	Panels    int     `json:"panels"`                             // the mosaic the counts are per panel of
+	Assumed   bool    `json:"assumedSurfaceBrightness,omitempty"` // the surface brightness is its class's typical one
 }
 
 // camera is what the estimate needs of the telescope and camera.
@@ -85,7 +85,7 @@ var allLines = []catalog.Line{catalog.Ha, catalog.OIII, catalog.SII, catalog.Hb}
 // the band passes them, collected once: each line at its response and Bayer
 // share, weighted by the object's light in it. The object's gain is 0 when a
 // line filter passes none of its lines.
-func (c camera) gains(name string, lines [4]float64) (obj, sky float64) {
+func (c camera) gains(name string, lines [4]float64) (float64, float64) {
 	g := c.area * c.qe * c.omega * photonsV0 / atmos.NanoLamberts(0)
 	line := func(ls []catalog.Line) float64 {
 		var resp, w float64
@@ -112,12 +112,12 @@ func (c camera) gains(name string, lines [4]float64) (obj, sky float64) {
 	if c.mono {
 		qe = broadQEMono
 	}
-	sky = g * qe * (atmos.CameraHi - atmos.CameraLo) / atmos.VWidth
-	if obj = line(allLines); obj == 0 {
-		obj = sky
+	sky := g * qe * (atmos.CameraHi - atmos.CameraLo) / atmos.VWidth
+	if obj := line(allLines); obj > 0 {
+		return obj, sky
 	}
 
-	return obj, sky
+	return sky, sky
 }
 
 // perSub is one sub's SNR² per arcsec² for object and sky rates in e⁻/s

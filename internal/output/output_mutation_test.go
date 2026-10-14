@@ -515,7 +515,7 @@ func TestMutJSON(t *testing.T) {
 		t.Fatalf("%v\n%s", err, out)
 	}
 	tj := doc["targets"].([]any)
-	if sj, ok := tj[0].(map[string]any)["subs"].(map[string]any); !ok || sj["good"] != 10.0 || sj["sub"] != 15.0 || sj["assumedSB"] != nil {
+	if sj, ok := tj[0].(map[string]any)["subs"].(map[string]any); !ok || sj["good"] != 10.0 || sj["sub"] != 15.0 || sj["assumedSurfaceBrightness"] != nil {
 		t.Errorf("subs %v", tj[0].(map[string]any)["subs"])
 	}
 	if _, ok := tj[1].(map[string]any)["subs"]; ok {

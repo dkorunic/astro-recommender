@@ -278,8 +278,9 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, fp filterPass, m
 // minima. It comes from beyond the atmosphere, so extinction dims it and,
 // unlike the glow K&S brighten along a longer path through the air, nothing
 // adds to it: it stays outside their dark-sky term.
-func where(s *Sky, tg catalog.Target) (ra, dec, extra float64) {
+func where(s *Sky, tg catalog.Target) (float64, float64, float64) {
 	mid := s.Grid[len(s.Grid)/2]
+	var ra, dec float64
 	if tg.Track == nil {
 		// Catalogs are J2000; the hour angle comes from sidereal time of date.
 		ra, dec = astro.Precess(tg.RADeg, tg.DecDeg, mid)
@@ -288,7 +289,7 @@ func where(s *Sky, tg catalog.Target) (ra, dec, extra float64) {
 	}
 	lon, lat := astro.Ecliptic(ra, dec, mid)
 	gl, gb := astro.Galactic(ra, dec) // of date for J2000: 0.4°, against 10° cells
-	extra = max(atmos.ZodiacalExcess(lon-s.SunLon, lat)+atmos.GalacticExcess(gl, gb), atmos.ZodiacalPoleNL+atmos.GalacticMinNL-s.ZenithNL)
+	extra := max(atmos.ZodiacalExcess(lon-s.SunLon, lat)+atmos.GalacticExcess(gl, gb), atmos.ZodiacalPoleNL+atmos.GalacticMinNL-s.ZenithNL)
 
 	return ra, dec, extra
 }

@@ -248,10 +248,13 @@ func SkyParts(zenithNL, k, alt, rho float64, m Moon) (float64, float64, float64)
 	return glow, rayleigh, mie
 }
 
-// vCenter and VWidth are the V band's effective wavelength and FWHM in nm
-// (Bessell 1990), the band every sky brightness here is measured in;
-// VWidth is exported for the sub-exposure estimate's photon zero point.
-const vCenter, VWidth = 551.0, 88.0
+// vCenter is the V band's effective wavelength in nm (Bessell 1990), the
+// band every sky brightness here is measured in.
+const vCenter = 551.0
+
+// VWidth is the V band's FWHM in nm (Bessell 1990); the sub-exposure
+// estimate's photon zero point spreads over it.
+const VWidth = 88.0
 
 // angstrom is the aerosol scattering's Ångström exponent: aerosol optical
 // depth goes as λ^-1.3 for typical continental aerosol.

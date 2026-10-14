@@ -193,42 +193,21 @@ func (t Target) SurfaceBrightness() (float64, bool) {
 // sub-exposure estimate of an object without one; scoring never uses it.
 // Brighter objects are the ones measured, so it likely flatters the object
 // it stands in for.
+// sbPlanetary is sbClass's planetary nebula class.
+const sbPlanetary = "planetary"
+
 var typicalSB = map[string]float64{
 	"galaxy":     22.52,
-	"planetary":  21.75,
+	sbPlanetary:  21.75,
 	"emission":   22.82,
 	"reflection": 22.03,
 	"nebula":     20.91,
 }
 
-// sbClass is t's class for typicalSB; "" when an exposure estimate does not
-// apply: clusters (point sources), galaxy groups (one member's magnitude over
-// the group's size), comets, stars, and dark nebulae (no light of their own)
-// unless imaged for an emission line behind them.
-func (t Target) sbClass() string {
-	typ := strings.ToLower(t.Type)
-	switch k := t.kind(); {
-	case k == kindGalaxy:
-		return "galaxy"
-	case k != kindNebula && k != kindClusterNebula:
-		return ""
-	case strings.Contains(typ, "planetary"):
-		return "planetary"
-	case EmissionLine(t):
-		return "emission"
-	case strings.Contains(typ, "dark"):
-		return ""
-	case strings.Contains(typ, "reflection"):
-		return "reflection"
-	}
-
-	return "nebula"
-}
-
 // ExposureSB returns the surface brightness the sub-exposure estimate uses:
 // the object's own (SurfaceBrightness), else its class's typical one with
 // assumed true; 0 when no estimate applies (sbClass).
-func (t Target) ExposureSB() (sb float64, assumed bool) {
+func (t Target) ExposureSB() (float64, bool) {
 	class := t.sbClass()
 	if class == "" {
 		return 0, false
@@ -301,6 +280,30 @@ func (t Target) Lines() [4]float64 {
 	sum := r[Ha] + r[OIII] + r[SII]
 
 	return [4]float64{r[Ha] / sum, r[OIII] / sum, r[SII] / sum, r[Ha] / sum / balmer}
+}
+
+// sbClass is t's class for typicalSB; "" when an exposure estimate does not
+// apply: clusters (point sources), galaxy groups (one member's magnitude over
+// the group's size), comets, stars, and dark nebulae (no light of their own)
+// unless imaged for an emission line behind them.
+func (t Target) sbClass() string {
+	typ := strings.ToLower(t.Type)
+	switch k := t.kind(); {
+	case k == kindGalaxy:
+		return "galaxy"
+	case k != kindNebula && k != kindClusterNebula:
+		return ""
+	case strings.Contains(typ, "planetary"):
+		return sbPlanetary
+	case EmissionLine(t):
+		return "emission"
+	case strings.Contains(typ, "dark"):
+		return ""
+	case strings.Contains(typ, "reflection"):
+		return "reflection"
+	}
+
+	return "nebula"
 }
 
 // kind is the class of object the scoring rules act on. The lists spell
