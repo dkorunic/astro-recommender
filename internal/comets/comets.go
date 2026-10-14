@@ -174,7 +174,9 @@ func (c *comet) position(t time.Time) (float64, float64, float64, float64) {
 	sinE, cosE := math.Sincos(j2000Obliq)
 	ye, ze := y*cosE-z*sinE, y*sinE+z*cosE
 
-	return math.Mod(math.Atan2(ye, x)/deg+360, 360), math.Asin(ze/delta) / deg, r, delta
+	// Clamped like astro.Precess: within rounding of the pole ze can exceed
+	// delta by an ulp, and an Asin NaN would silently drop the comet's night.
+	return math.Mod(math.Atan2(ye, x)/deg+360, 360), math.Asin(max(-1, min(1, ze/delta))) / deg, r, delta
 }
 
 // anomaly returns true anomaly (rad) and heliocentric distance (AU) dt days
