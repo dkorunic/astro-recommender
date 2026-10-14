@@ -16,6 +16,7 @@ Everything here is implemented directly in Go from the cited sources; no astrono
 - [Weather](#weather)
 - [Scoring a target](#scoring-a-target)
 - [Framing and mosaics](#framing-and-mosaics)
+- [Sub-exposure estimate](#sub-exposure-estimate)
 - [Seeing estimate](#seeing-estimate)
 - [Night plan](#night-plan)
 - [Constellations](#constellations)
@@ -618,6 +619,50 @@ F_{\text{frame}} = \max_{\text{grids}}\ \frac{F_{\text{fill}}}{\text{panels}}
 - The night's time is shared among a mosaic's panels, so the score is divided by the panel count.
 - `-mosaic N` tries every grid of at most N panels, and the fewest panels win a tie.
 - Objects of unknown size get F = 1.
+
+## Sub-exposure estimate
+
+`scoring.Subs`, `catalog.Target.ExposureSB`, `internal/config`
+
+With framing, each listed target gets the number of sub-exposures needed tonight for a modest, good and best image: a stacked SNR of 5, 10 and 20 per arcsec² at the object's mean surface brightness, through the `-filter` choice that scored it best. It shows in the SUBS column (the good level), in `-json` (`subs`) and in the web page's hover box.
+
+**Camera.** The Origin's defaults, each overridden by its flag: aperture D = 152 mm with a d = 63 mm central obstruction (Celestron, 41% of the aperture); the IMX678's 0.83 peak QE and 2.15 e⁻ read noise (a vendor sheet for the same sensor, at 8.5 dB gain, the middle of its 0.6–3.5 e⁻; the Origin's ISO 1000 has no published gain); 15 s subs; a colour (RGGB) sensor unless `-mono`. `-aperture` alone describes another telescope, so its obstruction is then 0.
+
+**Photon rate.** A V = 0 source gives 1005 photons s⁻¹ cm⁻² Å⁻¹ at 550 nm (Bessell 1998), 884 400 s⁻¹ cm⁻² over the V band's 88 nm. The sky model works in V-band nanoLamberts, so a brightness of x nL is 884 400 · x / NL(0) photons s⁻¹ cm⁻² arcsec⁻², and per pixel
+
+```math
+R = \frac{884\,400\;x}{\mathrm{NL}(0)}\;\frac{\pi}{4}\left(D^2 - d^2\right)\;QE_\mathrm{peak}\;q\;\Omega ,\qquad \Omega = \mathrm{scale}^2
+```
+
+The relative response q depends on what the light is:
+
+- **The sky and continuum objects**, unfiltered or through `cls`/`lpro`, are spread flat per nm over the camera's 400–700 nm (× 300/88 against V) at q = 0.8 for a mono sensor or 0.34 for a colour one, whose every pixel's dye passes about a third of the band (the RGGB mean of Sony's colour curves). The sky's share through a broadband filter is `BroadSky`'s, as in the score.
+- **Through a line filter** the sky model's shares are already the bands' own (`BandSky` against V), at each line's response (Hα 0.95, [O III] 0.85, [S II] 0.9, Hβ 0.8 of peak, read off Sony's IMX678 curve) times the Bayer share of pixels that see it (red Hα and [S II] ¼, green [O III] and Hβ ½; 1 for mono), weighted by the object's light per line.
+- **An emission-line object's** light is its lines, which any band that passes them collects once: it uses the line response unfiltered and through broadband filters too, rather than the sky's flat spread, which would count it 3.4 times.
+
+The object and sky per minute are the score's own (the sky with moonlight, zodiacal and galactic light, through a filter its bands' shares; the object dimmed by its band's extinction), with the surface brightness from `ExposureSB`.
+
+**Per sub and stacked.** With rates S and B per pixel, a sub of t seconds and read noise RN,
+
+```math
+\mathrm{SNR}^2_\mathrm{sub} = \frac{(S t)^2}{S t + B t + RN^2}\;\frac{1}{\Omega}\quad\text{per arcsec}^2
+```
+
+Dark current is left out. An optimally weighted stack adds SNR², so a night half dark and half moonlit is the mean of its minutes' SNR², not the SNR of mean rates. Subs lost to the weather (the mean quality $\bar q$ of the score: cloud, transparency, rain, dew, gusts) must be shot again:
+
+```math
+N_L = \left\lceil \frac{L^2}{\overline{\mathrm{SNR}^2_\mathrm{sub}}\;\bar q} \right\rceil ,\qquad L = 5,\ 10,\ 20
+```
+
+capped at 10⁹. For a mosaic the counts are per panel, and the subs that fit tonight (the observable time, or the planned blocks with `-plan`, divided by the sub length) are shared among the panels.
+
+**Surface brightness.** The object's own (`SurfaceBrightness`), else the median of its class over the embedded lists (`TestTypicalSB` recomputes them): galaxies 22.52, planetary nebulae 21.75, emission nebulae 22.82, reflection nebulae 22.03, other nebulae 20.91 mag/arcsec², marked `~`. Clusters (point sources), galaxy groups, comets and dark nebulae (unless imaged for the emission behind them, like the Horsehead) get none.
+
+**Limits.**
+
+- The V-band surface brightness of an emission nebula, measured or derived from an integrated magnitude that is often its cluster's, holds little of its Hα, and the class median comes from those values, so emission nebulae without a measurement come out pessimistic: hours rather than the hour Origin users report for the bright ones. Galaxies match (M 51 at the good level in about 35 minutes from a dark site).
+- At the Origin's 15 s a colour sensor's Hα quarter through a 7 nm band is read-noise limited (well under 1 e⁻ of object and a few of sky per sub against RN² ≈ 4.6), so a line filter gains less in subs than in the score, which has no read noise and can name a filter that SUBS does not favour as much.
+- No dark current, no frame rejection (tracking, satellites, wind: often 10–20% on the Origin), no saturation (the IMX678's 11.27 ke⁻ full well is far off at 15 s for these objects), flat spectra across each band, and one SNR target for every type.
 
 ## Seeing estimate
 
