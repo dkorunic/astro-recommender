@@ -42,7 +42,7 @@ w_i \;=\; \underbrace{Q_i}_{\text{weather}} \;\times\; \underbrace{T(h_i,\kappa_
 ```math
 \text{SCORE} \;=\; F_{\text{frame}} \cdot \frac{1}{N}\sum_{i\,\in\,\text{observable}} w_i ,
 \qquad
-\text{FOTO} \;=\; \frac{\#\,\text{observable minutes}}{N}
+\text{UP} \;=\; \frac{\#\,\text{observable minutes}}{N}
 ```
 
 N is the number of minutes in the window. Each factor lies between 0 and 1, so a perfect target (up all night, clear, moonless, at the zenith, well framed) scores 1. The sections below derive each factor:
@@ -428,7 +428,7 @@ Q = (1 - C)\cdot
 - **Rain**: the hour's precipitation ramps Q down to 0 at 0.1 mm, whatever the cloud layers say; an unknown amount does nothing. Open-Meteo reports gusts and precipitation over the *preceding* hour, so each hour reads the next entry.
 - **Transparency**: [7Timer!][7timer]'s ASTRO product (1 best, 8 worst; 3-hourly, about 3 days ahead) scales Q from 1 down to 0.5.
 
-When a forecast covers only part of the window, the uncovered minutes get the **mean of the covered ones**. A perfect sky would favour targets that are up only then. With no forecast at all, Q = 1. Weather only weighs the score. FOTO and the observable runs stay purely geometric.
+When a forecast covers only part of the window, the uncovered minutes get the **mean of the covered ones**. A perfect sky would favour targets that are up only then. With no forecast at all, Q = 1. Weather only weighs the score. UP and the observable runs stay purely geometric.
 
 The ramps are heuristics: the thresholds are judgment, not measurement (see [Heuristics](#heuristics)).
 
