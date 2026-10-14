@@ -67,3 +67,29 @@ func pack(targets []Target) packed {
 
 	return p
 }
+
+// decodePacked rejects a gob whose per-target lengths do not cover the
+// Strings blob exactly: version skew between a fetched list and the wasm's
+// packedTarget (gob matches fields by name, a missing one stays zero) must
+// stay a decode error, not a slice panic or silently misaligned strings.
+func TestDecodePackedLengths(t *testing.T) {
+	p := packed{Strings: "NnDdTtCcRrEe", Targets: []packedTarget{{Name: 2, Description: 2, Type: 2, Constellation: 2, RA: 2, Dec: 2}}}
+	enc := func() *bytes.Buffer {
+		var buf bytes.Buffer
+		if err := gob.NewEncoder(&buf).Encode(&p); err != nil {
+			t.Fatal(err)
+		}
+
+		return &buf
+	}
+	ts, err := decodePacked("x", enc())
+	if err != nil || len(ts) != 1 || ts[0].Dec != "Ee" {
+		t.Fatalf("consistent gob: %v, %v", ts, err)
+	}
+	for _, n := range []uint32{1, 3} { // short lengths misalign, long ones would panic the slice
+		p.Targets[0].Dec = n
+		if _, err := decodePacked("x", enc()); err == nil {
+			t.Errorf("Dec length %d accepted over a 12-byte blob", n)
+		}
+	}
+}

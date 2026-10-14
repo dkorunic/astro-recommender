@@ -443,6 +443,7 @@ var (
 	errSky         = errors.New("RA must be 0 to 24h and Dec within ±90°")
 	errNumber      = errors.New("bad number")
 	errDocuments   = errors.New("more than one YAML document")
+	errPacked      = errors.New("string lengths do not cover the blob")
 )
 
 // Load reads -targets, or the embedded -list target list.
@@ -588,9 +589,28 @@ func embedded(name string) ([]Target, error) {
 		return nil, err
 	}
 	defer f.Close()
+
+	return decodePacked(name, f)
+}
+
+// decodePacked decodes one list's packed gob. The lengths must account for
+// the whole blob: a gob from a packedTarget whose length fields changed still
+// decodes (gob matches fields by name, missing ones stay zero), and walking
+// the blob with wrong lengths would panic or silently misalign every string —
+// the browser build can fetch a list from a deploy newer than its cached
+// wasm, and skew there must stay a decode error.
+func decodePacked(name string, f io.Reader) ([]Target, error) {
 	var p packed
 	if err := gob.NewDecoder(f).Decode(&p); err != nil {
 		return nil, fmt.Errorf("embedded list %s: %w", name, err)
+	}
+	var total uint64
+	for _, pt := range p.Targets {
+		total += uint64(pt.Name) + uint64(pt.Description) + uint64(pt.Type) +
+			uint64(pt.Constellation) + uint64(pt.RA) + uint64(pt.Dec)
+	}
+	if total != uint64(len(p.Strings)) {
+		return nil, fmt.Errorf("embedded list %s: %w: %d of %d bytes", name, errPacked, total, len(p.Strings))
 	}
 	strs := p.Strings
 	next := func(n uint32) string {
