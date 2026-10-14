@@ -135,8 +135,9 @@ func (c camera) perSub(obj, sky float64) float64 {
 // the share of its subs the weather (Quality) lets through, sets the count.
 // Counts are per panel of r.Mosaic. planned is the time -plan gives r (0: its observable
 // time), which with the panels sets Max. The zero Estimate means none: no
-// camera, no surface brightness (catalog.Target.ExposureSB), or no minute
-// the target is up and the weather lets subs through.
+// camera, no surface brightness (catalog.Target.ExposureSB), or no
+// observable minute; a night the weather loses entirely is maxSubs counts
+// with SNRPerSub 0.
 func Subs(cfg *config.Config, s *Sky, r Result, planned time.Duration) Estimate {
 	c, ok := newCamera(cfg)
 	sb, assumed := r.ExposureSB()
@@ -200,7 +201,9 @@ func Subs(cfg *config.Config, s *Sky, r Result, planned time.Duration) Estimate 
 		snr2 += s.Quality[i] * c.perSub(objGain*obj, skyGain*sky)
 		n++
 	}
-	if snr2 == 0 {
+	// A night the weather loses entirely still has its observable time: the
+	// counts hit maxSubs, past Max, rather than reading as no estimate.
+	if n == 0 {
 		return Estimate{}
 	}
 	mean := snr2 / float64(n)

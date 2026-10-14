@@ -188,14 +188,14 @@ func (t Target) SurfaceBrightness() (float64, bool) {
 	return mag + 2.5*math.Log10(math.Pi/4*(60*t.Size)*(60*t.Size)), true
 }
 
+// sbPlanetary is sbClass's planetary nebula class.
+const sbPlanetary = "planetary"
+
 // typicalSB is the median V surface brightness per sbClass over the embedded
 // lists' objects that have one (TestTypicalSB recomputes it), for the
 // sub-exposure estimate of an object without one; scoring never uses it.
 // Brighter objects are the ones measured, so it likely flatters the object
 // it stands in for.
-// sbPlanetary is sbClass's planetary nebula class.
-const sbPlanetary = "planetary"
-
 var typicalSB = map[string]float64{
 	"galaxy":     22.52,
 	sbPlanetary:  21.75,

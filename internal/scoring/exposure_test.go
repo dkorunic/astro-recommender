@@ -219,13 +219,6 @@ func TestSubsNoCamera(t *testing.T) {
 	if e := Subs(cfg, s, cl, 0); e != (Estimate{}) {
 		t.Errorf("cluster: %+v", e)
 	}
-	rain := mutSky(141)
-	for i := range rain.Quality {
-		rain.Quality[i] = 0
-	}
-	if e := Subs(cfg, rain, r, 0); e != (Estimate{}) {
-		t.Errorf("rained out: %+v", e)
-	}
 	never := r
 	never.Obs = make([]bool, len(r.Obs))
 	if e := Subs(cfg, s, never, 0); e != (Estimate{}) {
@@ -345,5 +338,19 @@ func TestSubsWeatherPerMinute(t *testing.T) {
 	want := float64(litOnly) * float64(n) / float64(n-nd)
 	if got := Subs(cfg, s, r, 0).Best; math.Abs(float64(got)/want-1) > 0.02 {
 		t.Errorf("clouded dark half: %d subs, want %.0f (dark-only %d)", got, want, darkOnly)
+	}
+}
+
+// A night the forecast clouds out is an estimate past tonight's limit, not
+// none: "-" is for objects no estimate applies to.
+func TestSubsCloudedOut(t *testing.T) {
+	cfg, s := expCfg(), mutSky(141)
+	r := expResult(t, cfg, s, expGalaxy(22))
+	for i := range s.Quality {
+		s.Quality[i] = 0
+	}
+	e := Subs(cfg, s, r, 0)
+	if e.Good != maxSubs || e.Max <= 0 || e.Good <= e.Max || e.SNRPerSub != 0 {
+		t.Errorf("clouded out: %+v, want good %d past a positive max, no SNR", e, maxSubs)
 	}
 }

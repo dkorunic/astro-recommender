@@ -124,14 +124,7 @@ func main() {
 	if cfg.Plan > 0 {
 		slots = plan.Make(&s, results, cfg.Plan)
 	}
-	// The sub-exposure estimate needs a camera, which framing describes.
-	if cfg.Framing {
-		for i := range results[:min(cfg.Top, len(results))] {
-			if e := scoring.Subs(&cfg, &s, results[i], planned(slots, &results[i])); e.Good > 0 {
-				results[i].Exposure = &e
-			}
-		}
-	}
+	exposures(&cfg, &s, slots, results)
 
 	if cfg.JSON {
 		if err := output.JSON(&cfg, &s, place, slots, results); err != nil {
@@ -188,6 +181,25 @@ func nothing(cfg *config.Config, msg string) {
 func fatal(msg string) {
 	fmt.Fprintln(os.Stderr, "error:", msg)
 	os.Exit(1)
+}
+
+// exposures attaches the sub-exposure estimate to each listed result. It
+// needs a camera, which framing describes, and -csv never shows it.
+func exposures(cfg *config.Config, s *scoring.Sky, slots []plan.Slot, results []scoring.Result) {
+	if !cfg.Framing || cfg.CSV {
+		return
+	}
+	for i := range results[:min(cfg.Top, len(results))] {
+		// Rescored once here, so Subs and the browser's altitudes share it.
+		if results[i].Obs == nil {
+			if rs := scoring.Score(cfg, s, []catalog.Target{results[i].Target}, true); len(rs) == 1 {
+				results[i].Obs = rs[0].Obs
+			}
+		}
+		if e := scoring.Subs(cfg, s, results[i], planned(slots, &results[i])); e.Good > 0 {
+			results[i].Exposure = &e
+		}
+	}
 }
 
 // planned returns the time the plan gives r, its blocks' length; 0 without

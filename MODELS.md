@@ -654,7 +654,7 @@ Dark current is left out. An optimally weighted stack adds SNR², so a night hal
 N_L = \left\lceil \frac{L^2}{\overline{q_i\,\mathrm{SNR}^2_{\mathrm{sub},i}}} \right\rceil ,\qquad L = 5,\ 10,\ 20
 ```
 
-capped at 10⁹. For a mosaic the counts are per panel, and the subs that fit tonight (the observable time, or the planned blocks with `-plan`, divided by the sub length) are shared among the panels.
+capped at 10⁹, which a night the forecast loses entirely reaches (past tonight's limit, rather than no estimate). For a mosaic the counts are per panel, and the subs that fit tonight (the observable time, or the planned blocks with `-plan`, divided by the sub length) are shared among the panels.
 
 **Surface brightness.** The object's own (`SurfaceBrightness`), else the median of its class over the embedded lists (`TestTypicalSB` recomputes them): galaxies 22.52, planetary nebulae 21.75, emission nebulae 22.82, reflection nebulae 22.03, other nebulae 20.91 mag/arcsec², marked `~`. Clusters (point sources), galaxy groups, comets and dark nebulae (unless imaged for the emission behind them, like the Horsehead) get none.
 
