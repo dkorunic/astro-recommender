@@ -653,17 +653,19 @@ R = \frac{884\,400\;x}{\mathrm{NL}(0)}\;\frac{\pi}{4}\left(D^2 - d^2\right)\;QE_
 
 The relative response q depends on what the light is:
 
-- **The sky and continuum objects**, unfiltered or through `cls`/`lpro`, are spread over the camera's 400–700 nm (× 300/88 against V) at q = 0.8 for a mono sensor or 0.34 for a colour one, whose every pixel's dye passes about a third of the band (the RGGB mean of Sony's colour curves). The glow and a continuum are flat per nm; the moonlight scatters as it does in the score, so the camera band's Rayleigh part per nm is the λ⁻⁴ mean over 400–700 nm, 1.30 of V's (its Mie part 1.04). The sky's share through a broadband filter is `BroadSky`'s, as in the score.
-- **Through a line filter** each band passes its own share of the sky (`BandSky`, against V, so absolute), at its line's response (Hα 0.95, [O III] 0.85, [S II] 0.9, Hβ 0.8 of peak, read off Sony's IMX678 curve) times the Bayer share of pixels that see it (red Hα and [S II] ¼, green [O III] and Hβ ½; 1 for mono): on a colour sensor the [O III] band's sky falls on twice the pixels the Hα band's does. The object's lines are weighted the same way by its light in each.
+- **The sky and continuum objects**, unfiltered or through `cls`/`lpro`, are spread over the camera's 400–700 nm (× 300/88 against V) at q = 0.8 for a mono sensor or 0.34 for a colour one, whose every pixel's dye passes about a third of the band (the RGGB mean of Sony's colour curves), each channel alike. The glow and a continuum are flat per nm; the moonlight scatters as it does in the score, so the camera band's Rayleigh part per nm is the λ⁻⁴ mean over 400–700 nm, 1.30 of V's (its Mie part 1.04). The sky's share through a broadband filter is `BroadSky`'s, as in the score.
+- **Through a line filter** each band passes its own share of the sky (`BandSky`, against V, so absolute), at its line's response (Hα 0.95, [O III] 0.85, [S II] 0.9, Hβ 0.8 of peak, read off Sony's IMX678 curve), to the channel of pixels whose dye passes the line (red Hα and [S II], green [O III] and Hβ); the object's lines go to their channels the same way, weighted by its light in each.
 - **An emission-line object's** light is its lines ([from its V](#emission-line-light)), which any band that passes them collects once: it uses the line response unfiltered and through broadband filters too, rather than the sky's flat spread, which would count it 3.4 times. Unfiltered it is dimmed at its lines' extinction, as in the score.
 
 The object and sky per minute are the score's own (the sky with moonlight, zodiacal and galactic light, through a filter its bands' shares; the object dimmed by its band's extinction), with the surface brightness from `ExposureSB`, as absolute photons: the object's lines are not moved against the camera band, which the sky's gain already spans. A filter is the score's choice, worn all night, so its observable minutes are the score's too.
 
-**Per sub and stacked.** With rates S and B per pixel, a sub of t seconds and read noise RN,
+**Per sub and stacked.** A colour sensor's red, green and blue pixels (`channels`: ¼, ½ and ¼ of the RGGB array) see different light, and an optimally weighted stack adds them by SNR², each over its own pixels; a mono sensor is one channel of every pixel. With rates S_c and B_c per pixel of channel c, its share f_c, a sub of t seconds and read noise RN,
 
 ```math
-\mathrm{SNR}^2_\mathrm{sub} = \frac{(S t)^2}{S t + B t + RN^2}\;\frac{1}{\Omega}\quad\text{per arcsec}^2
+\mathrm{SNR}^2_\mathrm{sub} = \sum_c f_c\,\frac{(S_c t)^2}{S_c t + B_c t + RN^2}\;\frac{1}{\Omega}\quad\text{per arcsec}^2
 ```
+
+A channel that sees none of the object adds nothing, its read noise included: through Hα only the red quarter counts. An average pixel, (¼S)²/(¼S + ¼B + RN²), would agree sky-limited but charge the green and blue pixels' read noise against Hα, 4 times too pessimistic read-noise limited (2 for [O III]), and mix a nebula's red and green lines into one, about 1.5 times too pessimistic unfiltered.
 
 Dark current is left out. An optimally weighted stack adds SNR², so a night half dark and half moonlit is the mean of its minutes' SNR², not the SNR of mean rates. Subs lost to the weather (each minute's quality $q_i$ of the score: cloud, transparency, rain, dew, gusts) must be shot again, so the weather weighs each minute's SNR², and cloud during the target's best minutes costs more than the same cloud during its worst:
 
@@ -678,7 +680,7 @@ capped at 10⁹, which a night the forecast loses entirely reaches (past tonight
 **Limits.**
 
 - An emission nebula's lines come from its V surface brightness through the [fitted conversion](#emission-line-light), good to a factor of about three for one nebula; without a measurement the class median (22.82 for emission nebulae) stands in, which with the lines 1.19 mag brighter puts the bright ones at about five hours unfiltered on the Origin under the default pristine sky. Galaxies match Origin users' reports (M 51 at the good level in about 35 minutes from a dark site).
-- At the Origin's 15 s a colour sensor's Hα quarter through a 7 nm band is read-noise limited (a tenth of an e⁻ of sky per sub under a 21.3 mag/arcsec² sky against RN² ≈ 4.6, where unfiltered collects about 9), so under the darkest skies a line filter costs subs that the score, which has no read noise, credits to it: FILTER can name a filter for which SUBS asks more than without (IC 1795 through Hα under the default 22.0 zenith: about 1550 subs against 1120). The crossover is near Bortle 3–4 (at Bortle 4, 1597 against 1718); at Bortle 8 Hα needs a sixth of the subs (2703 against 15 501).
+- At the Origin's 15 s a colour sensor's red pixels through a 7 nm Hα band are read-noise limited under a dark sky (about half an e⁻ of sky per sub under 21.3 mag/arcsec² against RN² ≈ 4.6), where a broadband filter, collecting every line over 120 nm, is not; the score has no read noise, so FILTER can name a line filter that SUBS finds slower than another choice. IC 1795 under the default 22.0 zenith: 797 subs unfiltered, 581 through Hα, 492 through `cls`; at Bortle 4, 1193, 626 and 643; at Bortle 8, 10 412, 1731 and 4322.
 - No dark current, no frame rejection (tracking, satellites, wind: often 10–20% on the Origin), no saturation (the IMX678's 11.27 ke⁻ full well is far off at 15 s for these objects), flat spectra across each band, and one SNR target for every type.
 
 ## Seeing estimate
