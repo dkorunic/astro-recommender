@@ -6,7 +6,9 @@ package catalog
 import (
 	"bytes"
 	"encoding/gob"
+	"errors"
 	"flag"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -85,6 +87,14 @@ func TestDecodePackedLengths(t *testing.T) {
 	ts, err := decodePacked("x", enc())
 	if err != nil || len(ts) != 1 || ts[0].Dec != "Ee" {
 		t.Fatalf("consistent gob: %v, %v", ts, err)
+	}
+	// Bytes that are no gob at all (a truncated or HTML-error download in the
+	// browser build) are a decode error naming the list.
+	if _, err := decodePacked("x", strings.NewReader("<html>")); err == nil || !strings.Contains(err.Error(), "embedded list x") {
+		t.Errorf("non-gob bytes: %v", err)
+	}
+	if _, err := embedded("nope"); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("embedded(nope) = %v, want ErrNotExist", err)
 	}
 	for _, n := range []uint32{1, 3} { // short lengths misalign, long ones would panic the slice
 		p.Targets[0].Dec = n

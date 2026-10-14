@@ -244,3 +244,79 @@ func TestCachedInvalid(t *testing.T) {
 		t.Errorf("Cached without a stale copy = %v, want errBad", err)
 	}
 }
+
+// StatusError reads as the status line, so a warning names the code.
+func TestStatusErrorText(t *testing.T) {
+	if got := (&StatusError{http.StatusServiceUnavailable}).Error(); got != "HTTP status 503 Service Unavailable" {
+		t.Errorf("Error() = %q", got)
+	}
+}
+
+// A context cancelled during the retry pause ends the wait at once with
+// the context's error, without the second request. The transport cancels
+// as it answers 503, so the cancel lands after Do and before the wait,
+// which a real server's timing cannot promise.
+func TestGetJSONRetryCancel(t *testing.T) {
+	old, oldClient := RetryDelay, httpClient
+	RetryDelay = time.Hour
+	t.Cleanup(func() { RetryDelay, httpClient = old, oldClient })
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	calls := 0
+	httpClient = &http.Client{Transport: roundTrip(func(r *http.Request) (*http.Response, error) {
+		calls++
+		cancel()
+
+		return &http.Response{StatusCode: http.StatusServiceUnavailable, Body: http.NoBody, Header: http.Header{}, Request: r}, nil
+	})}
+	if err := GetJSON(ctx, "http://example.invalid", new(any)); !errors.Is(err, context.Canceled) || calls != 1 {
+		t.Errorf("GetJSON = %v after %d calls, want context.Canceled after 1", err, calls)
+	}
+}
+
+type roundTrip func(*http.Request) (*http.Response, error)
+
+func (f roundTrip) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+
+// A malformed URL or a failed request is an error from both getters.
+func TestGetErrors(t *testing.T) {
+	if _, err := GetText(context.Background(), "http://[::1"); err == nil {
+		t.Error("GetText with a malformed URL succeeded")
+	}
+	if err := GetJSON(context.Background(), "http://[::1", new(any)); err == nil {
+		t.Error("GetJSON with a malformed URL succeeded")
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {}))
+	defer srv.Close()
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := GetText(ctx, srv.URL); !errors.Is(err, context.Canceled) {
+		t.Errorf("GetText with a cancelled context = %v", err)
+	}
+}
+
+// readCache reports a missing cache directory as errNoCache and an
+// unreadable cache file as an error, never as data.
+func TestReadCacheErrors(t *testing.T) {
+	if _, _, err := readCache("", anyData); !errors.Is(err, errNoCache) {
+		t.Errorf("readCache(\"\") = %v, want errNoCache", err)
+	}
+	// A directory passes Stat but not ReadFile.
+	if data, _, err := readCache(t.TempDir(), anyData); err == nil {
+		t.Errorf("readCache(dir) = %q, want an error", data)
+	}
+}
+
+// A cache file that cannot be renamed into place (a directory there) leaves
+// no temp file behind.
+func TestWriteCacheRenameFails(t *testing.T) {
+	dir := t.TempDir()
+	cache := filepath.Join(dir, "c.txt")
+	if err := os.MkdirAll(filepath.Join(cache, "sub"), 0o750); err != nil {
+		t.Fatal(err)
+	}
+	writeCache(cache, []byte("data"))
+	if tmps, _ := filepath.Glob(filepath.Join(dir, "*.tmp")); len(tmps) != 0 {
+		t.Errorf("leftover temp files: %v", tmps)
+	}
+}

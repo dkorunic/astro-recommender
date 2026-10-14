@@ -612,3 +612,46 @@ func TestWeatherSentinels(t *testing.T) {
 		t.Errorf("sentinel gust: %v, want the mean wind, 3", g)
 	}
 }
+
+// Every fetcher wraps a failed request in its service's sentinel, and the
+// Open-Meteo ones add the response's reason, stripped of control characters
+// (it is the server's text, printed to a terminal).
+func TestFetchErrors(t *testing.T) {
+	var status int
+	reply := `{"reason":"end_date\u001b[31m out of range"}`
+	mutServe(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(status)
+		_, _ = w.Write([]byte(reply))
+	})
+	ctx, start := context.Background(), time.Date(2026, 10, 12, 18, 0, 0, 0, time.UTC)
+	check := func(name string, err, sentinel error, reason bool) {
+		t.Helper()
+		switch {
+		case !errors.Is(err, sentinel) || !errors.Is(err, fetch.ErrStatus):
+			t.Errorf("%s: err %v, want %v and a status error", name, err, sentinel)
+		case reason && !strings.Contains(err.Error(), "end_date[31m out of range"):
+			t.Errorf("%s: err %q lacks the sanitized reason", name, err)
+		}
+	}
+	// A one-day 400 is not narrowed, so it reaches the caller.
+	status = http.StatusBadRequest
+	_, _, err := Forecast(ctx, 1, 2, start, start)
+	check("Forecast", err, errOpenMeteo, true)
+	_, err = Profile(ctx, 1, 2, start, start.Add(time.Hour))
+	check("Profile", err, errOpenMeteo, true)
+	_, _, err = AerosolForecast(ctx, 1, 2, start, start)
+	check("AerosolForecast", err, errAirQuality, true)
+	status = http.StatusNotFound
+	_, err = AstroForecast(ctx, 1, 2)
+	check("AstroForecast", err, errSevenTimer, false)
+
+	// A 200 whose series disagree in length is malformed, not a short forecast.
+	status, reply = http.StatusOK, `{"hourly":{"time":[1791748800,1791752400],"cloud_cover_low":[0]}}`
+	if _, _, err = Forecast(ctx, 1, 2, start, start); !errors.Is(err, errOpenMeteo) || !strings.Contains(err.Error(), "malformed") {
+		t.Errorf("mismatched series: err %v", err)
+	}
+	// An hourly block that is not an object fails the decode, wrapped.
+	if _, err = decodeHourly(json.RawMessage(`[1]`)); !errors.Is(err, errOpenMeteo) {
+		t.Errorf("array block: err %v", err)
+	}
+}

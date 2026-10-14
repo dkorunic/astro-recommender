@@ -4,6 +4,9 @@
 package comets
 
 import (
+	"bufio"
+	"bytes"
+	"errors"
 	"math"
 	"testing"
 	"time"
@@ -52,5 +55,23 @@ func TestTrackNaN(t *testing.T) {
 	grid := []time.Time{time.Date(2026, 10, 6, 0, 0, 0, 0, time.UTC)}
 	if c.track(grid, make([][2]float64, len(grid))) {
 		t.Error("track with an unsolvable orbit = true, want false")
+	}
+}
+
+// An unsolvable orbit is dropped by Targets, not listed with a NaN
+// magnitude and position.
+func TestTargetsNaN(t *testing.T) {
+	grid := []time.Time{time.Date(2026, 10, 6, 0, 0, 0, 0, time.UTC)}
+	el := Elements{{name: "C/2026 X1", q: 1e-300, e: 2, h: 5, k: 4}}
+	if out := el.Targets(grid, 99); len(out) != 0 {
+		t.Errorf("Targets = %v, want none", out)
+	}
+}
+
+// A line longer than the scanner's buffer is the scanner's error, not a
+// silent "no elements parsed".
+func TestParseCometsLongLine(t *testing.T) {
+	if cs, err := parseComets(bytes.Repeat([]byte("x"), bufio.MaxScanTokenSize+1)); !errors.Is(err, bufio.ErrTooLong) {
+		t.Errorf("parseComets = %v, %v; want bufio.ErrTooLong", cs, err)
 	}
 }

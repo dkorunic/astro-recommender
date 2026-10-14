@@ -61,3 +61,16 @@ func TestLookup(t *testing.T) {
 		}
 	}
 }
+
+// Off the browser the key is the environment's, and unset means no lookup.
+// (The js branch, a placeholder for the proxy, runs only under GOOS=js.)
+func TestKey(t *testing.T) {
+	t.Setenv(KeyEnv, "sqm_test")
+	if got := Key(); got != "sqm_test" {
+		t.Errorf("Key() = %q, want sqm_test", got)
+	}
+	t.Setenv(KeyEnv, "")
+	if got := Key(); got != "" {
+		t.Errorf("Key() with no key = %q", got)
+	}
+}

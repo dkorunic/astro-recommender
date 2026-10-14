@@ -27,3 +27,12 @@ func TestConstellationOf(t *testing.T) {
 		}
 	}
 }
+
+// Abbr inverts Of's full names; anything else, such as Of's "-", passes through.
+func TestAbbr(t *testing.T) {
+	for full, want := range map[string]string{"Orion": "Ori", "Ursa Minor": "UMi", "Piscis Austrinus": "PsA", "-": "-", "orion": "orion"} {
+		if got := Abbr(full); got != want {
+			t.Errorf("Abbr(%q) = %q, want %q", full, got, want)
+		}
+	}
+}

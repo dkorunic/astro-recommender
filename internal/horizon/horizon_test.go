@@ -4,10 +4,14 @@
 package horizon
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
+	"io/fs"
 	"math"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -48,6 +52,16 @@ func TestLoadRejects(t *testing.T) {
 	}
 	if h, err := Load(f); err != nil || len(h) != 2 {
 		t.Errorf("valid file: %v, %v", h, err)
+	}
+	if _, err := Load(filepath.Join(t.TempDir(), "missing.txt")); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("missing file: %v, want fs.ErrNotExist", err)
+	}
+	// A line past the scanner's buffer is an error, not a truncated profile.
+	if err := os.WriteFile(f, []byte("0 10\n"+strings.Repeat(" ", bufio.MaxScanTokenSize)+"90 20\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if h, err := Load(f); !errors.Is(err, bufio.ErrTooLong) {
+		t.Errorf("overlong line: %v, %v; want bufio.ErrTooLong", h, err)
 	}
 }
 

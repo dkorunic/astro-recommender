@@ -526,3 +526,24 @@ func TestHasMagComet(t *testing.T) {
 		t.Error("the -9999 sentinel is a magnitude")
 	}
 }
+
+// A -targets file that cannot be read or is not a list of targets is an
+// error naming the problem, never an empty list.
+func TestLoadFileErrors(t *testing.T) {
+	dir := t.TempDir()
+	if _, _, err := Load("", filepath.Join(dir, "missing.yaml")); !errors.Is(err, os.ErrNotExist) {
+		t.Errorf("missing file: %v, want ErrNotExist", err)
+	}
+	for _, yml := range []string{
+		"name: X\n",   // a mapping, not a list: the Node decodes, the []Target does not
+		"[{name: X\n", // unterminated flow sequence
+	} {
+		f := filepath.Join(dir, "t.yaml")
+		if err := os.WriteFile(f, []byte(yml), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if tg, _, err := Load("", f); err == nil || !strings.Contains(err.Error(), f) {
+			t.Errorf("%q: Load = %d targets, %v; want an error naming the file", yml, len(tg), err)
+		}
+	}
+}

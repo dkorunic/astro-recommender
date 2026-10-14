@@ -4,11 +4,17 @@
 package main
 
 import (
+	"encoding/json"
+	"io"
+	"os"
 	"runtime/debug"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/dkorunic/astro-recommender/internal/astro"
+	"github.com/dkorunic/astro-recommender/internal/catalog"
+	"github.com/dkorunic/astro-recommender/internal/config"
 	"github.com/dkorunic/astro-recommender/internal/plan"
 	"github.com/dkorunic/astro-recommender/internal/scoring"
 )
@@ -69,5 +75,101 @@ func TestPlanned(t *testing.T) {
 	}
 	if got := planned(nil, &results[0]); got != 0 {
 		t.Errorf("no -plan: %v", got)
+	}
+}
+
+// capture returns what f writes to stdout and stderr.
+func capture(t *testing.T, f func()) (stdout, stderr string) {
+	t.Helper()
+	read := func(p **os.File) (func() string, func()) {
+		r, w, err := os.Pipe()
+		if err != nil {
+			t.Fatal(err)
+		}
+		old := *p
+		*p = w
+		done := make(chan string)
+		go func() {
+			b, _ := io.ReadAll(r)
+			done <- string(b)
+		}()
+
+		return func() string { return <-done }, func() { *p = old; _ = w.Close() }
+	}
+	out, restoreOut := read(&os.Stdout)
+	errs, restoreErr := read(&os.Stderr)
+	f()
+	restoreOut()
+	restoreErr()
+
+	return out(), errs()
+}
+
+// nothing keeps -csv and -json parseable: the CSV's header alone with the
+// message on stderr, and a JSON document whose message survives control
+// characters and non-ASCII, which %q would escape as invalid JSON.
+func TestNothing(t *testing.T) {
+	const msg = "nothing \x01 \u00e9\t tonight"
+	if out, errs := capture(t, func() { nothing(&config.Config{}, msg) }); out != msg+"\n" || errs != "" {
+		t.Errorf("text: stdout %q, stderr %q", out, errs)
+	}
+	out, errs := capture(t, func() { nothing(&config.Config{CSV: true}, msg) })
+	if out != "Catalogue Entry,Familiar Name,Right Ascension (J2000),Declination (J2000)\n" || errs != msg+"\n" {
+		t.Errorf("csv: stdout %q, stderr %q", out, errs)
+	}
+	out, errs = capture(t, func() { nothing(&config.Config{JSON: true}, msg) })
+	var doc struct {
+		Targets []string `json:"targets"`
+		Message string   `json:"message"`
+	}
+	if !json.Valid([]byte(out)) || json.Unmarshal([]byte(out), &doc) != nil || doc.Message != msg || doc.Targets == nil || len(doc.Targets) != 0 || errs != "" {
+		t.Errorf("json: stdout %q, stderr %q", out, errs)
+	}
+}
+
+// exposures estimates the listed results only (the first -n), rescoring
+// those without per-minute data once and keeping any they have; without
+// framing (no camera) or with -csv (never shown) it does nothing.
+func TestExposures(t *testing.T) {
+	cfg := &config.Config{Lat: 45.8, Lon: 16, AltMin: 30, AltMax: 80, SizeMax: 300, Top: 2, NoWeather: true, ExtinctionSet: true, Extinction: 0.2, FilterNM: 7}
+	cfg.Framing, cfg.Scale, cfg.FOVLong, cfg.FOVShort = true, 1.2314, 79.2, 45
+	cfg.Aperture, cfg.Obstruction, cfg.Sub, cfg.QE, cfg.ReadNoise = 152, 63, 15, 0.83, 2.15
+	start, end, _ := astro.Window(time.Date(2026, 10, 11, 12, 0, 0, 0, time.UTC), cfg.Lat, cfg.Lon, astro.Astronomical)
+	s := scoring.BuildSky(cfg, scoring.NoForecast(), start, end)
+	var targets []catalog.Target
+	for i, name := range []string{"A", "B", "C"} {
+		targets = append(targets, catalog.Target{Name: name, Type: "Galaxy", RADeg: 300 + 10*float64(i), DecDeg: 40, Size: 10, SurfBr: 21})
+	}
+	fresh := func() []scoring.Result {
+		rs := scoring.Score(cfg, &s, targets, false)
+		if len(rs) != 3 || rs[0].Obs != nil {
+			t.Fatalf("scored %d, want 3 without per-minute data", len(rs))
+		}
+
+		return rs
+	}
+	for name, c := range map[string]func(*config.Config){"no framing": func(c *config.Config) { c.Framing = false }, "csv": func(c *config.Config) { c.CSV = true }} {
+		one := *cfg
+		c(&one)
+		rs := fresh()
+		exposures(&one, &s, nil, rs)
+		for _, r := range rs {
+			if r.Obs != nil || r.Exposure != nil {
+				t.Errorf("%s: %s rescored or estimated", name, r.Name)
+			}
+		}
+	}
+	rs := fresh()
+	kept := make([]bool, len(s.Grid)) // never observable: Subs gives none
+	rs[1].Obs = kept
+	exposures(cfg, &s, nil, rs)
+	if rs[0].Obs == nil || rs[0].Exposure == nil || rs[0].Exposure.Good <= 0 {
+		t.Errorf("listed: obs %v, exposure %+v", rs[0].Obs != nil, rs[0].Exposure)
+	}
+	if &rs[1].Obs[0] != &kept[0] || rs[1].Exposure != nil {
+		t.Errorf("own per-minute data: replaced %v, exposure %+v", &rs[1].Obs[0] != &kept[0], rs[1].Exposure)
+	}
+	if rs[2].Obs != nil || rs[2].Exposure != nil {
+		t.Error("past -n: rescored or estimated")
 	}
 }

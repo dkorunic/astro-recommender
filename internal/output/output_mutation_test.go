@@ -10,6 +10,7 @@ import (
 	"os"
 	"reflect"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -366,6 +367,17 @@ func TestMutResultsAlignment(t *testing.T) {
 	}); !strings.Contains(out, "No objects") {
 		t.Errorf("empty: %q", out)
 	}
+	// A mosaic that scored best follows the pixels in PX, still aligned.
+	cfg.Top, res[0].Mosaic = 1, config.Mosaic{Cols: 2, Rows: 1}
+	mutColor(t, false)
+	plain = mutCapture(t, func() { Results(cfg, s, res) })
+	if !strings.Contains(plain, "  5700 2x1  ") {
+		t.Errorf("PX without the mosaic:\n%s", plain)
+	}
+	mutColor(t, true)
+	if colored := mutCapture(t, func() { Results(cfg, s, res) }); mutStrip(colored) != plain {
+		t.Errorf("colored table with a mosaic misaligned:\n%s\nvs\n%s", mutStrip(colored), plain)
+	}
 }
 
 func TestMutWeatherTable(t *testing.T) {
@@ -491,6 +503,36 @@ func TestMutHeader(t *testing.T) {
 	if out = mutCapture(t, func() { Header(cfg, s, "") }); !strings.Contains(out, "nautical night 20:00-20:00+1d") {
 		t.Errorf("header of a 24 h night:\n%s", out)
 	}
+	if strings.Contains(out, "Frame:") || strings.Contains(out, "Horizon:") {
+		t.Errorf("Frame/Horizon lines without framing or -horizon:\n%s", out)
+	}
+	// The optional lines: a Dec region, a -targets file, lost comets, -type,
+	// -skip, framing with mosaics and rotation, a horizon; -bortle 0 asked
+	// for the dark sky rather than defaulting to it.
+	cfg.DecSet, cfg.Dec = true, -5.5
+	cfg.TargetsFile, cfg.NoComets, s.CometsLost = "mine.yaml", false, true
+	cfg.Types = []string{"galaxy", "nebula"}
+	cfg.SkipFile, cfg.Skip = "done.txt", map[string]bool{"m31": true, "m33": true}
+	cfg.Framing, cfg.Scale, cfg.FOVLong, cfg.FOVShort, cfg.Mosaic, cfg.Rotate = true, 2, 400, 300, 4, true
+	cfg.Horizon = [][2]float64{{0, 10}, {180, 25}, {270, 5}}
+	cfg.Bortle, cfg.SkySet = 0, true
+	out = mutCapture(t, func() { Header(cfg, s, "") })
+	for _, want := range []string{
+		"Region:   within 5° of RA 12 30.0, Dec -05 30\n",
+		"Targets:  mine.yaml, comets unavailable, only galaxy, nebula, skipping 2 names from done.txt\n",
+		"Frame:    6.67° x 5.00°, 2.00\"/px (12000 x 9000 px), mosaics of up to 4 panels, rotatable\n",
+		"Horizon:  3 points, 5° - 25°\n",
+		"Sky:      Bortle/SQM off (dark sky, 22.0 mag/arcsec²)",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("header lacks %q:\n%s", want, out)
+		}
+	}
+	// A single frame, fixed: neither suffix.
+	cfg.Mosaic, cfg.Rotate = 1, false
+	if out = mutCapture(t, func() { Header(cfg, s, "") }); !strings.Contains(out, "(12000 x 9000 px)\n") {
+		t.Errorf("single-frame header:\n%s", out)
+	}
 }
 
 func TestMutJSON(t *testing.T) {
@@ -501,8 +543,11 @@ func TestMutJSON(t *testing.T) {
 		h0:        {Cloud: 20, Temp: 5, DewPoint: 1, Precip: math.NaN()},
 		h0 + 3600: {Cloud: 30, Temp: 6, DewPoint: 1, Precip: 0.3, Seeing: 1.2345},
 	}
+	s.Astro = map[int64]weather.AstroBlock{weather.AstroKey(s.Start): {Seeing: 3, Transparency: 2}}
+	cfg.Mosaic, cfg.Rotate = 4, true
 	res := mutResults(s)
 	res[0].Exposure = &scoring.Estimate{Modest: 3, Good: 10, Best: 40, Max: 200, Sub: 15, SNRPerSub: 3.2, Panels: 1}
+	res[0].Minor, res[0].BMag, res[0].Mosaic = 120, 4.4, config.Mosaic{Cols: 2, Rows: 1}
 	// A peak of exactly 0° (-alt-min below the horizon) is a value, not absent.
 	slots := []plan.Slot{{Start: s.Grid[0], End: s.Grid[60], Result: &res[0], Score: 0.7, PeakAlt: 0, PeakAt: s.Grid[59]}, {Start: s.Grid[60], End: s.End}}
 	out := mutCapture(t, func() {
@@ -525,7 +570,7 @@ func TestMutJSON(t *testing.T) {
 	if skyJ["bortle"] != float64(atmos.BortleClass(20.9)) || skyJ["bortle"] != 4.0 || skyJ["zenithMag"] != 20.9 || skyJ["filterK"] != nil {
 		t.Errorf("sky %v", skyJ)
 	}
-	if fr := doc["frame"].(map[string]any); fr["scale"] != 2.0 || fr["fovShort"] != 300.0 {
+	if fr := doc["frame"].(map[string]any); fr["scale"] != 2.0 || fr["fovShort"] != 300.0 || fr["maxPanels"] != 4.0 || fr["rotate"] != true {
 		t.Errorf("frame %v", fr)
 	}
 	moonJ := doc["moon"].(map[string]any)
@@ -550,6 +595,10 @@ func TestMutJSON(t *testing.T) {
 	if v := fc[1].(map[string]any)["seeingArcsec"]; v != 1.23 {
 		t.Errorf("seeingArcsec %v, want 1.23", v)
 	}
+	// 7Timer's point gives its hour transparency and seeing class.
+	if h := fc[0].(map[string]any); h["transparency"] != 2.0 || h["seeing"] != `0.75-1"` {
+		t.Errorf("hour 1 without 7Timer's values %v", h)
+	}
 	pl := doc["plan"].([]any)
 	if p0, p1 := pl[0].(map[string]any), pl[1].(map[string]any); p0["name"] != "M 31" || p0["peakAt"] == nil || p0["peakAlt"] != 0.0 ||
 		p1["name"] != nil || p1["peakAt"] != nil || p1["peakAlt"] != nil {
@@ -563,7 +612,10 @@ func TestMutJSON(t *testing.T) {
 	if t0["rank"] != 1.0 || t0["size"] != 190.0 || t0["px"] != 5700.0 || t0["ra"] != 10.68 || t0["surfaceBrightness"] != 21.0 || t0["surfaceBrightnessEstimated"] != nil || t0["comet"] != nil {
 		t.Errorf("target 0 %v", t0)
 	}
-	if t1["rank"] != 2.0 || t1["size"] != nil || t1["px"] != nil {
+	if t0["minor"] != 120.0 || t0["bmag"] != 4.4 || !reflect.DeepEqual(t0["mosaic"], map[string]any{"cols": 2.0, "rows": 1.0}) {
+		t.Errorf("target 0 minor/bmag/mosaic %v", t0)
+	}
+	if t1["rank"] != 2.0 || t1["size"] != nil || t1["px"] != nil || t1["minor"] != nil || t1["bmag"] != nil || t1["mosaic"] != nil {
 		t.Errorf("target 1 %v", t1)
 	}
 	if obs := t0["observable"].(map[string]any); obs["runs"] != 1.0 || obs["from"] == nil {
@@ -647,5 +699,74 @@ func TestMutResultsFit(t *testing.T) {
 	got = mutCapture(t, func() { w = Results(cfg, s, res) })
 	if w != 20 || !strings.Contains(got, " "+strings.Repeat("x", minDesc-1)+"… ") {
 		t.Errorf("floor: width %d, want the legend's 20, descriptions at %d:\n%s", w, minDesc, got)
+	}
+}
+
+// The legend explains only the tables that were printed, each description
+// wrapped so that no line passes the table's width.
+func TestMutLegend(t *testing.T) {
+	cfg, s := mutSky(t)
+	mutColor(t, false)
+	out := mutCapture(t, func() { Legend(cfg, s, 0) })
+	for _, absent := range []string{"Forecast table:", "Night plan:", "    FILTER", "    PX", "    SUBS"} {
+		if strings.Contains(out, absent) {
+			t.Errorf("legend has %q without its table or flag:\n%s", absent, out)
+		}
+	}
+	if !strings.HasPrefix(out, "\nLegend\n  Targets:\n    #  ") || !strings.Contains(out, "  Colors: green good, yellow fair, red poor;") {
+		t.Errorf("legend:\n%s", out)
+	}
+	// width: every line within it, the Colors lines aside (fixed text).
+	check := func(width int) []string {
+		t.Helper()
+		out := mutCapture(t, func() { Legend(cfg, s, width) })
+		body, _, _ := strings.Cut(out, "  Colors:")
+		lines := strings.Split(strings.TrimRight(body, "\n"), "\n")
+		for _, l := range lines {
+			if n := utf8.RuneCountInString(l); n > width {
+				t.Errorf("%d-rune line on a %d-column table: %q", n, width, l)
+			}
+		}
+
+		return lines
+	}
+	// The widest column name, not the section title, sets the indent here.
+	check(80)
+	// The plan's FILTER only with -filter.
+	cfg.Plan = time.Hour
+	if out := mutCapture(t, func() { Legend(cfg, s, 0) }); !strings.Contains(out, "  Night plan:") || strings.Contains(out, "    FILTER") {
+		t.Errorf("legend with -plan, no -filter:\n%s", out)
+	}
+	s.Weather = map[int64]weather.HourWeather{s.Start.Unix(): {}}
+	cfg.Filter, cfg.Framing = "dual", true
+	lines := check(100)
+	text := strings.Join(lines, "\n")
+	f, p, tg := strings.Index(text, "  Forecast table:"), strings.Index(text, "  Night plan:"), strings.Index(text, "  Targets:")
+	if f < 0 || p < f || tg < p {
+		t.Errorf("sections missing or out of order:\n%s", text)
+	}
+	for _, want := range []string{"\n    CLOUD ", "\n    FILTER ", "\n    PX ", "\n    SUBS "} {
+		if !strings.Contains(text, want) {
+			t.Errorf("legend lacks %q:\n%s", want, text)
+		}
+	}
+	// Continuation lines start in the description column of the first.
+	desc := strings.Index(lines[3], "local hour")
+	for _, l := range lines[3:] {
+		if !strings.HasSuffix(l, ":") && (len(l) <= desc || l[desc-1] != ' ' || l[desc] == ' ') {
+			t.Errorf("description not in column %d: %q", desc, l)
+		}
+	}
+	// The name is written once, on a description's first line.
+	if !slices.ContainsFunc(lines[3:], func(l string) bool { return len(l) > desc && strings.TrimSpace(l[:desc]) == "" }) {
+		t.Errorf("no continuation line with a blank name:\n%s", text)
+	}
+	if narrow := check(60); len(narrow) <= len(lines) {
+		t.Errorf("60 columns gave %d lines, 100 gave %d", len(narrow), len(lines))
+	}
+	// A terminal narrower than the names still leaves 20 runes of words.
+	out = mutCapture(t, func() { Legend(cfg, s, 1) })
+	if !strings.Contains(out, "local hour") {
+		t.Errorf("legend under the floor broke short descriptions:\n%s", out)
 	}
 }

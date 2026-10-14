@@ -118,7 +118,7 @@ func TestZodiacal(t *testing.T) {
 	// Mirror symmetry, and the longitude wrapped either way.
 	for _, c := range [][2]float64{{90, 30}, {120, 60}, {170, 80}} {
 		want := Zodiacal(c[0], c[1])
-		for _, m := range [][2]float64{{-c[0], c[1]}, {c[0], -c[1]}, {360 - c[0], c[1]}, {c[0] + 360, c[1]}, {c[0], 180 - c[1]}} {
+		for _, m := range [][2]float64{{-c[0], c[1]}, {c[0], -c[1]}, {360 - c[0], c[1]}, {c[0] + 360, c[1]}, {c[0], 180 - c[1]}, {c[0], 360 - c[1]}} {
 			if got := Zodiacal(m[0], m[1]); math.Abs(got-want) > 1e-12 {
 				t.Errorf("Zodiacal%v = %v, want Zodiacal%v = %v", m, got, c, want)
 			}

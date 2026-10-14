@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"slices"
 	"testing"
 	"time"
 
@@ -47,6 +48,31 @@ func moonlit(s *Sky, i int) {
 
 func expGalaxy(sb float64) catalog.Target {
 	return catalog.Target{Name: "G", Type: "Galaxy", RADeg: 90.5, Size: 20, SurfBr: sb}
+}
+
+// Score passes each tally's buffer from the previous target back into
+// channels, which accumulates into its channels: whatever the buffer held,
+// the channels must be exactly a fresh call's, colour or mono, line filter,
+// broadband or none, emission or continuum.
+func TestChannelsReuse(t *testing.T) {
+	cfg := expCfg()
+	for _, mono := range []bool{false, true} {
+		cfg.Mono = mono
+		c, _ := newCamera(cfg)
+		// Every channel non-zero, and three of them even for mono.
+		dirty := c.channels(nil, "", 7, catalog.Target{Type: "HII region"}.Lines(), filterPass{})
+		dirty = append(dirty[:0:0], dirty[0], dirty[0], dirty[0])
+		for _, name := range []string{"", "ha", "dual", "quad", "cls", "lpro"} {
+			for _, tg := range []catalog.Target{{Type: "HII region"}, {Type: "Planetary Nebula"}, {Type: "Galaxy"}} {
+				fp := passes(cfg, tg, name)
+				want := c.channels(nil, name, 7, tg.Lines(), fp)
+				got := c.channels(slices.Clone(dirty), name, 7, tg.Lines(), fp)
+				if !slices.Equal(got, want) {
+					t.Errorf("mono %v, %q, %s: reused %+v, fresh %+v", mono, name, tg.Type, got, want)
+				}
+			}
+		}
+	}
 }
 
 // The photon zero point, area, QE, pixel and band pinned: e⁻/s per pixel
@@ -259,6 +285,44 @@ func TestSubsNoCamera(t *testing.T) {
 	r.Obs = nil
 	if e := Subs(cfg, s, r, 0); e.Good == 0 {
 		t.Errorf("rescored: %+v", e)
+	}
+	// Rescored, none for one no mosaic frames (scoreTarget) or one never up,
+	// nor for one whose observable minutes -min-run rejects (its runs are
+	// 50 and 40 minutes): the minutes counted must not count.
+	big, low := r, r
+	big.Target.Size = 60 // over the 45' short side
+	low.Target.DecDeg = -80
+	for name, rr := range map[string]Result{"unframable": big, "never up": low} {
+		if e := Subs(cfg, s, rr, 0); e != (Estimate{}) {
+			t.Errorf("rescored %s: %+v", name, e)
+		}
+	}
+	long := expCfg()
+	long.MinRun = time.Hour
+	if e := Subs(long, s, r, 0); e != (Estimate{}) {
+		t.Errorf("rescored under -min-run: %+v", e)
+	}
+	// A line filter passes none of a continuum's light: no channel sees it.
+	ha := expCfg()
+	ha.Filter = "ha"
+	g := expResult(t, ha, s, expGalaxy(22))
+	g.Filter = "ha"
+	if e := Subs(ha, s, g, 0); e != (Estimate{}) {
+		t.Errorf("galaxy through Hα: %+v", e)
+	}
+}
+
+// Every line passes both broadband filters, so only a direct call reaches a
+// wavelength outside them: the L-Pro's sodium notch, and just past an edge.
+func TestInBands(t *testing.T) {
+	lpro := config.Broadband["lpro"]
+	for nm, want := range map[float64]bool{589: false, 700.01: false, 399.99: false, 400: true, 700: true, 656.3: true} {
+		if got := inBands(nm, lpro); got != want {
+			t.Errorf("inBands(%v, lpro) = %v, want %v", nm, got, want)
+		}
+	}
+	if inBands(500, nil) {
+		t.Error("no bands passed 500 nm")
 	}
 }
 

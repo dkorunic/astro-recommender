@@ -34,7 +34,7 @@ func TestSexagesimal(t *testing.T) {
 	if v, err := Sexagesimal("23 59 59.9"); err != nil || v >= 24 {
 		t.Errorf("sexagesimal(23 59 59.9) = %v, %v", v, err)
 	}
-	for _, bad := range []string{"", "  ", "-", "1 2 3 4", "1 x", "10 70 00", "00 00 99", "10 -5 00", "1 60", "NaN", "Inf", "10 NaN 00", "+-10 00 00", "--5 00 00", "-+5"} {
+	for _, bad := range []string{"", "  ", "-", "1 2 3 4", "1 x", "10 70 00", "00 00 99", "10 -5 00", "1 60", "NaN", "Inf", "10 NaN 00", "+-10 00 00", "--5 00 00", "-+5", "12 30 ."} {
 		if _, err := Sexagesimal(bad); err == nil {
 			t.Errorf("sexagesimal(%q) accepted", bad)
 		}
@@ -174,6 +174,9 @@ func TestWindowDateLine(t *testing.T) {
 		{"Asia/Anadyr", 64.7, -177.5},
 		{"Pacific/Auckland", -36.8, 174.8},
 		{"Pacific/Honolulu", 21.3, -157.9},
+		// The other way round: a zone 22 h behind its site's longitude (Fiji
+		// under Pago Pago's clock) would get the night before its own date.
+		{"Pacific/Pago_Pago", -18.1, 178.4},
 	} {
 		loc, err := time.LoadLocation(c.zone)
 		if err != nil {
@@ -219,6 +222,11 @@ func TestTonight(t *testing.T) {
 	if day, inProgress := Tonight(time.Date(2026, 6, 21, 0, 10, 0, 0, mad), 42.88, -8.54, Astronomical); day.Day() != 20 || inProgress {
 		t.Errorf("Tonight(Santiago 00:10) = %v, %v; want day 20, false", day, inProgress)
 	}
+	// Tromsø at midsummer has no astronomical night either day: now, not begun.
+	now := time.Date(2026, 6, 21, 0, 0, 0, 0, time.UTC)
+	if day, inProgress := Tonight(now, 69.65, 18.96, Astronomical); !day.Equal(now) || inProgress {
+		t.Errorf("Tonight(Tromsø midsummer) = %v, %v; want %v, false", day, inProgress, now)
+	}
 }
 
 // A polar night in progress carries on past noon into the next one, up to
@@ -239,6 +247,11 @@ func TestContinuePolar(t *testing.T) {
 	dusk, dawn, _ = Window(day, 45.8, 16, Astronomical)
 	if got := ContinuePolar(day, dusk, dawn, dusk.Add(time.Hour), 45.8, 16, Astronomical); !got.Equal(dawn) {
 		t.Errorf("ContinuePolar(Zagreb) = %v, want its dawn %v", got, dawn)
+	}
+	// A 24 h night whose next night does not start at its dawn keeps that
+	// dawn rather than borrowing the next night's.
+	if got := ContinuePolar(day, dusk, dusk.Add(24*time.Hour), dusk.Add(time.Hour), 45.8, 16, Astronomical); !got.Equal(dusk.Add(24 * time.Hour)) {
+		t.Errorf("ContinuePolar(24 h, unmatched) = %v, want %v", got, dusk.Add(24*time.Hour))
 	}
 }
 

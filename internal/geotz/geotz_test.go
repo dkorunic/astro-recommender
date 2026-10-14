@@ -4,6 +4,7 @@
 package geotz
 
 import (
+	"errors"
 	"testing"
 	"time"
 )
@@ -25,6 +26,15 @@ func TestLookup(t *testing.T) {
 		}
 		if _, err := time.LoadLocation(got); err != nil {
 			t.Errorf("%q does not load: %v", got, err)
+		}
+	}
+}
+
+// Off the globe the finder has no polygon, not even a nautical zone.
+func TestLookupNotFound(t *testing.T) {
+	for _, c := range [][2]float64{{91, 0}, {0, 181}} {
+		if got, err := Lookup(c[0], c[1]); !errors.Is(err, errNotFound) || got != "" {
+			t.Errorf("Lookup%v = %q, %v; want errNotFound", c, got, err)
 		}
 	}
 }

@@ -4,6 +4,7 @@
 package scoring
 
 import (
+	"context"
 	"errors"
 	"math"
 	"os"
@@ -188,5 +189,29 @@ func TestMergeProfile(t *testing.T) {
 	mergeProfile(w, nil)
 	if w[3600].Seeing == 0 {
 		t.Error("a nil profile cleared the estimate")
+	}
+}
+
+// -no-weather fetches nothing: a context already cancelled makes any fetch
+// that slips through fail at once with a stderr warning, and no network.
+// The fetches themselves need the network and are not tested here.
+func TestFetchForecastNoWeather(t *testing.T) {
+	f, err := os.CreateTemp(t.TempDir(), "stderr")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	start := time.Date(2026, 10, 5, 20, 0, 0, 0, time.UTC)
+	old := os.Stderr
+	os.Stderr = f
+	got := FetchForecast(ctx, &config.Config{Lat: 45.8, Lon: 16, NoWeather: true}, start, start.Add(time.Hour))
+	os.Stderr = old
+	out, err := os.ReadFile(f.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Weather != nil || got.Astro != nil || got.AOD != nil || !math.IsNaN(got.Elevation) || len(out) != 0 {
+		t.Errorf("-no-weather: %+v, stderr %q", got, out)
 	}
 }
