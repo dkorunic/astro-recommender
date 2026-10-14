@@ -3,6 +3,7 @@
 - constellation: ""
   dec: "+52 41 48.08"
   description: "True PN, PN G 095.1+00.9"
+  minor: 0.8
   name: "App 2"
   ra: "21 30 45.12"
   size: 1.0
@@ -24,6 +25,7 @@
 - constellation: ""
   dec: "+34 47 18.82"
   description: "True PN, PN G 070.8+03.0"
+  minor: 0.4
   name: "Ch 1"
   ra: "19 57 15.56"
   size: 1.0
@@ -31,6 +33,7 @@
 - constellation: ""
   dec: "-43 48 30.60"
   description: "True PN, PN G 262.4-01.9"
+  minor: 0.9
   name: "DeGaPe 1"
   ra: "08 35 40.69"
   size: 1.0
@@ -122,6 +125,7 @@
 - constellation: ""
   dec: "-12 14 48.19"
   description: "Possible PN, PN G 018.2+01.6"
+  minor: 0.4
   name: "DeGaPe 28"
   ra: "18 18 20.00"
   size: 0.6
@@ -192,6 +196,7 @@
 - constellation: ""
   dec: "-36 00 14.00"
   description: "Possible PN, PN G 254.5+00.4"
+  minor: 0.9
   name: "DeGaPe 53"
   ra: "08 21 24.00"
   size: 1.0
@@ -234,6 +239,7 @@
 - constellation: ""
   dec: "+65 25 15.31"
   description: "True PN, PN G 131.0+03.7"
+  minor: 0.7
   name: "Fe 8"
   ra: "02 10 10.64"
   size: 0.8
@@ -262,6 +268,7 @@
 - constellation: ""
   dec: "+74 18 40.00"
   description: "Likely PN, PN G 121.7+11.4"
+  minor: 1.6
   name: "Hu 2"
   ra: "00 33 57.40"
   size: 2.0
@@ -276,6 +283,7 @@
 - constellation: ""
   dec: "+04 52 02.71"
   description: "Likely PN, PN G 213.3+11.4"
+  minor: 3.5
   name: "Hu 5"
   ra: "07 33 04.46"
   size: 4.4
@@ -360,6 +368,7 @@
 - constellation: ""
   dec: "+61 41 40.88"
   description: "True PN, PN G 114.4+00.0"
+  minor: 0.7
   name: "LDû 13"
   ra: "23 38 40.43"
   size: 0.9
@@ -402,6 +411,7 @@
 - constellation: ""
   dec: "+35 08 57.30"
   description: "New candidate, PN G 068.2+08.4"
+  minor: 1.0
   name: "LDû 22"
   ra: "19 27 45.62"
   size: 1.6
@@ -444,6 +454,7 @@
 - constellation: ""
   dec: "-00 47 24.61"
   description: "New candidate, PN G 201.8-22.1"
+  minor: 1.7
   name: "LDû 29"
   ra: "05 12 47.69"
   size: 2.1
@@ -479,6 +490,7 @@
 - constellation: ""
   dec: "-01 57 07.06"
   description: "New candidate, PN G 214.0-02.0"
+  minor: 0.8
   name: "LDû 34"
   ra: "06 46 00.90"
   size: 1.1
@@ -514,6 +526,7 @@
 - constellation: ""
   dec: "-56 22 38.89"
   description: "New candidate, PN G 284.1+01.2"
+  minor: 0.4
   name: "LDû 39"
   ra: "10 29 20.40"
   size: 0.7
@@ -521,6 +534,7 @@
 - constellation: ""
   dec: "-62 14 05.32"
   description: "New candidate, PN G 284.0-05.9"
+  minor: 0.8
   name: "LDû 40"
   ra: "09 56 06.66"
   size: 1.0
@@ -528,6 +542,7 @@
 - constellation: ""
   dec: "-61 08 37.72"
   description: "New candidate, PN G 283.2-05.1"
+  minor: 0.9
   name: "LDû 41"
   ra: "09 55 19.07"
   size: 1.7
@@ -542,6 +557,7 @@
 - constellation: ""
   dec: "-53 31 26.69"
   description: "Possible PN, PN G 285.6+05.2"
+  minor: 0.2
   name: "LDû 44"
   ra: "10 52 06.84"
   size: 0.3
@@ -556,6 +572,7 @@
 - constellation: ""
   dec: "-31 37 40.69"
   description: "New candidate, PN G 355.2+02.3"
+  minor: 0.1
   name: "Mo 1"
   ra: "17 24 29.66"
   size: 0.2
@@ -570,6 +587,7 @@
 - constellation: ""
   dec: "-32 33 44.39"
   description: "New candidate, PN G 354.1+02.3"
+  minor: 0.1
   name: "Mo 3"
   ra: "17 21 54.80"
   size: 0.2
@@ -577,6 +595,7 @@
 - constellation: ""
   dec: "+02 31 53.69"
   description: "New candidate, PN G 204.4-10.7"
+  minor: 2.4
   name: "Mo 4"
   ra: "05 57 28.36"
   size: 6.4
@@ -584,6 +603,7 @@
 - constellation: ""
   dec: "+36 38 21.98"
   description: "New candidate, PN G 170.8+00.0"
+  minor: 1.1
   name: "Mo 6"
   ra: "05 21 54.10"
   size: 1.5
@@ -598,6 +618,7 @@
 - constellation: ""
   dec: "-28 40 24.67"
   description: "New candidate, PN G 247.8+03.5"
+  minor: 1.4
   name: "Mo 8"
   ra: "08 15 49.81"
   size: 3.0
@@ -605,6 +626,7 @@
 - constellation: ""
   dec: "-64 34 35.62"
   description: "New candidate, PN G 295.4-02.7"
+  minor: 0.3
   name: "Mo 9"
   ra: "11 40 38.77"
   size: 0.4
@@ -612,6 +634,7 @@
 - constellation: ""
   dec: "-61 41 07.69"
   description: "New candidate, PN G 307.3+00.8"
+  minor: 0.3
   name: "Mo 10"
   ra: "13 28 44.30"
   size: 0.4
@@ -626,6 +649,7 @@
 - constellation: ""
   dec: "-62 19 27.01"
   description: "New candidate, PN G 288.1-03.3"
+  minor: 1.6
   name: "Mo 13"
   ra: "10 38 28.87"
   size: 1.8
@@ -633,6 +657,7 @@
 - constellation: ""
   dec: "-33 42 28.01"
   description: "New candidate, PN G 249.1-03.8"
+  minor: 0.3
   name: "Mo 14"
   ra: "07 49 28.35"
   size: 0.7
@@ -640,6 +665,7 @@
 - constellation: ""
   dec: "-25 33 21.20"
   description: "New candidate, PN G 242.6+01.1"
+  minor: 3.8
   name: "Mo 15"
   ra: "07 54 02.84"
   size: 5.2
@@ -654,6 +680,7 @@
 - constellation: ""
   dec: "-33 26 35.99"
   description: "New candidate, PN G 248.9-03.6"
+  minor: 0.5
   name: "Mo 17"
   ra: "07 50 14.12"
   size: 0.7
@@ -759,6 +786,7 @@
 - constellation: ""
   dec: "-16 16 01.88"
   description: "New candidate, PN G 237.3+10.3"
+  minor: 0.1
   name: "Or 3"
   ra: "08 15 54.00"
   size: 0.2
@@ -787,6 +815,7 @@
 - constellation: ""
   dec: "+43 41 35.02"
   description: "True PN, PN G 086.9-03.4"
+  minor: 0.6
   name: "Ou 5"
   ra: "21 14 20.00"
   size: 0.8
@@ -801,6 +830,7 @@
 - constellation: ""
   dec: "+32 25 36.01"
   description: "True PN, PN G 068.3+02.6"
+  minor: 3.2
   name: "Ou 7"
   ra: "19 52 45.42"
   size: 5.7
@@ -808,6 +838,7 @@
 - constellation: ""
   dec: "+32 35 59.50"
   description: "New candidate, PN G 068.4+02.7"
+  minor: 0.5
   name: "Ou 8"
   ra: "19 52 23.88"
   size: 1.0
@@ -822,9 +853,10 @@
 - constellation: ""
   dec: "+10 28 10.42"
   description: "New candidate, PN G 053.9-15.8"
+  minor: 0.2
   name: "Pre 1"
   ra: "20 27 35.50"
-  size: 3.0
+  size: 0.3
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-47 47 07.12"
@@ -878,6 +910,7 @@
 - constellation: ""
   dec: "-07 51 29.09"
   description: "True PN, PN G 024.8-01.4"
+  minor: 0.1
   name: "Pre 9"
   ra: "18 41 46.20"
   size: 0.2
@@ -885,6 +918,7 @@
 - constellation: ""
   dec: "-34 39 21.60"
   description: "New candidate, PN G 352.0+01.6"
+  minor: 0.1
   name: "Pre 10"
   ra: "17 18 46.30"
   size: 0.2
@@ -906,6 +940,7 @@
 - constellation: ""
   dec: "-55 28 41.41"
   description: "True PN, PN G 338.9-17.5"
+  minor: 0.4
   name: "Pre 13"
   ra: "18 17 30.93"
   size: 0.6
@@ -927,6 +962,7 @@
 - constellation: ""
   dec: "-23 26 39.01"
   description: "True PN, PN G 002.3+06.5"
+  minor: 0.1
   name: "Pre 16"
   ra: "17 26 36.30"
   size: 0.2
@@ -983,6 +1019,7 @@
 - constellation: ""
   dec: "+08 58 37.99"
   description: "New candidate, PN G 053.1-17.5"
+  minor: 7.2
   name: "Pre 25"
   ra: "20 31 59.00"
   size: 12.0
@@ -990,6 +1027,7 @@
 - constellation: ""
   dec: "-52 22 48.00"
   description: "New candidate, PN G 334.7-04.8"
+  minor: 1.4
   name: "Pre 26"
   ra: "16 49 08.50"
   size: 1.6
@@ -1004,6 +1042,7 @@
 - constellation: ""
   dec: "-39 22 20.89"
   description: "New candidate, PN G 286.6+20.9"
+  minor: 0.3
   name: "Pre 29"
   ra: "11 32 16.50"
   size: 0.5
@@ -1025,6 +1064,7 @@
 - constellation: ""
   dec: "-70 20 30.98"
   description: "New candidate, PN G 297.6-08.1"
+  minor: 0.2
   name: "Pre 33"
   ra: "11 49 08.40"
   size: 0.4
@@ -1095,6 +1135,7 @@
 - constellation: ""
   dec: "-59 58 37.99"
   description: "True PN, PN G 290.8+00.5"
+  minor: 0.5
   name: "Pre 43"
   ra: "11 12 27.35"
   size: 0.7
@@ -1144,6 +1185,7 @@
 - constellation: ""
   dec: "-35 26 39.01"
   description: "True PN, PN G 252.5-01.6"
+  minor: 0.4
   name: "Pre 50"
   ra: "08 07 15.80"
   size: 0.8
@@ -1445,6 +1487,7 @@
 - constellation: ""
   dec: "+40 15 33.01"
   description: "New candidate, PN G 095.7-15.0"
+  minor: 1.6
   name: "Ra 42"
   ra: "22 30 05.00"
   size: 1.8
@@ -1466,6 +1509,7 @@
 - constellation: ""
   dec: "+25 13 18.41"
   description: "New candidate, PN G 180.1-06.5"
+  minor: 0.3
   name: "Ra 45"
   ra: "05 21 05.55"
   size: 0.8
@@ -1487,6 +1531,7 @@
 - constellation: ""
   dec: "+56 23 13.09"
   description: "True PN, PN G 102.0+00.1"
+  minor: 0.3
   name: "Ra 50"
   ra: "22 10 45.27"
   size: 0.4
@@ -1515,6 +1560,7 @@
 - constellation: ""
   dec: "+18 49 14.99"
   description: "Likely PN, PN G 192.0+00.7"
+  minor: 0.6
   name: "Ra 54"
   ra: "06 14 40.00"
   size: 1.0
@@ -1522,6 +1568,7 @@
 - constellation: ""
   dec: "+12 12 52.99"
   description: "New candidate, PN G 201.3+04.1"
+  minor: 1.7
   name: "Ra 55"
   ra: "06 45 05.00"
   size: 2.2
@@ -1529,6 +1576,7 @@
 - constellation: ""
   dec: "+63 26 44.99"
   description: "New candidate, PN G 110.9+03.1"
+  minor: 0.4
   name: "Ra 56"
   ra: "23 01 23.00"
   size: 0.5
@@ -1536,6 +1584,7 @@
 - constellation: ""
   dec: "+51 34 59.48"
   description: "New candidate, PN G 097.4-02.4"
+  minor: 0.1
   name: "Ra 57"
   ra: "21 56 40.67"
   size: 0.3
@@ -1550,6 +1599,7 @@
 - constellation: ""
   dec: "+32 40 18.98"
   description: "New candidate, PN G 061.3+17.2"
+  minor: 1.5
   name: "Ra 60"
   ra: "18 36 01.00"
   size: 1.8
@@ -1578,6 +1628,7 @@
 - constellation: ""
   dec: "-13 36 59.69"
   description: "New candidate, PN G 226.7-02.8"
+  minor: 0.7
   name: "Ra 64"
   ra: "07 06 49.95"
   size: 0.8
@@ -1585,6 +1636,7 @@
 - constellation: ""
   dec: "+50 49 38.10"
   description: "New candidate, PN G 116.5-11.5"
+  minor: 0.8
   name: "Ra 65"
   ra: "00 11 45.64"
   size: 1.8
@@ -1648,6 +1700,7 @@
 - constellation: ""
   dec: "+08 43 56.39"
   description: "New candidate, PN G 045.2-04.7"
+  minor: 0.3
   name: "St 67"
   ra: "19 31 20.13"
   size: 0.4
@@ -1655,6 +1708,7 @@
 - constellation: ""
   dec: "-17 32 57.19"
   description: "New candidate, PN G 024.0-22.5"
+  minor: 0.3
   name: "St 2"
   ra: "19 58 49.27"
   size: 0.4
@@ -1683,6 +1737,7 @@
 - constellation: ""
   dec: "-12 00 00.11"
   description: "New candidate, PN G 019.8-00.7"
+  minor: 0.2
   name: "St 6"
   ra: "18 30 01.68"
   size: 0.6
@@ -1697,6 +1752,7 @@
 - constellation: ""
   dec: "+58 44 22.31"
   description: "New candidate, PN G 098.0+06.6"
+  minor: 0.8
   name: "St 9"
   ra: "21 16 33.04"
   size: 1.6
@@ -1704,6 +1760,7 @@
 - constellation: ""
   dec: "-12 02 25.12"
   description: "New candidate, PN G 226.6+00.3"
+  minor: 0.6
   name: "St 10"
   ra: "07 17 58.99"
   size: 1.6
@@ -1718,6 +1775,7 @@
 - constellation: ""
   dec: "+40 43 39.40"
   description: "New candidate, PN G 101.9-17.7"
+  minor: 1.3
   name: "St 12"
   ra: "23 04 21.23"
   size: 1.7
@@ -1725,6 +1783,7 @@
 - constellation: ""
   dec: "+46 51 17.60"
   description: "New candidate, PN G 092.3-04.3"
+  minor: 0.3
   name: "St 13"
   ra: "21 40 00.35"
   size: 0.4
@@ -1732,6 +1791,7 @@
 - constellation: ""
   dec: "-03 11 46.90"
   description: "New candidate, PN G 215.5-01.9"
+  minor: 1.2
   name: "St 14"
   ra: "06 49 23.36"
   size: 1.5
@@ -1739,6 +1799,7 @@
 - constellation: ""
   dec: "-04 32 03.01"
   description: "New candidate, PN G 032.9-09.9"
+  minor: 0.2
   name: "Su 1"
   ra: "19 26 49.00"
   size: 0.5
@@ -1746,6 +1807,7 @@
 - constellation: ""
   dec: "+44 34 39.50"
   description: "New candidate, PN G 085.3-00.4"
+  minor: 1.0
   name: "Su 2"
   ra: "20 56 13.13"
   size: 2.1
@@ -1851,6 +1913,7 @@
 - constellation: ""
   dec: "+10 11 24.43"
   description: "New candidate, PN G 233.7+53.3"
+  minor: 0.7
   name: "St 15"
   ra: "10 33 19.09"
   size: 1.0
@@ -1865,6 +1928,7 @@
 - constellation: ""
   dec: "+69 46 54.98"
   description: "New candidate, PN G 123.9+06.9"
+  minor: 4.0
   name: "Fe 7"
   ra: "01 03 27.22"
   size: 6.0
@@ -1872,6 +1936,7 @@
 - constellation: ""
   dec: "+65 48 02.99"
   description: "New candidate, PN G 109.4+06.6"
+  minor: 0.5
   name: "Fe Objet 1"
   ra: "22 33 36.80"
   size: 0.8
@@ -1879,6 +1944,7 @@
 - constellation: ""
   dec: "-26 54 34.81"
   description: "New candidate, PN G 248.1+07.1"
+  minor: 1.2
   name: "Fe Objet 2"
   ra: "08 30 11.30"
   size: 1.5
@@ -1886,6 +1952,7 @@
 - constellation: ""
   dec: "+63 04 23.99"
   description: "New candidate, PN G 102.4+08.4"
+  minor: 2.3
   name: "Hu Objet 1"
   ra: "21 32 06.30"
   size: 3.5
@@ -1893,6 +1960,7 @@
 - constellation: ""
   dec: "+51 52 40.51"
   description: "New candidate, PN G 123.0-10.9"
+  minor: 3.5
   name: "Hu Objet 2"
   ra: "00 52 21.74"
   size: 5.7
@@ -1921,6 +1989,7 @@
 - constellation: ""
   dec: "+48 38 26.99"
   description: "New candidate, PN G 081.9+11.8"
+  minor: 0.2
   name: "LDû Objet 4"
   ra: "19 45 37.00"
   size: 0.4
@@ -1949,6 +2018,7 @@
 - constellation: ""
   dec: "-67 00 49.79"
   description: "New candidate, PN G 292.1-06.5"
+  minor: 3.0
   name: "LDû Objet 8"
   ra: "10 58 04.77"
   size: 5.0
@@ -1956,6 +2026,7 @@
 - constellation: ""
   dec: "-66 44 48.91"
   description: "New candidate, PN G 292.0-06.3"
+  minor: 0.9
   name: "LDû Objet 9"
   ra: "10 57 33.23"
   size: 1.6
@@ -1970,6 +2041,7 @@
 - constellation: ""
   dec: "+23 46 07.54"
   description: "New candidate, PN G 188.5+04.6"
+  minor: 0.2
   name: "Ma Objet 1"
   ra: "06 22 25.96"
   size: 0.3
@@ -1977,6 +2049,7 @@
 - constellation: ""
   dec: "-23 16 22.01"
   description: "New candidate, PN G 236.7-04.5"
+  minor: 4.8
   name: "Mo Objet 1"
   ra: "07 19 31.90"
   size: 10.7
@@ -1991,6 +2064,7 @@
 - constellation: ""
   dec: "+65 38 58.60"
   description: "New candidate, PN G 130.9+04.0"
+  minor: 3.1
   name: "Mo Objet 3"
   ra: "02 10 23.87"
   size: 3.4
@@ -1998,6 +2072,7 @@
 - constellation: ""
   dec: "-60 35 06.90"
   description: "New candidate, PN G 301.9+02.2"
+  minor: 1.0
   name: "Mo Objet 4"
   ra: "12 43 10.06"
   size: 1.6
@@ -2005,6 +2080,7 @@
 - constellation: ""
   dec: "-26 46 41.09"
   description: "New candidate, PN G 243.3+00.0"
+  minor: 1.0
   name: "Mo Objet 5"
   ra: "07 51 18.11"
   size: 1.2
@@ -2033,6 +2109,7 @@
 - constellation: ""
   dec: "+51 24 24.19"
   description: "Likely PN, PN G 151.0-00.4"
+  minor: 0.9
   name: "Ou 1"
   ra: "04 07 21.62"
   size: 1.3
@@ -2040,6 +2117,7 @@
 - constellation: ""
   dec: "+10 03 55.01"
   description: "New candidate, PN G 203.6+03.8"
+  minor: 0.8
   name: "Pre Objet 2"
   ra: "06 48 16.40"
   size: 1.4
@@ -2047,6 +2125,7 @@
 - constellation: ""
   dec: "+10 10 23.99"
   description: "New candidate, PN G 203.5+04.0"
+  minor: 0.4
   name: "Pre Objet 3"
   ra: "06 48 58.20"
   size: 1.0
@@ -2054,6 +2133,7 @@
 - constellation: ""
   dec: "+59 39 50.00"
   description: "New candidate, PN G 130.6-02.2"
+  minor: 1.5
   name: "Pre Objet 4"
   ra: "01 52 50.00"
   size: 2.5
@@ -2061,6 +2141,7 @@
 - constellation: ""
   dec: "+54 18 40.00"
   description: "New candidate, PN G 129.5-07.9"
+  minor: 1.5
   name: "Pre Objet 5"
   ra: "01 36 18.50"
   size: 1.8
@@ -2068,6 +2149,7 @@
 - constellation: ""
   dec: "+54 13 30.00"
   description: "New candidate, PN G 131.2-07.7"
+  minor: 1.3
   name: "Pre Objet 6"
   ra: "01 48 12.00"
   size: 1.6
@@ -2075,6 +2157,7 @@
 - constellation: ""
   dec: "-37 30 03.31"
   description: "New candidate, PN G 254.1-02.8"
+  minor: 1.3
   name: "PreMo Objet 1"
   ra: "08 06 31.61"
   size: 1.6
@@ -2110,6 +2193,7 @@
 - constellation: ""
   dec: "+25 37 05.30"
   description: "New candidate, PN G 065.5-05.6"
+  minor: 4.0
   name: "Ras Objet 1"
   ra: "20 18 09.47"
   size: 5.4
@@ -2117,6 +2201,7 @@
 - constellation: ""
   dec: "-04 09 29.48"
   description: "New candidate, PN G 216.4-02.3"
+  minor: 0.7
   name: "St Objet 1"
   ra: "06 49 28.48"
   size: 1.5
@@ -2124,6 +2209,7 @@
 - constellation: ""
   dec: "+58 45 43.60"
   description: "New candidate, PN G 096.8+07.9"
+  minor: 1.0
   name: "St Objet 2"
   ra: "21 03 24.04"
   size: 1.6
@@ -2131,6 +2217,7 @@
 - constellation: ""
   dec: "+51 25 20.10"
   description: "New candidate, PN G 156.0+04.9"
+  minor: 0.2
   name: "Su Objet 1"
   ra: "04 54 59.34"
   size: 0.6
@@ -2138,6 +2225,7 @@
 - constellation: ""
   dec: "+13 00 13.39"
   description: "New candidate, PN G 250.7+68.5"
+  minor: 0.7
   name: "Za Objet 1"
   ra: "11 42 28.50"
   size: 1.0
@@ -2145,6 +2233,7 @@
 - constellation: ""
   dec: "-08 30 19.12"
   description: "New candidate, PN G 214.3-16.0"
+  minor: 0.5
   name: "Za Objet 2"
   ra: "05 56 31.20"
   size: 0.6
@@ -2152,6 +2241,7 @@
 - constellation: ""
   dec: "-59 59 56.29"
   description: "Likely PN, PN G 295.6+02.0"
+  minor: 0.1
   name: "Pre 54"
   ra: "11 52 26.65"
   size: 0.2
@@ -2173,6 +2263,7 @@
 - constellation: ""
   dec: "-18 36 29.63"
   description: "New candidate, PN G 012.9-01.9"
+  minor: 0.4
   name: "Ro 5"
   ra: "18 21 10.08"
   size: 0.5
@@ -2187,6 +2278,7 @@
 - constellation: ""
   dec: "-28 33 24.98"
   description: "New candidate, PN G 245.5+00.1"
+  minor: 0.3
   name: "Fe 11"
   ra: "07 57 08.10"
   size: 0.4
@@ -2229,6 +2321,7 @@
 - constellation: ""
   dec: "-57 02 08.30"
   description: "True PN, PN G 325.8-02.4"
+  minor: 0.1
   name: "PreDr 1"
   ra: "15 53 37.96"
   size: 0.2
@@ -2236,6 +2329,7 @@
 - constellation: ""
   dec: "-62 39 29.16"
   description: "Likely PN, PN G 293.0-01.4"
+  minor: 0.1
   name: "St 16"
   ra: "11 24 07.44"
   size: 0.2
@@ -2243,6 +2337,7 @@
 - constellation: ""
   dec: "-57 44 30.59"
   description: "New candidate, PN G 290.8+02.9"
+  minor: 0.2
   name: "St 17"
   ra: "11 19 05.09"
   size: 0.3
@@ -2285,6 +2380,7 @@
 - constellation: ""
   dec: "-03 26 38.00"
   description: "New candidate, PN G 046.5-31.5"
+  minor: 0.1
   name: "St Objet 4"
   ra: "21 06 58.54"
   size: 0.4
@@ -2306,6 +2402,7 @@
 - constellation: ""
   dec: "-08 00 55.40"
   description: "New candidate, PN G 212.2-19.0"
+  minor: 0.4
   name: "Mo Objet 7"
   ra: "05 41 50.15"
   size: 1.6
@@ -2320,6 +2417,7 @@
 - constellation: ""
   dec: "-58 08 45.28"
   description: "New candidate, PN G 318.3+01.0"
+  minor: 0.8
   name: "Mo Objet 9"
   ra: "14 52 02.71"
   size: 0.9
@@ -2327,6 +2425,7 @@
 - constellation: ""
   dec: "-54 43 20.68"
   description: "New candidate, PN G 278.3-00.8"
+  minor: 0.7
   name: "Mo Objet 10"
   ra: "09 47 10.84"
   size: 1.4
@@ -2334,6 +2433,7 @@
 - constellation: ""
   dec: "-35 17 39.12"
   description: "New candidate, PN G 251.5-02.8"
+  minor: 0.1
   name: "Mo Objet 11"
   ra: "07 59 50.62"
   size: 0.3
@@ -2341,6 +2441,7 @@
 - constellation: ""
   dec: "-60 45 28.66"
   description: "New candidate, PN G 316.7-01.0"
+  minor: 0.2
   name: "Ro 6"
   ra: "14 48 23.77"
   size: 0.3
@@ -2348,6 +2449,7 @@
 - constellation: ""
   dec: "-61 39 12.46"
   description: "New candidate, PN G 307.2+00.9"
+  minor: 0.3
   name: "Mo 24"
   ra: "13 27 47.46"
   size: 0.4
@@ -2390,6 +2492,7 @@
 - constellation: ""
   dec: "+43 52 44.69"
   description: "New candidate, PN G 077.0+10.7"
+  minor: 3.0
   name: "Hu 7"
   ra: "19 38 19.16"
   size: 5.0
@@ -2509,6 +2612,7 @@
 - constellation: ""
   dec: "-42 03 39.13"
   description: "New candidate, PN G 342.9+01.3"
+  minor: 0.3
   name: "St 23"
   ra: "16 51 41.96"
   size: 0.4
@@ -2523,6 +2627,7 @@
 - constellation: ""
   dec: "-57 31 41.52"
   description: "New candidate, PN G 285.9+00.9"
+  minor: 0.2
   name: "St 25"
   ra: "10 39 12.45"
   size: 0.4
@@ -2537,6 +2642,7 @@
 - constellation: ""
   dec: "-52 17 32.39"
   description: "New candidate, PN G 324.6+04.1"
+  minor: 0.2
   name: "Dr Objet 1"
   ra: "15 20 04.55"
   size: 0.4
@@ -2551,6 +2657,7 @@
 - constellation: ""
   dec: "-37 52 59.84"
   description: "New candidate, PN G 350.1-01.2"
+  minor: 0.3
   name: "Mo Objet 12"
   ra: "17 25 12.07"
   size: 2.0
@@ -2558,6 +2665,7 @@
 - constellation: ""
   dec: "-65 18 59.94"
   description: "New candidate, PN G 302.8-02.4"
+  minor: 0.1
   name: "Pre Objet 8"
   ra: "12 51 02.28"
   size: 2.7
@@ -2565,6 +2673,7 @@
 - constellation: ""
   dec: "+63 24 52.99"
   description: "New candidate, PN G 105.9+06.0"
+  minor: 0.6
   name: "Ra Objet 1"
   ra: "22 09 27.00"
   size: 1.8
@@ -2586,6 +2695,7 @@
 - constellation: ""
   dec: "-52 19 02.60"
   description: "New candidate, PN G 283.9+05.7"
+  minor: 3.0
   name: "Mo 27"
   ra: "10 43 37.30"
   size: 5.0
@@ -2600,6 +2710,7 @@
 - constellation: ""
   dec: "-18 37 03.47"
   description: "New candidate, PN G 233.7-00.4"
+  minor: 5.8
   name: "Dr 14"
   ra: "07 29 05.45"
   size: 8.6
@@ -2607,6 +2718,7 @@
 - constellation: ""
   dec: "-58 34 08.36"
   description: "New candidate, PN G 316.3+01.5"
+  minor: 7.6
   name: "Dr 15"
   ra: "14 37 10.21"
   size: 9.4
@@ -2649,6 +2761,7 @@
 - constellation: ""
   dec: "-49 57 35.96"
   description: "New candidate, PN G 270.2-02.1"
+  minor: 0.1
   name: "St Objet 7"
   ra: "09 03 25.46"
   size: 0.6
@@ -2656,6 +2769,7 @@
 - constellation: ""
   dec: "+37 39 48.56"
   description: "New candidate, PN G 172.2+04.0"
+  minor: 0.1
   name: "Mo Objet 13"
   ra: "05 42 40.75"
   size: 0.2
@@ -2691,6 +2805,7 @@
 - constellation: ""
   dec: "-47 06 45.47"
   description: "New candidate, PN G 266.4-02.1"
+  minor: 0.3
   name: "St 30"
   ra: "08 48 35.07"
   size: 0.4
@@ -2747,6 +2862,7 @@
 - constellation: ""
   dec: "-41 50 41.71"
   description: "New candidate, PN G 344.1+00.2"
+  minor: 0.4
   name: "Dr Objet 5"
   ra: "17 00 19.93"
   size: 0.5
@@ -2761,6 +2877,7 @@
 - constellation: ""
   dec: "-76 17 28.21"
   description: "New candidate, PN G 296.5-14.7"
+  minor: 0.4
   name: "Su Objet 3"
   ra: "11 02 43.08"
   size: 2.5
@@ -2768,6 +2885,7 @@
 - constellation: ""
   dec: "+23 07 34.90"
   description: "New candidate, PN G 188.0+02.4"
+  minor: 3.9
   name: "Bl 1"
   ra: "06 12 50.50"
   size: 7.3
@@ -2775,6 +2893,7 @@
 - constellation: ""
   dec: "-62 47 01.72"
   description: "Possible PN, PN G 308.9-00.5"
+  minor: 1.3
   name: "DeGaPe 63"
   ra: "13 44 14.60"
   size: 2.3
@@ -2824,6 +2943,7 @@
 - constellation: ""
   dec: "-54 04 09.26"
   description: "New candidate, PN G 289.7+06.4"
+  minor: 1.5
   name: "Mo 28"
   ra: "11 20 28.93"
   size: 2.1
@@ -2831,6 +2951,7 @@
 - constellation: ""
   dec: "-62 14 34.26"
   description: "New candidate, PN G 284.2-05.7"
+  minor: 1.8
   name: "Mo 29"
   ra: "09 58 53.27"
   size: 2.0
@@ -2838,6 +2959,7 @@
 - constellation: ""
   dec: "-68 02 17.99"
   description: "New candidate, PN G 298.1-05.6"
+  minor: 0.7
   name: "Mo 30"
   ra: "11 59 56.08"
   size: 1.0
@@ -2859,6 +2981,7 @@
 - constellation: ""
   dec: "-52 09 36.43"
   description: "New candidate, PN G 335.4-05.3"
+  minor: 1.3
   name: "Mo 33"
   ra: "16 54 17.69"
   size: 2.0
@@ -2866,6 +2989,7 @@
 - constellation: ""
   dec: "-60 31 57.90"
   description: "Possible PN, PN G 290.7+00.0"
+  minor: 0.1
   name: "Ras 1"
   ra: "11 10 13.24"
   size: 0.2
@@ -2915,6 +3039,7 @@
 - constellation: ""
   dec: "-32 59 58.92"
   description: "New candidate, PN G 251.2+00.9"
+  minor: 0.6
   name: "St 41"
   ra: "08 14 31.12"
   size: 1.0
@@ -2922,6 +3047,7 @@
 - constellation: ""
   dec: "-54 23 32.93"
   description: "New candidate, PN G 285.3+04.1"
+  minor: 0.7
   name: "St 42"
   ra: "10 46 50.51"
   size: 1.0
@@ -2929,6 +3055,7 @@
 - constellation: ""
   dec: "-60 46 04.19"
   description: "New candidate, PN G 301.8+02.0"
+  minor: 0.8
   name: "St 43"
   ra: "12 42 15.23"
   size: 1.1
@@ -3013,6 +3140,7 @@
 - constellation: ""
   dec: "-60 39 39.78"
   description: "New candidate, PN G 281.6-05.8"
+  minor: 0.2
   name: "Mo Objet 14"
   ra: "09 41 55.71"
   size: 0.3
@@ -3020,6 +3148,7 @@
 - constellation: ""
   dec: "-56 42 32.29"
   description: "New candidate, PN G 280.4-01.7"
+  minor: 3.8
   name: "Mo Objet 15"
   ra: "09 54 40.09"
   size: 6.0
@@ -3041,6 +3170,7 @@
 - constellation: ""
   dec: "-39 57 03.82"
   description: "New candidate, PN G 258.5-00.7"
+  minor: 0.4
   name: "Ras Objet 2"
   ra: "08 27 59.45"
   size: 0.5
@@ -3048,6 +3178,7 @@
 - constellation: ""
   dec: "-34 11 54.24"
   description: "New candidate, PN G 253.0+01.4"
+  minor: 1.4
   name: "St Objet 9"
   ra: "08 21 19.26"
   size: 1.6
@@ -3062,6 +3193,7 @@
 - constellation: ""
   dec: "-44 42 55.51"
   description: "New candidate, PN G 262.3-03.6"
+  minor: 0.1
   name: "St Objet 11"
   ra: "08 27 43.01"
   size: 0.3
@@ -3181,6 +3313,7 @@
 - constellation: ""
   dec: "+29 39 10.15"
   description: "New candidate, PN G 179.9+01.3"
+  minor: 0.4
   name: "Dr 34"
   ra: "05 51 00.85"
   size: 0.5
@@ -3188,6 +3321,7 @@
 - constellation: ""
   dec: "+55 04 11.82"
   description: "New candidate, PN G 111.4-05.9"
+  minor: 8.6
   name: "Dr 35"
   ra: "23 30 41.11"
   size: 9.9
@@ -3195,6 +3329,7 @@
 - constellation: ""
   dec: "+53 52 24.02"
   description: "Likely PN, PN G 125.3-08.9"
+  minor: 2.1
   name: "Dr 36"
   ra: "01 07 40.04"
   size: 2.7
@@ -3202,6 +3337,7 @@
 - constellation: ""
   dec: "+12 02 19.82"
   description: "New candidate, PN G 046.9-00.8"
+  minor: 1.3
   name: "Dr 37"
   ra: "19 20 26.60"
   size: 2.0
@@ -3223,6 +3359,7 @@
 - constellation: ""
   dec: "-49 35 35.81"
   description: "Likely PN, PN G 269.3-02.6"
+  minor: 0.1
   name: "St 48"
   ra: "08 57 27.31"
   size: 0.2
@@ -3237,6 +3374,7 @@
 - constellation: ""
   dec: "-53 09 20.88"
   description: "New candidate, PN G 285.1+05.4"
+  minor: 0.5
   name: "St 51"
   ra: "10 49 22.56"
   size: 0.7
@@ -3258,6 +3396,7 @@
 - constellation: ""
   dec: "-56 46 53.36"
   description: "New candidate, PN G 292.8+04.6"
+  minor: 0.5
   name: "St 54"
   ra: "11 36 54.60"
   size: 1.0
@@ -3349,6 +3488,7 @@
 - constellation: ""
   dec: "-24 19 38.89"
   description: "New candidate, PN G 241.1+01.1"
+  minor: 0.1
   name: "St Objet 12"
   ra: "07 50 42.85"
   size: 0.2
@@ -3370,6 +3510,7 @@
 - constellation: ""
   dec: "-40 04 31.62"
   description: "New candidate, PN G 343.5+03.8"
+  minor: 1.7
   name: "Pre Objet 9"
   ra: "16 43 24.63"
   size: 2.0
@@ -3398,6 +3539,7 @@
 - constellation: ""
   dec: "+56 13 15.53"
   description: "New candidate, PN G 097.7+03.4"
+  minor: 1.0
   name: "StDr 3"
   ra: "21 31 59.35"
   size: 2.0
@@ -3433,6 +3575,7 @@
 - constellation: ""
   dec: "-58 52 01.02"
   description: "New candidate, PN G 306.9+03.7"
+  minor: 3.3
   name: "StDr 9"
   ra: "13 22 24.99"
   size: 4.4
@@ -3475,6 +3618,7 @@
 - constellation: ""
   dec: "+52 11 32.35"
   description: "True PN, PN G 095.3+00.1"
+  minor: 0.3
   name: "StDr Objet 1"
   ra: "21 35 07.85"
   size: 0.5
@@ -3503,6 +3647,7 @@
 - constellation: ""
   dec: "+13 13 31.15"
   description: "New candidate, PN G 196.5-02.7"
+  minor: 0.8
   name: "StDr Objet 5"
   ra: "06 10 57.83"
   size: 1.2
@@ -3545,6 +3690,7 @@
 - constellation: ""
   dec: "+55 55 52.61"
   description: "New candidate, PN G 095.8+04.8"
+  minor: 3.8
   name: "StDr 15"
   ra: "21 15 06.92"
   size: 5.0
@@ -3566,6 +3712,7 @@
 - constellation: ""
   dec: "+44 28 04.33"
   description: "True PN, PN G 091.0-06.3"
+  minor: 13.0
   name: "StDr 17"
   ra: "21 42 15.52"
   size: 15.0
@@ -3685,6 +3832,7 @@
 - constellation: ""
   dec: "-61 34 37.92"
   description: "New candidate, PN G 287.6-02.7"
+  minor: 0.3
   name: "Pre Objet 10"
   ra: "10 36 50.21"
   size: 0.6
@@ -3699,6 +3847,7 @@
 - constellation: ""
   dec: "+17 22 56.60"
   description: "New candidate, PN G 193.8+01.0"
+  minor: 1.5
   name: "StDr Objet 8"
   ra: "06 19 29.42"
   size: 1.8
@@ -3713,6 +3862,7 @@
 - constellation: ""
   dec: "-61 46 47.21"
   description: "New candidate, PN G 297.3+00.5"
+  minor: 0.1
   name: "StDr Objet 10"
   ra: "12 04 00.23"
   size: 0.2
@@ -3720,6 +3870,7 @@
 - constellation: ""
   dec: "+04 54 16.24"
   description: "New candidate, PN G 039.6-02.3"
+  minor: 0.8
   name: "StDr Objet 11"
   ra: "19 12 13.00"
   size: 1.3
@@ -3748,6 +3899,7 @@
 - constellation: ""
   dec: "+42 35 57.05"
   description: "True PN, PN G 158.3-05.6"
+  minor: 1.5
   name: "Pa 167"
   ra: "04 17 26.43"
   size: 4.2
@@ -3909,6 +4061,7 @@
 - constellation: ""
   dec: "-33 16 30.47"
   description: "New candidate, PN G 354.4+00.6"
+  minor: 0.9
   name: "Pa 192"
   ra: "17 29 07.98"
   size: 1.2
@@ -4098,6 +4251,7 @@
 - constellation: ""
   dec: "-44 17 46.21"
   description: "New candidate, PN G 286.5+15.7"
+  minor: 0.2
   name: "Ras 4"
   ra: "11 22 31.16"
   size: 0.3
@@ -4105,6 +4259,7 @@
 - constellation: ""
   dec: "-44 40 59.30"
   description: "New candidate, PN G 287.1+15.5"
+  minor: 0.3
   name: "Ras 5"
   ra: "11 24 48.51"
   size: 0.4
@@ -4119,6 +4274,7 @@
 - constellation: ""
   dec: "-44 06 11.30"
   description: "New candidate, PN G 291.6+17.4"
+  minor: 0.7
   name: "Ras 7"
   ra: "11 51 09.38"
   size: 0.9
@@ -4133,6 +4289,7 @@
 - constellation: ""
   dec: "-45 12 22.61"
   description: "New candidate, PN G 292.1+16.4"
+  minor: 0.1
   name: "Ras 9"
   ra: "11 52 14.90"
   size: 0.2
@@ -4140,6 +4297,7 @@
 - constellation: ""
   dec: "-14 17 06.94"
   description: "True PN, PN G 015.9+01.6"
+  minor: 4.6
   name: "StDr 31"
   ra: "18 13 54.93"
   size: 11.0
@@ -4154,6 +4312,7 @@
 - constellation: ""
   dec: "+11 49 08.29"
   description: "Likely PN, PN G 201.6+03.9"
+  minor: 0.6
   name: "StDr 33"
   ra: "06 44 52.15"
   size: 2.1
@@ -4168,6 +4327,7 @@
 - constellation: ""
   dec: "+54 54 11.41"
   description: "New candidate, PN G 125.0-07.9"
+  minor: 10.0
   name: "StDr 35"
   ra: "01 06 12.41"
   size: 16.0
@@ -4189,6 +4349,7 @@
 - constellation: ""
   dec: "-16 58 30.79"
   description: "New candidate, PN G 226.6-10.6"
+  minor: 0.8
   name: "StDr 38"
   ra: "06 37 32.39"
   size: 1.7
@@ -4203,6 +4364,7 @@
 - constellation: ""
   dec: "-24 26 38.54"
   description: "New candidate, PN G 241.2+01.0"
+  minor: 3.0
   name: "StDr 40"
   ra: "07 50 31.08"
   size: 5.5
@@ -4231,6 +4393,7 @@
 - constellation: ""
   dec: "-07 31 45.41"
   description: "New candidate, PN G 220.9-00.8"
+  minor: 13.0
   name: "StDr 44"
   ra: "07 03 06.26"
   size: 21.0
@@ -4273,6 +4436,7 @@
 - constellation: ""
   dec: "-54 56 20.00"
   description: "New candidate, PN G 324.8+00.8"
+  minor: 6.0
   name: "StDr 50"
   ra: "15 33 28.80"
   size: 8.5
@@ -4308,6 +4472,7 @@
 - constellation: ""
   dec: "-44 10 22.91"
   description: "New candidate, PN G 288.0+16.3"
+  minor: 0.3
   name: "Ras Objet 3"
   ra: "11 31 11.95"
   size: 0.4
@@ -4350,6 +4515,7 @@
 - constellation: ""
   dec: "+00 08 27.82"
   description: "New candidate, PN G 045.0-21.9"
+  minor: 2.5
   name: "DoS 4"
   ra: "20 31 14.95"
   size: 4.0
@@ -4385,6 +4551,7 @@
 - constellation: ""
   dec: "-52 06 41.80"
   description: "New candidate, PN G 272.1-03.1"
+  minor: 0.2
   name: "Mo 36"
   ra: "09 06 40.25"
   size: 0.3
@@ -4413,6 +4580,7 @@
 - constellation: ""
   dec: "+02 10 23.66"
   description: "New candidate, PN G 034.3+01.9"
+  minor: 0.3
   name: "Mo 40"
   ra: "18 47 20.12"
   size: 0.4
@@ -4623,6 +4791,7 @@
 - constellation: ""
   dec: "+30 05 11.90"
   description: "New candidate, PN G 141.8-29.9"
+  minor: 36.0
   name: "StDr 56"
   ra: "02 07 17.41"
   size: 44.0
@@ -4651,6 +4820,7 @@
 - constellation: ""
   dec: "+08 40 13.08"
   description: "New candidate, PN G 040.7+03.8"
+  minor: 0.9
   name: "StDr 60"
   ra: "18 51 55.48"
   size: 1.0
@@ -4924,6 +5094,7 @@
 - constellation: ""
   dec: "+23 53 20.62"
   description: "New candidate, PN G 137.8-37.4"
+  minor: 0.2
   name: "DoS Objet 1"
   ra: "01 42 59.23"
   size: 0.5
@@ -4931,6 +5102,7 @@
 - constellation: ""
   dec: "+59 09 37.19"
   description: "New candidate, PN G 107.5+00.0"
+  minor: 1.0
   name: "Gar Objet 1"
   ra: "22 46 24.97"
   size: 2.0
@@ -4980,6 +5152,7 @@
 - constellation: ""
   dec: "-60 05 38.90"
   description: "New candidate, PN G 328.3-09.3"
+  minor: 3.0
   name: "Pre 70"
   ra: "16 44 23.07"
   size: 4.0
@@ -4987,6 +5160,7 @@
 - constellation: ""
   dec: "-25 08 34.44"
   description: "New candidate, PN G 237.7-06.8"
+  minor: 0.7
   name: "Pre Objet 12"
   ra: "07 12 40.21"
   size: 0.9
@@ -5001,6 +5175,7 @@
 - constellation: ""
   dec: "+48 20 08.63"
   description: "New candidate, PN G 155.3-00.5"
+  minor: 4.5
   name: "StDr Objet 21"
   ra: "04 26 23.65"
   size: 8.0
@@ -5064,6 +5239,7 @@
 - constellation: ""
   dec: "-12 07 50.92"
   description: "Possible PN, PN G 225.5-01.9"
+  minor: 0.4
   name: "MoMi 3"
   ra: "07 07 51.23"
   size: 1.0
@@ -5071,6 +5247,7 @@
 - constellation: ""
   dec: "+46 04 33.74"
   description: "New candidate, PN G 148.4-09.1"
+  minor: 10.0
   name: "PaStDr 6"
   ra: "03 22 38.97"
   size: 15.0
@@ -5316,6 +5493,7 @@
 - constellation: ""
   dec: "+43 44 15.72"
   description: "True PN, PN G 152.0-09.5"
+  minor: 9.5
   name: "StDr 138"
   ra: "03 37 55.76"
   size: 12.0
@@ -5386,6 +5564,7 @@
 - constellation: ""
   dec: "-57 00 09.22"
   description: "New candidate, PN G 282.3-00.7"
+  minor: 0.3
   name: "Su Objet 5"
   ra: "10 10 11.60"
   size: 0.5
@@ -5393,6 +5572,7 @@
 - constellation: ""
   dec: "-59 56 05.78"
   description: "New candidate, PN G 285.4-02.1"
+  minor: 0.2
   name: "Su Objet 6"
   ra: "10 24 34.90"
   size: 0.3
@@ -5421,6 +5601,7 @@
 - constellation: ""
   dec: "+46 43 18.98"
   description: "True PN, PN G 082.3+07.2"
+  minor: 2.4
   name: "StDr 139"
   ra: "20 10 09.92"
   size: 2.7
@@ -5449,6 +5630,7 @@
 - constellation: ""
   dec: "+48 47 11.90"
   description: "True PN, PN G 115.9-13.5"
+  minor: 2.7
   name: "StDr 141"
   ra: "00 10 21.67"
   size: 4.2
@@ -5484,6 +5666,7 @@
 - constellation: ""
   dec: "-49 30 51.55"
   description: "New candidate, PN G 337.0-03.1"
+  minor: 0.4
   name: "Sl 2"
   ra: "16 50 01.50"
   size: 0.5
@@ -5603,6 +5786,7 @@
 - constellation: ""
   dec: "-56 59 21.70"
   description: "New candidate, PN G 334.3-12.1"
+  minor: 5.0
   name: "Pre 72"
   ra: "17 28 03.34"
   size: 9.3
@@ -5610,6 +5794,7 @@
 - constellation: ""
   dec: "-56 13 19.81"
   description: "New candidate, PN G 335.2-12.1"
+  minor: 2.7
   name: "Pre Objet 13"
   ra: "17 32 10.41"
   size: 5.8
@@ -5701,6 +5886,7 @@
 - constellation: ""
   dec: "+51 22 02.39"
   description: "Possible PN, PN G 088.3+06.7"
+  minor: 2.0
   name: "EkGo 1"
   ra: "20 33 22.73"
   size: 2.5
@@ -5771,6 +5957,7 @@
 - constellation: ""
   dec: "-66 01 18.30"
   description: "Possible PN, PN G 312.8-05.7"
+  minor: 0.1
   name: "Su Objet 8"
   ra: "14 30 47.74"
   size: 0.2
@@ -5883,6 +6070,7 @@
 - constellation: ""
   dec: "-61 05 05.60"
   description: "New candidate, PN G 321.5-04.3"
+  minor: 3.0
   name: "StDrLu 5"
   ra: "15 36 04.32"
   size: 4.2
@@ -5967,6 +6155,7 @@
 - constellation: ""
   dec: "-58 36 41.51"
   description: "Possible PN, PN G 275.8-08.9"
+  minor: 0.1
   name: "Jonk 1"
   ra: "08 52 41.05"
   size: 0.2
@@ -6023,6 +6212,7 @@
 - constellation: ""
   dec: "+03 06 18.76"
   description: "New candidate, PN G 211.8+04.7"
+  minor: 3.4
   name: "StDr 168"
   ra: "07 06 15.55"
   size: 4.0
@@ -6030,6 +6220,7 @@
 - constellation: ""
   dec: "-18 31 44.62"
   description: "New candidate, PN G 231.4-04.4"
+  minor: 0.4
   name: "StDr 169"
   ra: "07 09 30.30"
   size: 0.5
@@ -6037,6 +6228,7 @@
 - constellation: ""
   dec: "-07 22 48.90"
   description: "New candidate, PN G 019.9+08.6"
+  minor: 7.5
   name: "KinPau 1"
   ra: "17 56 29.64"
   size: 20.0
@@ -6058,6 +6250,7 @@
 - constellation: ""
   dec: "-74 24 19.30"
   description: "Possible PN, PN G 296.3-41.7"
+  minor: 1.0
   name: "Bic 5"
   ra: "02 05 40.22"
   size: 1.4
@@ -6114,6 +6307,7 @@
 - constellation: ""
   dec: "+27 03 52.85"
   description: "New candidate, PN G 065.4-02.8"
+  minor: 0.5
   name: "Sot 3"
   ra: "20 07 11.20"
   size: 0.6
@@ -6128,6 +6322,7 @@
 - constellation: ""
   dec: "+51 47 35.59"
   description: "New candidate, PN G 089.9+05.3"
+  minor: 5.4
   name: "Fal 2"
   ra: "20 46 38.17"
   size: 6.8
@@ -6163,6 +6358,7 @@
 - constellation: ""
   dec: "-65 08 20.94"
   description: "New candidate, PN G 320.5-08.6"
+  minor: 18.0
   name: "PaFal 1"
   ra: "15 52 30.34"
   size: 23.0
@@ -6177,6 +6373,7 @@
 - constellation: ""
   dec: "-54 35 01.00"
   description: "New candidate, PN G 323.0+02.5"
+  minor: 10.0
   name: "FalFer 1"
   ra: "15 16 31.00"
   size: 20.0
@@ -6191,6 +6388,7 @@
 - constellation: ""
   dec: "-61 40 36.98"
   description: "New candidate, PN G 317.9-02.7"
+  minor: 1.5
   name: "Lu 3"
   ra: "15 03 27.43"
   size: 1.9
@@ -6261,6 +6459,7 @@
 - constellation: ""
   dec: "+19 41 10.00"
   description: "New candidate, PN G 056.3-02.0"
+  minor: 0.8
   name: "EkGo 4"
   ra: "19 43 40.11"
   size: 1.8
@@ -6275,6 +6474,7 @@
 - constellation: ""
   dec: "+44 47 14.21"
   description: "True PN, PN G 081.7+04.5"
+  minor: 0.1
   name: "Br 9"
   ra: "20 21 13.85"
   size: 0.2
@@ -6310,6 +6510,7 @@
 - constellation: ""
   dec: "+21 30 10.01"
   description: "New candidate, PN G 186.2-04.0"
+  minor: 0.1
   name: "Br 13"
   ra: "05 44 28.00"
   size: 0.5
@@ -6317,6 +6518,7 @@
 - constellation: ""
   dec: "+51 08 17.56"
   description: "New candidate, PN G 090.1+04.1"
+  minor: 0.2
   name: "Br 14"
   ra: "20 53 25.31"
   size: 0.5
@@ -6359,6 +6561,7 @@
 - constellation: ""
   dec: "+60 14 06.29"
   description: "New candidate, PN G 103.5+03.7"
+  minor: 0.5
   name: "HorFulEvReb 2"
   ra: "22 04 34.12"
   size: 1.0
@@ -6478,6 +6681,7 @@
 - constellation: ""
   dec: "+18 24 00.86"
   description: "New candidate, PN G 176.9-21.8"
+  minor: 2.2
   name: "El 2"
   ra: "04 20 52.96"
   size: 2.4
@@ -6667,6 +6871,7 @@
 - constellation: ""
   dec: "+32 21 56.48"
   description: "Likely PN, PN G 177.2+02.0"
+  minor: 1.8
   name: "PaZib 1"
   ra: "05 46 59.59"
   size: 2.1
@@ -6681,6 +6886,7 @@
 - constellation: ""
   dec: "+28 00 44.17"
   description: "Likely PN, PN G 184.8+06.7"
+  minor: 0.77
   name: "Br 15"
   ra: "06 23 06.98"
   size: 1.2
@@ -6765,6 +6971,7 @@
 - constellation: ""
   dec: "+57 01 08.18"
   description: "New candidate, PN G 093.0+09.8"
+  minor: 2.7
   name: "MarSaiLeSot 1"
   ra: "20 34 39.44"
   size: 3.4
@@ -6835,6 +7042,7 @@
 - constellation: ""
   dec: "+07 51 02.41"
   description: "New candidate, PN G 040.8+01.8"
+  minor: 5.0
   name: "EkNHZ 1"
   ra: "18 59 24.70"
   size: 10.0
@@ -6877,6 +7085,7 @@
 - constellation: ""
   dec: "-20 37 01.09"
   description: "New candidate, PN G 012.5-05.4"
+  minor: 2.1
   name: "CopMart 3"
   ra: "18 33 28.58"
   size: 2.7
@@ -6884,6 +7093,7 @@
 - constellation: ""
   dec: "-15 26 14.21"
   description: "New candidate, PN G 017.7-04.2"
+  minor: 1.3
   name: "CopMart 4"
   ra: "18 38 38.61"
   size: 1.7
@@ -7010,6 +7220,7 @@
 - constellation: ""
   dec: "+69 47 26.99"
   description: "Possible PN, PN G 111.2+10.1"
+  minor: 0.5
   name: "Ek 17"
   ra: "22 30 17.97"
   size: 1.2
@@ -7059,6 +7270,7 @@
 - constellation: ""
   dec: "-17 41 39.19"
   description: "Likely PN, PN G 011.4+02.7"
+  minor: 1.4
   name: "CopMart 10"
   ra: "18 00 34.08"
   size: 1.9
@@ -7080,6 +7292,7 @@
 - constellation: ""
   dec: "+49 13 44.62"
   description: "New candidate, PN G 085.8+06.5"
+  minor: 2.1
   name: "CePozPruZib 1"
   ra: "20 24 58.86"
   size: 2.2
@@ -7101,6 +7314,7 @@
 - constellation: ""
   dec: "+43 49 55.16"
   description: "True PN, PN G 076.3+11.8"
+  minor: 1.7
   name: "HMK 1"
   ra: "19 30 53.84"
   size: 2.28
