@@ -36,6 +36,10 @@ type Result struct { // betteralign:ignore (embedded target first, per embeddeds
 	SkyMag  float64       // mean sky brightness at the target while observable, mag/arcsec²
 	MeanAlt float64
 	MaxAlt  float64
+	// Sub-exposure estimate, set by main (Subs) for the listed results with
+	// framing; nil for none. A pointer: Score copies and sorts Results by
+	// value, and the 64-byte Estimate inline cost BenchmarkPipeline 4%.
+	Exposure *Estimate
 }
 
 // Score scores every target within the size limits and returns the
@@ -110,28 +114,8 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 // mattered: some minute's filtered weight beat the broadband one, or only
 // fp's wider Moon limit let the minute in.
 func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, fp filterPass, mosaics []config.Mosaic, alt, weight []float64, obs []bool) (Result, bool) {
-	var ra, dec float64
-	mid := s.Grid[len(s.Grid)/2]
-	if tg.Track == nil {
-		// Catalogs are J2000; the hour angle comes from sidereal time of date.
-		ra, dec = astro.Precess(tg.RADeg, tg.DecDeg, mid)
-	}
+	ra, dec, extra := where(s, tg)
 	hz := astro.NewHorizontal(cfg.Lat, dec)
-	// The zodiacal and galactic light where the target stands (its
-	// mid-window position of date, a comet's too) against what the zenith
-	// brightness includes: half a magnitude more on the ecliptic 90° from
-	// the Sun, a little less at the ecliptic pole; up to 1.7 more in the
-	// Milky Way, 0.3 less at the galactic poles; at the zenith never below
-	// both minima. It comes from beyond the atmosphere, so extinction dims
-	// it and, unlike the glow K&S brighten along a longer path through the
-	// air, nothing adds to it: it stays outside their dark-sky term.
-	mra, mdec := ra, dec
-	if tg.Track != nil {
-		mra, mdec = tg.Track[len(s.Grid)/2][0], tg.Track[len(s.Grid)/2][1]
-	}
-	lon, lat := astro.Ecliptic(mra, mdec, mid)
-	gl, gb := astro.Galactic(mra, mdec) // of date for J2000: 0.4°, against 10° cells
-	extra := max(atmos.ZodiacalExcess(lon-s.SunLon, lat)+atmos.GalacticExcess(gl, gb), atmos.ZodiacalPoleNL+atmos.GalacticMinNL-s.ZenithNL)
 	// cos(LST - ra) by the difference formula: one Sincos per target instead
 	// of a Cos per target-minute.
 	sinRA, cosRA := math.Sincos(ra * deg)
@@ -284,6 +268,29 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, fp filterPass, m
 	}
 
 	return r, true
+}
+
+// where returns tg's mid-window position of date (degrees; a comet's
+// mid-track one) and extra, the zodiacal and galactic light there against
+// what the zenith brightness includes: half a magnitude more on the ecliptic
+// 90° from the Sun, a little less at the ecliptic pole; up to 1.7 more in the
+// Milky Way, 0.3 less at the galactic poles; at the zenith never below both
+// minima. It comes from beyond the atmosphere, so extinction dims it and,
+// unlike the glow K&S brighten along a longer path through the air, nothing
+// adds to it: it stays outside their dark-sky term.
+func where(s *Sky, tg catalog.Target) (ra, dec, extra float64) {
+	mid := s.Grid[len(s.Grid)/2]
+	if tg.Track == nil {
+		// Catalogs are J2000; the hour angle comes from sidereal time of date.
+		ra, dec = astro.Precess(tg.RADeg, tg.DecDeg, mid)
+	} else {
+		ra, dec = tg.Track[len(s.Grid)/2][0], tg.Track[len(s.Grid)/2][1]
+	}
+	lon, lat := astro.Ecliptic(ra, dec, mid)
+	gl, gb := astro.Galactic(ra, dec) // of date for J2000: 0.4°, against 10° cells
+	extra = max(atmos.ZodiacalExcess(lon-s.SunLon, lat)+atmos.GalacticExcess(gl, gb), atmos.ZodiacalPoleNL+atmos.GalacticMinNL-s.ZenithNL)
+
+	return ra, dec, extra
 }
 
 // frame returns the best frame score over the mosaics, each one's frameFill

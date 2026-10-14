@@ -248,9 +248,10 @@ func SkyParts(zenithNL, k, alt, rho float64, m Moon) (float64, float64, float64)
 	return glow, rayleigh, mie
 }
 
-// vCenter and vWidth are the V band's effective wavelength and FWHM in nm
-// (Bessell 1990), the band every sky brightness here is measured in.
-const vCenter, vWidth = 551.0, 88.0
+// vCenter and VWidth are the V band's effective wavelength and FWHM in nm
+// (Bessell 1990), the band every sky brightness here is measured in;
+// VWidth is exported for the sub-exposure estimate's photon zero point.
+const vCenter, VWidth = 551.0, 88.0
 
 // angstrom is the aerosol scattering's Ångström exponent: aerosol optical
 // depth goes as λ^-1.3 for typical continental aerosol.
@@ -267,7 +268,7 @@ const angstrom = 1.3
 // lamps' mix (sodium, white LEDs) vary by site, unknown here; a per-site
 // spectrum would replace the first return.
 func BandSky(center, width float64) (float64, float64, float64) {
-	f := width / vWidth
+	f := width / VWidth
 	rayleigh, mie := BandScale(center)
 
 	return f, f * rayleigh, f * mie
