@@ -295,6 +295,7 @@ func TestMutResultsAlignment(t *testing.T) {
 	cfg, s := mutSky(t)
 	cfg.Framing, cfg.Scale, cfg.FOVShort, cfg.FOVLong = true, 2, 300, 400
 	res := mutResults(s)
+	res[0].Exposure = &scoring.Estimate{Modest: 30, Good: 120, Best: 480, Max: 100, Sub: 15, SNRPerSub: 0.9, Panels: 1, Assumed: true}
 	mutColor(t, false)
 	var plainW int
 	plain := mutCapture(t, func() { plainW = Results(cfg, s, res) })
@@ -329,7 +330,8 @@ func TestMutResultsAlignment(t *testing.T) {
 	}
 	// Columns of the first row: rank 1, PX 190·60/2 = 5700.
 	f := strings.Fields(lines[1])
-	if f[0] != "1" || f[len(f)-1] != "5700" || f[len(f)-2] != "21.0" {
+	// SUBS last: more than the 100 subs tonight allows, assumed SB.
+	if f[0] != "1" || f[len(f)-1] != "~>100" || f[len(f)-2] != "5700" || f[len(f)-3] != "21.0" {
 		t.Errorf("row %q", f)
 	}
 	if !strings.Contains(lines[2], " -  ") || !strings.HasSuffix(strings.TrimRight(lines[3], " "), "-") {
@@ -346,7 +348,7 @@ func TestMutResultsAlignment(t *testing.T) {
 	}
 	lines = strings.Split(strings.TrimRight(plain, "\n"), "\n")
 	h, f0, f1 := strings.Fields(lines[0]), strings.Fields(lines[1]), strings.Fields(lines[2])
-	if h[len(h)-2] != "FILTER" || f0[len(f0)-2] != "dual" || f1[len(f1)-2] != "-" {
+	if h[len(h)-3] != "FILTER" || f0[len(f0)-3] != "dual" || f1[len(f1)-3] != "-" {
 		t.Errorf("FILTER cells:\n%s", plain)
 	}
 	if col := mutCol(lines[0], strings.Index(lines[0], "FILTER")); mutCol(lines[1], strings.Index(lines[1], "dual")) != col || []rune(lines[2])[col] != '-' {
@@ -500,6 +502,7 @@ func TestMutJSON(t *testing.T) {
 		h0 + 3600: {Cloud: 30, Temp: 6, DewPoint: 1, Precip: 0.3, Seeing: 1.2345},
 	}
 	res := mutResults(s)
+	res[0].Exposure = &scoring.Estimate{Modest: 3, Good: 10, Best: 40, Max: 200, Sub: 15, SNRPerSub: 3.2, Panels: 1}
 	// A peak of exactly 0° (-alt-min below the horizon) is a value, not absent.
 	slots := []plan.Slot{{Start: s.Grid[0], End: s.Grid[60], Result: &res[0], Score: 0.7, PeakAlt: 0, PeakAt: s.Grid[59]}, {Start: s.Grid[60], End: s.End}}
 	out := mutCapture(t, func() {
@@ -510,6 +513,13 @@ func TestMutJSON(t *testing.T) {
 	var doc map[string]any
 	if err := json.Unmarshal([]byte(out), &doc); err != nil {
 		t.Fatalf("%v\n%s", err, out)
+	}
+	tj := doc["targets"].([]any)
+	if sj, ok := tj[0].(map[string]any)["subs"].(map[string]any); !ok || sj["good"] != 10.0 || sj["sub"] != 15.0 || sj["assumedSB"] != nil {
+		t.Errorf("subs %v", tj[0].(map[string]any)["subs"])
+	}
+	if _, ok := tj[1].(map[string]any)["subs"]; ok {
+		t.Error("subs emitted without an estimate")
 	}
 	skyJ := doc["sky"].(map[string]any)
 	if skyJ["bortle"] != float64(atmos.BortleClass(20.9)) || skyJ["bortle"] != 4.0 || skyJ["zenithMag"] != 20.9 || skyJ["filterK"] != nil {
@@ -590,5 +600,22 @@ func TestMutJSON(t *testing.T) {
 	// A target's FILTER, left out when none helped.
 	if tg := doc["targets"].([]any); tg[1].(map[string]any)["filter"] != "oiii" || tg[0].(map[string]any)["filter"] != nil {
 		t.Errorf("filter %v / %v", tg[1].(map[string]any)["filter"], tg[0].(map[string]any)["filter"])
+	}
+}
+
+func TestMutSubsText(t *testing.T) {
+	for _, c := range []struct {
+		e          *scoring.Estimate
+		code, text string
+	}{
+		{nil, "39", "-"},
+		{&scoring.Estimate{Good: 120, Max: 400}, "39", "120"},
+		{&scoring.Estimate{Good: 120, Max: 400, Assumed: true}, "39", "~120"},
+		{&scoring.Estimate{Good: 500, Max: 400}, "33", ">400"},
+		{&scoring.Estimate{Good: 500, Max: 400, Assumed: true}, "33", "~>400"},
+	} {
+		if code, text := subsText(c.e); code != c.code || text != c.text {
+			t.Errorf("%+v: %q %q, want %q %q", c.e, code, text, c.code, c.text)
+		}
 	}
 }

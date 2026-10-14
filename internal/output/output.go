@@ -254,7 +254,8 @@ func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) int {
 			cells = append(cells, paint("39", filterText(r)))
 		}
 		if cfg.Framing {
-			cells = append(cells, paint("39", px))
+			code, text := subsText(r.Exposure)
+			cells = append(cells, paint("39", px), paint(code, text))
 		}
 		row(w, "", cells...)
 	}
@@ -330,6 +331,24 @@ func shortDesc(s string) string {
 // filterText is the FILTER cell: the -filter choice that scored best, "-"
 // when none beat no filter.
 func filterText(r scoring.Result) string { return cmp.Or(r.Filter, "-") }
+
+// subsText is the SUBS cell and its colour: the subs for a good image,
+// ~ when the surface brightness is its class's typical one, >N (yellow) when
+// more than the N tonight allows, - for none.
+func subsText(e *scoring.Estimate) (string, string) {
+	if e == nil {
+		return "39", "-"
+	}
+	prefix := ""
+	if e.Assumed {
+		prefix = "~"
+	}
+	if e.Good > e.Max {
+		return "33", prefix + ">" + strconv.Itoa(e.Max)
+	}
+
+	return "39", prefix + strconv.Itoa(e.Good)
+}
 
 // magText is the MAG column: the integrated V magnitude, else the B one
 // marked B, - when unknown.
@@ -498,6 +517,9 @@ const filterColumn = "FILTER"
 // pxColumn is shown only with framing (columns).
 const pxColumn = "PX"
 
+// subsColumn is shown only with framing (columns), like PX.
+const subsColumn = "SUBS"
+
 var planColumns = []column{
 	{"TIME", "imaging block"},
 	{"NAME", sameAsTargets},
@@ -526,13 +548,14 @@ var resultColumns = []column{
 	{"SB", "the object's own surface brightness, mag/arcsec², set against the sky it sees: SKY, cut by the chosen -filter to its bands' share for emission-line objects when that scores better, or halved for star clusters without nebulosity, whose own brightness is then not used (~ estimated from the magnitude and size or from a B value and a typical colour; - unknown, scored as sky-limited)"},
 	{filterColumn, "with -filter: the filter of the list that scores the object best, each minute taking the better of it and none (- when none helps: not emission-line, or the filter passes too little of its light)"},
 	{pxColumn, "with framing: size in pixels at the frame's pixel scale, and the mosaic (columns along the long side x rows) when more than one panel scores best"},
+	{subsColumn, "with framing: subs of -sub seconds for a good image (stacked SNR 10 per arcsec² at the object's surface brightness) through FILTER, counting those the forecast loses, per panel of a mosaic (~ a typical surface brightness for the type assumed; >N more than the N tonight allows, with -plan its blocks; - none: clusters, comets, dark nebulae). -json and the web page add SNR 5 and 20"},
 }
 
 // columns returns cols without FILTER when there is no -filter and without
-// PX when there is no framing.
+// PX and SUBS when there is no framing.
 func columns(cfg *config.Config, cols []column) []column {
 	return slices.DeleteFunc(slices.Clone(cols), func(c column) bool {
-		return c.name == filterColumn && cfg.Filter == "" || c.name == pxColumn && !cfg.Framing
+		return c.name == filterColumn && cfg.Filter == "" || (c.name == pxColumn || c.name == subsColumn) && !cfg.Framing
 	})
 }
 

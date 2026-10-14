@@ -92,30 +92,31 @@ type slot struct { // betteralign:ignore
 }
 
 type target struct { // betteralign:ignore
-	Rank          int       `json:"rank"`
-	Name          string    `json:"name"`
-	Description   string    `json:"description,omitempty"`
-	Type          string    `json:"type"`
-	Constellation string    `json:"constellation"`
-	Comet         bool      `json:"comet,omitempty"`
-	RA            float64   `json:"ra"`
-	Dec           float64   `json:"dec"`
-	Size          *float64  `json:"size,omitempty"`
-	Minor         *float64  `json:"minor,omitempty"`
-	Mag           *float64  `json:"mag,omitempty"`
-	BMag          *float64  `json:"bmag,omitempty"`
-	Foto          float64   `json:"foto"`
-	Score         float64   `json:"score"`
-	Frame         float64   `json:"frame"`
-	Observable    run       `json:"observable"`
-	MaxAlt        float64   `json:"maxAlt"`
-	MaxAt         time.Time `json:"maxAt"`
-	SkyMag        float64   `json:"skyMag"`
-	SB            *float64  `json:"surfaceBrightness,omitempty"`
-	SBEstimated   bool      `json:"surfaceBrightnessEstimated,omitempty"`
-	Px            *float64  `json:"px,omitempty"`
-	Mosaic        *mosaic   `json:"mosaic,omitempty"` // more than one panel only
-	Filter        string    `json:"filter,omitempty"` // the -filter choice that scored best; none helped when absent
+	Rank          int               `json:"rank"`
+	Name          string            `json:"name"`
+	Description   string            `json:"description,omitempty"`
+	Type          string            `json:"type"`
+	Constellation string            `json:"constellation"`
+	Comet         bool              `json:"comet,omitempty"`
+	RA            float64           `json:"ra"`
+	Dec           float64           `json:"dec"`
+	Size          *float64          `json:"size,omitempty"`
+	Minor         *float64          `json:"minor,omitempty"`
+	Mag           *float64          `json:"mag,omitempty"`
+	BMag          *float64          `json:"bmag,omitempty"`
+	Foto          float64           `json:"foto"`
+	Score         float64           `json:"score"`
+	Frame         float64           `json:"frame"`
+	Observable    run               `json:"observable"`
+	MaxAlt        float64           `json:"maxAlt"`
+	MaxAt         time.Time         `json:"maxAt"`
+	SkyMag        float64           `json:"skyMag"`
+	SB            *float64          `json:"surfaceBrightness,omitempty"`
+	SBEstimated   bool              `json:"surfaceBrightnessEstimated,omitempty"`
+	Px            *float64          `json:"px,omitempty"`
+	Mosaic        *mosaic           `json:"mosaic,omitempty"` // more than one panel only
+	Filter        string            `json:"filter,omitempty"` // the -filter choice that scored best; none helped when absent
+	Subs          *scoring.Estimate `json:"subs,omitempty"`   // with framing: the sub-exposure estimate
 }
 
 type mosaic struct { // betteralign:ignore
@@ -206,6 +207,7 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 		if res.BMag > 0 {
 			tg.BMag = &res.BMag
 		}
+		tg.Subs = res.Exposure
 		if m := res.Mosaic; m.Panels() > 1 {
 			tg.Mosaic = &mosaic{Cols: m.Cols, Rows: m.Rows}
 		}
