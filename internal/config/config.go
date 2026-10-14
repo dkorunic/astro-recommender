@@ -28,11 +28,20 @@ import (
 var errInvalidFlag = errors.New("invalid flag")
 
 // Celestron Origin: 335 mm focal length, IMX678 with 2.0 µm pixels at
-// 3856 x 2180 px, giving 1.32° x 0.75° and 1.23"/px.
+// 3856 x 2180 px, giving 1.32° x 0.75° and 1.23"/px; for the sub-exposure
+// estimate a 152 mm aperture with a 63 mm central obstruction (Celestron,
+// 41% of the aperture), the IMX678's 0.83 peak QE and 2.15 e⁻ read noise
+// (the vendor's figure at 8.5 dB gain, the middle of its 0.6-3.5 e⁻: the
+// Origin's ISO 1000 has no published gain), and its usual 15 s subs.
 const (
 	originFocal                 = 335.0 // mm
 	originPixel                 = 2.0   // µm
 	originPxLong, originPxShort = 3856, 2180
+	originAperture              = 152.0 // mm
+	originObstruction           = 63.0  // mm
+	originQE                    = 0.83
+	originReadNoise             = 2.15 // e⁻
+	originSub                   = 15.0 // s
 )
 
 var (
@@ -82,6 +91,11 @@ type Config struct {
 	FOVLong        float64 // arc minutes
 	FOVShort       float64 // arc minutes
 	Scale          float64 // arc seconds per pixel
+	Aperture       float64 // mm, for the sub-exposure estimate; with framing the Origin's unless -aperture
+	Obstruction    float64 // mm, the central obstruction's diameter
+	Sub            float64 // s, sub-exposure length
+	QE             float64 // the camera's peak quantum efficiency, 0-1
+	ReadNoise      float64 // e⁻ per pixel per sub
 	Top            int
 	Mosaic         int // -mosaic: most panels per object, 1 = single frame
 	Bortle         int
@@ -96,6 +110,7 @@ type Config struct {
 	RASet, DecSet  bool // -ra/-dec given: keep only targets within Tol of them
 	Framing        bool // -origin, -fov, -scale or -focal with -sensor/-pixel: fit and score objects against the frame
 	Rotate         bool // -rotate: the camera turns to put an object's major axis along the frame's long side
+	Mono           bool // -mono: a monochrome camera, every pixel sees every band
 	NoWeather      bool
 	NoGeocode      bool
 	NoSQM          bool
@@ -142,6 +157,12 @@ func Parse() (Config, error) {
 	flag.Float64Var(&minPx, "min-px", 200, "with framing, minimum object size in pixels; 0 or more")
 	flag.IntVar(&cfg.Mosaic, "mosaic", 1, "with framing, most mosaic panels per object, 1-25; an object's score is divided among its panels")
 	flag.BoolVar(&cfg.Rotate, "rotate", false, "with framing, the camera can be rotated to frame the major axis along the long side, so the minor axis counts (not the Origin)")
+	flag.Float64Var(&cfg.Aperture, "aperture", 0, "with framing, the telescope's aperture in mm, for the sub-exposure estimate (SUBS); Origin 152")
+	flag.Float64Var(&cfg.Obstruction, "obstruction", 0, "with framing, the central obstruction's diameter in mm; Origin 63, otherwise 0 when -aperture is given")
+	flag.Float64Var(&cfg.Sub, "sub", 0, "with framing, the sub-exposure length in seconds; Origin 15")
+	flag.Float64Var(&cfg.QE, "qe", 0, "with framing, the camera's peak quantum efficiency, above 0 and at most 1; Origin (IMX678) 0.83")
+	flag.Float64Var(&cfg.ReadNoise, "read-noise", 0, "with framing, the camera's read noise in electrons, 0 or more; Origin (IMX678) 2.15")
+	flag.BoolVar(&cfg.Mono, "mono", false, "with framing, the camera is monochrome, so every pixel sees every filter band (the Origin's is colour)")
 	flag.StringVar(&cfg.Filter, "filter", "", "filters you own, comma-separated: for emission-line targets dual (Ha + OIII at once), tri (+ Hb), quad (+ Hb and SII), ha, oiii, sii; broadband light pollution filters cls (Astronomik CLS) and lpro (Optolong L-Pro) for any target; each target is scored with each and without, the best shown in FILTER (default none)")
 	flag.Float64Var(&cfg.FilterNM, "filter-nm", 7, "with -filter, the width of each line filter band in nm, 1-30")
 	flag.IntVar(&cfg.Bortle, "bortle", 0, "Bortle class 1-9 of the site, sets the zenith sky brightness (0 = dark sky)")
@@ -213,6 +234,9 @@ func Parse() (Config, error) {
 		return Config{}, fmt.Errorf("%w: frame of %.0f px across is not a sensor; -fov is in degrees, -scale in arcsec/px", errInvalidFlag, px)
 	}
 	if err := cfg.frameSizes(set, minPx); err != nil {
+		return Config{}, err
+	}
+	if err := cfg.camera(set); err != nil {
 		return Config{}, err
 	}
 
@@ -481,6 +505,50 @@ func (cfg *Config) frameSizes(set map[string]bool, minPx float64) error {
 	if cfg.SizeMax > maxSize {
 		return fmt.Errorf("%w: -size-max %.1f' exceeds the largest frame side an object can use, %.1f'; larger objects cannot be framed, and with -rotate only an object with a known minor axis uses the long side",
 			errInvalidFlag, cfg.SizeMax, maxSize)
+	}
+
+	return nil
+}
+
+// camera checks the sub-exposure flags, which need framing like -mosaic,
+// and fills the Origin's values for those not given; -aperture alone
+// describes another telescope, so its obstruction is then 0.
+func (cfg *Config) camera(set map[string]bool) error {
+	given := set["aperture"] || set["obstruction"] || set["sub"] || set["qe"] || set["read-noise"] || cfg.Mono
+	if !cfg.Framing {
+		if given {
+			return fmt.Errorf("%w: -aperture, -obstruction, -sub, -qe, -read-noise and -mono need framing (-origin, -fov, -scale or -focal)", errInvalidFlag)
+		}
+
+		return nil
+	}
+	for _, d := range []struct {
+		name   string
+		v      *float64
+		origin float64
+	}{
+		{"aperture", &cfg.Aperture, originAperture},
+		{"obstruction", &cfg.Obstruction, originObstruction},
+		{"sub", &cfg.Sub, originSub},
+		{"qe", &cfg.QE, originQE},
+		{"read-noise", &cfg.ReadNoise, originReadNoise},
+	} {
+		if !set[d.name] {
+			*d.v = d.origin
+		}
+	}
+	if set["aperture"] && !set["obstruction"] {
+		cfg.Obstruction = 0
+	}
+	switch {
+	case cfg.Obstruction < 0 || cfg.Aperture <= cfg.Obstruction:
+		return fmt.Errorf("%w: -aperture must be above -obstruction, which must be 0 or more", errInvalidFlag)
+	case cfg.Sub <= 0:
+		return fmt.Errorf("%w: -sub must be above 0 seconds", errInvalidFlag)
+	case cfg.QE <= 0 || cfg.QE > 1:
+		return fmt.Errorf("%w: -qe must be above 0 and at most 1", errInvalidFlag)
+	case cfg.ReadNoise < 0:
+		return fmt.Errorf("%w: -read-noise must be 0 or more", errInvalidFlag)
 	}
 
 	return nil

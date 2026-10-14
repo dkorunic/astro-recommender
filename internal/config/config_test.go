@@ -313,3 +313,47 @@ func TestParseStrayArgument(t *testing.T) {
 		t.Errorf("-origin=false -n 2: Top %d, Framing %v, err %v", cfg.Top, cfg.Framing, err)
 	}
 }
+
+func TestCamera(t *testing.T) {
+	type cam struct{ ap, ob, sub, qe, rn float64 }
+	for name, c := range map[string]struct {
+		args []string
+		want string // error substring; "" = accepted
+		cam  cam
+	}{
+		"origin":     {[]string{"-origin"}, "", cam{152, 63, 15, 0.83, 2.15}},
+		"no framing": {nil, "", cam{}},
+		// Another telescope's aperture drops the Origin's obstruction.
+		"other scope": {[]string{"-origin", "-aperture", "200"}, "", cam{200, 0, 15, 0.83, 2.15}},
+		"all given": {[]string{
+			"-focal", "400", "-pixel", "3.76", "-sensor", "23.5x15.6", "-aperture", "200", "-obstruction", "70",
+			"-sub", "60", "-qe", "0.6", "-read-noise", "1", "-mono",
+		}, "", cam{200, 70, 60, 0.6, 1}},
+		"sub alone":      {[]string{"-sub", "30"}, "need framing", cam{}},
+		"mono alone":     {[]string{"-mono"}, "need framing", cam{}},
+		"obstruction=ap": {[]string{"-origin", "-obstruction", "152"}, "-aperture must be above -obstruction", cam{}},
+		"obstruction<0":  {[]string{"-origin", "-obstruction", "-1"}, "-aperture must be above -obstruction", cam{}},
+		"sub 0":          {[]string{"-origin", "-sub", "0"}, "-sub must be above 0", cam{}},
+		"qe 0":           {[]string{"-origin", "-qe", "0"}, "-qe must be above 0", cam{}},
+		"qe 1.1":         {[]string{"-origin", "-qe", "1.1"}, "-qe must be above 0", cam{}},
+		"read-noise -1":  {[]string{"-origin", "-read-noise", "-1"}, "-read-noise must be 0 or more", cam{}},
+		"qe NaN":         {[]string{"-origin", "-qe", "NaN"}, "finite", cam{}},
+	} {
+		cfg, err := parse(t, c.args...)
+		switch {
+		case c.want == "" && err != nil:
+			t.Errorf("%s: rejected: %v", name, err)
+		case c.want != "" && err == nil:
+			t.Errorf("%s: accepted", name)
+		case c.want != "" && !strings.Contains(err.Error(), c.want):
+			t.Errorf("%s: error %q does not mention %q", name, err, c.want)
+		case c.want == "":
+			if got := (cam{cfg.Aperture, cfg.Obstruction, cfg.Sub, cfg.QE, cfg.ReadNoise}); got != c.cam {
+				t.Errorf("%s: camera %+v, want %+v", name, got, c.cam)
+			}
+		}
+	}
+	if cfg, err := parse(t, "-origin", "-mono"); err != nil || !cfg.Mono {
+		t.Errorf("-mono: %v %v", cfg.Mono, err)
+	}
+}
