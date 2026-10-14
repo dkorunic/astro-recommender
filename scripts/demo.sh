@@ -6,7 +6,8 @@
 # freeze (github.com/charmbracelet/freeze), scaled and converted to JPEG by
 # sips and, when installed, recompressed by jpegoptim at quality 85. Needs
 # network for the weather, aerosol and geocoding lookups. Lines wrap at 180
-# columns, as in a real terminal; the legend already wraps to the table.
+# columns, as in a real terminal: COLUMNS tells the program so, which fits
+# its tables and wraps the header and legend there.
 #
 # The default run is the Markovac site with -filter dual and its measured SQM, not
 # the README's Zagreb transcript. Any arguments replace that whole flag set,
@@ -27,7 +28,7 @@ trap 'rm -rf "$tmp"' EXIT
 go build -o "$tmp/astro-recommender" .
 {
 	printf '\033[1;32m❯\033[0m ./astro-recommender %s\n' "${args[*]}"
-	CLICOLOR_FORCE=1 "$tmp/astro-recommender" "${args[@]}"
+	COLUMNS=180 CLICOLOR_FORCE=1 "$tmp/astro-recommender" "${args[@]}"
 } >"$tmp/demo.ansi"
 
 freeze --execute "cat $tmp/demo.ansi" --background '#1d1f21' --padding 20 --window=false \
