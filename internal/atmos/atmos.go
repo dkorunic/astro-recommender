@@ -201,6 +201,8 @@ func MoonLight(k, kRayleigh, kAerosol, moonAlt, alpha, moonDist float64) Moon {
 
 // scatter returns the moonlight m scatters to a target at scattering airmass
 // x, rho degrees from the Moon, for extinction k: Rayleigh and aerosol parts.
+// k must be the k m was built with: Fade and the X ≈ x limit carry MoonLight's
+// τ, and a different one makes the (e^(−τx) − Fade)/d branch blow up as d → 0.
 func (m Moon) scatter(k, x, rho float64) (float64, float64) {
 	// Winkler's gradation function: the single scattering integrated down
 	// the line of sight, x (e^(−τx) − e^(−τX)) / (X − x), whose limit at
