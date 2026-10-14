@@ -109,11 +109,14 @@ type channel struct {
 // response by the channel that sees it: through Hα a colour sensor's green
 // and blue pixels see nothing, and add nothing, their read noise included.
 // The object's gains are 0 when a line filter passes none of its lines.
-func (c camera) channels(name string, width float64, lines [4]float64, fp filterPass) []channel {
+// The channels overwrite dst's, so Score reuses each tally's across targets.
+func (c camera) channels(dst []channel, name string, width float64, lines [4]float64, fp filterPass) []channel {
 	g := c.area * c.qe * c.omega * photonsV0 / atmos.NanoLamberts(0)
-	chans := []channel{{share: 1}}
-	if !c.mono {
-		chans = []channel{{share: channelShare[red]}, {share: channelShare[green]}, {share: channelShare[blue]}}
+	chans := dst[:0]
+	if c.mono {
+		chans = append(chans, channel{share: 1})
+	} else {
+		chans = append(chans, channel{share: channelShare[red]}, channel{share: channelShare[green]}, channel{share: channelShare[blue]})
 	}
 	at := func(l catalog.Line) *channel {
 		if c.mono {
@@ -239,7 +242,7 @@ func Subs(cfg *config.Config, s *Sky, r Result, planned time.Duration) Estimate 
 		obs = ta.obs
 	}
 	lines := r.Lines()
-	chans := c.channels(r.Filter, cfg.FilterNM, lines, fp)
+	chans := c.channels(nil, r.Filter, cfg.FilterNM, lines, fp)
 	if !slices.ContainsFunc(chans, func(ch channel) bool { return ch.obj > 0 }) {
 		return Estimate{}
 	}

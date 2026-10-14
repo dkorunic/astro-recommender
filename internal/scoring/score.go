@@ -109,7 +109,7 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 			}
 			tallies[c].reset(fp)
 			if camNL > 0 {
-				tallies[c].chans = cam.channels(name, cfg.FilterNM, tg.Lines(), fp)
+				tallies[c].chans = cam.channels(tallies[c].chans, name, cfg.FilterNM, tg.Lines(), fp)
 			}
 			active, choice = append(active, &tallies[c]), append(choice, c)
 		}
@@ -178,7 +178,7 @@ func (t *tally) reset(fp filterPass) {
 	weight, obs := t.weight, t.obs
 	clear(weight)
 	clear(obs)
-	*t = tally{weight: weight, obs: obs, fp: fp, prev: -2}
+	*t = tally{chans: t.chans[:0], weight: weight, obs: obs, fp: fp, prev: -2} // chans: channels' buffer
 }
 
 // add counts minute i, observable at altitude a under a sky of sb with
@@ -352,7 +352,7 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, ts []*tally, mos
 			if c > t.cosMoon {
 				continue
 			}
-			if !parts && (t.fp.w > 0 || t.chans != nil) {
+			if !parts && (t.fp.w > 0 || len(t.chans) > 0) {
 				glow, rayleigh, mie = atmos.SkyParts(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i])
 				glow += extra * ext
 				parts = true
@@ -371,7 +371,7 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, ts []*tally, mos
 				gain = math.Sqrt(objRef / (objNL + k*sb))
 			}
 			var snr2 float64
-			if t.chans != nil {
+			if len(t.chans) > 0 {
 				snr2 = s.Quality[i] * cam.minuteSNR2(t.chans, camNL*trans, glow, rayleigh, mie)
 			}
 			t.add(i, a, s.Quality[i]*trans*min(1, gain), s.Quality[i]*trans*gain, snr2, sb)

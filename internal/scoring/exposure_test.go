@@ -58,7 +58,7 @@ func TestCameraGain(t *testing.T) {
 	}
 	area := math.Pi / 4 * (15.2*15.2 - 6.3*6.3)
 	g := area * 0.83 * 1.2314 * 1.2314 * 1005 * 880 / atmos.NanoLamberts(0)
-	plain := c.channels("", 7, [4]float64{}, filterPass{})
+	plain := c.channels(nil, "", 7, [4]float64{}, filterPass{})
 	if want := g * 0.34 * 300 / 88; len(plain) != 3 || math.Abs(plain[red].obj/want-1) > 1e-9 || plain[red].obj != plain[blue].obj || plain[red].obj != plain[red].sky[0] {
 		t.Errorf("unfiltered channels %+v, want object and glow gain %v on each", plain, want)
 	}
@@ -72,22 +72,22 @@ func TestCameraGain(t *testing.T) {
 	cfg.Mono = true
 	mono, _ := newCamera(cfg)
 	ha := [4]float64{catalog.Ha: 1}
-	col, mon := c.channels("ha", 7, ha, filterPass{}), mono.channels("ha", 7, ha, filterPass{})
+	col, mon := c.channels(nil, "ha", 7, ha, filterPass{}), mono.channels(nil, "ha", 7, ha, filterPass{})
 	if len(mon) != 1 || mon[0].share != 1 || col[red].obj != mon[0].obj || col[green].obj != 0 || col[blue].obj != 0 || col[red].share != 0.25 {
 		t.Errorf("Hα colour %+v, mono %+v", col, mon)
 	}
 	// [O III] on green, half the array.
-	if col := c.channels("oiii", 7, [4]float64{catalog.OIII: 1}, filterPass{}); col[green].obj == 0 || col[red].obj != 0 || col[green].share != 0.5 {
+	if col := c.channels(nil, "oiii", 7, [4]float64{catalog.OIII: 1}, filterPass{}); col[green].obj == 0 || col[red].obj != 0 || col[green].share != 0.5 {
 		t.Errorf("[O III] colour %+v", col)
 	}
-	if col := c.channels("ha", 7, [4]float64{}, filterPass{}); col[red].obj != 0 {
+	if col := c.channels(nil, "ha", 7, [4]float64{}, filterPass{}); col[red].obj != 0 {
 		t.Error("a line filter passes nothing of an object without lines")
 	}
 	// Each band's sky falls on its own channel: through dual-band, 7 nm of
 	// glow at Hα on the red, 7 nm at [O III] on the green, none on the blue,
 	// whatever the object's mix of the two lines.
 	for _, lines := range [][4]float64{catalog.Target{Type: "HII region"}.Lines(), catalog.Target{Type: "Planetary Nebula"}.Lines()} {
-		ch := c.channels("dual", 7, lines, filterPass{})
+		ch := c.channels(nil, "dual", 7, lines, filterPass{})
 		if r, gr := g*7/88*0.95, g*7/88*0.85; math.Abs(ch[red].sky[0]/r-1) > 1e-9 || math.Abs(ch[green].sky[0]/gr-1) > 1e-9 || ch[blue].sky[0] != 0 {
 			t.Errorf("dual-band glow gains %v %v %v, want %v %v 0", ch[red].sky[0], ch[green].sky[0], ch[blue].sky[0], r, gr)
 		}
@@ -269,7 +269,7 @@ func TestSubsNoCamera(t *testing.T) {
 func TestSubsEmissionLines(t *testing.T) {
 	c, _ := newCamera(expCfg())
 	lines := catalog.Target{Type: "HII region"}.Lines()
-	ch := c.channels("", 7, lines, filterPass{})
+	ch := c.channels(nil, "", 7, lines, filterPass{})
 	g := c.area * c.qe * c.omega * photonsV0 / atmos.NanoLamberts(0)
 	reds := g * (lines[catalog.Ha]*lineQE[catalog.Ha] + lines[catalog.SII]*lineQE[catalog.SII])
 	greens := g * (lines[catalog.OIII]*lineQE[catalog.OIII] + lines[catalog.Hb]*lineQE[catalog.Hb])
