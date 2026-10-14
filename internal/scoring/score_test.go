@@ -416,3 +416,54 @@ func TestScoreFilter(t *testing.T) {
 		}
 	}
 }
+
+// The filter is chosen by how much it gains, not by the capped weight: under
+// a pristine dark sky every helpful line filter's weight saturates at 1, and
+// the cap would leave the band's extinction to choose, Hα's, the lowest,
+// for a planetary too, whose light is two-thirds [O III]. Sky-limited (no
+// surface brightness), [O III] gains it most.
+func TestScoreFilterUncapped(t *testing.T) {
+	cfg := &config.Config{Lat: 45.8, Lon: 16, AltMin: 30, AltMax: 80, SizeMax: 300, NoWeather: true, ExtinctionSet: true, Extinction: 0.2, FilterNM: 7, Filter: "ha,oiii,dual"}
+	start, end, _ := astro.Window(time.Date(2026, 10, 11, 12, 0, 0, 0, time.UTC), cfg.Lat, cfg.Lon, astro.Astronomical)
+	s := BuildSky(cfg, NoForecast(), start, end)
+	for typ, want := range map[string]string{"Planetary Nebula": "oiii", "HII Region": "ha"} {
+		r := Score(cfg, &s, []catalog.Target{{Name: "T", Type: typ, RADeg: 300, DecDeg: 40, Size: 20}}, false)
+		if len(r) != 1 || r[0].Filter != want {
+			t.Errorf("%s: filter %q, want %q", typ, r[0].Filter, want)
+		}
+		if r[0].Score > 1 {
+			t.Errorf("%s: score %v above 1", typ, r[0].Score)
+		}
+	}
+}
+
+// With a camera (framing) the filter is chosen by the sub-exposure model,
+// read noise included, so FILTER is the choice that stacks the most SNR
+// tonight and SUBS agrees with it: on the Origin's 15 s colour subs under a
+// pristine sky a 7 nm Hα band is read-noise limited, and cls, collecting every
+// line over 120 nm, needs fewer.
+func TestScoreFilterCamera(t *testing.T) {
+	cfg := &config.Config{Lat: 45.8, Lon: 16, AltMin: 30, AltMax: 80, SizeMax: 300, NoWeather: true, ExtinctionSet: true, Extinction: 0.2, FilterNM: 7, Filter: "ha,dual,cls"}
+	cfg.Framing, cfg.Scale, cfg.FOVLong, cfg.FOVShort = true, 1.2314, 79.2, 45
+	cfg.Aperture, cfg.Obstruction, cfg.Sub, cfg.QE, cfg.ReadNoise = 152, 63, 15, 0.83, 2.15
+	start, end, _ := astro.Window(time.Date(2026, 10, 11, 12, 0, 0, 0, time.UTC), cfg.Lat, cfg.Lon, astro.Astronomical)
+	s := BuildSky(cfg, NoForecast(), start, end)
+	neb := catalog.Target{Name: "N", Type: "HII Region", RADeg: 300, DecDeg: 40, Size: 20} // the typical surface brightness
+	r := Score(cfg, &s, []catalog.Target{neb}, false)
+	if len(r) != 1 {
+		t.Fatal("not observable")
+	}
+	fewest, best := "", 0
+	for _, f := range []string{"", "ha", "dual", "cls"} {
+		one := *cfg
+		one.Filter = f
+		rr := r[0]
+		rr.Filter, rr.Obs = f, nil
+		if e := Subs(&one, &s, rr, 0); best == 0 || e.Good < best {
+			fewest, best = f, e.Good
+		}
+	}
+	if r[0].Filter != fewest || fewest != "cls" {
+		t.Errorf("filter %q, fewest subs %q (%d)", r[0].Filter, fewest, best)
+	}
+}

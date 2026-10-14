@@ -64,6 +64,7 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 		alt = make([]float64, len(s.Grid))
 	}
 	active, choice := make([]*tally, 0, len(names)), make([]int, 0, len(names))
+	cam, camOK := newCamera(cfg)
 	for _, tg := range targets {
 		// Comet comae have no catalog size, so size limits do not apply.
 		// An unknown size counts as 0, so -size-min 0 keeps it.
@@ -80,10 +81,22 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 		// No filter, then each -filter choice that passes some of the
 		// target's light, scored as worn all night, as it is shot: a filter
 		// that costs a bright nebula under a dark sky costs it every minute.
-		// All in one pass over the grid, which shares the geometry. The best
-		// total wins, the first of equals, so a filter must beat no filter;
-		// a target none beats (a galaxy, which a broadband filter dims as
-		// much as the sky) keeps exactly its unfiltered weights.
+		// All in one pass over the grid, which shares the geometry. The
+		// choice that gains most wins, the first of equals, so a filter must
+		// beat no filter; a target none beats (a galaxy, which a broadband
+		// filter dims as much as the sky) keeps exactly its unfiltered
+		// weights. Gains most: with a camera and a surface brightness to
+		// estimate subs from (catalog.Target.ExposureSB), the most SNR² the
+		// sub-exposure model stacks tonight, read noise included, so FILTER
+		// and SUBS agree; else the most uncapped weight, since under a dark
+		// sky every helpful filter's capped weight is 1 and the band's
+		// extinction alone would choose (Hα's, even for a planetary).
+		var camNL float64
+		if camOK {
+			if sb, _ := tg.ExposureSB(); sb > 0 {
+				camNL = lightNL(tg, sb)
+			}
+		}
 		active, choice = active[:0], choice[:0]
 		for c, name := range names {
 			fp := passes(cfg, tg, name)
@@ -91,19 +104,31 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 				continue
 			}
 			tallies[c].reset(fp)
+			if camNL > 0 {
+				tallies[c].chans = cam.channels(name, cfg.FilterNM, tg.Lines(), fp)
+			}
 			active, choice = append(active, &tallies[c]), append(choice, c)
 		}
-		base, ok := scoreTarget(cfg, s, tg, active, mosaics, alt)
+		base, ok := scoreTarget(cfg, s, tg, active, mosaics, alt, &cam, camNL)
 		if !ok {
 			continue
 		}
+		gains := func(t *tally) float64 {
+			if camNL > 0 {
+				return t.snr2
+			}
+
+			return t.raw
+		}
 		var best Result
+		var bestGain float64
 		found := false
 		for j, t := range active {
 			r, ok := t.result(cfg, s, base)
-			if !ok || (found && r.Score <= best.Score) {
+			if !ok || (found && gains(t) <= bestGain) {
 				continue
 			}
+			bestGain = gains(t)
 			r.Filter = names[choice[j]]
 			if perMinute {
 				r.Alt, r.Weight, r.Obs = slices.Clone(alt), slices.Clone(t.weight), slices.Clone(t.obs)
@@ -124,13 +149,18 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 }
 
 // tally is one -filter choice's running score in scoreTarget: what it
-// passes, its Moon limit, and the observable minutes it has counted.
+// passes, its Moon limit, and the observable minutes it has counted, with
+// their weights (capped at 1, the score), uncapped (raw) and, with a camera
+// (chans), the per-sub SNR² the sub-exposure model stacks (snr2), each
+// weighted by the minute's weather.
 type tally struct {
+	chans                    []channel
 	weight                   []float64 // per-minute weight, len(s.Grid)
 	obs                      []bool    // per-minute observable; nil unless perMinute
 	fp                       filterPass
 	cosMoon                  float64 // the Moon limit's cosine: a minute closer is not observable
 	altSum, weighted, skySum float64
+	raw, snr2                float64
 	good, runs, prev         int
 	// Continuous observable stretches: the current one starts at runStart
 	// and the longest so far is [best, best+bestLen).
@@ -146,8 +176,8 @@ func (t *tally) reset(fp filterPass) {
 }
 
 // add counts minute i, observable at altitude a under a sky of sb with
-// weight w.
-func (t *tally) add(i int, a, w, sb float64) {
+// weight w (raw uncapped) and per-sub SNR² snr2.
+func (t *tally) add(i int, a, w, raw, snr2, sb float64) {
 	if i != t.prev+1 {
 		t.runStart = i
 		t.runs++
@@ -164,6 +194,8 @@ func (t *tally) add(i int, a, w, sb float64) {
 		t.obs[i] = true
 	}
 	t.weighted += w
+	t.raw += raw
+	t.snr2 += snr2
 }
 
 // result completes base (scoreTarget's frame, mosaic and peak) with what t
@@ -195,10 +227,11 @@ func (t *tally) result(cfg *config.Config, s *Sky, base Result) (Result, bool) {
 
 // scoreTarget counts the target's observable minutes and their weights into
 // each of ts (reset, a filterPass each; fp.w 0 is no filter) in one pass over
-// the grid, and fills alt with its altitude when not nil. It returns the
-// result every tally shares (frame, mosaic, peak) for tally.result, false
-// when no mosaic holds the target.
-func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, ts []*tally, mosaics []config.Mosaic, alt []float64) (Result, bool) {
+// the grid, and fills alt with its altitude when not nil; a tally with chans
+// also counts cam's per-sub SNR² of the object's light camNL (lightNL of its
+// ExposureSB, absolute). It returns the result every tally shares (frame,
+// mosaic, peak) for tally.result, false when no mosaic holds the target.
+func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, ts []*tally, mosaics []config.Mosaic, alt []float64, cam *camera, camNL float64) (Result, bool) {
 	ra, dec, extra := where(s, tg)
 	hz := astro.NewHorizontal(cfg.Lat, dec)
 	// cos(LST - ra) by the difference formula: one Sincos per target instead
@@ -313,25 +346,29 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, ts []*tally, mos
 			if c > t.cosMoon {
 				continue
 			}
-			var sb, w float64
+			if !parts && (t.fp.w > 0 || t.chans != nil) {
+				glow, rayleigh, mie = atmos.SkyParts(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i])
+				glow += extra * ext
+				parts = true
+			}
+			var sb, trans, gain float64
 			if t.fp.w > 0 {
-				if !parts {
-					glow, rayleigh, mie = atmos.SkyParts(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i])
-					glow += extra * ext
-					parts = true
-				}
 				sb = glow + rayleigh + mie
-				w = s.Quality[i] * atmos.Transmission(air, s.ExtRayleigh[i]*t.fp.ray+atmos.OzoneExtinction+s.ExtAerosol[i]*t.fp.aer) *
-					t.fp.weight(objNL, objRef, k*glow, k*rayleigh, k*mie)
+				trans = atmos.Transmission(air, s.ExtRayleigh[i]*t.fp.ray+atmos.OzoneExtinction+s.ExtAerosol[i]*t.fp.aer)
+				gain = t.fp.gain(objNL, objRef, k*glow, k*rayleigh, k*mie)
 			} else {
 				sb = atmos.SkyBrightnessLit(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i]) + extra*ext
-				objExt := ext
+				trans = ext
 				if emission {
-					objExt = atmos.Transmission(air, s.Ext[i]+s.ExtRayleigh[i]*lineRay+s.ExtAerosol[i]*lineAer)
+					trans = atmos.Transmission(air, s.Ext[i]+s.ExtRayleigh[i]*lineRay+s.ExtAerosol[i]*lineAer)
 				}
-				w = s.Quality[i] * objExt * min(1, math.Sqrt(objRef/(objNL+k*sb)))
+				gain = math.Sqrt(objRef / (objNL + k*sb))
 			}
-			t.add(i, a, w, sb)
+			var snr2 float64
+			if t.chans != nil {
+				snr2 = s.Quality[i] * cam.minuteSNR2(t.chans, camNL*trans, glow, rayleigh, mie)
+			}
+			t.add(i, a, s.Quality[i]*trans*min(1, gain), s.Quality[i]*trans*gain, snr2, sb)
 		}
 	}
 	r.MaxAlt, r.MaxAt = math.Asin(maxSin)/deg, s.Grid[maxAt]
@@ -514,13 +551,20 @@ func broadPasses(tg catalog.Target, lines [4]float64, bands [][2]float64) filter
 }
 
 // weight is the sky weight through the filter, the counterpart of the
-// broadband min(1, √(objRef/(objNL + k·sky))): the target's signal is w of
-// it, the sky the bands' share of each part, so SNR² goes as
-// (w·S)²/(w·S + sky in the bands) against S²/(S + RefNL) for the reference.
+// broadband min(1, √(objRef/(objNL + k·sky))): gain capped at 1, a minute
+// as good as unfiltered under a pristine sky.
 func (fp filterPass) weight(objNL, objRef, glow, rayleigh, mie float64) float64 {
+	return min(1, fp.gain(objNL, objRef, glow, rayleigh, mie))
+}
+
+// gain is the filter's SNR against the same object unfiltered under a
+// pristine sky, uncapped: the target's signal is w of it, the sky the bands'
+// share of each part, so SNR² goes as (w·S)²/(w·S + sky in the bands)
+// against S²/(S + RefNL) for the reference.
+func (fp filterPass) gain(objNL, objRef, glow, rayleigh, mie float64) float64 {
 	sky := fp.glow*glow + fp.rayleigh*rayleigh + fp.mie*mie
 
-	return min(1, math.Sqrt(fp.w*fp.w*objRef/(fp.w*objNL+sky)))
+	return math.Sqrt(fp.w * fp.w * objRef / (fp.w*objNL + sky))
 }
 
 // minMoonK floors moonK: near the Moon its halo and the gradients across the

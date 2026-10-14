@@ -183,6 +183,21 @@ func (c camera) perSub(obj, sky float64) float64 {
 	return sig * sig / (sig + sky*c.sub + c.readNoise*c.readNoise) / c.omega
 }
 
+// minuteSNR2 is one minute's per-sub SNR² per arcsec² over chans: the
+// object's light obj (nanoLamberts, absolute, dimmed by its extinction)
+// under a sky of glow, rayleigh and mie; scoring chooses a filter by it, so
+// it must stay Subs' own.
+func (c camera) minuteSNR2(chans []channel, obj, glow, rayleigh, mie float64) float64 {
+	var snr2 float64
+	for _, ch := range chans {
+		if ch.obj > 0 {
+			snr2 += ch.share * c.perSub(ch.obj*obj, ch.sky[0]*glow+ch.sky[1]*rayleigh+ch.sky[2]*mie)
+		}
+	}
+
+	return snr2
+}
+
 // Subs estimates the subs r needs tonight through r.Filter for each of
 // Levels: an optimally weighted stack adds the per-sub SNR², so the mean
 // over r's observable minutes (r.Obs; rescored when nil), each weighted by
@@ -252,13 +267,7 @@ func Subs(cfg *config.Config, s *Sky, r Result, planned time.Duration) Estimate 
 		// The weather loses the minute's subs in proportion, so it weighs
 		// that minute's SNR², not the night's mean: cloud during the best
 		// minutes costs more than the same cloud during the worst.
-		var snr float64
-		for _, ch := range chans {
-			if ch.obj > 0 {
-				snr += ch.share * c.perSub(ch.obj*obj, ch.sky[0]*glow+ch.sky[1]*rayleigh+ch.sky[2]*mie)
-			}
-		}
-		snr2 += s.Quality[i] * snr
+		snr2 += s.Quality[i] * c.minuteSNR2(chans, obj, glow, rayleigh, mie)
 		n++
 	}
 	// A night the weather loses entirely still has its observable time: the

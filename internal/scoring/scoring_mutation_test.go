@@ -759,7 +759,7 @@ func TestMutFilterAllNight(t *testing.T) {
 	fp := passes(cfg, tg, "ha")
 	ta := tally{weight: make([]float64, len(s.Grid))}
 	ta.reset(fp)
-	base, ok := scoreTarget(cfg, s, tg, []*tally{&ta}, cfg.Mosaics(), nil)
+	base, ok := scoreTarget(cfg, s, tg, []*tally{&ta}, cfg.Mosaics(), nil, nil, 0)
 	if _, counted := ta.result(cfg, s, base); !ok || !counted {
 		t.Fatal("not observable")
 	}
