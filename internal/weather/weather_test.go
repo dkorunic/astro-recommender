@@ -588,3 +588,27 @@ func TestPlausible(t *testing.T) {
 		}
 	}
 }
+
+// A numeric sentinel where Open-Meteo sends null (-9999) must never reach
+// scoring as weather: a sentinel temperature, dew point or wind drops the
+// hour like a null or a bad cloud cover, a sentinel gust falls back to the
+// mean wind.
+func TestWeatherSentinels(t *testing.T) {
+	p := func(v float64) *float64 { return &v }
+	zero := []*float64{p(0), p(0), p(0)}
+	h := hourly{
+		Time: []int64{72000, 75600, 79200},
+		Low:  zero, Mid: zero, High: zero,
+		Temp:     []*float64{p(-9999), p(10), p(10)},
+		DewPoint: []*float64{p(5), p(5), p(-9999)},
+		Wind:     []*float64{p(3), p(3), p(3)},
+		Gust:     []*float64{p(-9999), p(-9999), p(-9999)},
+	}
+	out, err := h.weather()
+	if err != nil || len(out) != 1 {
+		t.Fatalf("got %d hours (%v), want only the one with sane values", len(out), err)
+	}
+	if g := out[75600].Gust; g != 3 {
+		t.Errorf("sentinel gust: %v, want the mean wind, 3", g)
+	}
+}

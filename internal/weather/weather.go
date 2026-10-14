@@ -256,8 +256,10 @@ func at(s []*float64, i int) (float64, bool) {
 // weather turns the hourly block into HourWeather keyed by unix hour.
 func (h *hourly) weather() (map[int64]HourWeather, error) {
 	// Gust is not in series: a null gust does not drop the hour (see below).
-	// Precipitation is optional too: a missing or short series costs only
-	// the rain gate.
+	// Deliberately, the gust series must still cover every hour — it was
+	// requested, so a short or missing one is a malformed response
+	// (TestGustShift pins it); only precipitation is optional, a missing or
+	// short series costing the rain gate alone.
 	series := [][]*float64{h.Low, h.Mid, h.High, h.Temp, h.DewPoint, h.Wind}
 	if len(h.Gust) != len(h.Time) {
 		return nil, fmt.Errorf("%w: malformed response", errOpenMeteo)
@@ -268,6 +270,7 @@ func (h *hourly) weather() (map[int64]HourWeather, error) {
 		}
 	}
 	out := map[int64]HourWeather{}
+	gustOK := func(v *float64) bool { return v != nil && *v >= 0 && *v <= 1000 }
 next:
 	for i, t := range h.Time {
 		// Missing values come back as null; skip rather than read them as clear
@@ -281,22 +284,32 @@ next:
 		if min(low, mid, high) < 0 || max(low, mid, high) > 1 { // bad data, skipped like null
 			continue
 		}
+		// Open-Meteo sends null for missing values, so only a sentinel (-9999)
+		// or an overflow reaches here; skipped like a null and the bad clouds,
+		// never read as weather (-9999 °C would zero the hour's score through
+		// the dew-point spread). The bounds are plausible's, at the surface.
+		if tc, dp, wind := *h.Temp[i], *h.DewPoint[i], *h.Wind[i]; tc < -150 || tc > 60 ||
+			dp < -150 || dp > 60 || wind < 0 || wind > 1000 {
+			continue
+		}
 		// ponytail: layers treated as independent; thin cirrus blocks ~half the light.
 		cloud := 100 * (1 - (1-low)*(1-mid)*(1-high/2))
 		// Gusts are the maximum over the preceding hour, so the hour starting
 		// at t has its gust in the next entry; the last hour keeps its own,
-		// and with neither the mean wind is the floor gusts never go below.
+		// and with neither (or a sentinel) the mean wind is the floor gusts
+		// never go below.
 		gust := *h.Wind[i]
-		if i+1 < len(h.Time) && h.Time[i+1] == t+3600 && h.Gust[i+1] != nil {
+		if i+1 < len(h.Time) && h.Time[i+1] == t+3600 && gustOK(h.Gust[i+1]) {
 			gust = *h.Gust[i+1]
-		} else if h.Gust[i] != nil {
+		} else if gustOK(h.Gust[i]) {
 			gust = *h.Gust[i]
 		}
 		// Precipitation is the preceding hour's sum like the gusts, shifted the
 		// same way; without a next entry it stays unknown, since the hour's own
-		// value is the previous hour's rain, and a gate must not misfire.
+		// value is the previous hour's rain, and a gate must not misfire (nor
+		// on a sentinel: the world-record hour is ~305 mm).
 		precip := math.NaN()
-		if v, ok := at(h.Precip, i+1); ok && v >= 0 && i+1 < len(h.Time) && h.Time[i+1] == t+3600 {
+		if v, ok := at(h.Precip, i+1); ok && v >= 0 && v <= 1000 && i+1 < len(h.Time) && h.Time[i+1] == t+3600 {
 			precip = v
 		}
 		out[t] = HourWeather{
