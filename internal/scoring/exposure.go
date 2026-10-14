@@ -73,37 +73,51 @@ func newCamera(cfg *config.Config) (camera, bool) {
 	}, true
 }
 
-// gain returns e⁻/s per pixel per nanoLambert through the -filter choice
-// name ("" none). Unfiltered and broadband, the sky model's V-band shares
-// are spread over the camera band, flat per nm, at the band's mean response;
-// a line filter's are already the bands' own, at each line's response and
-// Bayer share, weighted by the object's light in it (lines, Target.Lines):
-// 0 when it passes none.
-func (c camera) gain(name string, lines [4]float64) float64 {
+// allLines are the lines an unfiltered or broadband camera collects.
+var allLines = []catalog.Line{catalog.Ha, catalog.OIII, catalog.SII, catalog.Hb}
+
+// gains returns e⁻/s per pixel per nanoLambert of the object and of the sky
+// through the -filter choice name ("" none). The sky, and an object without
+// emission lines (lines zero, Target.Lines), are continuum: unfiltered and
+// broadband the sky model's V-band shares spread over the camera band, flat
+// per nm, at the band's mean response. A line filter's shares are already
+// its bands' own, and an emission-line object's light is its lines wherever
+// the band passes them, collected once: each line at its response and Bayer
+// share, weighted by the object's light in it. The object's gain is 0 when a
+// line filter passes none of its lines.
+func (c camera) gains(name string, lines [4]float64) (obj, sky float64) {
 	g := c.area * c.qe * c.omega * photonsV0 / atmos.NanoLamberts(0)
-	bands := config.Filters[name]
-	if bands == nil {
-		qe := broadQEColour
-		if c.mono {
-			qe = broadQEMono
+	line := func(ls []catalog.Line) float64 {
+		var resp, w float64
+		for _, l := range ls {
+			b := bayer[l]
+			if c.mono {
+				b = 1
+			}
+			resp += lines[l] * lineQE[l] * b
+			w += lines[l]
+		}
+		if w == 0 {
+			return 0
 		}
 
-		return g * qe * (atmos.CameraHi - atmos.CameraLo) / atmos.VWidth
+		return g * resp / w
 	}
-	var w, sum float64
-	for _, l := range bands {
-		b := bayer[l]
-		if c.mono {
-			b = 1
-		}
-		sum += lines[l] * lineQE[l] * b
-		w += lines[l]
+	if bands := config.Filters[name]; bands != nil {
+		r := line(bands)
+
+		return r, r
 	}
-	if w == 0 {
-		return 0
+	qe := broadQEColour
+	if c.mono {
+		qe = broadQEMono
+	}
+	sky = g * qe * (atmos.CameraHi - atmos.CameraLo) / atmos.VWidth
+	if obj = line(allLines); obj == 0 {
+		obj = sky
 	}
 
-	return g * sum / w
+	return obj, sky
 }
 
 // perSub is one sub's SNR² per arcsec² for object and sky rates in e⁻/s
@@ -138,8 +152,8 @@ func Subs(cfg *config.Config, s *Sky, r Result, planned time.Duration) Estimate 
 		obs = rs[0].Obs
 	}
 	fp := passes(cfg, r.Target, r.Filter)
-	gain := c.gain(r.Filter, r.Lines())
-	if gain == 0 {
+	objGain, skyGain := c.gains(r.Filter, r.Lines())
+	if objGain == 0 {
 		return Estimate{}
 	}
 	objNL := atmos.NanoLamberts(sb)
@@ -171,7 +185,7 @@ func Subs(cfg *config.Config, s *Sky, r Result, planned time.Duration) Estimate 
 			sky = atmos.SkyBrightnessLit(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i]) + extra*ext
 			obj = objNL * ext
 		}
-		snr2 += c.perSub(gain*obj, gain*sky)
+		snr2 += c.perSub(objGain*obj, skyGain*sky)
 		quality += s.Quality[i]
 		n++
 	}

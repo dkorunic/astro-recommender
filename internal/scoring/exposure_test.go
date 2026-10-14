@@ -50,13 +50,14 @@ func expGalaxy(sb float64) catalog.Target {
 // The photon zero point, area, QE, pixel and band pinned: e⁻/s per pixel
 // per nanoLambert for the Origin, unfiltered, colour.
 func TestCameraGain(t *testing.T) {
+	gain := func(c camera, name string, lines [4]float64) float64 { obj, _ := c.gains(name, lines); return obj }
 	c, ok := newCamera(expCfg())
 	if !ok {
 		t.Fatal("no camera")
 	}
 	area := math.Pi / 4 * (15.2*15.2 - 6.3*6.3)
 	want := area * 0.83 * 1.2314 * 1.2314 * 1005 * 880 / atmos.NanoLamberts(0) * 0.34 * 300 / 88
-	if got := c.gain("", [4]float64{}); math.Abs(got/want-1) > 1e-9 {
+	if got := gain(c, "", [4]float64{}); math.Abs(got/want-1) > 1e-9 {
 		t.Errorf("gain %v, want %v", got, want)
 	}
 	// A colour sensor's Hα is its red quarter; mono sees it with every pixel.
@@ -64,15 +65,15 @@ func TestCameraGain(t *testing.T) {
 	cfg := expCfg()
 	cfg.Mono = true
 	mono, _ := newCamera(cfg)
-	if r := c.gain("ha", lines) / mono.gain("ha", lines); math.Abs(r-0.25) > 1e-12 {
+	if r := gain(c, "ha", lines) / gain(mono, "ha", lines); math.Abs(r-0.25) > 1e-12 {
 		t.Errorf("colour/mono Hα %v, want 0.25", r)
 	}
 	// [O III] on green: half the pixels.
 	lines = [4]float64{catalog.OIII: 1}
-	if r := c.gain("oiii", lines) / mono.gain("oiii", lines); math.Abs(r-0.5) > 1e-12 {
+	if r := gain(c, "oiii", lines) / gain(mono, "oiii", lines); math.Abs(r-0.5) > 1e-12 {
 		t.Errorf("colour/mono [O III] %v, want 0.5", r)
 	}
-	if c.gain("ha", [4]float64{}) != 0 {
+	if gain(c, "ha", [4]float64{}) != 0 {
 		t.Error("a line filter passes nothing of an object without lines")
 	}
 }
@@ -243,5 +244,42 @@ func TestSubsNoCamera(t *testing.T) {
 	r.Obs = nil
 	if e := Subs(cfg, s, r, 0); e.Good == 0 {
 		t.Errorf("rescored: %+v", e)
+	}
+}
+
+// An emission nebula's light is its lines, which the camera band collects
+// once, not a continuum spread over it as the sky is: unfiltered its gain is
+// the lines' response, and through a dual-band filter under the Moon the
+// Origin needs fewer subs than without, as scoring's FILTER choice says.
+func TestSubsEmissionLines(t *testing.T) {
+	c, _ := newCamera(expCfg())
+	lines := catalog.Target{Type: "HII region"}.Lines()
+	obj, sky := c.gains("", lines)
+	var resp, sum float64
+	for l, w := range lines {
+		resp += w * lineQE[l] * bayer[l]
+		sum += w
+	}
+	g := c.area * c.qe * c.omega * photonsV0 / atmos.NanoLamberts(0)
+	if math.Abs(obj/(g*resp/sum)-1) > 1e-12 || math.Abs(sky/(g*broadQEColour*300/88)-1) > 1e-12 {
+		t.Errorf("unfiltered emission gains %v %v", obj, sky)
+	}
+	if obj, sky := c.gains("", [4]float64{}); obj != sky {
+		t.Errorf("a continuum object shares the sky's gain: %v %v", obj, sky)
+	}
+	s := mutSky(141)
+	for i := range s.Grid {
+		moonlit(s, i)
+	}
+	s.MoonSep = 0
+	neb := catalog.Target{Name: "N", Type: "HII region", RADeg: 90.5, Size: 20, SurfBr: 22}
+	plain, dual := expCfg(), expCfg()
+	dual.Filter = "dual"
+	r := expResult(t, dual, s, neb)
+	if r.Filter != "dual" {
+		t.Fatalf("dual did not help: %+v", r)
+	}
+	if f, n := Subs(dual, s, r, 0).Good, Subs(plain, s, expResult(t, plain, s, neb), 0).Good; f >= n {
+		t.Errorf("dual %d, unfiltered %d", f, n)
 	}
 }
