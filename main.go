@@ -141,6 +141,7 @@ func main() {
 		return
 	}
 	output.UseColor = output.ColorTerminal()
+	output.TermWidth = output.TerminalWidth()
 	output.Header(&cfg, &s, place)
 	output.Weather(&cfg, &s)
 	if cfg.Plan > 0 {

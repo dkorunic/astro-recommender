@@ -7,6 +7,7 @@ require (
 	github.com/hebl/gofa v1.19.1
 	github.com/ringsaturn/tzf/v2 v2.1.3
 	go.yaml.in/yaml/v4 v4.0.0-rc.6
+	golang.org/x/term v0.47.0
 )
 
 require (

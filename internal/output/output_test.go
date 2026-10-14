@@ -104,10 +104,10 @@ func TestShortDesc(t *testing.T) {
 		"NGC 457, ET Cluster, Owl Cluster, Dragonfly Cluster, E.T. Cluster":     "NGC 457, ET Cluster, Owl Cluster…",
 		"NGC 869, NGC 884, Double Cluster, h & χ Persei":                        "NGC 869, NGC 884, Double Cluster…",
 		"NGC 869, NGC 884, h & χ Persei":                                        "NGC 869, NGC 884, h & χ Persei",
-		strings.Repeat("χ", 50):                                                 strings.Repeat("χ", 40) + "…",
+		strings.Repeat("χ", 50):                                                 strings.Repeat("χ", 39) + "…",
 	}
 	for in, want := range tests {
-		if got := shortDesc(in); got != want {
+		if got := shortDesc(in, descWidth); got != want {
 			t.Errorf("shortDesc(%q) = %q, want %q", in, got, want)
 		}
 	}

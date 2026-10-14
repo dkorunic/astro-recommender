@@ -30,6 +30,7 @@ import (
 	"github.com/dkorunic/astro-recommender/internal/scoring"
 	"github.com/dkorunic/astro-recommender/internal/weather"
 	"github.com/fatih/color"
+	"golang.org/x/term"
 )
 
 // Header prints the site, window, Moon and sky; place is the reverse
@@ -201,9 +202,9 @@ func Plan(cfg *config.Config, s *scoring.Sky, slots []plan.Slot) {
 			continue
 		}
 		cells := []string{
-			when, paint("36", p.Result.Name), paint("39", shortDesc(p.Result.Description)), paint(typeColor(p.Result.Target), p.Result.Type),
+			when, paint("36", p.Result.Name), paint("39", shortDesc(p.Result.Description, descWidth)), paint(typeColor(p.Result.Target), p.Result.Type),
 			paint(scale(p.Score, 0.66, 0.33), fmt.Sprintf("%.2f", p.Score)),
-			paint("39", fmt.Sprintf("%.0f° @ %s", p.PeakAlt, clock(s, p.PeakAt))),
+			paint("39", altText(s, p.PeakAlt, p.PeakAt)),
 		}
 		if cfg.Filter != "" {
 			cells = append(cells, paint("39", filterText(*p.Result)))
@@ -215,14 +216,32 @@ func Plan(cfg *config.Config, s *scoring.Sky, slots []plan.Slot) {
 }
 
 // Results prints the target table and returns its width in columns (0 when
-// empty), which the legend wraps to.
+// empty), which the legend wraps to: at most TermWidth when that is set. On a
+// terminal narrower than the table the descriptions give way first, down to
+// minDesc runes.
 func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) int {
 	if len(results) == 0 {
 		fmt.Println("No objects within constraints.")
 
 		return 0
 	}
+	table, width, widest := resultsTable(cfg, s, results, descWidth)
+	if over := width - TermWidth; TermWidth > 0 && over > 0 && widest > minDesc {
+		table, width, _ = resultsTable(cfg, s, results, max(minDesc, widest-over))
+	}
+	fmt.Print(table)
+	if TermWidth > 0 {
+		width = min(width, TermWidth)
+	}
+
+	return width
+}
+
+// resultsTable renders the target table with descriptions cut to desc runes,
+// and returns it, its width in columns and the widest description in it.
+func resultsTable(cfg *config.Config, s *scoring.Sky, results []scoring.Result, desc int) (string, int, int) {
 	var buf bytes.Buffer
+	width, widest := 0, 0
 	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', 0)
 	row(w, "01", names(columns(cfg, resultColumns))...)
 	for i, r := range results[:min(cfg.Top, len(results))] {
@@ -239,13 +258,15 @@ func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) int {
 			size = fmt.Sprintf("%.0fx%.0f'", major, minor)
 		}
 		ra, dec := position(r.Position())
+		d := shortDesc(r.Description, desc)
+		widest = max(widest, utf8.RuneCountInString(d))
 		cells := []string{
-			paint("39", strconv.Itoa(i+1)), paint("36", r.Name), paint("39", shortDesc(r.Description)), paint(typeColor(r.Target), r.Type),
+			paint("39", strconv.Itoa(i+1)), paint("36", r.Name), paint("39", d), paint(typeColor(r.Target), r.Type),
 			paint("39", constellation.Abbr(r.Constellation)), paint("39", ra), paint("39", dec), paint("39", size),
 			paint(scale(r.Foto, 0.66, 0.33), fmt.Sprintf("%.2f", r.Foto)),
 			paint(scale(r.Score, 0.66, 0.33), fmt.Sprintf("%.2f", r.Score)),
 			paint("39", runText(s, r)),
-			paint("39", fmt.Sprintf("%.0f° @ %s", r.MaxAlt, clock(s, r.MaxAt))),
+			paint("39", altText(s, r.MaxAlt, r.MaxAt)),
 			paint(scale(r.SkyMag, 20.5, 19), fmt.Sprintf("%.1f", r.SkyMag)),
 			paint("39", magText(r.Target)),
 			paint("39", sbText(r)),
@@ -260,19 +281,36 @@ func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) int {
 		row(w, "", cells...)
 	}
 	w.Flush()
-	width := 0
 	for line := range strings.Lines(buf.String()) {
 		width = max(width, utf8.RuneCountInString(strings.TrimRight(sgr.ReplaceAllString(line, ""), " \n")))
 	}
-	fmt.Print(buf.String())
 
-	return width
+	return buf.String(), width, widest
+}
+
+// altText is the MAX ALT and PEAK cell: the altitude and when it is reached.
+func altText(s *scoring.Sky, alt float64, at time.Time) string {
+	return fmt.Sprintf("%.0f° %s", alt, clock(s, at))
 }
 
 // sgr matches the escapes paint writes.
 var sgr = regexp.MustCompile("\x1b\\[[0-9]*m")
 
 var UseColor bool
+
+// TermWidth is the terminal's width in columns, which the target table fits
+// when it can; 0 (not a terminal) leaves the table as wide as it is.
+var TermWidth int
+
+// TerminalWidth returns stdout's width in columns, 0 when it is not a
+// terminal (a pipe, a file, the browser build).
+func TerminalWidth() int {
+	if w, _, err := term.GetSize(int(os.Stdout.Fd())); err == nil {
+		return w
+	}
+
+	return 0
+}
 
 // runText is the OBSERVABLE column: the longest continuous observable
 // stretch, with a + when there are others.
@@ -311,16 +349,17 @@ func moonText(s *scoring.Sky) string {
 // descWidth caps the DESCRIPTION cell: tabwriter makes the column as wide as
 // the longest description shown, and Caldwell's alias lists run past 100
 // characters, 192-column rows. 40 holds every GaryImm description (37), so
-// the default list prints unchanged; -json keeps the full text.
-const descWidth = 40
+// the default list prints unchanged; -json keeps the full text. minDesc is
+// how far a narrow terminal may cut it, past which a common name is lost.
+const descWidth, minDesc = 40, 15
 
-// shortDesc truncates a description to descWidth runes with an ellipsis, at
-// the last comma-separated name that fits when there is one.
-func shortDesc(s string) string {
-	if utf8.RuneCountInString(s) <= descWidth {
+// shortDesc truncates a description to width runes, the ellipsis included,
+// at the last comma-separated name that fits when there is one.
+func shortDesc(s string, width int) string {
+	if utf8.RuneCountInString(s) <= width {
 		return s
 	}
-	prefix := string([]rune(s)[:descWidth])
+	prefix := string([]rune(s)[:width-1])
 	if cut := strings.LastIndex(prefix, ", "); cut > 0 {
 		prefix = prefix[:cut]
 	}

@@ -142,16 +142,17 @@ HOUR   CLOUD  LOW/MID/HIGH  TRANSP  EXT   SEEING   DEW SPREAD  WIND/GUST
 04:00  100%   0/100/1%      2/8     0.24  1-1.25"  5.1°C       3/6 km/h
 05:00  82%    0/82/0%       2/8     0.24  1-1.25"  4.1°C       2/5 km/h
 
-#  NAME      DESCRIPTION                  TYPE             CON  RA       DEC     SIZE  FOTO  SCORE  OBSERVABLE   MAX ALT      SKY   MAG  SB     FILTER  PX
-1  NGC 7380  Wizard Nebula                Emission Nebula  Cep  22 47.4  +58 08  25'   0.98  0.43   19:53-05:24  78° @ 22:15  18.6  7.2  ~22.8  dual    1218
-2  NGC 281   PacMan Nebula                Emission Nebula  Cas  00 52.9  +56 37  35'   1.00  0.38   19:53-05:33  79° @ 00:21  18.7  -    -      dual    1705
-3  IC 63     Gamma Cassiopeia Nebula      Emission Nebula  Cas  00 59.5  +60 55  20'   1.00  0.38   19:53-05:33  75° @ 00:27  18.7  -    -      dual    974
-4  Sh2-173   Phantom of the Opera Nebula  Emission Nebula  Cas  00 21.3  +61 44  25'   1.00  0.38   19:53-05:33  74° @ 23:49  18.7  -    -      dual    1218
-5  NGC 7635  Bubble Nebula                Emission Nebula  Cas  23 20.8  +61 13  15'   1.00  0.38   19:53-05:33  74° @ 22:48  18.6  -    -      dual    731
+#  NAME      DESCRIPTION                  TYPE             CON  RA       DEC     SIZE  FOTO  SCORE  OBSERVABLE   MAX ALT    SKY   MAG  SB     FILTER  PX
+1  NGC 7380  Wizard Nebula                Emission Nebula  Cep  22 47.4  +58 08  25'   0.98  0.43   19:53-05:24  78° 22:15  18.6  7.2  ~22.8  dual    1218
+2  NGC 281   PacMan Nebula                Emission Nebula  Cas  00 52.9  +56 37  35'   1.00  0.38   19:53-05:33  79° 00:21  18.7  -    -      dual    1705
+3  IC 63     Gamma Cassiopeia Nebula      Emission Nebula  Cas  00 59.5  +60 55  20'   1.00  0.38   19:53-05:33  75° 00:27  18.7  -    -      dual    974
+4  Sh2-173   Phantom of the Opera Nebula  Emission Nebula  Cas  00 21.3  +61 44  25'   1.00  0.38   19:53-05:33  74° 23:49  18.7  -    -      dual    1218
+5  NGC 7635  Bubble Nebula                Emission Nebula  Cas  23 20.8  +61 13  15'   1.00  0.38   19:53-05:33  74° 22:48  18.6  -    -      dual    731
 ```
 
 The output ends with a legend explaining every column of the tables shown and the colours. In short:
 
+- **DESCRIPTION**: the common names, cut at 40 characters, and on a terminal narrower than the table further (down to 15) until the table fits; a pipe or file gets the 40, and `-json` the full text.
 - **RA**, **DEC**: the J2000 position as `hh mm.m` and `±dd mm`; comets show where they are mid-window.
 - **FOTO**: the fraction of the window during which the object meets the altitude, horizon and Moon-distance limits (uptonight's metric).
 - **SCORE**: imaging quality from 0 to 1, where 1 means a perfect minute for the whole window under a pristine dark sky. It accounts for weather, extinction, sky brightness and, with framing, how well the object fits the frame. This column decides the order.
@@ -529,11 +530,11 @@ Comets are added to whichever list you use, and ranked with the same scoring:
 
 ```
 TIME         NAME     DESCRIPTION          TYPE               SCORE  PEAK ALT
-20:08-22:08  IC 1396  Elephant's Trunk     Dark Nebula        0.67   78° @ 21:37
-22:08-00:08  Sh2-132  Lion Nebula          Wolf-Rayet Nebula  0.92   80° @ 22:17
-00:08-02:08  NGC 281  PacMan Nebula        Emission Nebula    0.66   79° @ 00:50
-02:08-04:08  IC 1795  Fishhead Nebula      Emission Nebula    0.44   74° @ 02:23
-04:08-05:22  IC 405   Flaming Star Nebula  Emission Nebula    0.71   79° @ 05:13
+20:08-22:08  IC 1396  Elephant's Trunk     Dark Nebula        0.67   78° 21:37
+22:08-00:08  Sh2-132  Lion Nebula          Wolf-Rayet Nebula  0.92   80° 22:17
+00:08-02:08  NGC 281  PacMan Nebula        Emission Nebula    0.66   79° 00:50
+02:08-04:08  IC 1795  Fishhead Nebula      Emission Nebula    0.44   74° 02:23
+04:08-05:22  IC 405   Flaming Star Nebula  Emission Nebula    0.71   79° 05:13
 ```
 
 First, each block in time order gets the unused target with the best score within that block, with mean altitude breaking ties. Then a local search, modelled on [astrogo](https://github.com/TuSKan/astrogo)'s `SwapOptimizedStrategy`, swaps targets between blocks, moves a target into an empty block or brings in an unused one, whenever that raises the total score. The result is a good plan for one night, though not guaranteed to be the best possible. Combine it with `-from`/`-to` to plan just part of the night.

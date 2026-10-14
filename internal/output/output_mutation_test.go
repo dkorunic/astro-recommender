@@ -407,7 +407,7 @@ func TestMutPlanTable(t *testing.T) {
 	}
 	mutColor(t, false)
 	out := mutCapture(t, func() { Plan(cfg, s, slots) })
-	if !strings.Contains(out, "20:00-21:00") || !strings.Contains(out, "0.70") || !strings.Contains(out, "66° @ 20:59") || !strings.Contains(out, "no target") {
+	if !strings.Contains(out, "20:00-21:00") || !strings.Contains(out, "0.70") || !strings.Contains(out, "66° 20:59") || !strings.Contains(out, "no target") {
 		t.Errorf("plan:\n%s", out)
 	}
 	mutColor(t, true)
@@ -617,5 +617,35 @@ func TestMutSubsText(t *testing.T) {
 		if code, text := subsText(c.e); code != c.code || text != c.text {
 			t.Errorf("%+v: %q %q, want %q %q", c.e, code, text, c.code, c.text)
 		}
+	}
+}
+
+// A terminal narrower than the table cuts the descriptions, and only them,
+// by the overflow, never below minDesc; a wide one or none changes nothing.
+func TestMutResultsFit(t *testing.T) {
+	cfg, s := mutSky(t)
+	res := mutResults(s)
+	res[0].Description = strings.Repeat("x", 50) // no comma, so cut exactly
+	mutColor(t, false)
+	t.Cleanup(func() { TermWidth = 0 })
+	var full int
+	wide := mutCapture(t, func() { full = Results(cfg, s, res) })
+	if !strings.Contains(wide, strings.Repeat("x", descWidth-1)+"…") {
+		t.Fatalf("not cut to descWidth:\n%s", wide)
+	}
+	TermWidth = full + 5
+	if got := mutCapture(t, func() { Results(cfg, s, res) }); got != wide {
+		t.Errorf("a wide terminal changed the table:\n%s", got)
+	}
+	TermWidth = full - 10
+	var w int
+	got := mutCapture(t, func() { w = Results(cfg, s, res) })
+	if w != TermWidth || !strings.Contains(got, " "+strings.Repeat("x", descWidth-11)+"… ") {
+		t.Errorf("width %d on a %d-column terminal (table %d):\n%s", w, TermWidth, full, got)
+	}
+	TermWidth = 20
+	got = mutCapture(t, func() { w = Results(cfg, s, res) })
+	if w != 20 || !strings.Contains(got, " "+strings.Repeat("x", minDesc-1)+"… ") {
+		t.Errorf("floor: width %d, want the legend's 20, descriptions at %d:\n%s", w, minDesc, got)
 	}
 }
