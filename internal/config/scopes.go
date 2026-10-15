@@ -129,18 +129,12 @@ func (s Scope) fov() (float64, float64) {
 // scale returns the scope's pixel scale in arc seconds per pixel.
 func (s Scope) scale() float64 { return pixelScale(s.Pixel, s.Focal) }
 
-// variant returns the scope's camera's colour version, or with mono its chip's
-// mono version where one is made (else the colour one's QE and read noise
-// stand for a mono camera behind the same optics, the scope's ReadNoise
-// included, as it is its own colour camera's); nil without a preset or with
-// NoSubs.
-func (s Scope) variant(mono bool) *Variant {
+// variant returns the scope's camera's colour version, its ReadNoise over
+// the preset's; nil without a preset or with NoSubs.
+func (s Scope) variant() *Variant {
 	c, ok := Cameras[s.Camera]
-	switch {
-	case !ok || s.NoSubs:
+	if !ok || s.NoSubs {
 		return nil
-	case mono && c.Mono != nil:
-		return c.Mono
 	}
 
 	return &Variant{Response: c.Colour.Response, Gain: c.Colour.Gain, QE: c.Colour.QE, ReadNoise: cmp.Or(s.ReadNoise, c.Colour.ReadNoise)}
@@ -149,7 +143,8 @@ func (s Scope) variant(mono bool) *Variant {
 // applyScope resolves -scope (or -origin, the same as -scope origin) and
 // returns the scope whose values unset frame and camera flags take: it, or
 // the Origin without one. A scope's camera is fixed: -camera is an error
-// with it (-mono asks what a mono camera would do behind its optics).
+// with it, and so is -mono: a smart telescope's camera is colour, and a mono
+// camera is another telescope's (-camera, -fov, -scale or -focal).
 func (cfg *Config) applyScope(set map[string]bool, origin bool, name string) (Scope, error) {
 	key := strings.ToLower(strings.TrimSpace(name))
 	if origin {
@@ -167,6 +162,8 @@ func (cfg *Config) applyScope(set map[string]bool, origin bool, name string) (Sc
 		return Scope{}, fmt.Errorf("%w: -scope must be one of %s", errInvalidFlag, strings.Join(ScopeNames(), ", "))
 	case set["camera"]:
 		return Scope{}, fmt.Errorf("%w: -scope fixes its camera; -camera is for another telescope, with -focal", errInvalidFlag)
+	case cfg.Mono:
+		return Scope{}, fmt.Errorf("%w: %s's camera is colour; -mono is for another telescope's camera (-camera, -fov, -scale or -focal)", errInvalidFlag, s.Name)
 	}
 	cfg.Scope, cfg.Camera = key, s.Camera
 

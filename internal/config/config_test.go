@@ -364,7 +364,7 @@ func TestCamera(t *testing.T) {
 			}
 		}
 	}
-	if cfg, err := parse(t, "-origin", "-mono"); err != nil || !cfg.Mono {
+	if cfg, err := parse(t, "-fov", "2x1", "-mono"); err != nil || !cfg.Mono {
 		t.Errorf("-mono: %v %v", cfg.Mono, err)
 	}
 }

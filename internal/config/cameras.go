@@ -351,10 +351,6 @@ func (cfg *Config) CameraLabel() string {
 	if _, ok := Cameras[cfg.Camera]; !ok {
 		return ""
 	}
-	if cfg.Mono && Cameras[cfg.Camera].Mono == nil {
-		// A scope's chip made in colour only (-camera refuses it).
-		return strings.ToUpper(cfg.Camera) + " colour, as mono"
-	}
 	if cfg.Mono {
 		return strings.ToUpper(cfg.Camera) + " mono"
 	}

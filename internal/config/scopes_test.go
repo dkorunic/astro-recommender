@@ -6,6 +6,7 @@ package config
 import (
 	"cmp"
 	"math"
+	"strings"
 	"testing"
 )
 
@@ -119,20 +120,19 @@ func TestScopeNoCameraModel(t *testing.T) {
 	}
 }
 
-// -mono behind a scope takes its chip's mono version where one is made, the
-// scope's own read noise being its colour camera's; a chip made in colour
-// only keeps the colour QE and read noise, labelled as such.
+// A smart telescope's camera is colour: -mono with -scope or -origin is an
+// error, and a mono camera is another telescope's, -camera's or -fov's.
 func TestScopeMono(t *testing.T) {
-	cfg, err := mutParse(t, mutBase("-scope", "seestar-s50", "-mono")...)
+	for _, args := range [][]string{{"-scope", "seestar-s50", "-mono"}, {"-origin", "-mono"}, {"-scope", "origin", "-mono"}} {
+		if _, err := mutParse(t, mutBase(args...)...); err == nil || !strings.Contains(err.Error(), "camera is colour") {
+			t.Errorf("%v: %v", args, err)
+		}
+	}
 	m := Cameras["imx462"].Mono
-	if err != nil || cfg.QE != m.QE || cfg.ReadNoise != m.ReadNoise || cfg.CameraLabel() != "IMX462 mono" {
-		t.Errorf("seestar-s50 -mono: QE %v RN %v %q (%v), want %+v", cfg.QE, cfg.ReadNoise, cfg.CameraLabel(), err, m)
+	if cfg, err := mutParse(t, mutBase("-camera", "imx462", "-mono", "-focal", "250", "-aperture", "50")...); err != nil || cfg.QE != m.QE || cfg.CameraLabel() != "IMX462 mono" {
+		t.Errorf("-camera imx462 -mono: QE %v %q (%v)", cfg.QE, cfg.CameraLabel(), err)
 	}
-	cfg, err = mutParse(t, mutBase("-scope", "origin", "-mono")...)
-	if err != nil || cfg.QE != Cameras["imx678"].Colour.QE || cfg.ReadNoise != Scopes["origin"].ReadNoise || cfg.CameraLabel() != "IMX678 colour, as mono" {
-		t.Errorf("origin -mono: QE %v RN %v %q (%v)", cfg.QE, cfg.ReadNoise, cfg.CameraLabel(), err)
-	}
-	if cfg, _ := mutParse(t, mutBase("-scope", "seestar-s50")...); cfg.QE != Cameras["imx462"].Colour.QE || cfg.CameraLabel() != "IMX462 colour" {
-		t.Errorf("seestar-s50: QE %v %q", cfg.QE, cfg.CameraLabel())
+	if cfg, err := mutParse(t, mutBase("-fov", "2x1", "-mono")...); err != nil || !cfg.Mono {
+		t.Errorf("-fov -mono: %v", err)
 	}
 }
