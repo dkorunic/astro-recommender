@@ -305,12 +305,14 @@ func TestScoreRuns(t *testing.T) {
 // share of its light in the bands against the bands' share of each part of
 // the camera band's sky; no filter wins unless one beats it. Under the
 // first-quarter Moon of 26 January 2026 from a Bortle 6 site, a sky-limited
-// target in Ursa Major: an H II region gains most from Hα (and less from
-// dual-band, whose [O III] half lets in three times the moonlight per nm for
-// a fifth of its light), a little from [O III], nothing from [S II]; a
-// planetary most from [O III], a little from Hα (a quarter of its light in a
-// 7 nm band, against 300 nm of sky); a remnant from [S II], its defining
-// line, and most from quad-band; a galaxy or a cluster is never filtered.
+// target in Ursa Major: an H II region gains most from Hα, whose 7 nm band
+// also passes [N II] (and less from dual-band, whose [O III] half lets in
+// three times the moonlight per nm for a tenth of its light), nothing from
+// [O III] or [S II]; a planetary most from dual-band, its [N II] as bright as
+// Hα putting two-fifths of its light in the Hα band beside the half in
+// [O III]'s, then [O III], then Hα; a remnant most from Hα with its [N II],
+// then quad-band, a little from [S II]; a galaxy or a cluster is never
+// filtered.
 func TestScoreFilter(t *testing.T) {
 	cfg := &config.Config{Lat: 45.8, Lon: 16, AltMin: 30, AltMax: 80, SizeMax: 300, NoWeather: true, ExtinctionSet: true, Extinction: 0.2, Bortle: 6, FilterNM: 7}
 	start, end, _ := astro.Window(time.Date(2026, 1, 26, 12, 0, 0, 0, time.UTC), cfg.Lat, cfg.Lon, astro.Astronomical)
@@ -332,9 +334,9 @@ func TestScoreFilter(t *testing.T) {
 		// Broadband filters fall between the line filters and none on
 		// nebulae, the narrower first; continuum (a galaxy, a cluster) loses
 		// as much light as sky through them, so they never help it.
-		{"HII Region", []string{"ha", "dual", "cls", "lpro", "oiii", ""}, map[string]bool{"sii": true}},
-		{"Planetary Nebula", []string{"oiii", "dual", "cls", "lpro", ""}, map[string]bool{"sii": true}},
-		{"Supernova Remnant", []string{"quad", "ha", "sii", "oiii", ""}, nil},
+		{"HII Region", []string{"ha", "dual", "cls", "lpro", ""}, map[string]bool{"oiii": true, "sii": true}},
+		{"Planetary Nebula", []string{"dual", "oiii", "ha", "cls", "lpro", ""}, map[string]bool{"sii": true}},
+		{"Supernova Remnant", []string{"ha", "quad", "tri", "cls", "sii", "lpro", ""}, map[string]bool{"oiii": true}},
 		{"Spiral Galaxy", []string{""}, map[string]bool{"ha": true, "oiii": true, "sii": true, "dual": true, "tri": true, "quad": true, "cls": true, "lpro": true}},
 		{"Globular Cluster", []string{""}, map[string]bool{"cls": true, "lpro": true}},
 	} {
@@ -368,11 +370,11 @@ func TestScoreFilter(t *testing.T) {
 	}
 	// The Moon limit: through a 7 nm Hα or dual-band filter an H II region
 	// would beat the Moon to within a few degrees, which its halo does not
-	// allow, so both hold at the floor; [O III], a fifth of its light in
-	// the band the Moon scatters most into, hardly beats it.
+	// allow, so both hold at the floor; [O III], a tenth of its light in
+	// the band the Moon scatters most into, does not beat it.
 	hii := catalog.Target{Type: "HII Region"}
 	ha, dual, o3 := passes(cfg, hii, "ha").moonK(), passes(cfg, hii, "dual").moonK(), passes(cfg, hii, "oiii").moonK()
-	if !(ha == minMoonK && dual == minMoonK && o3 > 0.8 && o3 < 1) {
+	if !(ha == minMoonK && dual == minMoonK && o3 == 1) {
 		t.Errorf("moonK H II: ha %v, dual %v, oiii %v", ha, dual, o3)
 	}
 
@@ -420,10 +422,10 @@ func TestScoreFilter(t *testing.T) {
 // The filter is chosen by how much it gains, not by the capped weight: under
 // a pristine dark sky every helpful line filter's weight saturates at 1, and
 // the cap would leave the band's extinction to choose, Hα's, the lowest,
-// for a planetary too, whose light is two-thirds [O III]. Sky-limited (no
-// surface brightness), [O III] gains it most.
+// for a planetary too, whose light is half [O III]. Sky-limited (no surface
+// brightness), [O III] gains it more.
 func TestScoreFilterUncapped(t *testing.T) {
-	cfg := &config.Config{Lat: 45.8, Lon: 16, AltMin: 30, AltMax: 80, SizeMax: 300, NoWeather: true, ExtinctionSet: true, Extinction: 0.2, FilterNM: 7, Filter: "ha,oiii,dual"}
+	cfg := &config.Config{Lat: 45.8, Lon: 16, AltMin: 30, AltMax: 80, SizeMax: 300, NoWeather: true, ExtinctionSet: true, Extinction: 0.2, FilterNM: 7, Filter: "ha,oiii"}
 	start, end, _ := astro.Window(time.Date(2026, 10, 11, 12, 0, 0, 0, time.UTC), cfg.Lat, cfg.Lon, astro.Astronomical)
 	s := BuildSky(cfg, NoForecast(), start, end)
 	for typ, want := range map[string]string{"Planetary Nebula": "oiii", "HII Region": "ha"} {
@@ -443,8 +445,9 @@ func TestScoreFilterUncapped(t *testing.T) {
 // With a camera (framing) the filter is chosen by the sub-exposure model,
 // read noise included, so FILTER is the choice that stacks the most SNR
 // tonight and SUBS agrees with it: on the Origin's 15 s colour subs under a
-// pristine sky a 7 nm Hα band is read-noise limited, and cls, collecting every
-// line over 120 nm, needs fewer.
+// pristine sky a 7 nm Hα band is read-noise limited, and dual-band (its
+// [O III] on the green pixels) or cls, collecting every line over 120 nm,
+// needs fewer: ~390 subs each against Hα's ~410.
 func TestScoreFilterCamera(t *testing.T) {
 	cfg := &config.Config{Lat: 45.8, Lon: 16, AltMin: 30, AltMax: 80, SizeMax: 300, NoWeather: true, ExtinctionSet: true, Extinction: 0.2, FilterNM: 7, Filter: "ha,dual,cls"}
 	cfg.Framing, cfg.Scale, cfg.FOVLong, cfg.FOVShort = true, 1.2314, 79.2, 45
@@ -466,7 +469,7 @@ func TestScoreFilterCamera(t *testing.T) {
 			fewest, best = f, e.Good
 		}
 	}
-	if r[0].Filter != fewest || fewest != "cls" {
+	if r[0].Filter != fewest || fewest == "ha" || fewest == "" {
 		t.Errorf("filter %q, fewest subs %q (%d)", r[0].Filter, fewest, best)
 	}
 
@@ -537,5 +540,49 @@ func TestLineBandsClip(t *testing.T) {
 	fp := passes(&config.Config{FilterNM: 30}, catalog.Target{Type: "HII Region"}, "quad")
 	if fp.glow != g || fp.rayleigh != r || fp.mie != m {
 		t.Errorf("passes: %v %v %v, want the clipped bands' %v %v %v", fp.glow, fp.rayleigh, fp.mie, g, r, m)
+	}
+}
+
+// A standard filter in the Origin's f/2.2 cone (its 63 mm obstruction
+// leaving only the steeper rays) shifts its band blue: a 3 nm Hα band keeps
+// a quarter of Hα, most of [N II] 654.8 and none of 658.3; a 7 nm band most
+// of Hα, all of 654.8 and a quarter of 658.3. Pinned against a numerical
+// integration over the pupil; a collimated beam passes a line inside the
+// band whole, and an f/5 one barely shifts a 7 nm band. Through passes the
+// target's light falls by the lines' transmissions, the sky not at all.
+func TestBeamThrough(t *testing.T) {
+	origin := beam{335.0 / 152, 63.0 / 152}
+	for _, c := range []struct {
+		b         beam
+		width, nm float64
+		want      float64
+	}{
+		{origin, 3, 656.3, 0.2505},
+		{origin, 3, 654.8, 0.7255},
+		{origin, 3, 658.3, 0},
+		{origin, 7, 656.3, 0.8843},
+		{origin, 7, 654.8, 1},
+		{origin, 7, 658.3, 0.249},
+		{beam{5, 0}, 7, 656.3, 1},
+		{beam{}, 3, 657.8, 1},
+		{beam{}, 3, 657.9, 0},
+	} {
+		band := [2]float64{656.3 - c.width/2, 656.3 + c.width/2}
+		if got := c.b.through(c.nm, band); math.Abs(got-c.want) > 0.002 {
+			t.Errorf("%v %g nm band at %g nm: %.4f, want %.4f", c.b, c.width, c.nm, got, c.want)
+		}
+	}
+	if got := origin.through(500.7, [2]float64{499.2, 502.2}); math.Abs(got-0.3957) > 0.002 {
+		t.Errorf("3 nm [O III] band at f/2.2: %.4f, want 0.3957", got)
+	}
+	cfg := &config.Config{FilterNM: 7}
+	hii := catalog.Target{Type: "HII Region"}
+	fast := *cfg
+	fast.FRatio, fast.Obstructed = origin.fRatio, origin.obstructed
+	slow, shifted := passes(cfg, hii, "ha"), passes(&fast, hii, "ha")
+	lines := hii.Lines()
+	want := lines[catalog.Ha]*0.8843 + lines[catalog.NII6548] + lines[catalog.NII6583]*0.249
+	if math.Abs(shifted.w-want) > 0.002 || shifted.glow != slow.glow || shifted.rayleigh != slow.rayleigh || shifted.w >= slow.w {
+		t.Errorf("Hα through f/2.2: %+v, want w %.4f and the collimated sky of %+v", shifted, want, slow)
 	}
 }

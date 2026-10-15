@@ -37,8 +37,8 @@ var usageGroups = []usageGroup{
 	{"Selection", []string{"type", "size-min", "size-max", "targets", "skip", "comet-mag"}},
 	{"Framing", []string{"focal", "fov", "sensor", "pixel", "scale", "min-px", "mosaic", "rotate"}},
 	{"Camera and exposure", []string{"aperture", "obstruction", "qe", "read-noise", "mono", "sub"}},
-	{"Sky and filters", []string{"extinction", "filter-nm"}},
-	{"Data sources", []string{"no-weather", "no-sqm", "no-geocode", "no-comets"}},
+	{"Sky and filters", []string{"extinction", "filter-nm", "filter-std"}},
+	{"Data sources", []string{"no-weather", "no-sqm", "no-geocode", "no-comets", "no-solar"}},
 	{"Output", []string{"csv", "json", "version"}},
 }
 

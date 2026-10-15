@@ -653,13 +653,25 @@ func TestMutBandExtinction(t *testing.T) {
 		s.Ext[i], s.ExtRayleigh[i], s.ExtAerosol[i] = 0.2, ray, aer
 	}
 	tg := catalog.Target{Name: "N", Type: "Emission Nebula", RADeg: 90.5, Size: 20}
-	fp := passes(cfg, tg, "ha")
-	if x := 656.3 / 551; math.Abs(fp.ray-math.Pow(x, -4)) > 1e-12 || math.Abs(fp.aer-math.Pow(x, -1.3)) > 1e-12 {
-		t.Errorf("Hα band factors %v %v, want %v %v", fp.ray, fp.aer, math.Pow(x, -4), math.Pow(x, -1.3))
+	lines := tg.Lines()
+	// weighted is the factor (λ/551)^p weighted by the share of each line
+	// the 7 nm bands reach: [N II] 654.8/658.3 in Hα's.
+	weighted := func(p float64, ls ...catalog.Line) float64 {
+		var f, w float64
+		for _, l := range ls {
+			f += lines[l] * math.Pow(catalog.LineNM[l]/551, p)
+			w += lines[l]
+		}
+
+		return f / w
 	}
-	lines, dual := tg.Lines(), passes(cfg, tg, "dual")
-	wantRay := (lines[catalog.Ha]*math.Pow(656.3/551, -4) + lines[catalog.OIII]*math.Pow(500.7/551, -4)) / (lines[catalog.Ha] + lines[catalog.OIII])
-	if math.Abs(dual.ray-wantRay) > 1e-12 {
+	fp := passes(cfg, tg, "ha")
+	ha := []catalog.Line{catalog.Ha, catalog.NII6548, catalog.NII6583}
+	if wantRay, wantAer := weighted(-4, ha...), weighted(-1.3, ha...); math.Abs(fp.ray-wantRay) > 1e-12 || math.Abs(fp.aer-wantAer) > 1e-12 {
+		t.Errorf("Hα band factors %v %v, want %v %v", fp.ray, fp.aer, wantRay, wantAer)
+	}
+	dual := passes(cfg, tg, "dual")
+	if wantRay := weighted(-4, append(ha, catalog.OIII)...); math.Abs(dual.ray-wantRay) > 1e-12 {
 		t.Errorf("dual-band Rayleigh factor %v, want the light-weighted %v", dual.ray, wantRay)
 	}
 	r, ok := mutOne(t, cfg, s, tg, true)

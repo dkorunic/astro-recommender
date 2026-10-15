@@ -239,50 +239,70 @@ func (t Target) Position() (float64, float64) {
 type Line int
 
 const (
-	Ha   Line = iota // Hα 656.3 nm
-	OIII             // [O III] 500.7 nm
-	SII              // [S II] 671.6/673.1 nm, one band
-	Hb               // Hβ 486.1 nm
+	Ha      Line = iota // Hα 656.3 nm
+	OIII                // [O III] 500.7 nm
+	SII                 // [S II] 671.6/673.1 nm, one band
+	Hb                  // Hβ 486.1 nm
+	NII6548             // [N II] 654.8 nm, a third of 658.3's flux
+	NII6583             // [N II] 658.3 nm
 )
 
-// LineNM are the lines' wavelengths in nm (the [S II] doublet's mean).
-var LineNM = [...]float64{Ha: 656.3, OIII: 500.7, SII: 672.4, Hb: 486.1}
+// LineNM are the lines' wavelengths in nm (the [S II] doublet's mean). No
+// filter is built around [N II]: it is in whichever band reaches it, a
+// 7 nm Hα band's both lines.
+var LineNM = [...]float64{Ha: 656.3, OIII: 500.7, SII: 672.4, Hb: 486.1, NII6548: 654.8, NII6583: 658.3}
+
+// NumLines is how many Lines there are.
+const NumLines = len(LineNM)
 
 // balmer is the Hα/Hβ flux ratio of case-B recombination at 10⁴ K
 // (Osterbrock & Ferland 2006), the same for every type; dust raises it.
 const balmer = 2.86
 
-// lineRatios are typical [O III] 500.7 and [S II] fluxes relative to Hα by
-// object type. H II regions: [S II]/Hα 0.12 on average (0.1-0.3), [O III]
-// weak outside the bright cores. Planetary nebulae: [O III]/Hβ 6-9 (Magellanic
-// Cloud averages), so 2.8 Hα, [S II] faint. Supernova remnants: [S II]/Hα
-// above 0.4 is their defining criterion (Mathewson & Clarke 1973), [O III]
-// varies (strong in the Veil). Wolf-Rayet shells are [O III]-bright.
+// lineRatio is a type's [O III] 500.7, [S II] and [N II] doublet fluxes
+// relative to Hα.
+type lineRatio struct{ oiii, sii, nii float64 }
+
+// hiiRatios are H II regions' (and the default's): Madsen, Reynolds & Haffner
+// (2006)'s average over 13 classical O-star H II regions, whole regions in
+// WHAM's 1° beam: [N II]/Hα 0.27, [S II]/Hα 0.11, [O III]/Hα 0.18, the last
+// with a large scatter.
+var hiiRatios = lineRatio{oiii: 0.18, sii: 0.11, nii: 0.27}
+
+// lineRatios are the other types' ratios. Planetary nebulae: [O III]/Hβ 6-9
+// (Magellanic Cloud averages), so 2.8 Hα, [S II] faint (Riesgo & López
+// 2006's 613: log Hα/[S II] peaks at 1.2), log Hα/[N II] peaking at 0, so
+// [N II] as Hα. Supernova remnants: [S II]/Hα above 0.4 (Mathewson & Clarke
+// 1973) and [N II] 658.3/Hα above 0.5 (Fesen, Blair & Kirshner 1985) are
+// their criteria, [O III] varies (strong in the Veil). Wolf-Rayet shells:
+// NGC 6888's dereddened slits (Mesa-Delgado et al. 2014), [O III] as Hα,
+// the N-enriched ejecta's [N II] 0.4-0.9 of it.
 // ponytail: one ratio per type where single objects scatter by factors of a
-// few, and [N II] 654.8/658.3, inside most Hα bands, is left out.
+// few.
 var lineRatios = []struct {
 	word   string // in the type, lower case
-	ratios [3]float64
+	ratios lineRatio
 }{
-	{"planetary", [3]float64{Ha: 1, OIII: 2.8, SII: 0.05}},
-	{"supernova", [3]float64{Ha: 1, OIII: 0.5, SII: 0.6}},
-	{"wolf", [3]float64{Ha: 1, OIII: 1, SII: 0.2}},
+	{"planetary", lineRatio{oiii: 2.8, sii: 0.05, nii: 1}},
+	{"supernova", lineRatio{oiii: 0.5, sii: 0.6, nii: 0.8}},
+	{"wolf", lineRatio{oiii: 1, sii: 0.2, nii: 0.6}},
 }
 
-// Lines returns the shares of an emission-line target's light in Hα, [O III],
-// [S II] and Hβ (at Hα/balmer), summing to 1: all of it is what a camera
-// collects unfiltered, so no filter passes more. From its type's typical
-// ratios (lineRatios; H II regions, and the dark nebulae and clusters
-// emissionNames lists, otherwise); all 0 when it is not EmissionLine.
-func (t Target) Lines() [4]float64 {
+// Lines returns the shares of an emission-line target's light in each Line
+// (Hβ at Hα/balmer, [N II] split 1:3 over its doublet), summing to 1: all of
+// it is what a camera collects unfiltered, so no filter passes more. From its
+// type's typical ratios (lineRatios; H II regions, and the dark nebulae and
+// clusters emissionNames lists, otherwise); all 0 when it is not
+// EmissionLine.
+func (t Target) Lines() [NumLines]float64 {
 	if !EmissionLine(t) {
-		return [4]float64{}
+		return [NumLines]float64{}
 	}
 	r := classOf(t.Type).ratios
-	hb := r[Ha] / balmer
-	sum := r[Ha] + r[OIII] + r[SII] + hb
+	hb := 1 / balmer
+	sum := 1 + r.oiii + r.sii + hb + r.nii
 
-	return [4]float64{r[Ha] / sum, r[OIII] / sum, r[SII] / sum, hb / sum}
+	return [NumLines]float64{Ha: 1 / sum, OIII: r.oiii / sum, SII: r.sii / sum, Hb: hb / sum, NII6548: r.nii / 4 / sum, NII6583: r.nii * 3 / 4 / sum}
 }
 
 // sbClass is t's class for typicalSB; "" when an exposure estimate does not
@@ -354,7 +374,7 @@ func (t Target) kind() kind {
 // typeClass is what the type text alone decides: kind() before the
 // emissionNames promotion, whether it is in emissionTypes, and Lines' ratios.
 type typeClass struct {
-	ratios   [3]float64
+	ratios   lineRatio
 	kind     kind
 	emission bool
 }
@@ -376,7 +396,7 @@ func classOf(typ string) typeClass {
 
 func classify(typ string) typeClass {
 	typ = strings.ToLower(typ)
-	c := typeClass{emission: emissionTypes[typ], ratios: [3]float64{Ha: 1, OIII: 0.3, SII: 0.12}}
+	c := typeClass{emission: emissionTypes[typ], ratios: hiiRatios}
 	for _, l := range lineRatios {
 		if strings.Contains(typ, l.word) {
 			c.ratios = l.ratios

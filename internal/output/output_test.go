@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dkorunic/astro-recommender/internal/atmos"
+	"github.com/dkorunic/astro-recommender/internal/config"
 	"github.com/dkorunic/astro-recommender/internal/scoring"
 )
 
@@ -123,5 +125,25 @@ func TestShortDesc(t *testing.T) {
 		if got := shortDesc(c.in, c.width); got != c.want {
 			t.Errorf("shortDesc(%q, %d) = %q, want %q", c.in, c.width, got, c.want)
 		}
+	}
+}
+
+// The Sky line names the night's solar flux and its basis with the zenith's
+// change from the airglow; nothing when the flux is unknown, and a change
+// that rounds away under a bright sky prints +0.00, never -0.00.
+func TestSolarDesc(t *testing.T) {
+	cfg := &config.Config{SolarFlux: 107.3, SolarBasis: "30-day mean"}
+	nl := atmos.NanoLamberts(atmos.RefZenithMag)
+	s := &scoring.Sky{Airglow: atmos.AirglowExcess(107.3)}
+	s.ZenithNL = nl + s.Airglow
+	if got, want := solarDesc(cfg, s), ", solar flux 107 sfu (30-day mean; airglow -0.08 mag)"; got != want {
+		t.Errorf("dark: %q, want %q", got, want)
+	}
+	s.ZenithNL = atmos.NanoLamberts(17.5) + s.Airglow
+	if got := solarDesc(cfg, s); !strings.HasSuffix(got, "airglow +0.00 mag)") {
+		t.Errorf("Bortle 9: %q", got)
+	}
+	if got := solarDesc(&config.Config{}, s); got != "" {
+		t.Errorf("unknown flux: %q", got)
 	}
 }

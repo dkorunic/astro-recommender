@@ -43,7 +43,8 @@ type Sky struct {
 	MoonPhase   float64 // phase angle in degrees, 0 = full
 	MoonDist    float64 // geocentric distance in Earth radii
 	MoonSep     float64 // uptonight: min separation in degrees = illumination %
-	ZenithNL    float64 // site's moonless zenith sky brightness, nanoLamberts
+	ZenithNL    float64 // site's moonless zenith sky brightness, nanoLamberts, Airglow included
+	Airglow     float64 // nanoLamberts the solar cycle adds to the configured zenith (atmos.AirglowExcess); 0 when the flux is unknown
 	RefNL       float64 // refZenithMag in nanoLamberts
 	Comets      int     // comets added as targets
 	CometsLost  bool    // the comet elements could not be fetched
@@ -184,7 +185,8 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 	s.MoonPhase = astro.MoonPhaseAngle(mid)
 	s.MoonDist = astro.MoonDistance(mid)
 	s.SunLon = astro.SunLongitude(mid)
-	s.ZenithNL = atmos.NanoLamberts(cfg.ZenithMag())
+	s.Airglow = atmos.AirglowExcess(cfg.SolarFlux)
+	s.ZenithNL = atmos.NanoLamberts(cfg.ZenithMag()) + s.Airglow
 	s.RefNL = atmos.NanoLamberts(atmos.RefZenithMag)
 
 	s.LST = make([]float64, len(s.Grid))

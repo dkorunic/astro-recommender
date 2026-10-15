@@ -25,13 +25,24 @@ var Levels = [3]float64{5, 10, 20}
 // per arcsec².
 const photonsV0 = 1005 * 10 * atmos.VWidth
 
-// lineQE is the IMX678's response at each line relative to its peak, read
-// off Sony's curve; lineChannel the colour sensor's channel of pixels whose
-// dye passes it (red Hα and [S II], green [O III] and Hβ), and channelShare
-// each channel's share of the array (RGGB).
+// lineQE is a mono sensor's response at each line relative to its peak,
+// read off Sony's curve; colourQE the IMX678 colour sensor's, each channel's
+// (red, green, blue) at each line relative to the 83% peak, read off ZWO's
+// ASI678MC curve (manual V1.0, §3.3, from its gridlines; [O III] with 495.9 nm
+// at a third of 500.7's flux, [S II] the doublet's mean, Hβ's red at the
+// curve's floor). The dyes overlap: green collects a third of Hα's red
+// response, blue half of [O III]'s green. channelShare is each channel's
+// share of the array (RGGB).
 var (
-	lineQE       = [4]float64{catalog.Ha: 0.95, catalog.OIII: 0.85, catalog.SII: 0.9, catalog.Hb: 0.8}
-	lineChannel  = [4]int{catalog.Ha: red, catalog.OIII: green, catalog.SII: red, catalog.Hb: green}
+	lineQE   = [catalog.NumLines]float64{catalog.Ha: 0.95, catalog.OIII: 0.85, catalog.SII: 0.9, catalog.Hb: 0.8, catalog.NII6548: 0.95, catalog.NII6583: 0.95}
+	colourQE = [catalog.NumLines][3]float64{
+		catalog.Ha:      {red: 0.774, green: 0.339, blue: 0.107},
+		catalog.OIII:    {red: 0.047, green: 0.970, blue: 0.520},
+		catalog.SII:     {red: 0.713, green: 0.386, blue: 0.122},
+		catalog.Hb:      {red: 0.036, green: 0.937, blue: 0.790},
+		catalog.NII6548: {red: 0.780, green: 0.336, blue: 0.107},
+		catalog.NII6583: {red: 0.764, green: 0.342, blue: 0.108},
+	}
 	channelShare = [3]float64{red: 0.25, green: 0.5, blue: 0.25}
 )
 
@@ -42,11 +53,18 @@ const (
 	blue
 )
 
-// broadQEMono and broadQEColour are the response over atmos.CameraLo-CameraHi
-// relative to the peak: a mono sensor's mean, and a colour one's, where each
-// pixel's dye passes about a third of the band (the RGGB mean of Sony's
-// colour curves).
-const broadQEMono, broadQEColour = 0.8, 0.34
+// broadQEMono is a mono sensor's mean response over
+// atmos.CameraLo-CameraHi relative to its peak; broadQEColour each IMX678
+// colour channel's, from the same ZWO curve (the RGGB mean 0.48: the dyes
+// overlap, so each passes more than a third of the band).
+// ponytail: each channel's continuum is its mean response, the moonlight's
+// colour weighted as over the whole band (atmos.BandMean), not by the
+// channel's own curve; a per-channel weighting would give blue more
+// Rayleigh moonlight.
+var (
+	broadQEMono   = 0.8
+	broadQEColour = [3]float64{red: 0.396, green: 0.563, blue: 0.393}
+)
 
 // maxSubs caps a count, so an absurdly faint object cannot overflow an int.
 const maxSubs = 1_000_000_000
@@ -67,6 +85,7 @@ type Estimate struct { // betteralign:ignore
 // camera is what the estimate needs of the telescope and camera.
 type camera struct {
 	area, qe, readNoise, sub, omega float64 // cm², peak, e⁻, s, arcsec² per pixel
+	beam                            beam    // line filters' cone, beamOf
 	mono                            bool
 }
 
@@ -80,7 +99,7 @@ func newCamera(cfg *config.Config) (camera, bool) {
 
 	return camera{
 		area: math.Pi / 4 * (d*d - o*o), qe: cfg.QE, readNoise: cfg.ReadNoise, sub: cfg.Sub,
-		omega: cfg.Scale * cfg.Scale, mono: cfg.Mono,
+		omega: cfg.Scale * cfg.Scale, mono: cfg.Mono, beam: beamOf(cfg),
 	}, true
 }
 
@@ -100,17 +119,17 @@ type channel struct {
 // an object without emission lines (lines zero, Target.Lines), are
 // continuum: unfiltered and broadband spread over the camera band, the glow
 // flat per nm and the moonlight as it scatters (atmos.BandMean against V's),
-// at the band's mean response, which each of a colour sensor's dyes passes
-// alike (about a third of the band), through a broadband filter its
-// passbands' shares (fp). Through a line filter each band passes its own
-// share of the sky (atmos.BandSky, against V) at its own line's response, to
-// the channel whose dye passes the line. An emission-line object's light is
-// its lines wherever the band passes them, collected once, each at its
-// response by the channel that sees it: through Hα a colour sensor's green
-// and blue pixels see nothing, and add nothing, their read noise included.
-// The object's gains are 0 when a line filter passes none of its lines.
+// at each channel's mean response over the band (broadQEColour), through a
+// broadband filter its passbands' shares (fp). Through a line filter each
+// band passes its own share of the sky (atmos.BandSky, against V) at its
+// line's response, to every channel by its dye's (colourQE). An
+// emission-line object's light is its lines wherever the band passes them,
+// collected once, each channel taking its dye's response: through Hα a
+// colour sensor's green pixels see a third of what the red ones do, the
+// blue ones a seventh. The object's gains are 0 when a line filter passes
+// none of its lines.
 // The channels overwrite dst's, so Score reuses each tally's across targets.
-func (c camera) channels(dst []channel, name string, width float64, lines [4]float64, fp filterPass) []channel {
+func (c camera) channels(dst []channel, name string, width float64, lines [catalog.NumLines]float64, fp filterPass) []channel {
 	g := c.area * c.qe * c.omega * photonsV0 / atmos.NanoLamberts(0)
 	chans := dst[:0]
 	if c.mono {
@@ -118,41 +137,53 @@ func (c camera) channels(dst []channel, name string, width float64, lines [4]flo
 	} else {
 		chans = append(chans, channel{share: channelShare[red]}, channel{share: channelShare[green]}, channel{share: channelShare[blue]})
 	}
-	at := func(l catalog.Line) *channel {
+	// resp is channel i's response to line l relative to the peak.
+	resp := func(l catalog.Line, i int) float64 {
 		if c.mono {
-			return &chans[0]
+			return lineQE[l]
 		}
 
-		return &chans[lineChannel[l]]
+		return colourQE[l][i]
 	}
-	emission := lines != [4]float64{}
+	emission := lines != [catalog.NumLines]float64{}
 	if ls := config.Filters[name]; ls != nil {
 		// Each band clipped where a wide -filter-nm would overlap its
 		// neighbour (lineBands), so the shared sky is charged once; BandSky
 		// scatters at the line's centre, so only the width matters.
-		bands := lineBands(ls, width)
-		for i, l := range ls {
-			glow, rayleigh, mie := atmos.BandSky(catalog.LineNM[l], bands[i][1]-bands[i][0])
-			ch, r := at(l), g*lineQE[l]
-			ch.sky[0] += glow * r
-			ch.sky[1] += rayleigh * r
-			ch.sky[2] += mie * r
-			ch.obj += lines[l] * r
+		all := lineBands(ls, width)
+		bands := all[:len(ls)]
+		for b, l := range ls {
+			glow, rayleigh, mie := atmos.BandSky(catalog.LineNM[l], bands[b][1]-bands[b][0])
+			for i := range chans {
+				r := g * resp(l, i)
+				chans[i].sky[0] += glow * r
+				chans[i].sky[1] += rayleigh * r
+				chans[i].sky[2] += mie * r
+			}
+		}
+		// The object: every line a band reaches (passes' w), [N II] in Hα's,
+		// as much of it as the beam lets through.
+		for l, nm := range catalog.LineNM {
+			if t := c.beam.passed(nm, bands); t > 0 {
+				for i := range chans {
+					chans[i].obj += lines[l] * t * g * resp(catalog.Line(l), i)
+				}
+			}
 		}
 
 		return chans
 	}
-	qe := broadQEColour
-	if c.mono {
-		qe = broadQEMono
-	}
-	cont := g * qe * atmos.CameraBand
 	shares := [3]float64{1, 1, 1}
 	if fp.w > 0 {
 		shares = [3]float64{fp.glow, fp.rayleigh, fp.mie}
 	}
 	ray, aer := atmos.BandMean(atmos.CameraLo, atmos.CameraHi)
 	for i := range chans {
+		qe := broadQEMono
+		if !c.mono {
+			qe = broadQEColour[i]
+		}
+		cont := g * qe * atmos.CameraBand
 		chans[i].sky = [3]float64{cont * shares[0], cont * ray * shares[1], cont * aer * shares[2]}
 		if !emission {
 			// A continuum object through a broadband filter: its passbands' share.
@@ -165,7 +196,9 @@ func (c camera) channels(dst []channel, name string, width float64, lines [4]flo
 		// included: change the two together.
 		for l, share := range lines {
 			if passes := config.Broadband[name]; passes == nil || inBands(catalog.LineNM[l], passes) {
-				at(catalog.Line(l)).obj += share * g * lineQE[l]
+				for i := range chans {
+					chans[i].obj += share * g * resp(catalog.Line(l), i)
+				}
 			}
 		}
 	}

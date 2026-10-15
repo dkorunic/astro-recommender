@@ -342,3 +342,18 @@ func TestMoonScatter(t *testing.T) {
 		}
 	}
 }
+
+// The airglow follows the solar cycle around the natural 22.0 sky, solar
+// minimum's (90 sfu): 0.38 mag brighter at 180 sfu, as Noll et al.'s model
+// (22.0 to 21.6), and darker below 90; the flux is clamped to 65-250 sfu, and
+// an unknown one (0, NaN) leaves the sky as configured.
+func TestAirglowExcess(t *testing.T) {
+	nl := NanoLamberts(RefZenithMag)
+	for _, c := range []struct{ sfu, mag float64 }{
+		{90, 0}, {107, -0.0835}, {129, -0.1827}, {180, -0.3826}, {65, 0.1357}, {30, 0.1357}, {250, -0.6088}, {400, -0.6088}, {0, 0}, {math.NaN(), 0},
+	} {
+		if got := MagFromNL(nl+AirglowExcess(c.sfu)) - RefZenithMag; math.Abs(got-c.mag) > 0.001 {
+			t.Errorf("%v sfu: %+.4f mag, want %+.4f", c.sfu, got, c.mag)
+		}
+	}
+}

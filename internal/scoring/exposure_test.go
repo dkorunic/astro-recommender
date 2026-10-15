@@ -76,7 +76,8 @@ func TestChannelsReuse(t *testing.T) {
 }
 
 // The photon zero point, area, QE, pixel and band pinned: e⁻/s per pixel
-// per nanoLambert for the Origin, unfiltered, colour, each channel alike.
+// per nanoLambert for the Origin, unfiltered, colour, each channel at its
+// own mean response over the camera band.
 func TestCameraGain(t *testing.T) {
 	c, ok := newCamera(expCfg())
 	if !ok {
@@ -84,38 +85,48 @@ func TestCameraGain(t *testing.T) {
 	}
 	area := math.Pi / 4 * (15.2*15.2 - 6.3*6.3)
 	g := area * 0.83 * 1.2314 * 1.2314 * 1005 * 880 / atmos.NanoLamberts(0)
-	plain := c.channels(nil, "", 7, [4]float64{}, filterPass{})
-	if want := g * 0.34 * 300 / 88; len(plain) != 3 || math.Abs(plain[red].obj/want-1) > 1e-9 || plain[red].obj != plain[blue].obj || plain[red].obj != plain[red].sky[0] {
-		t.Errorf("unfiltered channels %+v, want object and glow gain %v on each", plain, want)
+	plain := c.channels(nil, "", 7, [catalog.NumLines]float64{}, filterPass{})
+	for i, qe := range [3]float64{red: 0.396, green: 0.563, blue: 0.393} {
+		if want := g * qe * 300 / 88; len(plain) != 3 || math.Abs(plain[i].obj/want-1) > 1e-9 || plain[i].obj != plain[i].sky[0] {
+			t.Errorf("unfiltered channel %d %+v, want object and glow gain %v", i, plain[i], want)
+		}
 	}
 	if plain[red].share+plain[green].share+plain[blue].share != 1 {
 		t.Errorf("channel shares %+v", plain)
 	}
-	// Hα reaches the red channel only, at the full response of each of its
-	// pixels: the quarter is the channel's share, not its gain. Mono is one
-	// channel of every pixel at that response.
+	// Hα reaches every channel by its dye (ZWO's IMX678 curve): red pixels
+	// at 0.77 of the peak, green at a third of that, blue at a seventh; the
+	// quarter is the channel's share, not its gain. Mono is one channel of
+	// every pixel at the mono response.
 	cfg := expCfg()
 	cfg.Mono = true
 	mono, _ := newCamera(cfg)
-	ha := [4]float64{catalog.Ha: 1}
+	ha := [catalog.NumLines]float64{catalog.Ha: 1}
 	col, mon := c.channels(nil, "ha", 7, ha, filterPass{}), mono.channels(nil, "ha", 7, ha, filterPass{})
-	if len(mon) != 1 || mon[0].share != 1 || col[red].obj != mon[0].obj || col[green].obj != 0 || col[blue].obj != 0 || col[red].share != 0.25 {
-		t.Errorf("Hα colour %+v, mono %+v", col, mon)
+	if len(mon) != 1 || mon[0].share != 1 || math.Abs(mon[0].obj/(g*0.95)-1) > 1e-9 || col[red].share != 0.25 {
+		t.Errorf("Hα mono %+v", mon)
 	}
-	// [O III] on green, half the array.
-	if col := c.channels(nil, "oiii", 7, [4]float64{catalog.OIII: 1}, filterPass{}); col[green].obj == 0 || col[red].obj != 0 || col[green].share != 0.5 {
+	for i, r := range [3]float64{red: 0.774, green: 0.339, blue: 0.107} {
+		if math.Abs(col[i].obj/(g*r)-1) > 1e-9 {
+			t.Errorf("Hα colour channel %d: %v, want %v", i, col[i].obj, g*r)
+		}
+	}
+	// [O III] mostly on green, half the array, and half as much on blue.
+	if col := c.channels(nil, "oiii", 7, [catalog.NumLines]float64{catalog.OIII: 1}, filterPass{}); math.Abs(col[green].obj/(g*0.970)-1) > 1e-9 || math.Abs(col[blue].obj/(g*0.520)-1) > 1e-9 || col[red].obj >= col[blue].obj/10 || col[green].share != 0.5 {
 		t.Errorf("[O III] colour %+v", col)
 	}
-	if col := c.channels(nil, "ha", 7, [4]float64{}, filterPass{}); col[red].obj != 0 {
+	if col := c.channels(nil, "ha", 7, [catalog.NumLines]float64{}, filterPass{}); col[red].obj != 0 {
 		t.Error("a line filter passes nothing of an object without lines")
 	}
-	// Each band's sky falls on its own channel: through dual-band, 7 nm of
-	// glow at Hα on the red, 7 nm at [O III] on the green, none on the blue,
-	// whatever the object's mix of the two lines.
-	for _, lines := range [][4]float64{catalog.Target{Type: "HII region"}.Lines(), catalog.Target{Type: "Planetary Nebula"}.Lines()} {
+	// Each band's sky falls on every channel by its dye: through dual-band,
+	// 7 nm of glow at Hα and 7 nm at [O III], each at the channel's response
+	// to its line, whatever the object's mix of the two lines.
+	for _, lines := range [][catalog.NumLines]float64{catalog.Target{Type: "HII region"}.Lines(), catalog.Target{Type: "Planetary Nebula"}.Lines()} {
 		ch := c.channels(nil, "dual", 7, lines, filterPass{})
-		if r, gr := g*7/88*0.95, g*7/88*0.85; math.Abs(ch[red].sky[0]/r-1) > 1e-9 || math.Abs(ch[green].sky[0]/gr-1) > 1e-9 || ch[blue].sky[0] != 0 {
-			t.Errorf("dual-band glow gains %v %v %v, want %v %v 0", ch[red].sky[0], ch[green].sky[0], ch[blue].sky[0], r, gr)
+		for i := range ch {
+			if want := g * 7 / 88 * (colourQE[catalog.Ha][i] + colourQE[catalog.OIII][i]); math.Abs(ch[i].sky[0]/want-1) > 1e-9 {
+				t.Errorf("dual-band glow gain %d: %v, want %v", i, ch[i].sky[0], want)
+			}
 		}
 	}
 	// Unfiltered, the camera band's moonlight is bluer than V's: its
@@ -335,10 +346,14 @@ func TestSubsEmissionLines(t *testing.T) {
 	lines := catalog.Target{Type: "HII region"}.Lines()
 	ch := c.channels(nil, "", 7, lines, filterPass{})
 	g := c.area * c.qe * c.omega * photonsV0 / atmos.NanoLamberts(0)
-	reds := g * (lines[catalog.Ha]*lineQE[catalog.Ha] + lines[catalog.SII]*lineQE[catalog.SII])
-	greens := g * (lines[catalog.OIII]*lineQE[catalog.OIII] + lines[catalog.Hb]*lineQE[catalog.Hb])
-	if math.Abs(ch[red].obj/reds-1) > 1e-12 || math.Abs(ch[green].obj/greens-1) > 1e-12 || ch[blue].obj != 0 || math.Abs(ch[blue].sky[0]/(g*broadQEColour*300/88)-1) > 1e-12 {
-		t.Errorf("unfiltered emission channels %+v", ch)
+	for i := range ch {
+		var want float64
+		for l, share := range lines {
+			want += g * share * colourQE[l][i]
+		}
+		if math.Abs(ch[i].obj/want-1) > 1e-12 || math.Abs(ch[i].sky[0]/(g*broadQEColour[i]*300/88)-1) > 1e-12 {
+			t.Errorf("unfiltered emission channel %d %+v, want object %v", i, ch[i], want)
+		}
 	}
 	s := mutSky(141)
 	for i := range s.Grid {
@@ -438,13 +453,13 @@ func TestSubsCloudedOut(t *testing.T) {
 // An emission-line target's V surface brightness measures its lines only as
 // far as the V passband reaches them, and its catalogue magnitude also counts
 // stars and continuum (vContinuum, fitted by scripts/calibrate_lines.py):
-// an H II region's lines are 1.19 mag brighter than its V, a planetary's,
-// [O III] inside V, as bright; a galaxy's light is its V.
+// an H II region's lines are 1.27 mag brighter than its V, a planetary's,
+// [O III] inside V, about as bright; a galaxy's light is its V.
 func TestLightNL(t *testing.T) {
 	for _, c := range []struct {
 		typ   string
 		boost float64
-	}{{"HII region", 1.19}, {"Supernova Remnant", 1.10}, {"Wolf-Rayet Nebula", 0.52}, {"Planetary Nebula", 0.03}, {"Galaxy", 0}} {
+	}{{"HII region", 1.27}, {"Supernova Remnant", 1.02}, {"Wolf-Rayet Nebula", 0.41}, {"Planetary Nebula", -0.08}, {"Galaxy", 0}} {
 		tg := catalog.Target{Type: c.typ}
 		if got := atmos.MagFromNL(atmos.NanoLamberts(22)) - atmos.MagFromNL(lightNL(tg, 22)); math.Abs(got-c.boost) > 0.01 {
 			t.Errorf("%s: lines %.3f mag brighter than V, want %.2f", c.typ, got, c.boost)
@@ -472,32 +487,45 @@ func TestCalibrationSample(t *testing.T) {
 			}
 			seen[catalog.NameKey(x.Name)] = true
 			ln := x.Lines()
-			fmt.Printf("ROW|%s|%s|%s|%.4f|%.4f|%.1f|%.2f|%.4f|%.4f|%.4f|%.4f\n", l, x.Name, x.Type, x.RADeg, x.DecDeg, x.Size, sb, ln[0], ln[1], ln[2], ln[3])
+			fmt.Printf("ROW|%s|%s|%s|%.4f|%.4f|%.1f|%.2f", l, x.Name, x.Type, x.RADeg, x.DecDeg, x.Size, sb)
+			for _, s := range ln {
+				fmt.Printf("|%.4f", s)
+			}
+			fmt.Println()
 		}
 	}
 }
 
 // A colour sensor's channels add their SNR², each over its own pixels: through
-// Hα only the red quarter sees the nebula, and the green and blue pixels,
-// seeing nothing, add nothing to an optimally weighted stack, their read
-// noise included. So it needs 4x a mono sensor's subs whether the read noise
-// or the sky limits them; an average pixel, charged the read noise of all
-// four, would need 16x read-noise limited.
+// Hα the red quarter sees the nebula at 0.77 of the peak, the green half at
+// 0.34 and the blue quarter at 0.11 (colourQE), against a mono sensor's
+// 0.95 on every pixel. Read-noise limited a channel's SNR² goes as its
+// response squared, so colour needs 0.95²/Σ share·r² = 4.3x mono's subs;
+// sky limited, its sky in the band scaling with the same response, as its
+// response, 0.95/Σ share·r = 2.4x. An average pixel charged the read noise of
+// all four would need far more; one that saw Hα on red only, 4x either way.
 func TestSubsBayerChannels(t *testing.T) {
 	s := mutSky(141)
 	neb := catalog.Target{Name: "N", Type: "HII region", RADeg: 90.5, Size: 20, SurfBr: 16}
+	var lin, sq float64
+	for i, share := range channelShare {
+		r := colourQE[catalog.Ha][i]
+		lin += share * r
+		sq += share * r * r
+	}
+	m := lineQE[catalog.Ha]
 	for _, c := range []struct {
 		name    string
 		rn, sub float64
-		lo, hi  float64
-	}{{"read-noise limited", 100, 0.05, 3.9, 4.1}, {"sky limited", 0, 0.05, 3.9, 4.1}} {
+		want    float64
+	}{{"read-noise limited", 100, 0.05, m * m / sq}, {"sky limited", 0, 0.05, m / lin}} {
 		colour, mono := expCfg(), expCfg()
 		colour.Filter, colour.ReadNoise, colour.Sub = "ha", c.rn, c.sub
 		mono.Filter, mono.ReadNoise, mono.Sub, mono.Mono = "ha", c.rn, c.sub, true
 		r := expResult(t, colour, s, neb)
 		r.Filter = "ha"
-		if ratio := float64(Subs(colour, s, r, 0).Good) / float64(Subs(mono, s, r, 0).Good); ratio < c.lo || ratio > c.hi {
-			t.Errorf("%s: colour needs %.2fx mono's subs through Hα, want 4", c.name, ratio)
+		if ratio := float64(Subs(colour, s, r, 0).Good) / float64(Subs(mono, s, r, 0).Good); math.Abs(ratio/c.want-1) > 0.025 {
+			t.Errorf("%s: colour needs %.2fx mono's subs through Hα, want %.2f", c.name, ratio, c.want)
 		}
 	}
 }

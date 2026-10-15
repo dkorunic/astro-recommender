@@ -199,6 +199,10 @@ func TestMutValidate(t *testing.T) {
 		{"-filter", " , "},
 		{"-filter", "cls", "-filter-nm", "7"},
 		{"-filter", "cls,lpro", "-filter-nm", "7"},
+		{"-filter-std"},
+		{"-filter", "cls", "-filter-std"},
+		{"-filter", "ha", "-filter-std", "-origin", "-aperture", "200"},
+		{"-filter", "ha", "-filter-std", "-focal", "400", "-pixel", "3.76"},
 		{"-bortle", "10"},
 		{"-bortle", "-1"},
 		{"-sqm", "14.9"},
@@ -233,6 +237,8 @@ func TestMutValidate(t *testing.T) {
 		{"-extinction", "1"},
 		{"-extinction", "0"},
 		{"-twilight", " Nautical "},
+		{"-filter", "HA", "-filter-std"},
+		{"-filter", "cls,dual", "-filter-std", "-focal", "400", "-pixel", "3.76", "-aperture", "100"},
 	} {
 		if _, err := mutParse(t, mutBase(args...)...); err != nil {
 			t.Errorf("%v rejected: %v", args, err)
@@ -367,6 +373,26 @@ func TestMutSkipFile(t *testing.T) {
 	for _, args := range [][]string{{"-skip", filepath.Join(dir, "none")}, {"-horizon", filepath.Join(dir, "none")}} {
 		if _, err := mutParse(t, mutBase(args...)...); err == nil || !strings.Contains(err.Error(), "none") {
 			t.Errorf("%v: %v", args, err)
+		}
+	}
+}
+
+// -filter-std puts the line filters in the Origin's f/2.2 beam, or another
+// telescope's from -focal over -aperture, its obstruction as a fraction of
+// the aperture; without it the beam is collimated (0).
+func TestMutFilterStdBeam(t *testing.T) {
+	for _, c := range []struct {
+		args         []string
+		ratio, obstr float64
+	}{
+		{[]string{"-filter", "ha"}, 0, 0},
+		{[]string{"-filter", "ha", "-filter-std"}, 335.0 / 152, 63.0 / 152},
+		{[]string{"-filter", "dual", "-filter-std", "-origin"}, 335.0 / 152, 63.0 / 152},
+		{[]string{"-filter", "dual", "-filter-std", "-focal", "400", "-pixel", "3.76", "-aperture", "100", "-obstruction", "20"}, 4, 0.2},
+	} {
+		cfg, err := mutParse(t, mutBase(c.args...)...)
+		if err != nil || math.Abs(cfg.FRatio-c.ratio) > 1e-12 || math.Abs(cfg.Obstructed-c.obstr) > 1e-12 {
+			t.Errorf("%v: f/%v obstructed %v (%v), want f/%v and %v", c.args, cfg.FRatio, cfg.Obstructed, err, c.ratio, c.obstr)
 		}
 	}
 }

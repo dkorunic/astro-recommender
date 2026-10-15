@@ -53,7 +53,7 @@ N is the number of minutes in the window. Each factor lies between 0 and 1, so a
 | Q | weather quality (cloud, rain, dew, gusts, transparency) | [Weather](#weather) |
 | κ | extinction coefficient, mag per airmass | [Atmosphere and sky](#atmosphere-and-sky) |
 | T | fraction of light surviving extinction, relative to the zenith | [Atmosphere and sky](#atmosphere-and-sky) |
-| B | sky brightness at the target (light pollution + zodiacal and galactic light + moonlight) | [Atmosphere and sky](#atmosphere-and-sky) |
+| B | sky brightness at the target (light pollution and airglow, with the solar cycle + zodiacal and galactic light + moonlight) | [Atmosphere and sky](#atmosphere-and-sky) |
 | S | the object's own surface brightness | [Object surface brightness](#object-surface-brightness) |
 | k | fraction of sky glow that counts against the target | [Scoring a target](#scoring-a-target) |
 | w, f | through a `-filter`: the target's share of light in its bands, and the bands' share of each part of the sky (replacing k) | [Nebula filters](#nebula-filters), [Broadband filters](#broadband-filters) |
@@ -296,6 +296,14 @@ B_{\text{nL}} = 34.08\, e^{\,20.7233 - 0.92104\,V} \qquad (V \text{ in mag/arcse
 
 These are the midpoints of the SQM ranges usually quoted for [Bortle's (2001)][bortle] classes.
 
+<a id="airglow"></a>**The solar cycle** (`atmos.AirglowExcess`, `internal/solar`). Airglow, the upper atmosphere's own light driven by the Sun's ultraviolet, is about two-thirds of a dark V zenith at solar minimum (145 of 220 S10 at the ecliptic and galactic poles, [Benn & Ellison 1998][benn]), and follows the 11-year cycle: V brightened 0.3 mag from solar minimum to maximum at Paranal ([Patat 2008][patat]), 0.4–0.5 at La Palma, 0.6 at Mauna Kea and 0.5 at CTIO. The ESO sky model ([Noll et al. 2012][noll]) scales each airglow component as 1 + m(S − 129), S the monthly mean 10.7 cm solar flux in sfu, m 0.0061 for the continuum and 0.0087 for [O I] 557.7 (about a fifth of V); with m = 0.006 the zenith gains
+
+```math
+\Delta B = 0.6\,B_{22.0}\left(\frac{1 + 0.006\,(S - 129)}{1 + 0.006\,(90 - 129)} - 1\right)
+```
+
+over the configured brightness: 0.6 is the airglow's share of the natural 22.0 at the reference direction (135°, 45°), where the zodiacal light is above the poles', and 90 sfu is the flux of that 22.0, solar minimum, as [Falchi et al. (2016)][falchi] take it (their atlas, from which light pollution maps derive, subtracts a natural sky scaled to each SQM reading's solar activity, so it holds artificial light only) and as Noll's model gives it. ΔB is added whatever the light pollution, whose natural part is that 22.0, and is clamped to 65–250 sfu (Noll's fit spans 95–228). At 180 sfu the zenith is 0.38 mag brighter, as Noll's model (22.0 to 21.6); at 107 sfu (October 2026) 0.08; at solar minimum (65) 0.14 darker. Under Bortle 6 and brighter the change is a few hundredths. S is NOAA SWPC's observed monthly mean for the night's UTC month, else (for a night within 30 days of NOAA's last daily value) the mean of the last 30 days, which Patat found the airglow follows best and which NOAA's monthly prediction overstated by 20 sfu in October 2026, else that prediction (to 2030); without one (`-no-solar`, a failed lookup, a date past 2030) the configured sky stands. An explicit `-sqm` is a measurement of a night's sky, airglow included, so it is not scaled. Time-of-night and seasonal airglow changes (up to a few tenths, by site) are not modelled.
+
 **Towards the horizon** the sky brightens because the line of sight passes through more glowing air, and dims through extinction. K&S model this with a scattering airmass X_s at zenith distance Z = 90° − h:
 
 ```math
@@ -484,6 +492,21 @@ A faint galaxy 30° from a bright Moon therefore scores much lower than one 120�
 
 `-filter dual|tri|quad|ha|oiii|sii` (`scoring.passes`, `atmos.SkyParts`, `atmos.BroadSky`, `catalog.Target.Lines`) scores the emission-line targets through a filter: emission, planetary and Wolf-Rayet nebulae, supernova remnants, and a few named objects whose catalogue type hides their Hα, such as IC 1396. A dual-band filter passes Hα and [O III] onto one frame, a tri-band one Hβ too, a quad-band one Hβ and [S II] too; the others pass one line. Every band is the same width, so a commercial multi-band filter with one wide band (the L-eNhance's 24 nm over Hβ and [O III]) is only approximated. Each band is `-filter-nm` wide (7 nm by default). Bands wide enough to overlap — past 14.6 nm Hβ's meets [O III]'s, past 16.1 Hα's meets [S II]'s, and the flag allows 30 — are clipped at the midpoint of the two lines (`scoring.lineBands`), each side keeping its own line's response, so the shared wavelengths are charged their sky once, as a physical filter's merged bands pass them once; the lines' light is counted once per line regardless.
 
+<a id="filters-in-a-fast-beam"></a>**Filters in a fast beam** (`-filter-std`, `scoring.beam`). An interference filter tilted by θ passes its band at λ·√(1 − sin²θ/n²), bluer, n being its effective index. Behind a telescope of focal ratio N each ray meets the filter at tan θ = r/2N, r from the central obstruction's edge to 1 across the pupil, so a standard filter (centred for collimated light) passes a line only from the rays whose shifted band still holds it. Taking the band as a top-hat [lo, hi] of the nominal width, a line at λ is in while n²(1 − (λ/lo)²) ≤ sin²θ ≤ n²(1 − (λ/hi)²), and its share is the pupil area, uniform in r², between the two:
+
+```math
+t = \frac{\min(1, r^2_{\text{hi}}) - \max(\varepsilon^2, r^2_{\text{lo}})}{1-\varepsilon^2},\qquad r^2 = \frac{\sin^2\theta}{1-\sin^2\theta}\,(2N)^2
+```
+
+with ε the obstruction over the aperture. n = 2.05 (`filterN`) fits [Chroma's measured curves][chroma] of its 3, 5 and 8 nm Hα, Hβ, [O III] and [S II] filters at f/2 to f/5 (55 curves, rms 0.06 in the line's transmission, no bias; `scripts/filter_shift.py`). Each line's share w then counts t of it; the sky stays the band's, since the shift moves the band without narrowing it (Chroma's integrated passbands hold within a few per cent to f/2). The beam is the Origin's f/2.2 with its 63 mm obstruction, which leaves only the steeper rays, or `-focal`/`-aperture`/`-obstruction`; without the flag t is 1 inside the band and 0 outside, the filters taken as made for the beam. At f/2.2:
+
+| Band | Hα 656.3 | [N II] 654.8 | [N II] 658.3 | [O III] 500.7 |
+|---|---|---|---|---|
+| 3 nm | 0.25 | 0.73 | 0 | 0.40 |
+| 7 nm | 0.88 | 1 | 0.25 | 0.99 |
+
+so a standard 7 nm Hα filter costs the Origin about 1.5 times the subs on an H II region (IC 1795 at Bortle 6: 993 against 653), and a 3 nm one loses to no filter. Broadband filters' edges shift too, but by a few nm against passbands tens of nm wide, and are left alone.
+
 **The sky in a band.** The sky splits into three parts with different spectra:
 
 - the **glow** (airglow and light pollution, with the zodiacal and galactic light: the dark-sky term B_dark),
@@ -500,25 +523,25 @@ f_{\text{M}} = \frac{\Delta\lambda}{300}\,\frac{(\lambda/551)^{-1.3}}{\langle(\l
 
 so per nm the [O III] band (500.7 nm) gets 2.9 times the Rayleigh moonlight of the Hα one (656.3 nm). Moonlight is taken as flat per nm before scattering: the Moon is 0.25 mag redder than the Sun in B−V ([Thejll et al. 2014][moon-colour]), which roughly offsets the Sun's own fall from 500 to 670 nm. The glow is taken as flat too: its spectrum depends on the site's lamps (sodium, white LEDs), which nothing here knows; flat is white LEDs, the case [broadband filters](#broadband-filters) gain least in. A multi-band filter's fractions are the sums over its bands. (The bands were once shares of V's 88 nm, which charged a line filter 3.4 times the sky per nm a broadband one is charged against the same unfiltered sky.)
 
-**The target's light in the bands.** No catalogue gives line fluxes, so each type gets typical ratios to Hα (`catalog.Target.Lines`), with Hβ (486.1 nm) at Hα/2.86 for every type, the case-B recombination ratio at 10⁴ K ([Osterbrock & Ferland 2006][agn2]; dust only raises it), all four normalised to shares that sum to 1, the whole of what an unfiltered camera collects:
+**The target's light in the bands.** No catalogue gives line fluxes, so each type gets typical ratios to Hα (`catalog.Target.Lines`), with Hβ (486.1 nm) at Hα/2.86 for every type, the case-B recombination ratio at 10⁴ K ([Osterbrock & Ferland 2006][agn2]; dust only raises it), and [N II] split 1:3 over 654.8 and 658.3 nm (the doublet's fixed ratio), all normalised to shares that sum to 1, the whole of what an unfiltered camera collects:
 
-| Type | Hα | [O III] 500.7 | [S II] 671.6/673.1 | Basis | shares Hα, [O III], [S II], Hβ |
-|---|---|---|---|---|---|
-| H II region (and every other emission-line target) | 1 | 0.3 | 0.12 | [S II]/Hα ≈ 0.12 on average; [O III] weak outside bright cores | 0.57, 0.17, 0.07, 0.20 |
-| planetary nebula | 1 | 2.8 | 0.05 | [O III]/Hβ 6–9 (Magellanic Cloud averages), Hα = 2.86 Hβ | 0.24, 0.67, 0.01, 0.08 |
-| supernova remnant | 1 | 0.5 | 0.6 | [S II]/Hα > 0.4 defines them ([Mathewson & Clarke 1973][mathewson]); [O III] varies | 0.41, 0.20, 0.25, 0.14 |
-| Wolf-Rayet nebula | 1 | 1 | 0.2 | [O III]-bright shells | 0.39, 0.39, 0.08, 0.14 |
+| Type | Hα | [O III] 500.7 | [S II] 671.6/673.1 | [N II] 654.8+658.3 | Basis | shares Hα, [O III], [S II], Hβ, [N II] |
+|---|---|---|---|---|---|---|
+| H II region (and every other emission-line target) | 1 | 0.18 | 0.11 | 0.27 | the average of 13 classical O-star H II regions in WHAM's 1° beam ([Madsen, Reynolds & Haffner 2006][madsen]); [O III] scatters most | 0.52, 0.09, 0.06, 0.18, 0.14 |
+| planetary nebula | 1 | 2.8 | 0.05 | 1 | [O III]/Hβ 6–9 (Magellanic Cloud averages), Hα = 2.86 Hβ; over 613 planetaries log Hα/[S II] peaks at 1.2 and log Hα/[N II] at 0 ([Riesgo & López 2006][riesgo]) | 0.19, 0.54, 0.01, 0.07, 0.19 |
+| supernova remnant | 1 | 0.5 | 0.6 | 0.8 | [S II]/Hα > 0.4 ([Mathewson & Clarke 1973][mathewson]) and [N II] 658.3/Hα > 0.5 ([Fesen, Blair & Kirshner 1985][fbk]) define them; [O III] varies | 0.31, 0.15, 0.18, 0.11, 0.25 |
+| Wolf-Rayet nebula | 1 | 1 | 0.2 | 0.6 | NGC 6888's dereddened slits ([Mesa-Delgado et al. 2014][mesa]): [O III] about Hα, the N-enriched ejecta's [N II] 0.4–0.9 of it | 0.32, 0.32, 0.06, 0.11, 0.19 |
 
-The share in the filter's bands is w (an H II region: 0.57 through Hα, 0.73 through dual-band, 0.93 tri-band, 1 quad-band; a planetary: 0.67 through [O III]). [N II] 654.8/658.3, inside most Hα bands, is left out.
+The share in the filter's bands is w: every line a band reaches, the filter's own and the others in it, so a 7 nm Hα band (652.8–659.8 nm) passes both [N II] lines, a 3 nm one only 654.8 at its edge, and a 30 nm [O III] band Hβ (an H II region: 0.67 through Hα, 0.76 through dual-band, 0.94 tri-band, 1 quad-band; a planetary: 0.54 through [O III], 0.92 through dual-band). [N II] is why a remnant gains most from Hα and a planetary from dual-band.
 
 Each extra band also passes its share of the sky, so the multi-band filters score close to `dual`. Sky-limited under the glow alone (w²/f_glow, against 1 unfiltered) through 7 nm bands:
 
 | Target | `ha` | `oiii` | `sii` | `dual` | `tri` | `quad` |
 |---|---|---|---|---|---|---|
-| H II region | 13.7 | 1.2 | 0.2 | 11.6 | 12.4 | 10.7 |
-| planetary nebula | 2.4 | 19.1 | 0.0 | 17.5 | 14.0 | 10.7 |
-| supernova remnant | 7.1 | 1.8 | 2.6 | 8.0 | 8.1 | 10.7 |
-| Wolf-Rayet nebula | 6.6 | 6.6 | 0.3 | 13.2 | 12.1 | 10.7 |
+| H II region | 19.0 | 0.4 | 0.1 | 12.4 | 12.7 | 10.7 |
+| planetary nebula | 6.3 | 12.4 | 0.0 | 18.3 | 14.0 | 10.7 |
+| supernova remnant | 13.1 | 1.0 | 1.5 | 10.7 | 9.5 | 10.7 |
+| Wolf-Rayet nebula | 11.1 | 4.3 | 0.2 | 14.6 | 12.5 | 10.7 |
 
 The multi-band filters' use beyond that is colour on a one-shot-colour camera, which no score here measures.
 
@@ -538,7 +561,7 @@ With w = 1 and every f equal to k this is the broadband weight.
 \kappa_\lambda = \kappa_{\text{R}}\Big(\frac{\lambda}{551}\Big)^{-4} + \kappa_{\text{O}_3} + \kappa_{\text{aer}}\Big(\frac{\lambda}{551}\Big)^{-1.3}
 ```
 
-and a multi-band filter the mean over its lines weighted by the share of light each passes. At κ = 0.2 the Hα band's coefficient is 0.13 and the [O III] band's 0.26, so at airmass 2 an Hα target through its filter keeps 6% more light than the V coefficient says and an [O III] target 5% less. Without a filter an emission-line target is dimmed at its lines' own coefficient too (the mean over all four, weighted by their shares: Hα dominates an H II region's), so a filter cannot win on extinction alone, as it could when the unfiltered target was dimmed at V's.
+and a multi-band filter the mean over its lines weighted by the share of light each passes. At κ = 0.2 the Hα band's coefficient is 0.13 and the [O III] band's 0.26, so at airmass 2 an Hα target through its filter keeps 6% more light than the V coefficient says and an [O III] target 5% less. Without a filter an emission-line target is dimmed at its lines' own coefficient too (the mean over all its lines, weighted by their shares: Hα and [N II] dominate an H II region's), so a filter cannot win on extinction alone, as it could when the unfiltered target was dimmed at V's.
 
 **A list of filters** (`-filter dual,ha,oiii`, the ones you own) scores each target without a filter and through each filter that passes some of its light (a line filter: emission-line targets; a [broadband](#broadband-filters) one: all), each **worn all night**, as it is shot: changing filters mid-target means a second set of flats and a split stack, and a filter that costs a bright nebula under a dark sky (object-limited, it loses 1 − w of the light) costs it every minute. The choice that gains most wins, no filter on a tie (then the first in the list); that filter is the target's FILTER (`Result.Filter`), `-` when none beats no filter, whose weights are then exactly the unfiltered ones (the filtered sky, the sum of its parts, matches the unfiltered one only to rounding). Gains most is not the highest SCORE: under a dark sky every helpful line filter's weight reaches the cap of 1, which would leave the band's extinction to choose (Hα's, the lowest, even for a planetary, whose light is two-thirds [O III]). Without a camera it is the most uncapped weight, Σ Q·T·√(SNR² ratio); with framing, which describes one, and a surface brightness to estimate subs from (`ExposureSB`), the best **mean** per-sub SNR² of the [sub-exposure model](#sub-exposure-estimate) over the choice's own observable minutes, Σ Q·SNR²_sub / N, read noise and the colour channels included: the model's count for a level is level²/mean, so FILTER is exactly the choice SUBS needs fewest subs through. The total Σ Q·SNR²_sub would let a choice win on minutes alone — a narrowband filter's Moon limit (below) admits moonlit minutes no filter keeps, and near the Moon a bright nebula then showed Hα in FILTER with more subs in SUBS than no filter needs over its few Moon-down minutes. The Origin's 15 s colour subs thus pick dual-band over Hα (two channels see it) and, where a 7 nm band is read-noise limited, `cls`. All the choices are scored in one pass over the grid, which shares the geometry (altitude, horizon, the Moon's separation) and the sky's parts.
 
@@ -589,7 +612,7 @@ each choice (no filter, `W_sky`, and each passing filter, `W_filter`) summed ove
 S_{\text{lines}} = \frac{S_V}{f_V}\,10^{-0.4\,c},\qquad f_V = \sum_\ell s_\ell\,T_V(\lambda_\ell)
 ```
 
-with s_ℓ the line shares above and T_V Bessell's V curve at each line (`lineV`: Hα 0.032, [O III] 0.593 with 495.9 nm at a third of 500.7's flux, [S II] 0.016, Hβ 0.111): V straddles [O III] and misses Hα. c = 0.93 mag (`vContinuum`) is fitted by `scripts/calibrate_lines.py`: the median, over the 29 emission nebulae of at least 30′ in GaryImm, Messier, OpenNGC, OpenIC, Sharpless and Caldwell (exact duplicates once; the Hα map's beam is 6′), of S_lines' Hα share against [Finkbeiner (2003)][finkbeiner]'s full-sky Hα map (NASA SkyView's "H-Alpha Comp", in Rayleighs), averaged over each disc less the median of a ring from 1.25 to 2 radii (the Milky Way's diffuse Hα). Its interquartile range is 0.02–1.45 mag: one nebula's lines are good to a factor of about three. The lines are then 1.19 mag brighter than V for an H II region (taking V as all of the light, as before, ran 1.1–1.5 mag faint on every subset of the sample), 1.10 for a remnant, 0.52 for a Wolf-Rayet nebula and 0.03 for a planetary, whose [O III] V holds. The SB column still shows the V surface brightness.
+with s_ℓ the line shares above and T_V Bessell's V curve at each line (`lineV`: Hα 0.032, [O III] 0.593 with 495.9 nm at a third of 500.7's flux, [S II] 0.016, Hβ 0.111, [N II] 0.035 and 0.028): V straddles [O III] and misses Hα. c = 1.25 mag (`vContinuum`) is fitted by `scripts/calibrate_lines.py`: the median, over the 29 emission nebulae of at least 30′ in GaryImm, Messier, OpenNGC, OpenIC, Sharpless and Caldwell (exact duplicates once; the Hα map's beam is 6′), of S_lines' Hα share against [Finkbeiner (2003)][finkbeiner]'s full-sky Hα map (NASA SkyView's "H-Alpha Comp", in Rayleighs), averaged over each disc less the median of a ring from 1.25 to 2 radii (the Milky Way's diffuse Hα). Its interquartile range is 0.34–1.76 mag: one nebula's lines are good to a factor of about three. The map measures Hα alone, so the fit holds each nebula's Hα where it was before [N II] was counted (c was 0.93 then) and the [N II] comes on top. The lines are then 1.27 mag brighter than V for an H II region (taking V as all of the light, as before, ran 1.1–1.5 mag faint on every subset of the sample), 1.02 for a remnant, 0.41 for a Wolf-Rayet nebula and 0.08 fainter for a planetary, whose [O III] V holds. The SB column still shows the V surface brightness.
 
 ## Framing and mosaics
 
@@ -653,8 +676,17 @@ R = \frac{884\,400\;x}{\mathrm{NL}(0)}\;\frac{\pi}{4}\left(D^2 - d^2\right)\;QE_
 
 The relative response q depends on what the light is:
 
-- **The sky and continuum objects**, unfiltered or through `cls`/`lpro`, are spread over the camera's 400–700 nm (× 300/88 against V) at q = 0.8 for a mono sensor or 0.34 for a colour one, whose every pixel's dye passes about a third of the band (the RGGB mean of Sony's colour curves), each channel alike. The glow and a continuum are flat per nm; the moonlight scatters as it does in the score, so the camera band's Rayleigh part per nm is the λ⁻⁴ mean over 400–700 nm, 1.30 of V's (its Mie part 1.04). The sky's share through a broadband filter is `BroadSky`'s, as in the score.
-- **Through a line filter** each band passes its own share of the sky (`BandSky`, against V, so absolute), at its line's response (Hα 0.95, [O III] 0.85, [S II] 0.9, Hβ 0.8 of peak, read off Sony's IMX678 curve), to the channel of pixels whose dye passes the line (red Hα and [S II], green [O III] and Hβ); the object's lines go to their channels the same way, weighted by its light in each.
+- **The sky and continuum objects**, unfiltered or through `cls`/`lpro`, are spread over the camera's 400–700 nm (× 300/88 against V) at q = 0.8 for a mono sensor, or for a colour one each channel's own mean over the band from ZWO's IMX678 curve (`broadQEColour`: red 0.40, green 0.56, blue 0.39 of peak, an RGGB mean of 0.48: the dyes overlap, so each passes more than a third of the band). The moonlight's colour is weighted as over the whole band for every channel, not by each dye's curve. The glow and a continuum are flat per nm; the moonlight scatters as it does in the score, so the camera band's Rayleigh part per nm is the λ⁻⁴ mean over 400–700 nm, 1.30 of V's (its Mie part 1.04). The sky's share through a broadband filter is `BroadSky`'s, as in the score.
+- **Through a line filter** each band passes its own share of the sky (`BandSky`, against V, so absolute) to every channel at that dye's response to the band's line, and the object's lines likewise, weighted by its light in each. A mono sensor takes Sony's curve (Hα and [N II] 0.95, [O III] 0.85, [S II] 0.9, Hβ 0.8 of peak); a colour one ZWO's ASI678MC curve (manual V1.0, §3.3, read off its gridlines to about ±1 point; `colourQE`), where every dye passes some of every line:
+
+| Line | red | green | blue |
+|---|---|---|---|
+| Hβ 486.1 | 0.04 | 0.94 | 0.79 |
+| [O III] 500.7 (+ 495.9) | 0.05 | 0.97 | 0.52 |
+| Hα 656.3, [N II] | 0.77 | 0.34 | 0.11 |
+| [S II] 671.6/673.1 | 0.71 | 0.39 | 0.12 |
+
+so through Hα the green pixels, half the array, collect almost as much as the red quarter, and through [O III] the blue quarter adds half of green's response.
 - **An emission-line object's** light is its lines ([from its V](#emission-line-light)), which any band that passes them collects once: it uses the line response unfiltered and through broadband filters too, rather than the sky's flat spread, which would count it 3.4 times. Unfiltered it is dimmed at its lines' extinction, as in the score.
 
 The object and sky per minute are the score's own (the sky with moonlight, zodiacal and galactic light, through a filter its bands' shares; the object dimmed by its band's extinction), with the surface brightness from `ExposureSB`, as absolute photons: the object's lines are not moved against the camera band, which the sky's gain already spans. A filter is the score's choice, worn all night, so its observable minutes are the score's too.
@@ -665,7 +697,7 @@ The object and sky per minute are the score's own (the sky with moonlight, zodia
 \mathrm{SNR}^2_\mathrm{sub} = \sum_c f_c\,\frac{(S_c t)^2}{S_c t + B_c t + RN^2}\;\frac{1}{\Omega}\quad\text{per arcsec}^2
 ```
 
-A channel that sees none of the object adds nothing, its read noise included: through Hα only the red quarter counts. An average pixel, (¼S)²/(¼S + ¼B + RN²), would agree sky-limited but charge the green and blue pixels' read noise against Hα, 4 times too pessimistic read-noise limited (2 for [O III]), and mix a nebula's red and green lines into one, about 1.5 times too pessimistic unfiltered.
+Each channel adds by its own response, so one that sees little of the object adds little, its read noise included: through Hα the colour IMX678 needs 0.95²/Σ f_c q_c² = 4.3 times a mono sensor's subs read-noise limited, and 0.95/Σ f_c q_c = 2.4 times sky limited (`TestSubsBayerChannels`). An average pixel, (¼S)²/(¼S + ¼B + RN²), would charge every pixel's read noise against the line, and putting each line on one dye's channel only, as this model once did, missed the green pixels' third of Hα and the blue ones' half of [O III]: 0.5 and 0.75 of the lines' signal.
 
 Dark current is left out. An optimally weighted stack adds SNR², so a night half dark and half moonlit is the mean of its minutes' SNR², not the SNR of mean rates. Subs lost to the weather (each minute's quality $q_i$ of the score: cloud, transparency, rain, dew, gusts) must be shot again, so the weather weighs each minute's SNR², and cloud during the target's best minutes costs more than the same cloud during its worst:
 
@@ -679,8 +711,8 @@ capped at 10⁹, which a night the forecast loses entirely reaches (past tonight
 
 **Limits.**
 
-- An emission nebula's lines come from its V surface brightness through the [fitted conversion](#emission-line-light), good to a factor of about three for one nebula; without a measurement the class median (22.82 for emission nebulae) stands in, which with the lines 1.19 mag brighter puts the bright ones at about five hours unfiltered on the Origin under the default pristine sky. Galaxies match Origin users' reports (M 51 at the good level in about 35 minutes from a dark site).
-- At the Origin's 15 s a colour sensor's red pixels through a 7 nm Hα band are read-noise limited under a dark sky (about half an e⁻ of sky per sub under 21.3 mag/arcsec² against RN² ≈ 4.6), where a broadband filter, collecting every line over 120 nm, is not. With framing, FILTER is chosen by this model, so it is the choice needing fewest subs: IC 1795 under the default 22.0 zenith takes 797 subs unfiltered, 581 through Hα and 492 through `cls`, so `cls`; at Bortle 4 1193, 626 and 643; at Bortle 8 10 412, 1731 and 4322.
+- An emission nebula's lines come from its V surface brightness through the [fitted conversion](#emission-line-light), good to a factor of about three for one nebula; without a measurement the class median (22.82 for emission nebulae) stands in, which with the lines 1.27 mag brighter puts the typical one at about an hour and a half unfiltered on the Origin under the default pristine sky (IC 1795: 352 subs). Galaxies come out quicker than Origin users report: M 51 reaches the good level in 46 subs (12 minutes) under a 22.0 sky on 15 April 2026 from 45.8° N, against reports of about 35 minutes from dark sites; frame rejection, real skies brighter than 22.0, a vendor curve possibly above the delivered sensor's, and stacking losses are not modelled (below), so treat SUBS as a lower bound.
+- At the Origin's 15 s a colour sensor's pixels through a 7 nm Hα band are read-noise limited under a dark sky (about half an e⁻ of sky per sub on the red ones under 21.3 mag/arcsec² against RN² ≈ 4.6), where a broadband filter, collecting every line over 120 nm, is not. With framing, FILTER is chosen by this model, so it is the choice needing fewest subs: IC 1795 from 45.8° N on 14 October 2026 (`-origin -no-weather`, one `-filter` at a time) under the default 22.0 zenith takes 352 subs unfiltered, 348 through Hα, 276 through dual-band and 230 through `cls`, so `cls`; at Bortle 4 615, 366, 301 and 336, so dual-band; at Bortle 8 7161, 813, 894 and 2956, so Hα.
 - No dark current, no frame rejection (tracking, satellites, wind: often 10–20% on the Origin), no saturation (the IMX678's 11.27 ke⁻ full well is far off at 15 s for these objects), flat spectra across each band, and one SNR target for every type.
 
 ## Seeing estimate
@@ -812,7 +844,10 @@ The models above come from the literature. The following are this project's own 
 | Cluster sky fraction | k = 0.5 | point sources stand out of the glow |
 | Emission line ratios | one set per type ([Nebula filters](#nebula-filters)) | single objects scatter by factors of a few; no list has line fluxes |
 | Hβ | Hα/2.86 for every type | case-B recombination; dust raises the ratio, so dusty H II regions' Hβ is overstated |
-| Emission-line light from V | V/f_V less c = 0.93 mag of stars and continuum | fitted to Finkbeiner's Hα map over 29 nebulae of 30′ and more (interquartile 0.02–1.45 mag), almost all H II regions; for other types f_V carries the difference |
+| Emission-line light from V | V/f_V less c = 1.25 mag of stars and continuum | fitted to Finkbeiner's Hα map over 29 nebulae of 30′ and more (interquartile 0.34–1.76 mag), almost all H II regions; for other types f_V carries the difference |
+| Airglow with the solar cycle | one slope (0.006/sfu) and a 0.6 share of the natural 22.0 for every site, the monthly flux | measured swings run 0.3–1.0 mag by site and cycle; the airglow also changes through the night and the seasons by up to a few tenths, and DarkSkySites' handling of the natural sky is undocumented |
+| Colour sensor response | the IMX678's red, green and blue curves read off ZWO's chart (about ±1 point), each line at its dye's response, each channel's continuum its mean over 400–700 nm | a vendor curve, possibly above the delivered sensor's; the moonlight's colour is weighted as over the whole band for every channel, not by each dye |
+| Filter band shift | `-filter-std`: top-hat bands of the nominal width, one effective index (2.05) for every filter | real filters' edges slope and their indices differ by coating (Chroma's 5 nm Hα measures 0.39 at f/2 where the model gives 0.53); filters sold for fast optics are assumed to pass their lines whole |
 | Filter band width | every band `-filter-nm` wide | real tri- and quad-band filters mix widths (the L-eNhance's 24 nm over Hβ and [O III]); one width keeps the flag simple |
 | OSM obstacle heights | building 8 m (else 3 m a level + 2 m), tree 12 m, wood 20 m | typical two-storey house, mature broadleaf, temperate forest canopy; OSM tags few heights |
 | Canopy floor | trees under 1 m ignored | the canopy map reads a metre or so over open ground |
@@ -854,7 +889,9 @@ Treat SCORE as a way to order tonight's options, not as an absolute measure of q
 | Filter bands | V band: [Bessell (1990)][bessell], PASP 102, 1181; Ångström exponent: [Ångström (1929)][angstrom]; Moon colour: [Thejll et al. (2014)][moon-colour], A&A 563, A38 |
 | Broadband filter passbands | [Astronomik CLS][astronomik-cls] (published edges); [Optolong L-Pro][optolong-lpro] (blocked lines, reference curve) |
 | Emission-line light from V | Hα map: [Finkbeiner (2003)][finkbeiner], ApJS 146, 407, through NASA SkyView; V passband: [Bessell (1990)][bessell] |
-| Emission line ratios | SNR criterion: [Mathewson & Clarke (1973)][mathewson], ApJ 180, 725; Magellanic Cloud PN [O III]/Hβ: [Stanghellini et al. (2003)][stanghellini], ApJ 596, 997; the criterion against H II regions: [Kopsacheili et al. (2020)][kopsacheili], MNRAS 491, 889; case-B Hα/Hβ: [Osterbrock & Ferland (2006)][agn2], *Astrophysics of Gaseous Nebulae and AGN*, 2nd ed. |
+| Filters and the sensor | standard narrowband filters at f/2 to f/5: [Chroma Technology's f/# data][chroma]; the IMX678 colour curves: ZWO, *ASI678MC manual* V1.0, §3.3 |
+| Airglow and the solar cycle | the component scaling: [Noll et al. (2012)][noll], A&A 543, A92; Paranal's V against the flux: [Patat (2008)][patat], A&A 481, 575; the airglow's share of a dark sky: [Benn & Ellison (1998)][benn], New Astron. Rev. 42, 503; the 22.0 natural sky at solar minimum: [Falchi et al. (2016)][falchi], Sci. Adv. 2, e1600377; the flux: NOAA SWPC's solar cycle indices and 30-day 10.7 cm flux |
+| Emission line ratios | SNR criterion: [Mathewson & Clarke (1973)][mathewson], ApJ 180, 725; Magellanic Cloud PN [O III]/Hβ: [Stanghellini et al. (2003)][stanghellini], ApJ 596, 997; the criterion against H II regions: [Kopsacheili et al. (2020)][kopsacheili], MNRAS 491, 889; the remnants' [N II]: [Fesen, Blair & Kirshner (1985)][fbk], ApJ 292, 29; H II regions: [Madsen, Reynolds & Haffner (2006)][madsen], ApJ 652, 401; planetaries' [N II] and [S II]: [Riesgo & López (2006)][riesgo], RMxAA; Wolf-Rayet shells: [Mesa-Delgado et al. (2014)][mesa], ApJ 785, 100; case-B Hα/Hβ: [Osterbrock & Ferland (2006)][agn2], *Astrophysics of Gaseous Nebulae and AGN*, 2nd ed. |
 | Per-filter Moon avoidance (comparison) | [Telescopius][telescopius]; the BAIT Lorentzian as in ACP |
 | Bortle scale | [Bortle (2001)][bortle], *Sky & Telescope* |
 | Surface brightness | [OpenNGC][openngc]; Gary Imm's Deep Sky Compendium; [SkEye][skeye] |
@@ -882,6 +919,9 @@ Treat SCORE as a way to order tonight's options, not as an absolute measure of q
 [andrews]: https://doi.org/10.1029/2004JD005734
 [blaauw]: https://doi.org/10.1093/mnras/121.2.123
 [falchi]: https://doi.org/10.1126/sciadv.1600377
+[benn]: https://arxiv.org/abs/astro-ph/9909153
+[patat]: https://arxiv.org/abs/0801.2270
+[noll]: https://arxiv.org/abs/1205.2003
 [thorsky]: https://github.com/jrthorstensen/thorsky
 [bortle]: https://skyandtelescope.org/astronomy-resources/light-pollution-and-astronomy-the-bortle-dark-sky-scale/
 [openngc]: https://github.com/mattiaverga/OpenNGC
@@ -899,6 +939,10 @@ Treat SCORE as a way to order tonight's options, not as an absolute measure of q
 [angstrom]: https://doi.org/10.1080/20014422.1929.11880498
 [moon-colour]: https://arxiv.org/abs/1401.1994
 [mathewson]: https://doi.org/10.1086/151999
+[madsen]: https://arxiv.org/abs/astro-ph/0609558
+[riesgo]: https://arxiv.org/abs/astro-ph/0602201
+[fbk]: https://doi.org/10.1086/163130
+[mesa]: https://arxiv.org/abs/1402.6181
 [chm]: https://doi.org/10.1016/j.rse.2023.113888
 [agn2]: https://ui.adsabs.harvard.edu/abs/2006agna.book.....O
 [finkbeiner]: https://doi.org/10.1086/374411
@@ -907,5 +951,6 @@ Treat SCORE as a way to order tonight's options, not as an absolute measure of q
 [telescopius]: https://telescopius.com/
 [astronomik-cls]: https://www.astroshop.eu/broadband-filters/astronomik-filters-2-cls-ccd-filter/p,16748
 [optolong-lpro]: https://optolong.com/cms/document/detail/id/13.html
+[chroma]: https://www.chroma.com/resources/technical-library/narrowband-astronomy-filter-f-number-data/
 [roman]: https://doi.org/10.1086/132034
 [vi49]: https://vizier.cfa.harvard.edu/viz-bin/VizieR?-source=VI/49

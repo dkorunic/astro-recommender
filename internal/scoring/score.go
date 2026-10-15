@@ -468,16 +468,24 @@ func passes(cfg *config.Config, tg catalog.Target, name string) filterPass {
 	// were once shares of V's 88 nm, which charged them CameraBand times the
 	// sky per nm a broadband filter is charged against the same unfiltered sky.
 	ls := config.Filters[name]
-	bands := lineBands(ls, cfg.FilterNM)
-	for i, l := range ls {
-		glow, rayleigh, mie := atmos.BroadSky(bands[i][0], bands[i][1])
-		fp.w += lines[l]
+	all := lineBands(ls, cfg.FilterNM)
+	bands := all[:len(ls)]
+	for _, b := range bands {
+		glow, rayleigh, mie := atmos.BroadSky(b[0], b[1])
 		fp.glow += glow
 		fp.rayleigh += rayleigh
 		fp.mie += mie
-		ray, aer := atmos.BandScale(catalog.LineNM[l])
-		fp.ray += lines[l] * ray
-		fp.aer += lines[l] * aer
+	}
+	// Every line a band reaches, the filter's own and the others in it
+	// ([N II] in Hα's), each once, as much of it as the beam lets through.
+	bm := beamOf(cfg)
+	for l, nm := range catalog.LineNM {
+		if t := bm.passed(nm, bands); t > 0 {
+			ray, aer := atmos.BandScale(nm)
+			fp.w += lines[l] * t
+			fp.ray += lines[l] * t * ray
+			fp.aer += lines[l] * t * aer
+		}
 	}
 	if fp.w > 0 {
 		fp.ray, fp.aer = fp.ray/fp.w, fp.aer/fp.w
@@ -512,24 +520,84 @@ func lineBands(ls []catalog.Line, width float64) [4][2]float64 {
 	return bands
 }
 
+// filterN is a standard interference filter's effective index: tilted by θ
+// its band moves to λ·√(1 − sin²θ/n²). 2.05 fits Chroma's published curves
+// of its 3, 5 and 8 nm Hα, Hβ, [O III] and [S II] filters at f/2 to f/5 as
+// top-hats of their nominal width (rms 0.06 in the line's transmission, no
+// bias; scripts/filter_shift.py).
+const filterN = 2.05
+
+// beam is the light cone line filters sit in (config.Config.FRatio,
+// Obstructed): its focal ratio and central obstruction as a fraction of the
+// aperture. The zero beam is collimated, the filters made for it: a band
+// passes a line inside it whole.
+type beam struct{ fRatio, obstructed float64 }
+
+func beamOf(cfg *config.Config) beam { return beam{cfg.FRatio, cfg.Obstructed} }
+
+// passed returns the share of a line at nm the bands let through, the most
+// any one does. In a cone a standard filter's band shifts blue with each
+// ray's angle θ (tan θ = r/2N across the pupil, r from the obstruction to
+// 1), so a line inside the collimated band leaves it in the outer rays and
+// one just blue of it enters: the share is the pupil area, uniform in r²,
+// whose shifted band holds the line. The sky is the bands' own: the shift
+// moves each band, not its width.
+func (b beam) passed(nm float64, bands [][2]float64) float64 {
+	var t float64
+	for _, band := range bands {
+		t = max(t, b.through(nm, band))
+	}
+
+	return t
+}
+
+// through is passed for one band [lo, hi]: the line is in while
+// n²(1 − (nm/lo)²) ≤ sin²θ ≤ n²(1 − (nm/hi)²).
+func (b beam) through(nm float64, band [2]float64) float64 {
+	if b.fRatio == 0 {
+		if nm >= band[0] && nm <= band[1] {
+			return 1
+		}
+
+		return 0
+	}
+	// r² across the pupil at which sin²θ is reached; past 1 no ray is
+	// that steep.
+	r2 := func(sin2 float64) float64 {
+		if sin2 <= 0 {
+			return 0
+		}
+		if sin2 >= 1 {
+			return math.Inf(1)
+		}
+
+		return sin2 / (1 - sin2) * 4 * b.fRatio * b.fRatio
+	}
+	n2, e2 := filterN*filterN, b.obstructed*b.obstructed
+	from := max(e2, r2(n2*(1-(nm/band[0])*(nm/band[0]))))
+	to := min(1, r2(n2*(1-(nm/band[1])*(nm/band[1])))) // 0 for a line red of the band
+
+	return max(0, to-from) / (1 - e2)
+}
+
 // lineV is the V band's transmission at each line, how much of it a V
 // surface brightness measures: Bessell (1990)'s curve, linear between its
 // 10 nm points, [O III] with 495.9 nm at a third of 500.7's flux added and
 // [S II] the doublet's mean. V straddles [O III] and misses Hα.
-var lineV = [4]float64{catalog.Ha: 0.0324, catalog.OIII: 0.5929, catalog.SII: 0.0161, catalog.Hb: 0.1111}
+var lineV = [catalog.NumLines]float64{catalog.Ha: 0.0324, catalog.OIII: 0.5929, catalog.SII: 0.0161, catalog.Hb: 0.1111, catalog.NII6548: 0.0354, catalog.NII6583: 0.0284}
 
 // vContinuum (mag) is the share of an emission nebula's catalogued V light
 // that is not its lines (the stars inside it, scattered continuum), fitted by
 // scripts/calibrate_lines.py: the median over 29 nebulae of 30' and more of
 // Finkbeiner (2003)'s Hα map against their lines derived from V by lineV
-// (interquartile range 0.02-1.45 mag).
-const vContinuum = 0.93
+// (interquartile range 0.34-1.76 mag).
+const vContinuum = 1.25
 
 // lightNL returns the light in nanoLamberts of tg at V surface brightness
 // sb: a continuum's is its V; an emission-line target's is its lines, which
 // V measures only as far as its passband reaches them (lineV) less what of
-// it is continuum (vContinuum): 1.19 mag brighter than V for an H II region,
-// as bright for a planetary, whose [O III] V holds.
+// it is continuum (vContinuum): 1.27 mag brighter than V for an H II region,
+// about as bright for a planetary, whose [O III] V holds.
 func lightNL(tg catalog.Target, sb float64) float64 {
 	nl := atmos.NanoLamberts(sb)
 	var fv float64
@@ -551,7 +619,7 @@ var cameraBand = [][2]float64{{atmos.CameraLo, atmos.CameraHi}}
 // its passed lines' share of them (Target.Lines sum to 1, so passing every
 // line is 1, as unfiltered), anything else's its continuum's, taken flat per
 // nm.
-func broadPasses(tg catalog.Target, lines [4]float64, bands [][2]float64) filterPass {
+func broadPasses(tg catalog.Target, lines [catalog.NumLines]float64, bands [][2]float64) filterPass {
 	var fp filterPass
 	emission := catalog.EmissionLine(tg)
 	for _, b := range bands {

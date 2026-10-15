@@ -64,13 +64,17 @@ type sky struct { // betteralign:ignore
 	Bortle     int        `json:"bortle,omitempty"`
 	SQM        float64    `json:"sqm,omitempty"`
 	SQMSource  string     `json:"sqmSource,omitempty"`
-	Extinction [2]float64 `json:"extinction"` // min and max over the window, mag per airmass
+	SolarFlux  float64    `json:"solarFlux,omitempty"`  // sfu, the night's monthly 10.7 cm flux; absent when unknown or skipped
+	SolarBasis string     `json:"solarBasis,omitempty"` // what solarFlux is: monthly mean, 30-day mean or NOAA prediction
+	AirglowMag float64    `json:"airglowMag,omitempty"` // the zenith's change from the solar cycle, mag/arcsec²; negative is brighter
+	Extinction [2]float64 `json:"extinction"`           // min and max over the window, mag per airmass
 	Filter     *filter    `json:"filter,omitempty"`
 }
 
 type filter struct { // betteralign:ignore
 	Mode      string  `json:"mode"`                // the -filter list: dual, tri, quad, ha, oiii, sii, cls, lpro, comma-separated
 	Bandwidth float64 `json:"bandwidth,omitempty"` // nm, each line filter band; absent with only cls/lpro
+	FRatio    float64 `json:"fRatio,omitempty"`    // -filter-std: the beam whose angles shift standard line filters' bands; absent for filters made for it
 }
 
 type frame struct {
@@ -138,9 +142,13 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 		Moon:     moon{Up: moonUp(s), Illumination: s.Illum, MinSeparation: s.MoonSep, PhaseAngle: s.MoonPhase},
 		Sky: sky{
 			ZenithMag: cfg.ZenithMag(), SQM: cfg.SQM, SQMSource: cfg.SQMSource,
+			SolarFlux: cfg.SolarFlux, SolarBasis: cfg.SolarBasis,
 			Extinction: [2]float64{slices.Min(s.Ext), slices.Max(s.Ext)},
 		},
 		Targets: []target{},
+	}
+	if cfg.SolarFlux > 0 {
+		r.Sky.AirglowMag = airglowMag(s)
 	}
 	if cfg.SQM != 0 {
 		r.Sky.Bortle = atmos.BortleClass(cfg.SQM)
@@ -150,7 +158,7 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 	if cfg.Filter != "" {
 		r.Sky.Filter = &filter{Mode: cfg.Filter}
 		if cfg.LineFilter() {
-			r.Sky.Filter.Bandwidth = cfg.FilterNM
+			r.Sky.Filter.Bandwidth, r.Sky.Filter.FRatio = cfg.FilterNM, cfg.FRatio
 		}
 	}
 	if cfg.Framing {

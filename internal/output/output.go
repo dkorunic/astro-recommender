@@ -33,6 +33,46 @@ import (
 	"golang.org/x/term"
 )
 
+// solarDesc is the Sky line's solar cycle part: the month's 10.7 cm flux
+// and how much it changes the zenith (negative: brighter), from the airglow.
+func solarDesc(cfg *config.Config, s *scoring.Sky) string {
+	if cfg.SolarFlux <= 0 {
+		return ""
+	}
+
+	return fmt.Sprintf(", solar flux %.0f sfu (%s; airglow %+.2f mag)", cfg.SolarFlux, cfg.SolarBasis, airglowMag(s))
+}
+
+// airglowMag is the zenith's change in mag/arcsec² from s.Airglow: negative
+// is brighter. Under a bright sky it rounds to 0, which %+.2f would print as
+// -0.00.
+func airglowMag(s *scoring.Sky) float64 {
+	d := atmos.MagFromNL(s.ZenithNL) - atmos.MagFromNL(s.ZenithNL-s.Airglow)
+	if math.Abs(d) < 0.005 {
+		return 0
+	}
+
+	return d
+}
+
+// filterDesc is the Sky line's filter part: the -filter list, the line
+// bands' width (-filter-nm sizes only those, not broadband ones) and, with
+// -filter-std, the beam that shifts them.
+func filterDesc(cfg *config.Config) string {
+	if cfg.Filter == "" {
+		return ""
+	}
+	desc := ", filter " + cfg.Filter
+	if cfg.LineFilter() {
+		desc += fmt.Sprintf(" %g nm", cfg.FilterNM)
+		if cfg.FRatio > 0 {
+			desc += fmt.Sprintf(" standard, shifted at f/%.1f", cfg.FRatio)
+		}
+	}
+
+	return desc
+}
+
 // Header prints the site, window, Moon and sky; place is the reverse
 // geocoded name, empty if unknown.
 func Header(cfg *config.Config, s *scoring.Sky, place string) {
@@ -139,14 +179,7 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 		extDesc += fmt.Sprintf(" (elevation %.0f m, aerosols)", s.Elevation)
 	}
 	skyDesc += ", extinction " + paint(scale(hi, 0.25, 0.4), extDesc) + " mag/airmass"
-	if cfg.Filter != "" {
-		skyDesc += ", filter " + cfg.Filter
-		// -filter-nm sizes only the line filters' bands, not broadband ones.
-		if cfg.LineFilter() {
-			skyDesc += fmt.Sprintf(" %g nm", cfg.FilterNM)
-		}
-	}
-	headerLine("Sky:     ", skyDesc)
+	headerLine("Sky:     ", skyDesc+solarDesc(cfg, s)+filterDesc(cfg))
 	fmt.Println()
 }
 

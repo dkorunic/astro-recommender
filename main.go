@@ -23,6 +23,7 @@ import (
 	"github.com/dkorunic/astro-recommender/internal/output"
 	"github.com/dkorunic/astro-recommender/internal/plan"
 	"github.com/dkorunic/astro-recommender/internal/scoring"
+	"github.com/dkorunic/astro-recommender/internal/solar"
 	"github.com/dkorunic/astro-recommender/internal/sqm"
 )
 
@@ -77,13 +78,15 @@ func main() {
 	// pay for a round-trip. The goroutines only read cfg; results go to
 	// locals, applied after Wait.
 	var (
-		wg        sync.WaitGroup
-		forecast  scoring.Forecast
-		place     string
-		cometEls  comets.Elements
-		cometErr  error
-		sqmVal    float64
-		sqmSource string
+		wg         sync.WaitGroup
+		forecast   scoring.Forecast
+		place      string
+		cometEls   comets.Elements
+		cometErr   error
+		sqmVal     float64
+		sqmSource  string
+		solarSFU   float64
+		solarBasis string
 	)
 	wg.Go(func() { forecast = scoring.FetchForecast(ctx, &cfg, start, end) })
 	// An explicit -sqm or -bortle (even 0) wins; the lookup needs a key.
@@ -110,10 +113,21 @@ func main() {
 			}
 		})
 	}
+	// A measured -sqm already holds its night's airglow; any other zenith
+	// has 22.0's natural sky, solar minimum's, which the flux scales.
+	if !cfg.NoSolar && cfg.SQM == 0 {
+		wg.Go(func() {
+			var err error
+			if solarSFU, solarBasis, err = solar.Flux(ctx, start); err != nil {
+				fmt.Fprintln(os.Stderr, "warning: sky not scaled for the solar cycle:", err)
+			}
+		})
+	}
 	wg.Wait()
 	if sqmSource != "" {
 		cfg.SQM, cfg.SQMSource = sqmVal, sqmSource
 	}
+	cfg.SolarFlux, cfg.SolarBasis = solarSFU, solarBasis
 
 	s := scoring.BuildSky(&cfg, forecast, start, end)
 	s.Night = [2]time.Time{duskT, dawnT}

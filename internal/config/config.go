@@ -72,15 +72,16 @@ const (
 type Config struct {
 	Day            time.Time
 	Loc            *time.Location
-	TargetsFile    string
-	ListName       string          // built-in target list (catalog.Lists)
-	From, To       string          // optional local "HH:MM" limits within the night
-	Twilight       string          // -twilight: "astronomical" or "nautical", the dusk/dawn definition
-	SQMSource      string          // where SQM was looked up; empty when given with -sqm
-	SkipFile       string          // -skip: file of names to leave out, shown in the header
 	Skip           map[string]bool // its names as catalog.NameKey
-	Types          []string        // -type: catalog.Classes to keep, nil = all
-	Filter         string          // -filter: comma-separated Filters or Broadband keys, lowercased, without repeats; "" = none
+	TargetsFile    string
+	ListName       string   // built-in target list (catalog.Lists)
+	From, To       string   // optional local "HH:MM" limits within the night
+	Twilight       string   // -twilight: "astronomical" or "nautical", the dusk/dawn definition
+	SQMSource      string   // where SQM was looked up; empty when given with -sqm
+	SkipFile       string   // -skip: file of names to leave out, shown in the header
+	Filter         string   // -filter: comma-separated Filters or Broadband keys, lowercased, without repeats; "" = none
+	SolarBasis     string   // what SolarFlux is: solar.Monthly, Recent or Predicted
+	Types          []string // -type: catalog.Classes to keep, nil = all
 	Horizon        horizon.Horizon
 	Plan           time.Duration
 	MinRun         time.Duration // -min-run: shortest continuous observable stretch a target needs; 0 = any
@@ -91,6 +92,8 @@ type Config struct {
 	RA, Dec        float64 // -ra/-dec sky region centre in J2000 degrees; see RASet/DecSet
 	Tol            float64 // -tol: half-width of the region in degrees (RA at 15°/h)
 	FilterNM       float64 // -filter-nm: each band's width
+	FRatio         float64 // -filter-std: the beam's focal ratio its line filters sit in; 0 = collimated (filters made for it)
+	Obstructed     float64 // -filter-std: the beam's central obstruction, a fraction of the aperture
 	Extinction     float64 // mag per airmass; used everywhere when set explicitly
 	FOVLong        float64 // arc minutes
 	FOVShort       float64 // arc minutes
@@ -105,20 +108,22 @@ type Config struct {
 	Bortle         int
 	SQM            float64 // measured zenith sky brightness, mag/arcsec²; 0 = unset
 	CometMag       float64
-	DateSet        bool // -date given; otherwise Day is now
-	Version        bool // -version: print the version and exit; nothing else is set
-	JSON           bool // -json: one JSON document instead of the tables
-	CSV            bool // -csv: the targets as CSV that N.I.N.A. imports, instead of the tables
-	ExtinctionSet  bool // -extinction given: skip the aerosol-based estimate
-	SkySet         bool // -sqm or -bortle given, even as 0: skip the DarkSkySites lookup
-	RASet, DecSet  bool // -ra/-dec given: keep only targets within Tol of them
-	Framing        bool // -origin, -fov, -scale or -focal with -sensor/-pixel: fit and score objects against the frame
-	Rotate         bool // -rotate: the camera turns to put an object's major axis along the frame's long side
-	Mono           bool // -mono: a monochrome camera, every pixel sees every band
+	SolarFlux      float64 // sfu, the night's monthly 10.7 cm solar flux main looked up; 0 = unknown, the sky as configured
+	DateSet        bool    // -date given; otherwise Day is now
+	Version        bool    // -version: print the version and exit; nothing else is set
+	JSON           bool    // -json: one JSON document instead of the tables
+	CSV            bool    // -csv: the targets as CSV that N.I.N.A. imports, instead of the tables
+	ExtinctionSet  bool    // -extinction given: skip the aerosol-based estimate
+	SkySet         bool    // -sqm or -bortle given, even as 0: skip the DarkSkySites lookup
+	RASet, DecSet  bool    // -ra/-dec given: keep only targets within Tol of them
+	Framing        bool    // -origin, -fov, -scale or -focal with -sensor/-pixel: fit and score objects against the frame
+	Rotate         bool    // -rotate: the camera turns to put an object's major axis along the frame's long side
+	Mono           bool    // -mono: a monochrome camera, every pixel sees every band
 	NoWeather      bool
 	NoGeocode      bool
 	NoSQM          bool
 	NoComets       bool
+	NoSolar        bool
 }
 
 func Parse() (Config, error) {
@@ -128,6 +133,7 @@ func Parse() (Config, error) {
 	var origin bool
 	var fov, sensor string
 	var focal, pixel float64
+	var filterStd bool
 	var horizonFile string
 	var ra, dec, types string
 	flag.Float64Var(&cfg.Lat, "lat", 0, "latitude in degrees, north positive (required)")
@@ -169,6 +175,7 @@ func Parse() (Config, error) {
 	flag.BoolVar(&cfg.Mono, "mono", false, "with framing, the camera is monochrome, so every pixel sees every filter band (the Origin's is colour)")
 	flag.StringVar(&cfg.Filter, "filter", "", "filters you own, comma-separated: for emission-line targets dual (Ha + OIII at once), tri (+ Hb), quad (+ Hb and SII), ha, oiii, sii; broadband light pollution filters cls (Astronomik CLS) and lpro (Optolong L-Pro) for any target; each target is scored without and with each worn all night, and FILTER shows the one that gains it most (with framing, the one SUBS needs fewest subs through) (default none)")
 	flag.Float64Var(&cfg.FilterNM, "filter-nm", 7, "with -filter, the width of each line filter band in nm, 1-30")
+	flag.BoolVar(&filterStd, "filter-std", false, "with -filter, the line filters are standard ones, whose bands shift blue in a fast beam: the Origin's f/2.2, or -focal over -aperture (off: made for the beam)")
 	flag.IntVar(&cfg.Bortle, "bortle", 0, "Bortle class 1-9 of the site, sets the zenith sky brightness (0 = dark sky)")
 	flag.Float64Var(&cfg.SQM, "sqm", 0, "measured zenith sky brightness in mag/arcsec² (SQM meter or light pollution map); overrides -bortle; default: looked up on DarkSkySites when a key is available (CLI: $DARKSKYSITES_API_KEY; browser: always) and -bortle is not")
 	flag.Float64Var(&cfg.Extinction, "extinction", 0.2, "atmospheric extinction in mag per airmass; default: estimated per hour from elevation and CAMS aerosols, this value if unavailable")
@@ -179,6 +186,7 @@ func Parse() (Config, error) {
 	flag.BoolVar(&cfg.NoGeocode, "no-geocode", false, "skip the OpenStreetMap reverse geocoding of the location")
 	flag.BoolVar(&cfg.NoSQM, "no-sqm", false, "skip the DarkSkySites sky brightness lookup")
 	flag.BoolVar(&cfg.NoComets, "no-comets", false, "skip comets (MPC orbital elements, cached for a day)")
+	flag.BoolVar(&cfg.NoSolar, "no-solar", false, "skip the NOAA solar flux lookup that scales the airglow with the solar cycle")
 	flag.Float64Var(&cfg.CometMag, "comet-mag", 12, "include comets brighter than this total visual magnitude")
 	version := flag.Bool("version", false, "print the version and exit")
 	setUsage()
@@ -246,6 +254,9 @@ func Parse() (Config, error) {
 	}
 
 	if err := cfg.validateFlags(set); err != nil {
+		return Config{}, err
+	}
+	if err := cfg.beam(set, filterStd, focal); err != nil {
 		return Config{}, err
 	}
 	if err := cfg.loadFiles(horizonFile); err != nil {
@@ -601,6 +612,26 @@ func (cfg *Config) parseRegion(set map[string]bool, ra, dec string) error {
 	}
 	if (cfg.RASet || cfg.DecSet) && (cfg.Tol <= 0 || cfg.Tol > 180) {
 		return fmt.Errorf("%w: -tol must be above 0 and at most 180 degrees", errInvalidFlag)
+	}
+
+	return nil
+}
+
+// beam sets FRatio and Obstructed for -filter-std: the Origin's f/2.2 and
+// obstruction, or another telescope's from -focal and -aperture (camera
+// validated -aperture against -obstruction); without -filter-std, 0.
+func (cfg *Config) beam(set map[string]bool, filterStd bool, focal float64) error {
+	switch {
+	case !filterStd:
+		return nil
+	case !cfg.LineFilter():
+		return fmt.Errorf("%w: -filter-std needs a line filter in -filter (dual, tri, quad, ha, oiii or sii)", errInvalidFlag)
+	case set["focal"] != set["aperture"]:
+		return fmt.Errorf("%w: -filter-std takes the beam from -focal and -aperture together, or the Origin's f/2.2 with neither", errInvalidFlag)
+	case set["focal"]:
+		cfg.FRatio, cfg.Obstructed = focal/cfg.Aperture, cfg.Obstruction/cfg.Aperture
+	default:
+		cfg.FRatio, cfg.Obstructed = originFocal/originAperture, originObstruction/originAperture
 	}
 
 	return nil
