@@ -236,8 +236,8 @@ const (
 // chart to about ±0.2 e⁻). A version is left out where no astro camera
 // ships it or its peak QE is unpublished (the IMX183's and IMX174's colour
 // ones); a mono version takes the mono response (lineQE in scoring). The
-// IMX678 preset is ZWO's at gain 182; the Origin keeps its own read noise
-// (Scopes' ReadNoise).
+// IMX678 preset is ZWO's ASI678MC/MM at gain 182 (one QE for both, as ZWO
+// quotes it); the Origin keeps its own read noise (Scopes' ReadNoise).
 var Cameras = map[string]Sensor{
 	"imx571": {
 		Pixel: 3.76, PxLong: 6248, PxShort: 4176,
@@ -254,10 +254,12 @@ var Cameras = map[string]Sensor{
 		Colour: &Variant{Response: &imx585, Gain: 200, QE: 0.91, ReadNoise: 1.0},
 		Mono:   &Variant{Gain: 200, QE: 0.91, ReadNoise: 1.0},
 	},
+	// The read noise ZWO's current ASI6200 chart's (its v1.4 manual's 1.5
+	// predates the 0.86 e⁻ revision).
 	"imx455": {
 		Pixel: 3.76, PxLong: 9576, PxShort: 6388,
-		Colour: &Variant{Response: &imx455, Gain: 100, QE: 0.80, ReadNoise: 1.5},
-		Mono:   &Variant{Gain: 100, QE: 0.91, ReadNoise: 1.5},
+		Colour: &Variant{Response: &imx455, Gain: 100, QE: 0.80, ReadNoise: 1.35},
+		Mono:   &Variant{Gain: 100, QE: 0.91, ReadNoise: 1.35},
 	},
 	"imx294": {
 		Pixel: 4.63, PxLong: 4144, PxShort: 2822,
@@ -276,6 +278,7 @@ var Cameras = map[string]Sensor{
 	chipIMX678: {
 		Pixel: 2.0, PxLong: 3840, PxShort: 2160,
 		Colour: &Variant{Response: &imx678, Gain: 182, QE: 0.83, ReadNoise: 0.9},
+		Mono:   &Variant{Gain: 182, QE: 0.83, ReadNoise: 0.9},
 	},
 	chipIMX662: {
 		Pixel: 2.9, PxLong: 1920, PxShort: 1080,

@@ -357,7 +357,7 @@ The `-filter` choices are classes rather than products: filters of the same clas
 | `imx294` | ASI294MC Pro | 4.63 µm, 4144 × 2822 | 75%, 1.7 e⁻ at gain 120 | – |
 | `imx410` | ASI2400MC Pro | 5.94 µm, 6072 × 4042 | 80%, 1.5 e⁻ at gain 140 | – |
 | `imx432` | ASI432MM | 9 µm, 1608 × 1104 | – | 79%, 4.3 e⁻ at gain 140 |
-| `imx455` | ASI6200MC/MM Pro, Player One Zeus 455 | 3.76 µm, 9576 × 6388 | 80%, 1.5 e⁻ at gain 100 | 91%, 1.5 e⁻ at gain 100 |
+| `imx455` | ASI6200MC/MM Pro, Player One Zeus 455 | 3.76 µm, 9576 × 6388 | 80%, 1.35 e⁻ at gain 100 | 91%, 1.35 e⁻ at gain 100 |
 | `imx461` | ASI461MM Pro | 3.76 µm, 11656 × 8750 | – | 91%, 1.45 e⁻ at gain 100 |
 | `imx178` | Celestron Origin 2023, Vaonis Stellina, ASI178MC | 2.4 µm, 3096 × 2080 | 70% (second-hand), 1.7 e⁻ at gain 100 | – |
 | `imx462` | ASI462MC/MM, Seestar S50, Vespera | 2.9 µm, 1936 × 1096 | 81%, 1.05 e⁻ at gain 80 | 89%, 1.05 e⁻ at gain 80 |
@@ -371,9 +371,9 @@ The `-filter` choices are classes rather than products: filters of the same clas
 | `imx662` | ASI662MC/MM | 2.9 µm, 1920 × 1080 | 91%, 1.2 e⁻ at gain 200 | 91%, 1.2 e⁻ at gain 200 |
 | `imx664` | ASI664MC | 2.9 µm, 2704 × 1536 | 91%, 0.8 e⁻ at gain 252 | – |
 | `imx676` | ASI676MC/MM | 2.0 µm, 3552 × 3552 | 83%, 0.75 e⁻ at gain 180 | 83%, 0.75 e⁻ at gain 180 |
-| `imx678` | ASI678MC, Celestron Origin | 2.0 µm, 3840 × 2160 | 83%, 0.9 e⁻ at gain 182 | – |
+| `imx678` | ASI678MC/MM, Celestron Origin | 2.0 µm, 3840 × 2160 | 83%, 0.9 e⁻ at gain 182 | 83%, 0.9 e⁻ at gain 182 |
 
-Read noise is the maker's figure at its deep-sky gain, where the high conversion gain mode switches on (ZWO's gain in 0.1 dB; read off its chart to about ±0.2 e⁻); a sensor without that mode (IMX174, IMX183) is quoted at the gain shown. Peak QE is the maker's, often an estimate. A version is left out where no astro camera ships it or its peak QE is unpublished (the IMX183's and IMX174's colour); the IMX178's colour peak (70%) is Sony's datasheet as quoted second-hand, since ZWO's manual says TBD. The colour responses are digitized from each maker's QE chart by `scripts/qe_digitize.py` ([MODELS.md](MODELS.md#camera-presets)); the IMX678's green pixels respond to Hα at 0.34 of the peak against red's 0.77, the IMX571's at 0.15, so at equal QE and read noise the colour response alone moves an emission nebula's SUBS by up to 1.7× across the presets (IC 1795: 180–298 subs unfiltered, 48–84 through dual-band). The Origin itself is `-origin`, with its own read noise (2.15 e⁻ at its unpublished gain); `-camera imx678` is ZWO's ASI678MC.
+Read noise is the maker's figure at its deep-sky gain, where the high conversion gain mode switches on (ZWO's gain in 0.1 dB; read off its chart to about ±0.2 e⁻); a sensor without that mode (IMX174, IMX183) is quoted at the gain shown. Peak QE is the maker's, often an estimate. A version is left out where no astro camera ships it or its peak QE is unpublished (the IMX183's and IMX174's colour); the IMX178's colour peak (70%) is Sony's datasheet as quoted second-hand, since ZWO's manual says TBD. The colour responses are digitized from each maker's QE chart by `scripts/qe_digitize.py` ([MODELS.md](MODELS.md#camera-presets)); the IMX678's green pixels respond to Hα at 0.34 of the peak against red's 0.77, the IMX571's at 0.15, so at equal QE and read noise the colour response alone moves an emission nebula's SUBS by up to 1.7× across the presets (IC 1795: 180–298 subs unfiltered, 48–84 through dual-band). The Origin itself is `-origin`, with its own read noise (2.15 e⁻ at its unpublished gain); `-camera imx678` is ZWO's ASI678MC (`-mono` its ASI678MM).
 
 ### Smart telescopes
 
