@@ -41,7 +41,7 @@ func mutClose(t *testing.T, name string, got, want, tol float64) {
 // The Origin: 3856×2180 px of 2 µm at 335 mm: 2·atan(7.712/670) = 1.31897°
 // = 79.14′, 2·atan(4.36/670) = 44.74′; 206265·2/335000 = 1.2314″/px.
 func TestMutOriginFrame(t *testing.T) {
-	cfg, err := mutParse(t, mutBase("-origin")...)
+	cfg, err := mutParse(t, mutBase("-scope", "origin")...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,18 +51,18 @@ func TestMutOriginFrame(t *testing.T) {
 	mutClose(t, "SizeMin", cfg.SizeMin, 200*1.23143/60, 1e-3)
 	mutClose(t, "SizeMax", cfg.SizeMax, 44.74, 0.01)
 	if !cfg.Framing {
-		t.Error("-origin not framing")
+		t.Error("-scope origin not framing")
 	}
 	l, s := cfg.FramePx()
 	mutClose(t, "FramePx long", l, 3856, 1)
 	mutClose(t, "FramePx short", s, 2180, 1)
 	// Explicit sizes win over the frame defaults.
-	cfg, err = mutParse(t, mutBase("-origin", "-size-min", "0", "-size-max", "40", "-min-px", "500")...)
+	cfg, err = mutParse(t, mutBase("-scope", "origin", "-size-min", "0", "-size-max", "40", "-min-px", "500")...)
 	if err != nil || cfg.SizeMin != 0 || cfg.SizeMax != 40 {
 		t.Errorf("explicit sizes: %v %v %v", cfg.SizeMin, cfg.SizeMax, err)
 	}
 	// An explicit -size-min equal to the plain default still wins.
-	cfg, err = mutParse(t, mutBase("-origin", "-size-min", "10")...)
+	cfg, err = mutParse(t, mutBase("-scope", "origin", "-size-min", "10")...)
 	if err != nil || cfg.SizeMin != 10 {
 		t.Errorf("explicit -size-min 10: %v %v", cfg.SizeMin, err)
 	}
@@ -75,9 +75,9 @@ func TestMutOriginFrame(t *testing.T) {
 		t.Errorf("-pixel without -focal: %v", err)
 	}
 	// -min-px scales the default minimum.
-	cfg, _ = mutParse(t, mutBase("-origin", "-min-px", "100")...)
+	cfg, _ = mutParse(t, mutBase("-scope", "origin", "-min-px", "100")...)
 	mutClose(t, "SizeMin 100px", cfg.SizeMin, 100*1.23143/60, 1e-3)
-	if _, err := mutParse(t, mutBase("-origin", "-size-max", "45")...); err == nil {
+	if _, err := mutParse(t, mutBase("-scope", "origin", "-size-max", "45")...); err == nil {
 		t.Error("-size-max above the short side accepted")
 	}
 	// No framing: plain defaults.
@@ -148,7 +148,7 @@ func TestMutOtherFrames(t *testing.T) {
 			t.Errorf("%v accepted", args)
 		}
 	}
-	for _, args := range [][]string{{"-scale", "0.01", "-fov", "0.05x0.05"}, {"-scale", "1000", "-min-px", "1"}, {"-fov", "180x180", "-size-max", "10"}, {"-min-px", "0", "-origin"}} {
+	for _, args := range [][]string{{"-scale", "0.01", "-fov", "0.05x0.05"}, {"-scale", "1000", "-min-px", "1"}, {"-fov", "180x180", "-size-max", "10"}, {"-min-px", "0", "-scope", "origin"}} {
 		if _, err := mutParse(t, mutBase(args...)...); err != nil {
 			t.Errorf("%v rejected: %v", args, err)
 		}
@@ -202,7 +202,7 @@ func TestMutValidate(t *testing.T) {
 		{"-filter", "cls,lpro", "-filter-nm", "7"},
 		{"-filter-std"},
 		{"-filter", "cls", "-filter-std"},
-		{"-filter", "ha", "-filter-std", "-origin", "-aperture", "200"},
+		{"-filter", "ha", "-filter-std", "-scope", "origin", "-aperture", "200"},
 		{"-filter", "ha", "-filter-std", "-focal", "400", "-pixel", "3.76"},
 		{"-bortle", "10"},
 		{"-bortle", "-1"},
@@ -388,13 +388,13 @@ func TestMutFilterStdBeam(t *testing.T) {
 	}{
 		{[]string{"-filter", "ha"}, 0, 0},
 		{[]string{"-filter", "ha", "-filter-std"}, 335.0 / 152, 77.0 / 152},
-		{[]string{"-filter", "dual", "-filter-std", "-origin"}, 335.0 / 152, 77.0 / 152},
+		{[]string{"-filter", "dual", "-filter-std", "-scope", "origin"}, 335.0 / 152, 77.0 / 152},
 		{[]string{"-filter", "dual", "-filter-std", "-scope", "origin-mk1"}, 335.0 / 152, 63.0 / 152},
 		{[]string{"-filter", "dual", "-filter-std", "-scope", "seestar-s50"}, 5, 0},
 		{[]string{"-filter", "dual", "-filter-std", "-focal", "400", "-pixel", "3.76", "-aperture", "100", "-obstruction", "20"}, 4, 0.2},
 		// A given obstruction counts with the scope's beam, even 0.
 		{[]string{"-filter", "ha", "-filter-std", "-scope", "draco", "-obstruction", "40"}, 340.0 / 90, 40.0 / 90},
-		{[]string{"-filter", "ha", "-filter-std", "-origin", "-obstruction", "0"}, 335.0 / 152, 0},
+		{[]string{"-filter", "ha", "-filter-std", "-scope", "origin", "-obstruction", "0"}, 335.0 / 152, 0},
 	} {
 		cfg, err := mutParse(t, mutBase(c.args...)...)
 		if err != nil || math.Abs(cfg.FRatio-c.ratio) > 1e-12 || math.Abs(cfg.Obstructed-c.obstr) > 1e-12 {

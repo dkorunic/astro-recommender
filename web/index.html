@@ -245,7 +245,7 @@ const HIDDEN = ["version"]; // nothing to show
 // help text and the CLI speak in flags.
 const LABELS = {
   lat: "Latitude", lon: "Longitude", date: "Date", tz: "Time zone", list: "Target list", n: "Results",
-  plan: "Night plan", origin: "Celestron Origin", scope: "Smart telescope", filter: "Filters", bortle: "Bortle class", sqm: "Sky brightness",
+  plan: "Night plan", scope: "Smart telescope", filter: "Filters", bortle: "Bortle class", sqm: "Sky brightness",
 };
 // The string flags whose help ends in their choices, shown as a select.
 const SELECTS = ["list", "camera", "scope"];
@@ -657,6 +657,7 @@ function save() {
 function restore() {
   let v = {};
   try { v = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch {}
+  if (v.origin === true && !v.scope) v.scope = "origin"; // -origin was -scope origin
   for (const el of $("form").elements) {
     if (!(el.name in v) || el.name === "date") continue; // older saves kept it
     // A flag whose kind changed (-filter was a checkbox) keeps nothing stale.
@@ -680,6 +681,7 @@ function query() {
 function share() { history.replaceState(null, "", query()); }
 function fromURL() {
   const q = new URLSearchParams(location.search);
+  if (q.has("origin") && !q.get("scope")) q.set("scope", "origin"); // -origin was -scope origin
   // Only a link query() made (it always names a field) fills and runs the
   // form; a foreign parameter such as a tracking tag must not start a run.
   if (![...$("form").elements].some((el) => el.name && el.type !== "file" && q.has(el.name))) return false;

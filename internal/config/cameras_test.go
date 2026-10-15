@@ -62,7 +62,7 @@ func TestCameras(t *testing.T) {
 
 // -camera fills -sensor, -pixel, -qe and -read-noise from its chip, each
 // given flag winning, and the colour response; -mono picks the mono version.
-// It needs -focal, refuses -origin, an unknown chip and a version not made;
+// It needs -focal, refuses -scope, an unknown chip and a version not made;
 // without it the response is the IMX678's, the Origin's.
 func TestCameraFlag(t *testing.T) {
 	cfg, err := mutParse(t, mutBase("-camera", " IMX571 ", "-focal", "400", "-aperture", "80")...)
@@ -85,7 +85,7 @@ func TestCameraFlag(t *testing.T) {
 	}
 	for _, args := range [][]string{
 		{"-camera", "imx571"},
-		{"-camera", "imx571", "-origin", "-focal", "400"},
+		{"-camera", "imx571", "-scope", "origin", "-focal", "400"},
 		{"-camera", "imx999", "-focal", "400"},
 		{"-camera", "imx294", "-mono", "-focal", "400"},
 		{"-camera", "imx492", "-focal", "400"},
@@ -94,7 +94,7 @@ func TestCameraFlag(t *testing.T) {
 			t.Errorf("%v accepted", args)
 		}
 	}
-	if cfg, _ := mutParse(t, mutBase("-origin")...); cfg.ColourResponse() != &imx678 || cfg.CameraLabel() != "IMX678 colour" || cfg.ScopeLabel() != "Celestron Origin Mark II (IMX678)" {
+	if cfg, _ := mutParse(t, mutBase("-scope", "origin")...); cfg.ColourResponse() != &imx678 || cfg.CameraLabel() != "IMX678 colour" || cfg.ScopeLabel() != "Celestron Origin Mark II (IMX678)" {
 		t.Errorf("the Origin: camera %q, scope %q", cfg.CameraLabel(), cfg.ScopeLabel())
 	}
 	if cfg, _ := mutParse(t, mutBase("-fov", "2x1")...); cfg.ColourResponse() != &imx678 || cfg.CameraLabel() != "" || cfg.ScopeLabel() != "" {

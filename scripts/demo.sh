@@ -14,13 +14,13 @@
 # so give -lat and -lon again:
 #
 #   scripts/demo.sh
-#   scripts/demo.sh -lat 45.8 -lon 16 -origin
+#   scripts/demo.sh -lat 45.8 -lon 16 -scope origin
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 command -v freeze >/dev/null || { echo "install freeze: go install github.com/charmbracelet/freeze@latest" >&2; exit 1; }
 
-args=(-filter dual -lat 45.58587022468967 -lon 17.312918864814147 -sqm 21.60)
+args=(-scope origin -filter dual -lat 45.58587022468967 -lon 17.312918864814147 -sqm 21.60)
 [ $# -gt 0 ] && args=("$@")
 
 tmp=$(mktemp -d)

@@ -61,16 +61,16 @@ func TestScopes(t *testing.T) {
 }
 
 // -scope sets the frame and, where its chip has a preset and its obstruction
-// is published, the sub-exposure estimate's camera; -origin is -scope
-// origin, byte for byte.
+// is published, the sub-exposure estimate's camera; its key ignores case
+// and spaces.
 func TestScopeFlag(t *testing.T) {
-	a, err := mutParse(t, mutBase("-origin")...)
+	a, err := mutParse(t, mutBase("-scope", "origin")...)
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, err := mutParse(t, mutBase("-scope", "ORIGIN")...)
+	b, err := mutParse(t, mutBase("-scope", " ORIGIN ")...)
 	if err != nil || a.FOVLong != b.FOVLong || a.Scale != b.Scale || a.Obstruction != b.Obstruction || a.Scope != b.Scope {
-		t.Errorf("-origin %+v and -scope origin %+v differ (%v)", a, b, err)
+		t.Errorf("-scope origin %+v and -scope \" ORIGIN \" %+v differ (%v)", a, b, err)
 	}
 	s := Scopes["vespera-pro"]
 	cfg, err := mutParse(t, mutBase("-scope", "vespera-pro")...)
@@ -81,6 +81,51 @@ func TestScopeFlag(t *testing.T) {
 	cfg, err = mutParse(t, mutBase("-scope", "draco", "-qe", "0.8", "-read-noise", "1.2", "-obstruction", "40", "-sub", "60")...)
 	if err != nil || cfg.QE != 0.8 || cfg.ReadNoise != 1.2 || cfg.Obstruction != 40 || cfg.Sub != 60 || cfg.Aperture != 90 {
 		t.Errorf("draco with a camera: %+v (%v)", cfg, err)
+	}
+}
+
+// -scope alone sets everything the sub-exposure estimate and the frame read,
+// for every preset: the frame, optics, sub, its chip's QE, read noise (the
+// scope's own over the preset's) and colour response, and the -filter-std
+// beam; no chip preset or an unpublished obstruction leaves QE and read
+// noise 0, so SUBS is left out.
+func TestScopeSetsAll(t *testing.T) {
+	for key, s := range Scopes {
+		cfg, err := mutParse(t, mutBase("-scope", key, "-filter", "ha", "-filter-std")...)
+		if s.NoSubs {
+			// -filter-std needs the unpublished obstruction.
+			if err == nil {
+				t.Errorf("%s: -filter-std without -obstruction accepted", key)
+			}
+			cfg, err = mutParse(t, mutBase("-scope", key)...)
+		}
+		if err != nil {
+			t.Errorf("%s: %v", key, err)
+
+			continue
+		}
+		long, short := s.fov()
+		if !cfg.Framing || cfg.Scope != key || cfg.Camera != s.Camera || cfg.Mono ||
+			cfg.FOVLong != long || cfg.FOVShort != short || cfg.Scale != s.scale() ||
+			cfg.Aperture != s.Aperture || cfg.Obstruction != s.Obstruction || cfg.Sub != s.Sub {
+			t.Errorf("%s: frame/optics %+v, want %+v", key, cfg, s)
+		}
+		var qe, rn float64
+		if v := s.variant(); v != nil {
+			qe, rn = v.QE, v.ReadNoise
+			if cfg.ColourResponse() != Cameras[s.Camera].Colour.Response {
+				t.Errorf("%s: response not %s's", key, s.Camera)
+			}
+		}
+		if cfg.QE != qe || cfg.ReadNoise != rn || (rn != 0 && s.ReadNoise != 0 && rn != s.ReadNoise) {
+			t.Errorf("%s: QE %v RN %v, want %v %v", key, cfg.QE, cfg.ReadNoise, qe, rn)
+		}
+		if !s.NoSubs && (cfg.FRatio != s.Focal/s.Aperture || cfg.Obstructed != s.Obstruction/s.Aperture) {
+			t.Errorf("%s: beam f/%v %v, want f/%v %v", key, cfg.FRatio, cfg.Obstructed, s.Focal/s.Aperture, s.Obstruction/s.Aperture)
+		}
+		if cfg.ScopeLabel() == "" || cfg.SizeMax != cfg.MaxFramed() {
+			t.Errorf("%s: label %q, size-max %v of %v", key, cfg.ScopeLabel(), cfg.SizeMax, cfg.MaxFramed())
+		}
 	}
 }
 
@@ -120,10 +165,10 @@ func TestScopeNoCameraModel(t *testing.T) {
 	}
 }
 
-// A smart telescope's camera is colour: -mono with -scope or -origin is an
+// A smart telescope's camera is colour: -mono with -scope is an
 // error, and a mono camera is another telescope's, -camera's or -fov's.
 func TestScopeMono(t *testing.T) {
-	for _, args := range [][]string{{"-scope", "seestar-s50", "-mono"}, {"-origin", "-mono"}, {"-scope", "origin", "-mono"}} {
+	for _, args := range [][]string{{"-scope", "seestar-s50", "-mono"}, {"-scope", "origin", "-mono"}} {
 		if _, err := mutParse(t, mutBase(args...)...); err == nil || !strings.Contains(err.Error(), "camera is colour") {
 			t.Errorf("%v: %v", args, err)
 		}

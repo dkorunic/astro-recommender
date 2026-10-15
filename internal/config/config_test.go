@@ -87,19 +87,19 @@ func TestParseFrame(t *testing.T) {
 		want string // substring of the error, "" to accept
 		cfg  frame  // expected when accepted and Framing
 	}{
-		"origin":           {[]string{"-origin"}, "", origin},
+		"origin":           {[]string{"-scope", "origin"}, "", origin},
 		"fov alone":        {[]string{"-fov", "7x10"}, "", frame{600, 420, originScale, 200 * originScale / 60, 420}},
 		"scale alone":      {[]string{"-scale", "0.2"}, "", frame{originFOVLong, originFOVShort, 0.2, 200 * 0.2 / 60, originFOVShort}},
 		"fov and scale":    {[]string{"-fov", "2.5x1.7", "-scale", "3.8"}, "", frame{150, 102, 3.8, 200 * 3.8 / 60, 102}},
-		"min-px 0":         {[]string{"-origin", "-min-px", "0"}, "", frame{originFOVLong, originFOVShort, originScale, 0, originFOVShort}},
-		"explicit sizes":   {[]string{"-origin", "-size-min", "5", "-size-max", "40"}, "", frame{originFOVLong, originFOVShort, originScale, 5, 40}},
-		"size-max > frame": {[]string{"-origin", "-size-max", "300"}, "cannot be framed", frame{}},
+		"min-px 0":         {[]string{"-scope", "origin", "-min-px", "0"}, "", frame{originFOVLong, originFOVShort, originScale, 0, originFOVShort}},
+		"explicit sizes":   {[]string{"-scope", "origin", "-size-min", "5", "-size-max", "40"}, "", frame{originFOVLong, originFOVShort, originScale, 5, 40}},
+		"size-max > frame": {[]string{"-scope", "origin", "-size-max", "300"}, "cannot be framed", frame{}},
 		"fov in arcmin":    {[]string{"-fov", "79x45", "-scale", "1.23"}, "not a sensor", frame{}},
 		"scale off frame":  {[]string{"-fov", "10x7", "-scale", "0.5"}, "not a sensor", frame{}},
-		"min-px negative":  {[]string{"-origin", "-min-px", "-100"}, "-min-px", frame{}},
-		"min-px NaN":       {[]string{"-origin", "-min-px", "NaN"}, "-min-px must be a finite", frame{}},
+		"min-px negative":  {[]string{"-scope", "origin", "-min-px", "-100"}, "-min-px", frame{}},
+		"min-px NaN":       {[]string{"-scope", "origin", "-min-px", "NaN"}, "-min-px must be a finite", frame{}},
 		"min-px Inf":       {[]string{"-min-px", "Inf"}, "-min-px must be a finite", frame{}},
-		"scale Inf":        {[]string{"-origin", "-scale", "Inf"}, "-scale must be a finite", frame{}},
+		"scale Inf":        {[]string{"-scope", "origin", "-scale", "Inf"}, "-scale must be a finite", frame{}},
 		"extinction NaN":   {[]string{"-extinction", "NaN"}, "-extinction must be a finite", frame{}},
 		"alt-min Inf":      {[]string{"-alt-min", "-Inf"}, "-alt-min must be a finite", frame{}},
 		"size-min NaN":     {[]string{"-size-min", "NaN"}, "-size-min must be a finite", frame{}},
@@ -136,8 +136,8 @@ func TestParseFrame(t *testing.T) {
 		"rotate":          {[]string{"-fov", "10x7", "-rotate"}, "", frame{600, 420, originScale, 200 * originScale / 60, 600}},
 		"mosaic rotate":   {[]string{"-fov", "10x7", "-mosaic", "3", "-rotate"}, "", frame{600, 420, originScale, 200 * originScale / 60, 600 * 2.8}},
 		"mosaic size-max": {[]string{"-fov", "10x7", "-mosaic", "4", "-size-max", "800"}, "cannot be framed", frame{}},
-		"mosaic 0":        {[]string{"-origin", "-mosaic", "0"}, "-mosaic must be 1 to", frame{}},
-		"mosaic 26":       {[]string{"-origin", "-mosaic", "26"}, "-mosaic must be 1 to", frame{}},
+		"mosaic 0":        {[]string{"-scope", "origin", "-mosaic", "0"}, "-mosaic must be 1 to", frame{}},
+		"mosaic 26":       {[]string{"-scope", "origin", "-mosaic", "26"}, "-mosaic must be 1 to", frame{}},
 		"mosaic alone":    {[]string{"-mosaic", "4"}, "need framing", frame{}},
 		"rotate alone":    {[]string{"-rotate"}, "need framing", frame{}},
 	} {
@@ -304,13 +304,13 @@ func TestParseTypes(t *testing.T) {
 }
 
 // A stray argument stops flag parsing, so it is an error rather than the
-// flags after it being dropped: -origin true would lose -n and -bortle.
+// flags after it being dropped: -rotate true would lose -n and -bortle.
 func TestParseStrayArgument(t *testing.T) {
-	if _, err := parse(t, "-origin", "true", "-n", "2"); err == nil || !strings.Contains(err.Error(), `"true"`) {
-		t.Errorf("-origin true -n 2: err %v, want the stray \"true\" named", err)
+	if _, err := parse(t, "-rotate", "true", "-n", "2"); err == nil || !strings.Contains(err.Error(), `"true"`) {
+		t.Errorf("-rotate true -n 2: err %v, want the stray \"true\" named", err)
 	}
-	if cfg, err := parse(t, "-origin=false", "-n", "2"); err != nil || cfg.Top != 2 || cfg.Framing {
-		t.Errorf("-origin=false -n 2: Top %d, Framing %v, err %v", cfg.Top, cfg.Framing, err)
+	if cfg, err := parse(t, "-rotate=false", "-n", "2"); err != nil || cfg.Top != 2 || cfg.Framing {
+		t.Errorf("-rotate=false -n 2: Top %d, Framing %v, err %v", cfg.Top, cfg.Framing, err)
 	}
 }
 
@@ -321,34 +321,33 @@ func TestCamera(t *testing.T) {
 		want string // error substring; "" = accepted
 		cam  cam
 	}{
-		"origin":     {[]string{"-origin"}, "", cam{152, 77, 10, 0.83, 2.15}},
+		"origin":     {[]string{"-scope", "origin"}, "", cam{152, 77, 10, 0.83, 2.15}},
 		"origin mk1": {[]string{"-scope", "origin-mk1"}, "", cam{152, 63, 10, 0.70, 1.7}},
 		"seestar":    {[]string{"-scope", "Seestar-S50"}, "", cam{50, 0, 10, 0.81, 1.05}},
 		// No chip preset or no published obstruction: no SUBS unless given.
-		"no preset":        {[]string{"-scope", "seestar-s50-pro"}, "", cam{50, 0, 10, 0, 0}},
-		"no obstruction":   {[]string{"-scope", "evscope"}, "", cam{114, 0, 4, 0, 0}},
-		"unknown scope":    {[]string{"-scope", "hubble"}, "-scope must be one of", cam{}},
-		"origin and scope": {[]string{"-origin", "-scope", "vespera"}, "-origin is -scope origin", cam{}},
-		"scope camera":     {[]string{"-scope", "vespera", "-camera", "imx571", "-focal", "400"}, "-scope fixes its camera", cam{}},
-		"no framing":       {nil, "", cam{}},
+		"no preset":      {[]string{"-scope", "seestar-s50-pro"}, "", cam{50, 0, 10, 0, 0}},
+		"no obstruction": {[]string{"-scope", "evscope"}, "", cam{114, 0, 4, 0, 0}},
+		"unknown scope":  {[]string{"-scope", "hubble"}, "-scope must be one of", cam{}},
+		"scope camera":   {[]string{"-scope", "vespera", "-camera", "imx571", "-focal", "400"}, "-scope fixes its camera", cam{}},
+		"no framing":     {nil, "", cam{}},
 		// Another telescope's aperture drops the Origin's obstruction.
-		"other scope": {[]string{"-origin", "-aperture", "200"}, "", cam{200, 0, 10, 0.83, 2.15}},
+		"other scope": {[]string{"-scope", "origin", "-aperture", "200"}, "", cam{200, 0, 10, 0.83, 2.15}},
 		"all given": {[]string{
 			"-focal", "400", "-pixel", "3.76", "-sensor", "23.5x15.6", "-aperture", "200", "-obstruction", "70",
 			"-sub", "60", "-qe", "0.6", "-read-noise", "1", "-mono",
 		}, "", cam{200, 70, 60, 0.6, 1}},
 		"sub alone":      {[]string{"-sub", "30"}, "need framing", cam{}},
 		"mono alone":     {[]string{"-mono"}, "need framing", cam{}},
-		"obstruction=ap": {[]string{"-origin", "-obstruction", "152"}, "-aperture must be above -obstruction", cam{}},
-		"obstruction<0":  {[]string{"-origin", "-obstruction", "-1"}, "-aperture must be above -obstruction", cam{}},
-		"sub 0":          {[]string{"-origin", "-sub", "0"}, "-sub must be 0.001 to 3600", cam{}},
-		"sub tiny":       {[]string{"-origin", "-sub", "1e-300"}, "-sub must be", cam{}},
-		"sub huge":       {[]string{"-origin", "-sub", "3601"}, "-sub must be", cam{}},
-		"sub hour":       {[]string{"-origin", "-sub", "3600"}, "", cam{152, 77, 3600, 0.83, 2.15}},
-		"qe 0":           {[]string{"-origin", "-qe", "0"}, "-qe must be above 0", cam{}},
-		"qe 1.1":         {[]string{"-origin", "-qe", "1.1"}, "-qe must be above 0", cam{}},
-		"read-noise -1":  {[]string{"-origin", "-read-noise", "-1"}, "-read-noise must be 0 or more", cam{}},
-		"qe NaN":         {[]string{"-origin", "-qe", "NaN"}, "finite", cam{}},
+		"obstruction=ap": {[]string{"-scope", "origin", "-obstruction", "152"}, "-aperture must be above -obstruction", cam{}},
+		"obstruction<0":  {[]string{"-scope", "origin", "-obstruction", "-1"}, "-aperture must be above -obstruction", cam{}},
+		"sub 0":          {[]string{"-scope", "origin", "-sub", "0"}, "-sub must be 0.001 to 3600", cam{}},
+		"sub tiny":       {[]string{"-scope", "origin", "-sub", "1e-300"}, "-sub must be", cam{}},
+		"sub huge":       {[]string{"-scope", "origin", "-sub", "3601"}, "-sub must be", cam{}},
+		"sub hour":       {[]string{"-scope", "origin", "-sub", "3600"}, "", cam{152, 77, 3600, 0.83, 2.15}},
+		"qe 0":           {[]string{"-scope", "origin", "-qe", "0"}, "-qe must be above 0", cam{}},
+		"qe 1.1":         {[]string{"-scope", "origin", "-qe", "1.1"}, "-qe must be above 0", cam{}},
+		"read-noise -1":  {[]string{"-scope", "origin", "-read-noise", "-1"}, "-read-noise must be 0 or more", cam{}},
+		"qe NaN":         {[]string{"-scope", "origin", "-qe", "NaN"}, "finite", cam{}},
 	} {
 		cfg, err := parse(t, c.args...)
 		switch {

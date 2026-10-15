@@ -216,5 +216,5 @@ Re-renders `demo.jpg` for the top-level README from a live coloured run. It need
 
 ```sh
 task demo                                   # same as scripts/demo.sh
-scripts/demo.sh -lat 45.8 -lon 16 -origin
+scripts/demo.sh -lat 45.8 -lon 16 -scope origin
 ```

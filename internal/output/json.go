@@ -79,7 +79,7 @@ type filter struct { // betteralign:ignore
 
 type frame struct {
 	Camera   string  `json:"camera,omitempty"`    // -camera's or -scope's chip preset, e.g. "IMX571 colour"
-	Scope    string  `json:"scope,omitempty"`     // -scope's (-origin's), e.g. "ZWO Seestar S50 (IMX462)"
+	Scope    string  `json:"scope,omitempty"`     // -scope's, e.g. "ZWO Seestar S50 (IMX462)"
 	FOVLong  float64 `json:"fovLong"`             // arcminutes
 	FOVShort float64 `json:"fovShort"`            // arcminutes
 	Scale    float64 `json:"scale"`               // arcseconds per pixel

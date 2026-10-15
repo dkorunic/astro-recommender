@@ -29,10 +29,10 @@ type Scope struct {
 	NoSubs                       bool
 }
 
-// originKey is -origin's -scope.
+// originKey is the Origin Mark II's -scope, the default frame.
 const originKey = "origin"
 
-// Scopes are the -scope presets by lower-case key. -origin is "origin", the
+// Scopes are the -scope presets by lower-case key. "origin" is the
 // Mark II, which is also where an unset frame value comes from.
 var Scopes = map[string]Scope{
 	// Celestron's RASA 152 f/2.2: the Mark II (2025) with the IMX678 and a
@@ -100,7 +100,7 @@ func ScopeNames() []string { return slices.Sorted(maps.Keys(Scopes)) }
 func scopeChoices() string {
 	keys := ScopeNames()
 	slices.SortStableFunc(keys, func(a, b string) int {
-		// -origin's Mark II first: the scope the tool was built around.
+		// The Origin Mark II first: the scope the tool was built around.
 		first := func(k string) int {
 			if k == originKey {
 				return 0
@@ -140,19 +140,13 @@ func (s Scope) variant() *Variant {
 	return &Variant{Response: c.Colour.Response, Gain: c.Colour.Gain, QE: c.Colour.QE, ReadNoise: cmp.Or(s.ReadNoise, c.Colour.ReadNoise)}
 }
 
-// applyScope resolves -scope (or -origin, the same as -scope origin) and
+// applyScope resolves -scope and
 // returns the scope whose values unset frame and camera flags take: it, or
 // the Origin without one. A scope's camera is fixed: -camera is an error
 // with it, and so is -mono: a smart telescope's camera is colour, and a mono
 // camera is another telescope's (-camera, -fov, -scale or -focal).
-func (cfg *Config) applyScope(set map[string]bool, origin bool, name string) (Scope, error) {
+func (cfg *Config) applyScope(set map[string]bool, name string) (Scope, error) {
 	key := strings.ToLower(strings.TrimSpace(name))
-	if origin {
-		if set["scope"] && key != originKey {
-			return Scope{}, fmt.Errorf("%w: -origin is -scope origin, not -scope %s", errInvalidFlag, name)
-		}
-		key = originKey
-	}
 	if key == "" && !set["scope"] {
 		return Scopes[originKey], nil
 	}

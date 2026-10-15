@@ -59,7 +59,7 @@ type Config struct {
 	Filter         string   // -filter: comma-separated Filters or Broadband keys, lowercased, without repeats; "" = none
 	SolarBasis     string   // what SolarFlux is: solar.Monthly, Recent or Predicted
 	Camera         string   // -camera's (or -scope's chip's) Cameras key, lower case; "" for a camera given by -sensor/-pixel
-	Scope          string   // -scope's (-origin's: "origin") Scopes key; "" without one
+	Scope          string   // -scope's Scopes key; "" without one
 	Types          []string // -type: catalog.Classes to keep, nil = all
 	Horizon        horizon.Horizon
 	Plan           time.Duration
@@ -95,7 +95,7 @@ type Config struct {
 	ExtinctionSet  bool    // -extinction given: skip the aerosol-based estimate
 	SkySet         bool    // -sqm or -bortle given, even as 0: skip the DarkSkySites lookup
 	RASet, DecSet  bool    // -ra/-dec given: keep only targets within Tol of them
-	Framing        bool    // -origin, -fov, -scale or -focal with -sensor/-pixel: fit and score objects against the frame
+	Framing        bool    // -scope, -fov, -scale or -focal with -sensor/-pixel: fit and score objects against the frame
 	Rotate         bool    // -rotate: the camera turns to put an object's major axis along the frame's long side
 	Mono           bool    // -mono: a monochrome camera, every pixel sees every band
 	NoWeather      bool
@@ -109,7 +109,6 @@ func Parse() (Config, error) {
 	var cfg Config
 	var date, tz string
 	var minPx float64
-	var origin bool
 	var fov, sensor string
 	var focal, pixel float64
 	var camera, scopeName string
@@ -138,7 +137,6 @@ func Parse() (Config, error) {
 	flag.StringVar(&cfg.TargetsFile, "targets", "", "custom uptonight-style targets YAML file (overrides -list)")
 	flag.StringVar(&cfg.SkipFile, "skip", "", "file of target names to leave out, one per line (e.g. already imaged), # comments; case and spaces do not matter")
 	flag.StringVar(&types, "type", "", "keep only these object classes, comma-separated: "+strings.Join(catalog.Classes, ", ")+" (emission: what the line filters help; default all)")
-	flag.BoolVar(&origin, "origin", false, "frame for the Celestron Origin Mark II (IMX678 at 335 mm: 1.32x0.75°, 1.23\"/px): fit the FOV, at least -min-px across; the same as -scope origin")
 	flag.StringVar(&scopeName, "scope", "", "frame for a smart telescope, its optics and camera: "+scopeChoices())
 	flag.StringVar(&fov, "fov", "", "frame for another telescope: field of view WxH in degrees up to 180, e.g. 2.1x1.4 (default Origin; -scale optional)")
 	flag.Float64Var(&focal, "focal", 0, "frame for another telescope: focal length in mm; with -sensor sets the field of view (instead of -fov), with -pixel the pixel scale (instead of -scale)")
@@ -154,7 +152,7 @@ func Parse() (Config, error) {
 	flag.Float64Var(&cfg.Sub, "sub", 0, "with framing, the sub-exposure length in seconds, 0.001-3600; Origin 10, -scope's")
 	flag.Float64Var(&cfg.QE, "qe", 0, "with framing, the camera's peak quantum efficiency, above 0 and at most 1; Origin (IMX678) 0.83")
 	flag.Float64Var(&cfg.ReadNoise, "read-noise", 0, "with framing, the camera's read noise in electrons, 0 or more; Origin (IMX678) 2.15")
-	flag.BoolVar(&cfg.Mono, "mono", false, "with framing, the camera is monochrome, so every pixel sees every filter band; not with -scope or -origin, whose cameras are colour")
+	flag.BoolVar(&cfg.Mono, "mono", false, "with framing, the camera is monochrome, so every pixel sees every filter band; not with -scope, whose cameras are colour")
 	flag.StringVar(&cfg.Filter, "filter", "", "filters you own, comma-separated: for emission-line targets dual (Ha + OIII at once), tri (+ Hb), quad (+ Hb and SII), ha, oiii, sii; broadband light pollution filters cls (Astronomik CLS) and lpro (Optolong L-Pro) for any target; each target is scored without and with each worn all night, and FILTER shows the one that gains it most (with framing, the one SUBS needs fewest subs through) (default none)")
 	flag.Float64Var(&cfg.FilterNM, "filter-nm", 7, "with -filter, the width of each line filter band in nm, 1-30")
 	flag.BoolVar(&filterStd, "filter-std", false, "with -filter, the line filters are standard ones, whose bands shift blue in a fast beam: -scope's (the Origin's f/2.2), or -focal over -aperture (off: made for the beam)")
@@ -174,7 +172,7 @@ func Parse() (Config, error) {
 	setUsage()
 	flag.Parse()
 	// flag stops at the first argument that is not a flag, so everything
-	// after a stray word (-origin true: a bool takes -origin=false) would be
+	// after a stray word (-rotate true: a bool takes -rotate=false) would be
 	// dropped without a word.
 	if flag.NArg() > 0 {
 		return Config{}, fmt.Errorf("%w: unexpected argument %q, the flags after it were not read (a true/false flag takes -flag=false)", errInvalidFlag, flag.Arg(0))
@@ -204,7 +202,7 @@ func Parse() (Config, error) {
 		return Config{}, err
 	}
 
-	base, err := cfg.framing(set, frameFlags{origin: origin, scope: scopeName, camera: camera, fov: fov, sensor: sensor, focal: focal, pixel: pixel, minPx: minPx})
+	base, err := cfg.framing(set, frameFlags{scope: scopeName, camera: camera, fov: fov, sensor: sensor, focal: focal, pixel: pixel, minPx: minPx})
 	if err != nil {
 		return Config{}, err
 	}
@@ -455,18 +453,17 @@ func (cfg *Config) setTypes(types string) error {
 type frameFlags struct {
 	scope, camera, fov, sensor string
 	focal, pixel, minPx        float64
-	origin                     bool
 }
 
 // framing sets the frame and the sub-exposure camera from the frame flags and
 // returns the base scope, whose values the flags not given take.
 func (cfg *Config) framing(set map[string]bool, f frameFlags) (Scope, error) {
-	// Framing (-scope or -origin, -fov or -focal/-sensor, -scale or
+	// Framing (-scope, -fov or -focal/-sensor, -scale or
 	// -focal/-pixel) replaces the size defaults; explicit -size-min/-size-max
 	// still win. Unset frame values default to the scope's, else the
 	// Origin's. frameFOV rejects -sensor and -pixel without -focal, and
 	// -focal without either.
-	base, err := cfg.applyScope(set, f.origin, f.scope)
+	base, err := cfg.applyScope(set, f.scope)
 	if err != nil {
 		return Scope{}, err
 	}
@@ -514,7 +511,7 @@ func (cfg *Config) frameSizes(set map[string]bool, minPx float64) error {
 	// Judged on the values, so an explicit default (-mosaic 1, -rotate=false,
 	// as the web form's shared links carry) asks for nothing.
 	if !cfg.Framing && (cfg.Mosaic > 1 || cfg.Rotate) {
-		return fmt.Errorf("%w: -mosaic and -rotate need framing (-scope or -origin, -fov, -scale or -focal)", errInvalidFlag)
+		return fmt.Errorf("%w: -mosaic and -rotate need framing (-scope, -fov, -scale or -focal)", errInvalidFlag)
 	}
 	if !cfg.Framing {
 		return nil
@@ -544,7 +541,7 @@ func (cfg *Config) camera(set map[string]bool, preset *Variant, base Scope) erro
 	given := set["aperture"] || set["obstruction"] || set["sub"] || set["qe"] || set["read-noise"] || cfg.Mono
 	if !cfg.Framing {
 		if given {
-			return fmt.Errorf("%w: -aperture, -obstruction, -sub, -qe, -read-noise and -mono need framing (-scope or -origin, -fov, -scale or -focal)", errInvalidFlag)
+			return fmt.Errorf("%w: -aperture, -obstruction, -sub, -qe, -read-noise and -mono need framing (-scope, -fov, -scale or -focal)", errInvalidFlag)
 		}
 
 		return nil

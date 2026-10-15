@@ -35,7 +35,7 @@ var usageGroups = []usageGroup{
 	{"Night window", []string{"from", "to", "twilight", "min-run"}},
 	{"Altitude and region", []string{"alt-min", "alt-max", "horizon", "ra", "dec", "tol"}},
 	{"Selection", []string{"type", "size-min", "size-max", "targets", "skip", "comet-mag"}},
-	{"Framing", []string{"origin", "focal", "camera", "fov", "sensor", "pixel", "scale", "min-px", "mosaic", "rotate"}},
+	{"Framing", []string{"focal", "camera", "fov", "sensor", "pixel", "scale", "min-px", "mosaic", "rotate"}},
 	{"Camera and exposure", []string{"aperture", "obstruction", "qe", "read-noise", "mono", "sub"}},
 	{"Sky and filters", []string{"extinction", "filter-nm", "filter-std"}},
 	{"Data sources", []string{"no-weather", "no-sqm", "no-geocode", "no-comets", "no-solar"}},
