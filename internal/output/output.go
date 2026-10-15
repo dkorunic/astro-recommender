@@ -33,14 +33,20 @@ import (
 	"golang.org/x/term"
 )
 
-// solarDesc is the Sky line's solar cycle part: the month's 10.7 cm flux
-// and how much it changes the zenith (negative: brighter), from the airglow.
+// solarDesc is the Sky line's solar cycle part, in words: how much the
+// airglow brightens or darkens the zenith, with the month's 10.7 cm flux;
+// "" when the flux is unknown or the change rounds away (a bright sky).
 func solarDesc(cfg *config.Config, s *scoring.Sky) string {
-	if cfg.SolarFlux <= 0 {
+	d := airglowMag(s)
+	if cfg.SolarFlux <= 0 || d == 0 {
 		return ""
 	}
+	way := "brighter"
+	if d > 0 {
+		way = "darker"
+	}
 
-	return fmt.Sprintf(", solar flux %.0f sfu (%s; airglow %+.2f mag)", cfg.SolarFlux, cfg.SolarBasis, airglowMag(s))
+	return fmt.Sprintf(", airglow %.2f mag %s (solar flux %.0f sfu, %s)", math.Abs(d), way, cfg.SolarFlux, cfg.SolarBasis)
 }
 
 // airglowMag is the zenith's change in mag/arcsec² from s.Airglow: negative
@@ -55,22 +61,23 @@ func airglowMag(s *scoring.Sky) float64 {
 	return d
 }
 
-// filterDesc is the Sky line's filter part: the -filter list, the line
-// bands' width (-filter-nm sizes only those, not broadband ones) and, with
-// -filter-std, the beam that shifts them.
+// filterDesc is the Filter line: the -filter list and, with a line
+// filter, its bands' width (-filter-nm sizes only those, not broadband ones)
+// and, with -filter-std, the beam that shifts them; "" without -filter.
 func filterDesc(cfg *config.Config) string {
 	if cfg.Filter == "" {
 		return ""
 	}
-	desc := ", filter " + cfg.Filter
-	if cfg.LineFilter() {
-		desc += fmt.Sprintf(" %g nm", cfg.FilterNM)
-		if cfg.FRatio > 0 {
-			desc += fmt.Sprintf(" standard, shifted at f/%.1f", cfg.FRatio)
-		}
+	desc := strings.ReplaceAll(cfg.Filter, ",", ", ")
+	if !cfg.LineFilter() {
+		return desc
+	}
+	bands := fmt.Sprintf("%g nm line bands", cfg.FilterNM)
+	if cfg.FRatio > 0 {
+		bands += fmt.Sprintf("; standard, shifted in the f/%.1f beam", cfg.FRatio)
 	}
 
-	return desc
+	return desc + " (" + bands + ")"
 }
 
 // Header prints the site, window, Moon and sky; place is the reverse
@@ -132,9 +139,10 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 	headerLine("Targets: ", targetsDesc)
 	if cfg.Framing {
 		pxLong, pxShort := cfg.FramePx()
-		extra := ""
+		// The instrument first: it is what the numbers describe.
+		lead, extra := "", ""
 		if label := cmp.Or(cfg.ScopeLabel(), cfg.CameraLabel()); label != "" {
-			extra += ", " + label
+			lead = label + ", "
 		}
 		if cfg.Mosaic > 1 {
 			extra += fmt.Sprintf(", mosaics of up to %d panels", cfg.Mosaic)
@@ -142,7 +150,7 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 		if cfg.Rotate {
 			extra += ", rotatable"
 		}
-		headerLine("Frame:   ", fmt.Sprintf("%.2f° x %.2f°, %.2f\"/px (%.0f x %.0f px)%s", cfg.FOVLong/60, cfg.FOVShort/60,
+		headerLine("Frame:   ", fmt.Sprintf("%s%.2f° x %.2f°, %.2f\"/px (%.0f x %.0f px)%s", lead, cfg.FOVLong/60, cfg.FOVShort/60,
 			cfg.Scale, pxLong, pxShort, extra))
 	}
 	if len(cfg.Horizon) > 0 {
@@ -182,7 +190,10 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 		extDesc += fmt.Sprintf(" (elevation %.0f m, aerosols)", s.Elevation)
 	}
 	skyDesc += ", extinction " + paint(scale(hi, 0.25, 0.4), extDesc) + " mag/airmass"
-	headerLine("Sky:     ", skyDesc+solarDesc(cfg, s)+filterDesc(cfg))
+	headerLine("Sky:     ", skyDesc+solarDesc(cfg, s))
+	if f := filterDesc(cfg); f != "" {
+		headerLine("Filter:  ", f)
+	}
 	fmt.Println()
 }
 
@@ -586,16 +597,35 @@ func subsText(e *scoring.Estimate) (string, string) {
 	if e == nil {
 		return "39", "-"
 	}
-	// N in >N is what tonight allows, which no assumed surface brightness
-	// enters, so it takes no ~.
+	// Past what tonight allows, the nights like tonight it takes: what a
+	// small scope stacks across, where every row's >N would read alike. The
+	// count is tonight's limit, which no assumed surface brightness enters,
+	// so it takes no ~.
 	if e.Good > e.Max {
-		return "33", ">" + strconv.Itoa(e.Max)
+		return "33", nightsText(e.Good, e.Max)
 	}
 	if e.Assumed {
 		return "39", "~" + strconv.Itoa(e.Good)
 	}
 
 	return "39", strconv.Itoa(e.Good)
+}
+
+// nightsText is good subs over the max that fit a night: one decimal under
+// ten nights, whole ones to 99, past it (a night the forecast loses whole)
+// >99; >N without a night's subs to divide by.
+func nightsText(good, perNight int) string {
+	if perNight <= 0 {
+		return ">" + strconv.Itoa(perNight)
+	}
+	switch n := float64(good) / float64(perNight); {
+	case n < 9.95:
+		return fmt.Sprintf("%.1f nights", n)
+	case n < 99.5:
+		return fmt.Sprintf("%.0f nights", n)
+	}
+
+	return ">99 nights"
 }
 
 // magText is the MAG column: the integrated V magnitude, else the B one
@@ -817,7 +847,7 @@ var resultColumns = []column{
 	{"SB", "object surface brightness, mag/arcsec² (higher is fainter)"},
 	{filterColumn, "the filter of yours that helps most, worn all night"},
 	{pxColumn, "size in pixels (NxM: mosaic panels needed)"},
-	{subsColumn, "-sub second subs for a good image, per panel; >N: only N fit"},
+	{subsColumn, "-sub second subs for a good image, per panel; N nights: more than tonight fits"},
 }
 
 // columns returns cols without FILTER when there is no -filter and without

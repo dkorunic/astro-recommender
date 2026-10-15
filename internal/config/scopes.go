@@ -60,9 +60,9 @@ var Scopes = map[string]Scope{
 	// from reviews; its 1.45 µm the chip's, which matches their 3° field.
 	// Draco saves a 2x2 binned 50 MP frame and has a central obstruction of
 	// unpublished size.
-	"dwarf-2":    {Name: "DWARF II", Sensor: "IMX415", Focal: 100, Aperture: 24, Pixel: 1.45, PxLong: 3840, PxShort: 2160, Sub: 15},
-	"dwarf-3":    {Name: "DWARF 3", Camera: chipIMX678, Focal: 150, Aperture: 35, Pixel: 2.0, PxLong: 3840, PxShort: 2160, Sub: 15},
-	"dwarf-mini": {Name: "DWARF mini", Camera: chipIMX662, Focal: 150, Aperture: 30, Pixel: 2.9, PxLong: 1920, PxShort: 1080, Sub: 15},
+	"dwarf-2":    {Name: "DwarfLab DWARF II", Sensor: "IMX415", Focal: 100, Aperture: 24, Pixel: 1.45, PxLong: 3840, PxShort: 2160, Sub: 15},
+	"dwarf-3":    {Name: "DwarfLab DWARF 3", Camera: chipIMX678, Focal: 150, Aperture: 35, Pixel: 2.0, PxLong: 3840, PxShort: 2160, Sub: 15},
+	"dwarf-mini": {Name: "DwarfLab DWARF mini", Camera: chipIMX662, Focal: 150, Aperture: 30, Pixel: 2.9, PxLong: 1920, PxShort: 1080, Sub: 15},
 	"draco":      {Name: "DwarfLab Draco", Sensor: "OmniVision OV50Q40", Focal: 340, Aperture: 90, Pixel: 2.394, PxLong: 4096, PxShort: 3072, Sub: 15, NoSubs: true},
 	// Vaonis' refractors, 10 s subs. Stellina's chip is named by third
 	// parties only; its pixels are the maker's and the IMX178's.
@@ -92,6 +92,34 @@ var Scopes = map[string]Scope{
 
 // ScopeNames returns the -scope presets, sorted.
 func ScopeNames() []string { return slices.Sorted(maps.Keys(Scopes)) }
+
+// scopeChoices lists the presets for -scope's help as "key = Name", the
+// Origin Mark II first, then by name, so a maker's models stand together,
+// case aside and with "II" read as 2, so generations run in order (Vespera,
+// II, 3); the web page shows the names in its select and sends the keys.
+func scopeChoices() string {
+	keys := ScopeNames()
+	slices.SortStableFunc(keys, func(a, b string) int {
+		// -origin's Mark II first: the scope the tool was built around.
+		first := func(k string) int {
+			if k == originKey {
+				return 0
+			}
+
+			return 1
+		}
+
+		order := func(k string) string { return strings.ReplaceAll(strings.ToLower(Scopes[k].Name), " ii", " 2") }
+
+		return cmp.Or(cmp.Compare(first(a), first(b)), strings.Compare(order(a), order(b)))
+	})
+	choices := make([]string, len(keys))
+	for i, k := range keys {
+		choices[i] = k + " = " + Scopes[k].Name
+	}
+
+	return strings.Join(choices, ", ")
+}
 
 // fov returns the scope's frame's long and short sides in arc minutes.
 func (s Scope) fov() (float64, float64) {

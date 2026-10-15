@@ -139,7 +139,7 @@ func Parse() (Config, error) {
 	flag.StringVar(&cfg.SkipFile, "skip", "", "file of target names to leave out, one per line (e.g. already imaged), # comments; case and spaces do not matter")
 	flag.StringVar(&types, "type", "", "keep only these object classes, comma-separated: "+strings.Join(catalog.Classes, ", ")+" (emission: what the line filters help; default all)")
 	flag.BoolVar(&origin, "origin", false, "frame for the Celestron Origin Mark II (IMX678 at 335 mm: 1.32x0.75°, 1.23\"/px): fit the FOV, at least -min-px across; the same as -scope origin")
-	flag.StringVar(&scopeName, "scope", "", "frame for a smart telescope, its optics and camera, as -origin: "+strings.Join(ScopeNames(), ", "))
+	flag.StringVar(&scopeName, "scope", "", "frame for a smart telescope, its optics and camera: "+scopeChoices())
 	flag.StringVar(&fov, "fov", "", "frame for another telescope: field of view WxH in degrees up to 180, e.g. 2.1x1.4 (default Origin; -scale optional)")
 	flag.Float64Var(&focal, "focal", 0, "frame for another telescope: focal length in mm; with -sensor sets the field of view (instead of -fov), with -pixel the pixel scale (instead of -scale)")
 	flag.StringVar(&camera, "camera", "", "frame for another telescope (with -focal) by its camera's sensor, setting -sensor, -pixel, -qe and -read-noise (with -mono its mono version): "+strings.Join(CameraNames(), ", "))

@@ -128,20 +128,25 @@ func TestShortDesc(t *testing.T) {
 	}
 }
 
-// The Sky line names the night's solar flux and its basis with the zenith's
-// change from the airglow; nothing when the flux is unknown, and a change
-// that rounds away under a bright sky prints +0.00, never -0.00.
+// The Sky line says in words how much the solar cycle's airglow brightens
+// the zenith, with the month's flux and its basis; nothing when the flux is
+// unknown or the change rounds away under a bright sky.
 func TestSolarDesc(t *testing.T) {
 	cfg := &config.Config{SolarFlux: 107.3, SolarBasis: "30-day mean"}
 	nl := atmos.NanoLamberts(atmos.RefZenithMag)
 	s := &scoring.Sky{Airglow: atmos.AirglowExcess(107.3)}
 	s.ZenithNL = nl + s.Airglow
-	if got, want := solarDesc(cfg, s), ", solar flux 107 sfu (30-day mean; airglow -0.08 mag)"; got != want {
+	if got, want := solarDesc(cfg, s), ", airglow 0.08 mag brighter (solar flux 107 sfu, 30-day mean)"; got != want {
 		t.Errorf("dark: %q, want %q", got, want)
 	}
 	s.ZenithNL = atmos.NanoLamberts(17.5) + s.Airglow
-	if got := solarDesc(cfg, s); !strings.HasSuffix(got, "airglow +0.00 mag)") {
+	if got := solarDesc(cfg, s); got != "" {
 		t.Errorf("Bortle 9: %q", got)
+	}
+	cfg.SolarFlux, s.Airglow = 65, atmos.AirglowExcess(65)
+	s.ZenithNL = nl + s.Airglow
+	if got, want := solarDesc(cfg, s), ", airglow 0.14 mag darker (solar flux 65 sfu, 30-day mean)"; got != want {
+		t.Errorf("solar minimum: %q, want %q", got, want)
 	}
 	if got := solarDesc(&config.Config{}, s); got != "" {
 		t.Errorf("unknown flux: %q", got)

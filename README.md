@@ -129,30 +129,31 @@ Window:   2026-10-15 19:50 - 2026-10-16 05:35 (9h 45m)
 Moon:     25% illuminated, targets kept at least 25° away, sets 20:27
 Size:     4.1' - 44.7'
 Targets:  GaryImm, 1 comet brighter than mag 12.0
-Frame:    1.32° x 0.75°, 1.23"/px (3856 x 2180 px), Celestron Origin Mark II (IMX678)
-Sky:      Bortle 6 (zenith 18.80 mag/arcsec²), extinction 0.32-0.37 (elevation 126 m, aerosols) mag/airmass, solar flux 107 sfu (30-day mean; airglow +0.00 mag), filter dual 7 nm
+Frame:    Celestron Origin Mark II (IMX678), 1.32° x 0.75°, 1.23"/px (3856 x 2180 px)
+Sky:      Bortle 6 (zenith 18.80 mag/arcsec²), extinction 0.32-0.37 (elevation 126 m, aerosols) mag/airmass
+Filter:   dual (7 nm line bands)
 
 Forecast
 HOUR   CLOUD  LOW/MID/HIGH  TRANSP  EXT   SEEING     DEW SPREAD  WIND/GUST
-19:00  39%    0/36/8%       3/8     0.32  1.5-2"     4.4°C       3/9 km/h
-20:00  76%    0/68/52%      3/8     0.33  1.5-2"     3.2°C       4/9 km/h
-21:00  53%    12/39/25%     3/8     0.34  1.5-2"     2.6°C       4/9 km/h
-22:00  61%    20/37/47%     3/8     0.35  1.5-2"     2.8°C       4/9 km/h
-23:00  43%    16/30/7%      3/8     0.35  1.5-2"     2.5°C       4/9 km/h
-00:00  41%    3/34/16%      3/8     0.36  1.5-2"     1.9°C       4/8 km/h
-01:00  34%    0/22/32%      3/8     0.37  1.25-1.5"  1.9°C       3/5 km/h
-02:00  20%    0/7/27%       3/8     0.37  1.25-1.5"  1.9°C       2/3 km/h
-03:00  32%    0/17/35%      3/8     0.36  1.25-1.5"  1.5°C       2/2 km/h
-04:00  42%    0/37/16%      4/8     0.36  1.25-1.5"  0.9°C       2/2 km/h
-05:00  73%    57/33/14%     4/8     0.35  1.25-1.5"  0.1°C       1/3 km/h
+19:00  36%    0/36/0%       3/8     0.32  1.5-2"     4.8°C       3/9 km/h
+20:00  63%    0/63/0%       3/8     0.33  1.5-2"     3.0°C       4/9 km/h
+21:00  33%    0/33/0%       3/8     0.34  1.5-2"     2.6°C       5/9 km/h
+22:00  32%    0/31/2%       3/8     0.35  1.5-2"     2.5°C       4/9 km/h
+23:00  27%    0/10/37%      3/8     0.35  1.5-2"     2.2°C       4/8 km/h
+00:00  24%    0/8/35%       3/8     0.36  1.5-2"     1.9°C       4/7 km/h
+01:00  30%    8/13/24%      3/8     0.37  1.25-1.5"  2.0°C       4/6 km/h
+02:00  16%    0/0/32%       3/8     0.37  1.25-1.5"  1.9°C       3/5 km/h
+03:00  16%    0/0/32%       3/8     0.36  1.25-1.5"  1.6°C       1/1 km/h
+04:00  67%    0/63/21%      4/8     0.36  1.25-1.5"  0.5°C       0/3 km/h
+05:00  90%    82/40/9%      4/8     0.35  1.25-1.5"  0.0°C       0/4 km/h
 
 Targets, ranked by SCORE
-#  NAME     DESCRIPTION                  TYPE              CON  RA       DEC     SIZE  UP    SCORE  OBSERVABLE   MAX ALT    SKY   MAG   SB     FILTER  PX    SUBS
-1  NGC 281  PacMan Nebula                Emission Nebula   Cas  00 52.9  +56 37  35'   1.00  0.27   19:50-05:35  79° 00:13  18.7  -     -      dual    1705  ~2861
-2  Sh2-174  Valentine Rose Nebula        Planetary Nebula  Cep  23 47.1  +80 49  10'   1.00  0.27   19:50-05:35  55° 23:07  18.6  14.7  ~28.3  dual    487   >3510
-3  IC 1795  Fishhead Nebula              Emission Nebula   Cas  02 26.5  +62 03  30'   1.00  0.27   19:50-05:35  74° 01:47  18.7  -     -      dual    1462  ~2880
-4  IC 63    Gamma Cassiopeia Nebula      Emission Nebula   Cas  00 59.5  +60 55  20'   1.00  0.27   19:50-05:35  75° 00:19  18.7  -     -      dual    974   ~2876
-5  Sh2-173  Phantom of the Opera Nebula  Emission Nebula   Cas  00 21.3  +61 44  25'   1.00  0.27   19:50-05:35  74° 23:41  18.7  -     -      dual    1218  ~2909
+#  NAME      DESCRIPTION                  TYPE              CON  RA       DEC     SIZE  UP    SCORE  OBSERVABLE   MAX ALT    SKY   MAG   SB     FILTER  PX    SUBS
+1  NGC 281   PacMan Nebula                Emission Nebula   Cas  00 52.9  +56 37  35'   1.00  0.32   19:50-05:35  79° 00:13  18.7  -     -      dual    1705  ~2394
+2  Sh2-174   Valentine Rose Nebula        Planetary Nebula  Cep  23 47.1  +80 49  10'   1.00  0.32   19:50-05:35  55° 23:07  18.6  14.7  ~28.3  dual    487   >99 nights
+3  NGC 7380  Wizard Nebula                Emission Nebula   Cep  22 47.4  +58 08  25'   0.97  0.32   19:50-05:16  78° 22:07  18.6   7.2  ~22.8  dual    1218  2445
+4  IC 63     Gamma Cassiopeia Nebula      Emission Nebula   Cas  00 59.5  +60 55  20'   1.00  0.32   19:50-05:35  75° 00:19  18.7  -     -      dual    974   ~2411
+5  Sh2-173   Phantom of the Opera Nebula  Emission Nebula   Cas  00 21.3  +61 44  25'   1.00  0.32   19:50-05:35  74° 23:41  18.7  -     -      dual    1218  ~2427
 ```
 
 Each table has a title (Forecast, Night plan, Targets). The output ends with a short, dimmed legend: one line per column of the tables shown, the `~`/`-` marks and the colours. UP, SKY and TYPE are left plain when every row would get one colour, as it tells no row apart; SCORE always keeps its colour, so a poor night shows red. In more detail:
@@ -169,7 +170,7 @@ Each table has a title (Forecast, Night plan, Targets). The output ends with a s
 - **MAG**: the integrated V magnitude from the catalogue; a trailing `B` marks a B magnitude where no V is known, and a comet shows its estimated magnitude mid-window. `-` when unknown. Scoring uses it only through the derived surface brightness (SB).
 - **CON**: the IAU constellation abbreviation (JSON keeps the full name).
 - **PX**: the object's size in pixels at the frame's pixel scale, shown only with framing (`-origin`, `-scope`, `-fov`, `-scale`, `-focal`), since without it there is no frame to measure against. With `-mosaic`, a grid such as `2x1` (columns along the frame's long side × rows) follows when more than one panel scores best.
-- **SUBS**: with framing, the sub-exposures of `-sub` seconds needed tonight for a good image (stacked SNR 10 per arcsec² at the object's surface brightness) through the FILTER shown, counting those the forecast will lose, per panel of a mosaic. `~` marks a typical surface brightness for the type, used when the object has none; `>N` (never with `~`: N is tonight's limit, not an estimate) means more than the N subs that fit in the target's observable time tonight (or, for a target `-plan` schedules, its blocks), which is also what a night the forecast clouds out shows; `-` means no estimate applies (clusters, comets, dark nebulae and molecular clouds). `-json` and the web page's hover box add the modest (SNR 5) and best (SNR 20) levels. See MODELS.md for the model and its limits: an emission nebula's lines come from its V surface brightness, good to a factor of about three for one nebula, and with framing FILTER is chosen by this estimate, so on the Origin's 10 s colour subs under a dark sky it can be `cls` or dual-band over Hα (a 7 nm Hα band is then read-noise limited on the red pixels).
+- **SUBS**: with framing, the sub-exposures of `-sub` seconds needed tonight for a good image (stacked SNR 10 per arcsec² at the object's surface brightness) through the FILTER shown, counting those the forecast will lose, per panel of a mosaic. `~` marks a typical surface brightness for the type, used when the object has none; `N nights` (in yellow, never with `~`) means more subs than fit in the target's observable time tonight (or, for a target `-plan` schedules, its blocks): the nights like tonight a good image takes, one decimal under ten, `>99 nights` past it, which is also what a night the forecast clouds out shows, the count for a small smart telescope that stacks across nights; `-` means no estimate applies (clusters, comets, dark nebulae and molecular clouds). `-json` and the web page's hover box add the modest (SNR 5) and best (SNR 20) levels. See MODELS.md for the model and its limits: an emission nebula's lines come from its V surface brightness, good to a factor of about three for one nebula, and with framing FILTER is chosen by this estimate, so on the Origin's 10 s colour subs under a dark sky it can be `cls` or dual-band over Hα (a 7 nm Hα band is then read-noise limited on the red pixels).
 
 On a colour-capable terminal the output is colour-coded green/yellow/red. Colours are turned off when output is piped, when `NO_COLOR` is set or when `TERM=dumb`. `CLICOLOR_FORCE=1` turns them on regardless.
 
@@ -381,9 +382,9 @@ Read noise is the maker's figure at its deep-sky gain, where the high conversion
 | `-scope` | Telescope | Sensor | Optics | Frame | Sub | SUBS |
 |---|---|---|---|---|---|---|
 | `draco` | DwarfLab Draco | OmniVision OV50Q40 | 90 mm f/3.8 | 1.65° × 1.24°, 1.45″/px | 15 s | with `-qe`, `-read-noise`, `-obstruction` |
-| `dwarf-2` | DWARF II | IMX415 | 24 mm f/4.2 | 3.19° × 1.79°, 2.99″/px | 15 s | with `-qe`, `-read-noise` |
-| `dwarf-3` | DWARF 3 | IMX678 | 35 mm f/4.3 | 2.93° × 1.65°, 2.75″/px | 15 s | yes |
-| `dwarf-mini` | DWARF mini | IMX662 | 30 mm f/5.0 | 2.13° × 1.20°, 3.99″/px | 15 s | yes |
+| `dwarf-2` | DwarfLab DWARF II | IMX415 | 24 mm f/4.2 | 3.19° × 1.79°, 2.99″/px | 15 s | with `-qe`, `-read-noise` |
+| `dwarf-3` | DwarfLab DWARF 3 | IMX678 | 35 mm f/4.3 | 2.93° × 1.65°, 2.75″/px | 15 s | yes |
+| `dwarf-mini` | DwarfLab DWARF mini | IMX662 | 30 mm f/5.0 | 2.13° × 1.20°, 3.99″/px | 15 s | yes |
 | `evscope` | Unistellar eVscope / eQuinox | IMX224 | 114 mm f/3.9 | 0.62° × 0.47°, 1.72″/px | 4 s | with `-qe`, `-read-noise`, `-obstruction` |
 | `evscope-2` | Unistellar eVscope 2 / eQuinox 2 | IMX347 | 114 mm f/3.9 | 0.76° × 0.57°, 1.33″/px | 4 s | with `-qe`, `-read-noise`, `-obstruction` |
 | `odyssey` | Unistellar Odyssey / Odyssey Pro | unnamed, 1.45 µm | 85 mm f/3.8 | 0.75° × 0.56°, 0.93″/px | 4 s | with `-qe`, `-read-noise`, `-obstruction` |
@@ -719,7 +720,7 @@ Where astro-recommender is ahead is the ranking itself. The tools below either f
 - **The forecast weighs each minute; it does not gate the night.** Cloud by layer (thin cirrus counts half), rain, dew-point spread and gusts (Open-Meteo), and transparency (7Timer) scale the weight hour by hour. A target up only in the clear half of the night therefore beats one up only in the cloudy half. Hours a forecast does not cover get the covered hours' mean, with a warning, never a silent clear sky.
 - **Extinction from the forecast aerosols.** κ = Rayleigh scattering scaled by the site's elevation + ozone + 1.086 × the CAMS aerosol optical depth, per hour, through Pickering's (2002) airmass. Smoke or dust lowers low targets more than high ones, which none of the other rankers model.
 - **Filters as a spectral model.** With `-filter`, an emission target's light is split by typical line ratios for its type from published measurements, [N II] included (its line flux from its surface brightness, calibrated against Finkbeiner's Hα map), and the sky over the camera's 400–700 nm is split into glow, Rayleigh moonlight (λ⁻⁴) and aerosol moonlight (λ⁻¹·³), each passed by the filter's bands (a standard filter's band shifted off its line in a fast beam with `-filter-std`, fitted to Chroma's measured curves), each band dimmed by its own extinction. Given the filters you own, each target is scored with each worn all night, as it is shot, and keeps the one that gains most, or with a camera described the one that needs the fewest subs, read noise included. The weight and the Moon limit both follow from that, so an [O III] band lets in about three times the moonlight of an Hα one. `TestScoreFilter` pins the orderings under a first-quarter Moon from Bortle 6 (H II regions: Hα > dual-band > CLS > L-Pro > none; planetaries: dual-band > [O III] > Hα > CLS > L-Pro > none; remnants: Hα, with its [N II], > quad-band; galaxies and clusters never filtered). Telescopius' fixed per-filter Moon distances (22°, 34° and 45° at a 3% Moon) are the nearest equivalent.
-- **A sub-exposure estimate per target.** With framing, SUBS gives the subs of `-sub` seconds needed tonight for stacked SNR 5, 10 and 20 per arcsec² through the chosen filter, from the same per-minute sky, forecast and extinction as the score, with the aperture, obstruction, quantum efficiency and read noise of the camera (presets for 20 smart telescopes and 21 sensors, from the makers' figures and digitized QE charts), a colour sensor's red, green and blue pixels counted apart, each at its dye's response to every line (the IMX678's green pixels respond to Hα at 0.34 of the peak, its blue ones to [O III] at 0.53); `>N` flags a target that cannot reach it before dawn.
+- **A sub-exposure estimate per target.** With framing, SUBS gives the subs of `-sub` seconds needed tonight for stacked SNR 5, 10 and 20 per arcsec² through the chosen filter, from the same per-minute sky, forecast and extinction as the score, with the aperture, obstruction, quantum efficiency and read noise of the camera (presets for 20 smart telescopes and 21 sensors, from the makers' figures and digitized QE charts), a colour sensor's red, green and blue pixels counted apart, each at its dye's response to every line (the IMX678's green pixels respond to Hα at 0.34 of the peak, its blue ones to [O III] at 0.53); past tonight's time it gives the nights like tonight a good image takes.
 - **Framing and mosaics in the score.** How well an object fills the frame scales its score, and a mosaic's score is shared among its panels. The best grid wins, and `TestMaxFramed` pins the size limit against the fit.
 - **Positions with tested limits.** Sun, Moon, sidereal time, precession, galactic coordinates and the altitudes scored are compared with IAU SOFA over 3000 random dates and positions (`TestSOFA`, `TestSOFAGalactic`) and 300 random nights of scored altitudes (`TestScoreSOFA`; limits in [Accuracy](#accuracy)). Of the others, Stellarium, SkyChart and Deep-Sky Planner publish accuracy figures for their ephemerides.
 - **A seeing estimate checked against measurements.** For hours without 7Timer, seeing comes from the ECMWF upper-air profile through Dewan's Cn² model. It is scaled by factors fitted to two years of ESO's DIMM seeing at Paranal and La Silla (bias +0.03″, RMSE 0.33″ in `scripts/calibrate_seeing.py`'s fit; `TestSeeing` pins the model's behaviour), and it is shown only, not scored.

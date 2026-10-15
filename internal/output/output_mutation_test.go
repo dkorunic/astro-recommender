@@ -345,8 +345,8 @@ func TestMutResultsAlignment(t *testing.T) {
 	}
 	// Columns of the first row: rank 1, PX 190·60/2 = 5700.
 	f := strings.Fields(lines[1])
-	// SUBS last: more than the 100 subs tonight allows, assumed SB.
-	if f[0] != "1" || f[len(f)-1] != ">100" || f[len(f)-2] != "5700" || f[len(f)-3] != "21.0" {
+	// SUBS last: more than the 100 subs tonight allows, as nights.
+	if f[0] != "1" || f[len(f)-1] != "nights" || f[len(f)-3] != "5700" || f[len(f)-4] != "21.0" {
 		t.Errorf("row %q", f)
 	}
 	if !strings.Contains(lines[2], " -  ") || !strings.HasSuffix(strings.TrimRight(lines[3], " "), "-") {
@@ -363,7 +363,8 @@ func TestMutResultsAlignment(t *testing.T) {
 	}
 	lines = mutTable(t, plain, "Targets, ranked by SCORE")
 	h, f0, f1 := strings.Fields(lines[0]), strings.Fields(lines[1]), strings.Fields(lines[2])
-	if h[len(h)-3] != "FILTER" || f0[len(f0)-3] != "dual" || f1[len(f1)-3] != "-" {
+	// Row 1's SUBS, "N nights", is two fields.
+	if h[len(h)-3] != "FILTER" || f0[len(f0)-4] != "dual" || f1[len(f1)-3] != "-" {
 		t.Errorf("FILTER cells:\n%s", plain)
 	}
 	if col := mutCol(lines[0], strings.Index(lines[0], "FILTER")); mutCol(lines[1], strings.Index(lines[1], "dual")) != col || []rune(lines[2])[col] != '-' {
@@ -488,7 +489,8 @@ func TestMutHeader(t *testing.T) {
 		"Location: 45.8100, 15.9800, Europe/Zagreb",
 		"(2h 00m, nautical night)",
 		"SQM 21.60 mag/arcsec² (DSS, ≈ Bortle 2)",
-		"extinction 0.20 (set) mag/airmass, filter dual 7 nm",
+		"extinction 0.20 (set) mag/airmass\n",
+		"Filter:   dual (7 nm line bands)",
 		"GaryImm, comets off",
 		"Region:   within 5° of RA 12 30.0",
 		"Min run:  at least 1h 00m",
@@ -677,8 +679,12 @@ func TestMutSubsText(t *testing.T) {
 		{nil, "39", "-"},
 		{&scoring.Estimate{Good: 120, Max: 400}, "39", "120"},
 		{&scoring.Estimate{Good: 120, Max: 400, Assumed: true}, "39", "~120"},
-		{&scoring.Estimate{Good: 500, Max: 400}, "33", ">400"},
-		{&scoring.Estimate{Good: 500, Max: 400, Assumed: true}, "33", ">400"},
+		{&scoring.Estimate{Good: 500, Max: 400}, "33", "1.2 nights"},
+		{&scoring.Estimate{Good: 500, Max: 400, Assumed: true}, "33", "1.2 nights"},
+		{&scoring.Estimate{Good: 3980, Max: 400}, "33", "10 nights"},
+		{&scoring.Estimate{Good: 39_799, Max: 400}, "33", "99 nights"},
+		{&scoring.Estimate{Good: 1_000_000_000, Max: 400}, "33", ">99 nights"},
+		{&scoring.Estimate{Good: 5, Max: 0}, "33", ">0"},
 	} {
 		if code, text := subsText(c.e); code != c.code || text != c.text {
 			t.Errorf("%+v: %q %q, want %q %q", c.e, code, text, c.code, c.text)

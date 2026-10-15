@@ -28,12 +28,13 @@
 }
 /* Night vision: dim pure red on black, nothing blue or white to spoil dark
    adaptation. The colour codes become brightness: good bright, fair medium,
-   poor dim. */
+   poor dim, but never below 3:1 on the panel, since on a light-polluted
+   night every SCORE is poor. */
 :root[data-theme="night"] {
   color-scheme: dark;
   --bg: #000; --panel: #0a0101; --field: #050000; --fg: #c8281d; --muted: #7a1810; --line: #2e0805;
   --accent: #d93225; --accent-fg: #000; --accent-soft: rgba(217, 50, 37, .16); --focus: #f04434;
-  --c31: #6a140d; --c32: #ff4d3d; --c33: #b8281d; --c34: #a52418; --c35: #a52418; --c36: #e03a2c; --c90: #7a1810;
+  --c31: #ab281d; --c32: #ff4d3d; --c33: #d02e20; --c34: #a52418; --c35: #a52418; --c36: #e03a2c; --c90: #7a1810;
   --dusk: linear-gradient(90deg, #200403 0%, #5c0f09 50%, #a52418 100%);
   --title: linear-gradient(90deg, #7a1810 0%, #d93225 100%);
 }
@@ -68,18 +69,29 @@ form { background: var(--panel); border: 1px solid var(--line); border-radius: 1
   display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px 18px; align-content: start;
 }
 .groups legend { padding: 0; margin-bottom: 10px; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-label > span .req { font: 500 11px system-ui, sans-serif; color: var(--accent); margin-left: 6px; }
+:is(label, .chipfield) > span .req { font: 500 11px system-ui, sans-serif; color: var(--accent); margin-left: 6px; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px 18px; }
-label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; min-width: 0; }
-label > span { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-label > span code { font: 500 12px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); margin-left: 6px; }
-label > span.flag code { font-weight: 600; font-size: 13px; color: var(--fg); margin-left: 0; }
+label, .chipfield { display: flex; flex-direction: column; gap: 4px; font-size: 13px; min-width: 0; }
+:is(label, .chipfield) > span { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+:is(label, .chipfield) > span code { font: 500 12px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); margin-left: 6px; }
+:is(label, .chipfield) > span.flag code { font-weight: 600; font-size: 13px; color: var(--fg); margin-left: 0; }
 /* Two lines of help, all of it while the field has focus (and in its tooltip). */
-label small { font-size: 12px; color: var(--muted); line-height: 1.35; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
-label:focus-within small { -webkit-line-clamp: unset; }
+:is(label, .chipfield) small { font-size: 12px; color: var(--muted); line-height: 1.35; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+:is(label, .chipfield):focus-within small { -webkit-line-clamp: unset; }
 /* A checkbox sits where the other fields have their input, so help text
    lines up along a row. */
 label.check .control { display: flex; align-items: center; min-height: 40px; }
+/* A multi-choice flag (-filter) as toggles, joined into its hidden field. */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips label {
+  flex-direction: row; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; cursor: pointer;
+  border: 1px solid var(--line); border-radius: 999px; background: var(--field); font-weight: 500;
+  transition: border-color .12s, background .12s;
+}
+.chips label:has(:checked) { border-color: var(--accent); background: var(--accent-soft); }
+/* On a phone the toggles take the group's full width, one column. */
+@media (max-width: 600px) { .groups fieldset:has(.chipfield) { grid-template-columns: 1fr; } }
+.chips label:has(:focus-visible) { border-color: var(--focus); box-shadow: 0 0 0 3px var(--accent-soft); }
 input, select {
   font: inherit; padding: 8px 10px; min-height: 40px; border: 1px solid var(--line); border-radius: 7px;
   background: var(--field); color: var(--fg); width: 100%; transition: border-color .12s, box-shadow .12s;
@@ -136,13 +148,20 @@ pre#out a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; 
   padding: 6px 10px; font: 600 13px/18px system-ui, sans-serif; color: var(--c36);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-#shot { width: 240px; height: 240px; background: var(--panel); border-block: 1px solid var(--line); }
+#shot {
+  display: grid; place-items: center; width: 240px; height: 240px; background: var(--panel); border-block: 1px solid var(--line);
+  font: 12px system-ui, sans-serif; color: var(--muted);
+}
+#shot.failed { height: auto; padding: 8px 10px; place-items: start; }
+#shot:has(#thumb:not([hidden])) #shotmsg { display: none; }
 #thumb { display: block; width: 240px; height: 240px; }
 #thumb[hidden] { display: none; }
 #alt { display: block; width: 240px; margin-top: 4px; }
 #alt[hidden] { display: none; }
 #subs { padding: 6px 10px 8px; border-top: 1px solid var(--line); font: 12px/17px system-ui, sans-serif; color: var(--fg); }
 #subs[hidden] { display: none; }
+#subs .lead { display: block; font-weight: 600; text-wrap: balance; }
+#subs .lvl { white-space: nowrap; }
 #subs .over { color: var(--c90); }
 footer {
   display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px;
@@ -200,7 +219,7 @@ footer a:hover { text-decoration: underline; }
   <pre id="out"></pre>
   <div id="card" role="tooltip" hidden>
     <div id="name"></div>
-    <div id="shot"><img id="thumb" alt="" hidden></div>
+    <div id="shot"><span id="shotmsg"></span><img id="thumb" alt="" hidden></div>
     <canvas id="alt" width="240" height="96" hidden></canvas>
     <div id="subs" hidden></div>
   </div>
@@ -230,6 +249,12 @@ const LABELS = {
 };
 // The string flags whose help ends in their choices, shown as a select.
 const SELECTS = ["list", "camera", "scope"];
+// Comma-separated choices shown as toggles, value -> label; each must be in
+// the flag's help, and TestFilterChips in internal/config holds -filter's to
+// config.Filters and config.Broadband.
+const CHIPS = {
+  filter: { dual: "Dual", tri: "Tri", quad: "Quad", ha: "Hα", oiii: "OIII", sii: "SII", cls: "CLS", lpro: "L-Pro" },
+};
 const KEY = "astro-recommender-form";
 const $ = (id) => document.getElementById(id);
 
@@ -356,9 +381,14 @@ function sky(html) {
 }
 // The thumbnail shows once its own image has loaded, never the previous
 // name's image or an empty box: a load event the previous image queued before
-// the pointer moved on would otherwise show it under the new name.
+// the pointer moved on would otherwise show it under the new name. Until then
+// the slot says it is loading; if CDS fails it shrinks to a line saying so,
+// and the curve moves up.
 let thumbFor = null, curves = null;
-$("thumb").addEventListener("load", (e) => { if (thumbFor && e.target.src === thumbFor.dataset.thumb) e.target.hidden = false; });
+const own = (e) => thumbFor && e.target.src === thumbFor.dataset.thumb;
+const failed = () => { $("shot").classList.add("failed"); $("shotmsg").textContent = "No picture: CDS unavailable"; };
+$("thumb").addEventListener("load", (e) => { if (own(e)) e.target.hidden = false; });
+$("thumb").addEventListener("error", (e) => { if (own(e)) failed(); });
 // show fills the card for the result link a and puts it beside a, clear of
 // the window's edges; a null hides it.
 function show(a) {
@@ -368,6 +398,8 @@ function show(a) {
   img.hidden = true;
   if (!a) { card.hidden = true; return; }
   $("name").textContent = a.textContent;
+  $("shot").classList.remove("failed");
+  $("shotmsg").textContent = "Loading DSS2 picture…";
   drawAlt(curves?.alt?.[a.dataset.rank - 1], curves?.obs?.[a.dataset.rank - 1] ?? []);
   showSubs(curves?.subs?.[a.dataset.rank - 1]);
   card.hidden = false;
@@ -376,8 +408,8 @@ function show(a) {
   // The picture level with the row where the window allows.
   card.style.top = `${Math.max(8, Math.min(r.top - 130, innerHeight - card.offsetHeight - 8))}px`;
   img.src = a.dataset.thumb;
-  // Back on the same name the src does not change and no load event fires.
-  if (img.complete && img.naturalWidth) img.hidden = false;
+  // Back on the same name the src does not change and no event fires.
+  if (img.complete) { if (img.naturalWidth) img.hidden = false; else failed(); }
 }
 const link = (el) => el?.closest?.("#out a[data-thumb]") ?? null;
 // Pointer, keyboard and touch all reach the card. A touch also fires
@@ -403,18 +435,22 @@ document.addEventListener("keydown", (e) => {
 
 // showSubs fills the sub-exposure box under the curve: per level the subs
 // and their time, the levels past tonight's limit greyed; per panel for a
-// mosaic. e is main_js.go's estimate for the result, null without one.
+// mosaic. Past tonight's limit it leads with the nights a good image takes,
+// as SUBS does (output.nightsText). e is main_js.go's estimate for the result, null without one.
 // The values are numbers from our own JSON, so innerHTML takes no
 // untrusted text.
 function showSubs(e) {
   const box = $("subs");
   if (!e) { box.hidden = true; return; }
   const dur = (n) => { const m = n * e.sub / 60; return m < 60 ? `${Math.max(1, Math.round(m))} min` : `${(m / 60).toFixed(1)} h`; };
-  const lvl = (name, n) => `<span${n > e.max ? ' class="over"' : ""}>${name} ${n} (${dur(n)})</span>`;
+  const lvl = (name, n) => `<span class="lvl${n > e.max ? " over" : ""}">${name} ${n} (${dur(n)})</span>`;
+  const nights = (x) => !e.max ? "no sub fits tonight" : x < 9.95 ? `${x.toFixed(1)} nights like tonight` :
+    x < 99.5 ? `${Math.round(x)} nights like tonight` : "over 99 nights like tonight";
   // snrPerSub 0: the forecast loses every sub, and the counts are only a cap.
   box.innerHTML = !e.snrPerSub ? `Subs of ${e.sub} s: none tonight, the forecast loses them all` :
-    `Subs of ${e.sub} s${e.panels > 1 ? `, per panel of ${e.panels}` : ""}${e.assumedSurfaceBrightness ? ", typical SB" : ""}:<br>` +
-    `${lvl("modest", e.modest)} · ${lvl("good", e.good)}<br>${lvl("best", e.best)} · ${e.max} fit tonight`;
+    (e.good > e.max ? `<span class="lead">Good image: ${nights(e.good / e.max)}</span>` : "") +
+    `Subs of ${e.sub} s${e.panels > 1 ? `, per panel of ${e.panels}` : ""}${e.assumedSurfaceBrightness ? ", typical SB" : ""}, ${e.max} fit tonight:<br>` +
+    `${lvl("modest", e.modest)} · ${lvl("good", e.good)} · ${lvl("best", e.best)}`;
   box.hidden = false;
 }
 
@@ -537,7 +573,39 @@ function caption(f) {
   return span;
 }
 
+// chips builds a CHIPS flag: unnamed checkboxes, so the form loops skip them,
+// writing their values in order into a hidden field that carries the flag.
+function chips(f) {
+  const box = Object.assign(document.createElement("div"), { className: "chipfield", title: f.desc });
+  box.setAttribute("role", "group");
+  const value = Object.assign(document.createElement("input"), { type: "hidden", name: f.name });
+  const row = Object.assign(document.createElement("div"), { className: "chips" });
+  for (const [v, text] of Object.entries(CHIPS[f.name])) {
+    if (!new RegExp(`\\b${v}\\b`).test(f.desc)) throw new Error(`-${f.name} help does not name ${v}: ${f.desc}`);
+    const c = Object.assign(document.createElement("input"), { type: "checkbox", value: v });
+    c.addEventListener("change", () => { value.value = [...row.querySelectorAll(":checked")].map((x) => x.value).join(","); });
+    const chip = document.createElement("label");
+    chip.append(c, text);
+    row.append(chip);
+  }
+  const cap = caption(f);
+  box.setAttribute("aria-label", cap.textContent);
+  box.append(cap, row, Object.assign(document.createElement("small"), { textContent: f.desc }), value);
+  return box;
+}
+// syncChips ticks the toggles from their hidden fields, filled by restore()
+// or fromURL(), and rewrites each from the ticks, dropping a value no toggle has.
+function syncChips() {
+  for (const box of document.querySelectorAll(".chipfield")) {
+    const value = box.querySelector("input[type=hidden]");
+    const on = value.value.toLowerCase().split(",").map((x) => x.trim());
+    for (const c of box.querySelectorAll("input[type=checkbox]")) c.checked = on.includes(c.value);
+    value.value = [...box.querySelectorAll(":checked")].map((x) => x.value).join(",");
+  }
+}
+
 function field(f) {
+  if (CHIPS[f.name]) return chips(f);
   const label = document.createElement("label");
   label.title = f.desc;
   let input;
@@ -551,13 +619,17 @@ function field(f) {
     if (FILES.includes(f.name)) {
       input = Object.assign(document.createElement("input"), { type: "file" });
     } else if (SELECTS.includes(f.name)) {
-      // The help ends in the choices, "...: name, name"; a flag without a
-      // default (-camera) gets an empty first choice, none.
+      // The help ends in the choices, "...: name, name", or "key = Name"
+      // pairs (-scope) shown by name and sent by key; a flag without a
+      // default (-camera, -scope) gets an empty first choice, none.
       input = document.createElement("select");
       const names = f.desc.split(": ")[1]?.split(", ") ?? [];
       if (names.length < 2) throw new Error(`-${f.name} help has no "name, name" list: ${f.desc}`);
       if (!f.def) input.add(new Option("none", "", true));
-      for (const n of names) input.add(new Option(n, n === f.def ? "" : n, n === f.def));
+      for (const n of names) {
+        const [key, label] = n.split(" = ");
+        input.add(new Option(label ?? key, key === f.def ? "" : key, key === f.def));
+      }
     } else {
       input = Object.assign(document.createElement("input"), { type: "text", placeholder: EXAMPLES[f.name] ?? f.def ?? "" });
       if (f.name === "date") input.type = "date";
@@ -677,6 +749,7 @@ async function init() {
   for (const [title, fs] of groups) if (!MAIN_GROUPS.includes(title)) group($("more"), title, fs);
   restore();
   const shared = fromURL();
+  syncChips();
   const el = $("form").elements;
   el.lat.addEventListener("change", zone);
   el.lon.addEventListener("change", zone);
@@ -778,6 +851,8 @@ $("link").addEventListener("click", async () => {
 
 $("clear").addEventListener("click", () => {
   $("form").reset();
+  // reset() leaves a hidden field's value, which is its default too.
+  for (const h of $("form").querySelectorAll("input[type=hidden]")) h.value = "";
   try { localStorage.removeItem(KEY); } catch {}
   history.replaceState(null, "", location.pathname);
   zone();
