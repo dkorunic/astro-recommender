@@ -564,8 +564,11 @@ func (cfg *Config) camera(set map[string]bool, preset *Variant, base Scope) erro
 			*d.v = d.origin
 		}
 	}
-	if v := base.variant(); v != nil && preset == nil {
-		preset = &Variant{QE: v.QE, ReadNoise: cmp.Or(base.ReadNoise, v.ReadNoise)}
+	if v := base.variant(cfg.Mono); v != nil && preset == nil {
+		preset = v
+	}
+	if err := modelless(set, preset, base); err != nil {
+		return err
 	}
 	if preset != nil {
 		if !set["qe"] {
@@ -650,19 +653,44 @@ func (cfg *Config) beam(set map[string]bool, filterStd bool, focal float64, base
 	case !cfg.LineFilter():
 		return fmt.Errorf("%w: -filter-std needs a line filter in -filter (dual, tri, quad, ha, oiii or sii)", errInvalidFlag)
 	case set["focal"] != set["aperture"]:
-		return fmt.Errorf("%w: -filter-std takes the beam from -focal and -aperture together, or the scope's (the Origin's f/2.2) with neither", errInvalidFlag)
+		return fmt.Errorf("%w: -filter-std takes the beam from -focal and -aperture together, or with neither from the %s's f/%.1f", errInvalidFlag, base.Name, base.Focal/base.Aperture)
 	case set["focal"]:
 		cfg.FRatio, cfg.Obstructed = focal/cfg.Aperture, cfg.Obstruction/cfg.Aperture
+	case base.NoSubs && !set["obstruction"]:
+		// A ring of the beam's steepest rays is missing; none would be guessed.
+		return fmt.Errorf("%w: the %s's central obstruction is unpublished; give -obstruction (mm) with -filter-std", errInvalidFlag, base.Name)
 	default:
-		cfg.FRatio, cfg.Obstructed = base.Focal/base.Aperture, base.Obstruction/base.Aperture
+		obstruction := base.Obstruction
+		if set["obstruction"] {
+			obstruction = cfg.Obstruction
+		}
+		cfg.FRatio, cfg.Obstructed = base.Focal/base.Aperture, obstruction/base.Aperture
+	}
+
+	return nil
+}
+
+// modelless checks the camera flags of a scope without a camera model, whose
+// SUBS takes both from the flags: a missing read noise would be 0 e⁻, and an
+// unpublished obstruction none, both optimistic.
+func modelless(set map[string]bool, preset *Variant, base Scope) error {
+	if preset != nil || !set["qe"] && !set["read-noise"] {
+		return nil
+	}
+	switch {
+	case set["qe"] != set["read-noise"]:
+		return fmt.Errorf("%w: %s has no camera model; give -qe and -read-noise together", errInvalidFlag, base.Name)
+	case base.NoSubs && !set["obstruction"] && !set["aperture"]:
+		return fmt.Errorf("%w: %s's central obstruction is unpublished; give -obstruction (mm) with -qe and -read-noise", errInvalidFlag, base.Name)
 	}
 
 	return nil
 }
 
 // frameFOV returns the frame's long and short sides in arc minutes from -fov,
-// or -focal with -sensor, or the base scope's when neither is given. It also
-// validates -focal for frameScale.
+// or -focal with -sensor, or the base scope's sensor at -focal (with -pixel
+// alone), or the base scope's field when none is given. It also validates
+// -focal for frameScale.
 func frameFOV(set map[string]bool, fov, sensor string, focal float64, base Scope) (float64, float64, error) {
 	switch {
 	case set["fov"] && set["sensor"]:
@@ -677,6 +705,10 @@ func frameFOV(set map[string]bool, fov, sensor string, focal float64, base Scope
 		return parseFOV(fov)
 	case set["sensor"]:
 		return sensorFOV(sensor, focal)
+	case set["focal"]:
+		// The scope's field at its own focal length would not match the
+		// scale -pixel gives at this one.
+		return fovSide(float64(base.PxLong)*base.Pixel/1000, focal), fovSide(float64(base.PxShort)*base.Pixel/1000, focal), nil
 	}
 
 	long, short := base.fov()

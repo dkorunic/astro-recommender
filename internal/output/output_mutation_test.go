@@ -947,3 +947,41 @@ func TestMutMosaicKeepsPX(t *testing.T) {
 		t.Errorf("PX kept on 60 columns without a mosaic:\n%s", out)
 	}
 }
+
+// On a phone-width terminal the table drops down to what and when to shoot,
+// how well and for how long (its floor then set by the names); the legend,
+// its colour lines included, wraps to the width.
+func TestMutNarrowFits(t *testing.T) {
+	cfg, s := mutSky(t)
+	cfg.Framing, cfg.Scale, cfg.FOVLong, cfg.FOVShort, cfg.Filter = true, 2, 400, 300, "ha"
+	res := mutResults(s)
+	mutColor(t, false)
+	t.Cleanup(func() { TermWidth = 0 })
+	for _, w := range []int{60, 40} {
+		TermWidth = w
+		table := mutCapture(t, func() { Results(cfg, s, res) })
+		if h := strings.Fields(mutTable(t, table, "Targets, ranked by SCORE")[0]); !slices.Equal(h, []string{"#", "NAME", "DESCRIPTION", "SCORE", "OBSERVABLE", "SUBS"}) {
+			t.Errorf("%d columns keep %q", w, h)
+		}
+		for line := range strings.Lines(mutCapture(t, func() { Legend(cfg, s, w) })) {
+			if n := visible(strings.TrimRight(line, "\n")); n > w {
+				t.Errorf("%d columns: a %d-wide legend line %q", w, n, line)
+			}
+		}
+	}
+}
+
+// The page's sky links and the CSV take J2000: a catalogue position as it
+// is, a comet's mid-window track point (of date) moved back.
+func TestMutJ2000(t *testing.T) {
+	_, s := mutSky(t)
+	if ra, dec := J2000(s, catalog.Target{RADeg: 10, DecDeg: 20}); ra != 10 || dec != 20 {
+		t.Errorf("catalogue target moved: %v %v", ra, dec)
+	}
+	comet := catalog.Target{Track: [][2]float64{{1, 2}, {3, 4}, {5, 6}}}
+	ra, dec := J2000(s, comet)
+	t0 := astro.DaysJ2000(s.Grid[len(s.Grid)/2]) / 36525
+	if back, d := astro.PrecessT(ra, dec, t0); math.Abs(back-3) > 1e-3 || math.Abs(d-4) > 1e-3 || math.Abs(ra-3) < 0.1 {
+		t.Errorf("comet J2000 %v %v, of date again %v %v", ra, dec, back, d)
+	}
+}

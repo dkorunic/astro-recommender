@@ -68,3 +68,17 @@ func TestSkyRegex(t *testing.T) {
 		}
 	}
 }
+
+// The page closes the hover card before it replaces the report: a card left
+// open under the pointer would go on showing the previous run's object, and
+// show() would skip a link equal to the stale one it remembers.
+func TestCardClosedOnRun(t *testing.T) {
+	page, err := os.ReadFile("../../web/index.html")
+	if err != nil {
+		t.Fatal(err)
+	}
+	re := regexp.MustCompile(`show\(null\);\n(?:.*\n){0,2}\s*\$\("out"\)\.innerHTML = `)
+	if n := strings.Count(string(page), `$("out").innerHTML = `); n == 0 || len(re.FindAll(page, -1)) != n {
+		t.Errorf("%d report replacements, %d after show(null)", n, len(re.FindAll(page, -1)))
+	}
+}

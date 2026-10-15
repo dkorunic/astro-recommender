@@ -784,6 +784,8 @@ $("form").addEventListener("submit", async (e) => {
   try {
     const a = await args();
     const { out, err, alt, code } = await run(a);
+    // A card left open would show the replaced run's object under the pointer.
+    show(null);
     try { curves = alt ? JSON.parse(alt) : null; } catch { curves = null; }
     $("out").innerHTML = sky(ansi(out));
     // -csv and -json are meant for other programs (N.I.N.A. imports the

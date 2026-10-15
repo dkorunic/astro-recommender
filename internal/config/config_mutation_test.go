@@ -109,9 +109,10 @@ func TestMutOtherFrames(t *testing.T) {
 	mutClose(t, "sensor long approx", cfg.FOVLong, 201.9, 0.05)
 	mutClose(t, "sensor short", cfg.FOVShort, 2*math.Atan(15.6/800)*180/math.Pi*60, 1e-9)
 	mutClose(t, "pixel scale", cfg.Scale, 1.93889, 1e-4)
-	// -pixel alone with -focal keeps the Origin field.
+	// -pixel alone with -focal keeps the Origin's sensor (2180 px of 2.0 µm)
+	// at that focal length, not its field.
 	cfg, err = mutParse(t, mutBase("-focal", "1000", "-pixel", "2")...)
-	if err != nil || math.Abs(cfg.FOVShort-44.74) > 0.01 || math.Abs(cfg.Scale-0.41253) > 1e-4 {
+	if err != nil || math.Abs(cfg.FOVShort-2*math.Atan(4.36/2000)*180/math.Pi*60) > 1e-9 || math.Abs(cfg.Scale-0.41253) > 1e-4 {
 		t.Errorf("-focal -pixel: %v %v %v", cfg.FOVShort, cfg.Scale, err)
 	}
 	// 20000 px across is a sensor; more is not.
@@ -391,10 +392,21 @@ func TestMutFilterStdBeam(t *testing.T) {
 		{[]string{"-filter", "dual", "-filter-std", "-scope", "origin-mk1"}, 335.0 / 152, 63.0 / 152},
 		{[]string{"-filter", "dual", "-filter-std", "-scope", "seestar-s50"}, 5, 0},
 		{[]string{"-filter", "dual", "-filter-std", "-focal", "400", "-pixel", "3.76", "-aperture", "100", "-obstruction", "20"}, 4, 0.2},
+		// A given obstruction counts with the scope's beam, even 0.
+		{[]string{"-filter", "ha", "-filter-std", "-scope", "draco", "-obstruction", "40"}, 340.0 / 90, 40.0 / 90},
+		{[]string{"-filter", "ha", "-filter-std", "-origin", "-obstruction", "0"}, 335.0 / 152, 0},
 	} {
 		cfg, err := mutParse(t, mutBase(c.args...)...)
 		if err != nil || math.Abs(cfg.FRatio-c.ratio) > 1e-12 || math.Abs(cfg.Obstructed-c.obstr) > 1e-12 {
 			t.Errorf("%v: f/%v obstructed %v (%v), want f/%v and %v", c.args, cfg.FRatio, cfg.Obstructed, err, c.ratio, c.obstr)
 		}
+	}
+	// An unpublished obstruction is not guessed, and the error names the
+	// scope whose beam it means, not the Origin.
+	if _, err := mutParse(t, mutBase("-filter", "ha", "-filter-std", "-scope", "draco")...); err == nil || !strings.Contains(err.Error(), "Draco") {
+		t.Errorf("draco without -obstruction: %v", err)
+	}
+	if _, err := mutParse(t, mutBase("-filter", "ha", "-filter-std", "-scope", "seestar-s50", "-focal", "1000", "-pixel", "2.9")...); err == nil || !strings.Contains(err.Error(), "Seestar S50's f/5.0") {
+		t.Errorf("-focal without -aperture: %v", err)
 	}
 }

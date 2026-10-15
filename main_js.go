@@ -17,6 +17,7 @@ import (
 	"github.com/dkorunic/astro-recommender/internal/catalog"
 	"github.com/dkorunic/astro-recommender/internal/config"
 	"github.com/dkorunic/astro-recommender/internal/geotz"
+	"github.com/dkorunic/astro-recommender/internal/output"
 	"github.com/dkorunic/astro-recommender/internal/scoring"
 	"github.com/dkorunic/astro-recommender/internal/weather"
 )
@@ -69,7 +70,7 @@ func altitudes(cfg *config.Config, s *scoring.Sky, results []scoring.Result) {
 	doc := struct {
 		Zone  string              `json:"zone"`
 		Alt   [][]float64         `json:"alt"`
-		Pos   [][3]float64        `json:"pos"` // per result: RA and Dec as listed (degrees), size (arcmin, 0 unknown)
+		Pos   [][3]float64        `json:"pos"` // per result: J2000 RA and Dec (degrees), size (arcmin, 0 unknown)
 		Obs   [][][2]int64        `json:"obs"`
 		Subs  []*scoring.Estimate `json:"subs"` // per result, null without one
 		Wx    []wxHour            `json:"wx"`
@@ -95,8 +96,9 @@ func altitudes(cfg *config.Config, s *scoring.Sky, results []scoring.Result) {
 		}
 		doc.Alt = append(doc.Alt, curve)
 		// sky() links each row by its rank from these, so narrow tables may
-		// drop the RA and DEC columns.
-		pra, pdec := res.Position()
+		// drop the RA and DEC columns; J2000, as Aladin and hips2fits expect
+		// (a comet's listed position is of date).
+		pra, pdec := output.J2000(s, res.Target)
 		size := 0.0
 		if res.HasSize() {
 			size = res.Size

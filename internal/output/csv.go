@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/dkorunic/astro-recommender/internal/astro"
+	"github.com/dkorunic/astro-recommender/internal/catalog"
 	"github.com/dkorunic/astro-recommender/internal/config"
 	"github.com/dkorunic/astro-recommender/internal/plan"
 	"github.com/dkorunic/astro-recommender/internal/scoring"
@@ -46,11 +47,7 @@ func CSV(cfg *config.Config, s *scoring.Sky, slots []plan.Slot, results []scorin
 	w := csv.NewWriter(os.Stdout)
 	_ = w.Write(csvHeader)
 	for _, res := range list {
-		ra, dec := res.Position()
-		if res.Track != nil {
-			ra, dec = astro.PrecessT(ra, dec, -astro.DaysJ2000(s.Grid[len(s.Grid)/2])/36525)
-		}
-		raS, decS := sexagesimal(ra, dec)
+		raS, decS := sexagesimal(J2000(s, res.Target))
 		_ = w.Write([]string{cell(res.Name), "", raS, decS})
 	}
 	w.Flush()
@@ -83,4 +80,17 @@ func sexagesimal(ra, dec float64) (string, string) {
 
 	return fmt.Sprintf("%02dh %02dm %04.1fs", t/36000, t/600%60, float64(t%600)/10),
 		fmt.Sprintf("%s%02d° %02d′ %02d″", sign, a/3600, a/60%60, a%60)
+}
+
+// J2000 returns the target's position in J2000 degrees: Position(), with a
+// comet's mid-window track point, which is of date, moved back to J2000
+// (PrecessT at minus the epoch, within an arcsecond). The CSV and the web
+// page's sky links take it, since N.I.N.A., Aladin and hips2fits expect J2000.
+func J2000(s *scoring.Sky, t catalog.Target) (float64, float64) {
+	ra, dec := t.Position()
+	if t.Track != nil {
+		ra, dec = astro.PrecessT(ra, dec, -astro.DaysJ2000(s.Grid[len(s.Grid)/2])/36525)
+	}
+
+	return ra, dec
 }

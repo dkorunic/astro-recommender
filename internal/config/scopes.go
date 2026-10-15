@@ -129,14 +129,21 @@ func (s Scope) fov() (float64, float64) {
 // scale returns the scope's pixel scale in arc seconds per pixel.
 func (s Scope) scale() float64 { return pixelScale(s.Pixel, s.Focal) }
 
-// variant returns the scope's camera's colour version, nil without a preset
-// or with NoSubs.
-func (s Scope) variant() *Variant {
-	if c, ok := Cameras[s.Camera]; ok && !s.NoSubs {
-		return c.Colour
+// variant returns the scope's camera's colour version, or with mono its chip's
+// mono version where one is made (else the colour one's QE and read noise
+// stand for a mono camera behind the same optics, the scope's ReadNoise
+// included, as it is its own colour camera's); nil without a preset or with
+// NoSubs.
+func (s Scope) variant(mono bool) *Variant {
+	c, ok := Cameras[s.Camera]
+	switch {
+	case !ok || s.NoSubs:
+		return nil
+	case mono && c.Mono != nil:
+		return c.Mono
 	}
 
-	return nil
+	return &Variant{Response: c.Colour.Response, Gain: c.Colour.Gain, QE: c.Colour.QE, ReadNoise: cmp.Or(s.ReadNoise, c.Colour.ReadNoise)}
 }
 
 // applyScope resolves -scope (or -origin, the same as -scope origin) and

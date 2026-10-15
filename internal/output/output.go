@@ -548,8 +548,10 @@ const descKeep = 22
 // dropOrder is the order a narrow terminal drops target columns in, least
 // needed for choosing tonight's target first: the position is for the mount
 // (-csv carries it), then detail the score already weighs; UP repeats what
-// OBSERVABLE shows, and most descriptions name the type.
-var dropOrder = [][]string{{raColumn, decColumn}, {"CON"}, {"MAG"}, {"SB"}, {"SKY"}, {sizeColumn}, {pxColumn}, {"UP"}, {typeColumn}}
+// OBSERVABLE shows, and most descriptions name the type; on a phone the
+// peak's time and the filter go last, leaving what and when to shoot, how
+// well and for how long.
+var dropOrder = [][]string{{raColumn, decColumn}, {"CON"}, {"MAG"}, {"SB"}, {"SKY"}, {sizeColumn}, {pxColumn}, {"UP"}, {typeColumn}, {"MAX ALT"}, {filterColumn}}
 
 // planDropOrder is dropOrder for the night plan: what to shoot when, and
 // how well, stay.
@@ -926,14 +928,39 @@ func Legend(cfg *config.Config, s *scoring.Sky, tableWidth int) {
 	}
 	// The colours are the last cells, so their escapes do not shift the
 	// description column.
-	dim := func(s string) string { return paint("90", s) }
-	fmt.Fprintf(w, "  Marks:\t%s\n", dim("~ estimated, - unknown or not applicable"))
-	fmt.Fprintf(w, "  Colors:\t%s%s%s%s%s%s\n", paint("32", "green"), dim(" good, "), paint("33", "yellow"), dim(" fair, "), paint("31", "red"), dim(" poor"))
-	fmt.Fprintf(w, "\t%s%s%s%s%s\n", dim("TYPE: "), paint("35", "magenta"), dim(" emission-line (helped by -filter), "), paint("33", "yellow"), dim(" comet"))
-	fmt.Fprintf(w, "\t%s\n", dim("UP, SKY and TYPE are plain when every row is alike"))
+	legendLine(w, "  Marks:", width, "90", "~ estimated, - unknown or not applicable")
+	legendLine(w, "  Colors:", width, "32", "green", "90", "good,", "33", "yellow", "90", "fair,", "31", "red", "90", "poor")
+	legendLine(w, "", width, "90", "TYPE:", "35", "magenta", "90", "emission-line (helped by -filter),", "33", "yellow", "90", "comet")
+	legendLine(w, "", width, "90", "UP, SKY and TYPE are plain when every row is alike")
 	w.Flush()
 	for line := range strings.Lines(buf.String()) {
 		fmt.Println(strings.TrimRight(line, " \n"))
+	}
+}
+
+// legendLine writes a legend line of parts, colour code then text, words
+// joined by spaces and wrapped at width under the description column, each
+// word painted in its part's colour.
+func legendLine(w io.Writer, title string, width int, parts ...string) {
+	var words, codes []string
+	for i := 0; i+1 < len(parts); i += 2 {
+		for word := range strings.FieldsSeq(parts[i+1]) {
+			words, codes = append(words, word), append(codes, parts[i])
+		}
+	}
+	for i := 0; i < len(words); {
+		var line []string
+		n := 0
+		for ; i < len(words); i++ {
+			wn := utf8.RuneCountInString(words[i])
+			if len(line) > 0 && n+1+wn > width {
+				break
+			}
+			n += min(n, 1) + wn
+			line = append(line, paint(codes[i], words[i]))
+		}
+		fmt.Fprintf(w, "%s\t%s\n", title, strings.Join(line, " "))
+		title = ""
 	}
 }
 

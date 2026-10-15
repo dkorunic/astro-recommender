@@ -82,3 +82,57 @@ func TestScopeFlag(t *testing.T) {
 		t.Errorf("draco with a camera: %+v (%v)", cfg, err)
 	}
 }
+
+// -focal with -pixel alone keeps the scope's sensor, not its field: the field
+// at the new focal length matches the scale, so the frame keeps its pixels.
+func TestScopeFocal(t *testing.T) {
+	s := Scopes["seestar-s50"]
+	cfg, err := mutParse(t, mutBase("-scope", "seestar-s50", "-focal", "1000", "-pixel", "2.9")...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if px, _ := cfg.FramePx(); math.Abs(px-float64(s.PxLong)) > 1 || math.Abs(cfg.FOVShort-fovSide(float64(s.PxShort)*s.Pixel/1000, 1000)) > 1e-9 {
+		t.Errorf("%v px across, short side %v'", px, cfg.FOVShort)
+	}
+}
+
+// A scope without a camera model takes SUBS from -qe and -read-noise
+// together, and one with an unpublished obstruction also from -obstruction
+// (or -aperture, another telescope); neither defaults to the optimistic 0.
+func TestScopeNoCameraModel(t *testing.T) {
+	for _, c := range []struct {
+		args []string
+		ok   bool
+	}{
+		{[]string{"-scope", "dwarf-2", "-qe", "0.8"}, false},
+		{[]string{"-scope", "dwarf-2", "-read-noise", "1"}, false},
+		{[]string{"-scope", "dwarf-2", "-qe", "0.8", "-read-noise", "1"}, true},
+		{[]string{"-scope", "draco", "-qe", "0.8", "-read-noise", "1"}, false},
+		{[]string{"-scope", "draco", "-qe", "0.8", "-read-noise", "1", "-obstruction", "40"}, true},
+		{[]string{"-scope", "draco", "-qe", "0.8", "-read-noise", "1", "-aperture", "80"}, true},
+		{[]string{"-scope", "draco"}, true},
+		{[]string{"-scope", "seestar-s50", "-qe", "0.9"}, true}, // its chip's read noise
+	} {
+		if _, err := mutParse(t, mutBase(c.args...)...); (err == nil) != c.ok {
+			t.Errorf("%v: %v, want ok %v", c.args, err, c.ok)
+		}
+	}
+}
+
+// -mono behind a scope takes its chip's mono version where one is made, the
+// scope's own read noise being its colour camera's; a chip made in colour
+// only keeps the colour QE and read noise, labelled as such.
+func TestScopeMono(t *testing.T) {
+	cfg, err := mutParse(t, mutBase("-scope", "seestar-s50", "-mono")...)
+	m := Cameras["imx462"].Mono
+	if err != nil || cfg.QE != m.QE || cfg.ReadNoise != m.ReadNoise || cfg.CameraLabel() != "IMX462 mono" {
+		t.Errorf("seestar-s50 -mono: QE %v RN %v %q (%v), want %+v", cfg.QE, cfg.ReadNoise, cfg.CameraLabel(), err, m)
+	}
+	cfg, err = mutParse(t, mutBase("-scope", "origin", "-mono")...)
+	if err != nil || cfg.QE != Cameras["imx678"].Colour.QE || cfg.ReadNoise != Scopes["origin"].ReadNoise || cfg.CameraLabel() != "IMX678 colour, as mono" {
+		t.Errorf("origin -mono: QE %v RN %v %q (%v)", cfg.QE, cfg.ReadNoise, cfg.CameraLabel(), err)
+	}
+	if cfg, _ := mutParse(t, mutBase("-scope", "seestar-s50")...); cfg.QE != Cameras["imx462"].Colour.QE || cfg.CameraLabel() != "IMX462 colour" {
+		t.Errorf("seestar-s50: QE %v %q", cfg.QE, cfg.CameraLabel())
+	}
+}
