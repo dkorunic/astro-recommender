@@ -133,6 +133,9 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 	if cfg.Framing {
 		pxLong, pxShort := cfg.FramePx()
 		extra := ""
+		if label := cmp.Or(cfg.ScopeLabel(), cfg.CameraLabel()); label != "" {
+			extra += ", " + label
+		}
 		if cfg.Mosaic > 1 {
 			extra += fmt.Sprintf(", mosaics of up to %d panels", cfg.Mosaic)
 		}

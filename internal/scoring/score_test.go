@@ -543,8 +543,8 @@ func TestLineBandsClip(t *testing.T) {
 	}
 }
 
-// A standard filter in the Origin's f/2.2 cone (its 63 mm obstruction
-// leaving only the steeper rays) shifts its band blue: a 3 nm Hα band keeps
+// A standard filter in the original Origin's f/2.2 cone (its 63 mm
+// obstruction leaving only the steeper rays) shifts its band blue: a 3 nm Hα band keeps
 // a quarter of Hα, most of [N II] 654.8 and none of 658.3; a 7 nm band most
 // of Hα, all of 654.8 and a quarter of 658.3. Pinned against a numerical
 // integration over the pupil; a collimated beam passes a line inside the

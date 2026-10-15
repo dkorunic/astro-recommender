@@ -86,7 +86,7 @@ func TestCameraGain(t *testing.T) {
 	area := math.Pi / 4 * (15.2*15.2 - 6.3*6.3)
 	g := area * 0.83 * 1.2314 * 1.2314 * 1005 * 880 / atmos.NanoLamberts(0)
 	plain := c.channels(nil, "", 7, [catalog.NumLines]float64{}, filterPass{})
-	for i, qe := range [3]float64{red: 0.396, green: 0.563, blue: 0.393} {
+	for i, qe := range imx678.Broad {
 		if want := g * qe * 300 / 88; len(plain) != 3 || math.Abs(plain[i].obj/want-1) > 1e-9 || plain[i].obj != plain[i].sky[0] {
 			t.Errorf("unfiltered channel %d %+v, want object and glow gain %v", i, plain[i], want)
 		}
@@ -95,7 +95,7 @@ func TestCameraGain(t *testing.T) {
 		t.Errorf("channel shares %+v", plain)
 	}
 	// Hα reaches every channel by its dye (ZWO's IMX678 curve): red pixels
-	// at 0.77 of the peak, green at a third of that, blue at a seventh; the
+	// at 0.77 of the peak, green at 0.34, blue at 0.11; the
 	// quarter is the channel's share, not its gain. Mono is one channel of
 	// every pixel at the mono response.
 	cfg := expCfg()
@@ -106,13 +106,13 @@ func TestCameraGain(t *testing.T) {
 	if len(mon) != 1 || mon[0].share != 1 || math.Abs(mon[0].obj/(g*0.95)-1) > 1e-9 || col[red].share != 0.25 {
 		t.Errorf("Hα mono %+v", mon)
 	}
-	for i, r := range [3]float64{red: 0.774, green: 0.339, blue: 0.107} {
+	for i, r := range imx678.Lines[catalog.Ha] {
 		if math.Abs(col[i].obj/(g*r)-1) > 1e-9 {
 			t.Errorf("Hα colour channel %d: %v, want %v", i, col[i].obj, g*r)
 		}
 	}
 	// [O III] mostly on green, half the array, and half as much on blue.
-	if col := c.channels(nil, "oiii", 7, [catalog.NumLines]float64{catalog.OIII: 1}, filterPass{}); math.Abs(col[green].obj/(g*0.970)-1) > 1e-9 || math.Abs(col[blue].obj/(g*0.520)-1) > 1e-9 || col[red].obj >= col[blue].obj/10 || col[green].share != 0.5 {
+	if col := c.channels(nil, "oiii", 7, [catalog.NumLines]float64{catalog.OIII: 1}, filterPass{}); math.Abs(col[green].obj/(g*imx678.Lines[catalog.OIII][green])-1) > 1e-9 || math.Abs(col[blue].obj/(g*imx678.Lines[catalog.OIII][blue])-1) > 1e-9 || col[red].obj >= col[blue].obj/10 || col[green].share != 0.5 {
 		t.Errorf("[O III] colour %+v", col)
 	}
 	if col := c.channels(nil, "ha", 7, [catalog.NumLines]float64{}, filterPass{}); col[red].obj != 0 {
@@ -124,7 +124,7 @@ func TestCameraGain(t *testing.T) {
 	for _, lines := range [][catalog.NumLines]float64{catalog.Target{Type: "HII region"}.Lines(), catalog.Target{Type: "Planetary Nebula"}.Lines()} {
 		ch := c.channels(nil, "dual", 7, lines, filterPass{})
 		for i := range ch {
-			if want := g * 7 / 88 * (colourQE[catalog.Ha][i] + colourQE[catalog.OIII][i]); math.Abs(ch[i].sky[0]/want-1) > 1e-9 {
+			if want := g * 7 / 88 * (imx678.Lines[catalog.Ha][i] + imx678.Lines[catalog.OIII][i]); math.Abs(ch[i].sky[0]/want-1) > 1e-9 {
 				t.Errorf("dual-band glow gain %d: %v, want %v", i, ch[i].sky[0], want)
 			}
 		}
@@ -349,9 +349,9 @@ func TestSubsEmissionLines(t *testing.T) {
 	for i := range ch {
 		var want float64
 		for l, share := range lines {
-			want += g * share * colourQE[l][i]
+			want += g * share * imx678.Lines[l][i]
 		}
-		if math.Abs(ch[i].obj/want-1) > 1e-12 || math.Abs(ch[i].sky[0]/(g*broadQEColour[i]*300/88)-1) > 1e-12 {
+		if math.Abs(ch[i].obj/want-1) > 1e-12 || math.Abs(ch[i].sky[0]/(g*imx678.Broad[i]*300/88)-1) > 1e-12 {
 			t.Errorf("unfiltered emission channel %d %+v, want object %v", i, ch[i], want)
 		}
 	}
@@ -498,7 +498,7 @@ func TestCalibrationSample(t *testing.T) {
 
 // A colour sensor's channels add their SNR², each over its own pixels: through
 // Hα the red quarter sees the nebula at 0.77 of the peak, the green half at
-// 0.34 and the blue quarter at 0.11 (colourQE), against a mono sensor's
+// 0.34 and the blue quarter at 0.11 (the IMX678's config.Response), against a mono sensor's
 // 0.95 on every pixel. Read-noise limited a channel's SNR² goes as its
 // response squared, so colour needs 0.95²/Σ share·r² = 4.3x mono's subs;
 // sky limited, its sky in the band scaling with the same response, as its
@@ -509,7 +509,7 @@ func TestSubsBayerChannels(t *testing.T) {
 	neb := catalog.Target{Name: "N", Type: "HII region", RADeg: 90.5, Size: 20, SurfBr: 16}
 	var lin, sq float64
 	for i, share := range channelShare {
-		r := colourQE[catalog.Ha][i]
+		r := imx678.Lines[catalog.Ha][i]
 		lin += share * r
 		sq += share * r * r
 	}
@@ -529,3 +529,6 @@ func TestSubsBayerChannels(t *testing.T) {
 		}
 	}
 }
+
+// imx678 is the default colour response, the Origin's sensor's.
+var imx678 = (&config.Config{}).ColourResponse()

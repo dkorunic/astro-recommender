@@ -226,8 +226,10 @@ const HIDDEN = ["version"]; // nothing to show
 // help text and the CLI speak in flags.
 const LABELS = {
   lat: "Latitude", lon: "Longitude", date: "Date", tz: "Time zone", list: "Target list", n: "Results",
-  plan: "Night plan", origin: "Celestron Origin", filter: "Filters", bortle: "Bortle class", sqm: "Sky brightness",
+  plan: "Night plan", origin: "Celestron Origin", scope: "Smart telescope", filter: "Filters", bortle: "Bortle class", sqm: "Sky brightness",
 };
+// The string flags whose help ends in their choices, shown as a select.
+const SELECTS = ["list", "camera", "scope"];
 const KEY = "astro-recommender-form";
 const $ = (id) => document.getElementById(id);
 
@@ -548,10 +550,13 @@ function field(f) {
   } else {
     if (FILES.includes(f.name)) {
       input = Object.assign(document.createElement("input"), { type: "file" });
-    } else if (f.name === "list") {
+    } else if (SELECTS.includes(f.name)) {
+      // The help ends in the choices, "...: name, name"; a flag without a
+      // default (-camera) gets an empty first choice, none.
       input = document.createElement("select");
       const names = f.desc.split(": ")[1]?.split(", ") ?? [];
-      if (!names.includes(f.def)) throw new Error(`-list help has no "name, name" list: ${f.desc}`);
+      if (names.length < 2) throw new Error(`-${f.name} help has no "name, name" list: ${f.desc}`);
+      if (!f.def) input.add(new Option("none", "", true));
       for (const n of names) input.add(new Option(n, n === f.def ? "" : n, n === f.def));
     } else {
       input = Object.assign(document.createElement("input"), { type: "text", placeholder: EXAMPLES[f.name] ?? f.def ?? "" });
@@ -560,7 +565,7 @@ function field(f) {
     label.append(caption(f), input);
   }
   // The select lists the names already; the caption marks a required field.
-  const help = f.name === "list" ? f.desc.split(": ")[0] : f.desc.replace(" (required)", "");
+  const help = SELECTS.includes(f.name) ? f.desc.split(": ")[0] : f.desc.replace(" (required)", "");
   label.append(Object.assign(document.createElement("small"), { textContent: help }));
   input.name = f.name;
   // The browser's own check: it blocks the run, focuses the field and says why.

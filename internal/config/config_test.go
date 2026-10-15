@@ -321,10 +321,18 @@ func TestCamera(t *testing.T) {
 		want string // error substring; "" = accepted
 		cam  cam
 	}{
-		"origin":     {[]string{"-origin"}, "", cam{152, 63, 15, 0.83, 2.15}},
-		"no framing": {nil, "", cam{}},
+		"origin":     {[]string{"-origin"}, "", cam{152, 77, 10, 0.83, 2.15}},
+		"origin mk1": {[]string{"-scope", "origin-mk1"}, "", cam{152, 63, 10, 0.70, 1.7}},
+		"seestar":    {[]string{"-scope", "Seestar-S50"}, "", cam{50, 0, 10, 0.81, 1.05}},
+		// No chip preset or no published obstruction: no SUBS unless given.
+		"no preset":        {[]string{"-scope", "seestar-s50-pro"}, "", cam{50, 0, 10, 0, 0}},
+		"no obstruction":   {[]string{"-scope", "evscope"}, "", cam{114, 0, 4, 0, 0}},
+		"unknown scope":    {[]string{"-scope", "hubble"}, "-scope must be one of", cam{}},
+		"origin and scope": {[]string{"-origin", "-scope", "vespera"}, "-origin is -scope origin", cam{}},
+		"scope camera":     {[]string{"-scope", "vespera", "-camera", "imx571", "-focal", "400"}, "-scope fixes its camera", cam{}},
+		"no framing":       {nil, "", cam{}},
 		// Another telescope's aperture drops the Origin's obstruction.
-		"other scope": {[]string{"-origin", "-aperture", "200"}, "", cam{200, 0, 15, 0.83, 2.15}},
+		"other scope": {[]string{"-origin", "-aperture", "200"}, "", cam{200, 0, 10, 0.83, 2.15}},
 		"all given": {[]string{
 			"-focal", "400", "-pixel", "3.76", "-sensor", "23.5x15.6", "-aperture", "200", "-obstruction", "70",
 			"-sub", "60", "-qe", "0.6", "-read-noise", "1", "-mono",
@@ -336,7 +344,7 @@ func TestCamera(t *testing.T) {
 		"sub 0":          {[]string{"-origin", "-sub", "0"}, "-sub must be 0.001 to 3600", cam{}},
 		"sub tiny":       {[]string{"-origin", "-sub", "1e-300"}, "-sub must be", cam{}},
 		"sub huge":       {[]string{"-origin", "-sub", "3601"}, "-sub must be", cam{}},
-		"sub hour":       {[]string{"-origin", "-sub", "3600"}, "", cam{152, 63, 3600, 0.83, 2.15}},
+		"sub hour":       {[]string{"-origin", "-sub", "3600"}, "", cam{152, 77, 3600, 0.83, 2.15}},
 		"qe 0":           {[]string{"-origin", "-qe", "0"}, "-qe must be above 0", cam{}},
 		"qe 1.1":         {[]string{"-origin", "-qe", "1.1"}, "-qe must be above 0", cam{}},
 		"read-noise -1":  {[]string{"-origin", "-read-noise", "-1"}, "-read-noise must be 0 or more", cam{}},
@@ -360,3 +368,9 @@ func TestCamera(t *testing.T) {
 		t.Errorf("-mono: %v %v", cfg.Mono, err)
 	}
 }
+
+// The Origin's frame, the default for unset frame values.
+var (
+	originFOVLong, originFOVShort = Scopes[originKey].fov()
+	originScale                   = Scopes[originKey].scale()
+)

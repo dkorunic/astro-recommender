@@ -386,8 +386,10 @@ func TestMutFilterStdBeam(t *testing.T) {
 		ratio, obstr float64
 	}{
 		{[]string{"-filter", "ha"}, 0, 0},
-		{[]string{"-filter", "ha", "-filter-std"}, 335.0 / 152, 63.0 / 152},
-		{[]string{"-filter", "dual", "-filter-std", "-origin"}, 335.0 / 152, 63.0 / 152},
+		{[]string{"-filter", "ha", "-filter-std"}, 335.0 / 152, 77.0 / 152},
+		{[]string{"-filter", "dual", "-filter-std", "-origin"}, 335.0 / 152, 77.0 / 152},
+		{[]string{"-filter", "dual", "-filter-std", "-scope", "origin-mk1"}, 335.0 / 152, 63.0 / 152},
+		{[]string{"-filter", "dual", "-filter-std", "-scope", "seestar-s50"}, 5, 0},
 		{[]string{"-filter", "dual", "-filter-std", "-focal", "400", "-pixel", "3.76", "-aperture", "100", "-obstruction", "20"}, 4, 0.2},
 	} {
 		cfg, err := mutParse(t, mutBase(c.args...)...)

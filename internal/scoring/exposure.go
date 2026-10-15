@@ -26,23 +26,11 @@ var Levels = [3]float64{5, 10, 20}
 const photonsV0 = 1005 * 10 * atmos.VWidth
 
 // lineQE is a mono sensor's response at each line relative to its peak,
-// read off Sony's curve; colourQE the IMX678 colour sensor's, each channel's
-// (red, green, blue) at each line relative to the 83% peak, read off ZWO's
-// ASI678MC curve (manual V1.0, §3.3, from its gridlines; [O III] with 495.9 nm
-// at a third of 500.7's flux, [S II] the doublet's mean, Hβ's red at the
-// curve's floor). The dyes overlap: green collects a third of Hα's red
-// response, blue half of [O III]'s green. channelShare is each channel's
-// share of the array (RGGB).
+// read off Sony's curve (a colour one's is config.Response, the -camera
+// preset's or the IMX678's); channelShare is each colour channel's share of
+// the array (RGGB).
 var (
-	lineQE   = [catalog.NumLines]float64{catalog.Ha: 0.95, catalog.OIII: 0.85, catalog.SII: 0.9, catalog.Hb: 0.8, catalog.NII6548: 0.95, catalog.NII6583: 0.95}
-	colourQE = [catalog.NumLines][3]float64{
-		catalog.Ha:      {red: 0.774, green: 0.339, blue: 0.107},
-		catalog.OIII:    {red: 0.047, green: 0.970, blue: 0.520},
-		catalog.SII:     {red: 0.713, green: 0.386, blue: 0.122},
-		catalog.Hb:      {red: 0.036, green: 0.937, blue: 0.790},
-		catalog.NII6548: {red: 0.780, green: 0.336, blue: 0.107},
-		catalog.NII6583: {red: 0.764, green: 0.342, blue: 0.108},
-	}
+	lineQE       = [catalog.NumLines]float64{catalog.Ha: 0.95, catalog.OIII: 0.85, catalog.SII: 0.9, catalog.Hb: 0.8, catalog.NII6548: 0.95, catalog.NII6583: 0.95}
 	channelShare = [3]float64{red: 0.25, green: 0.5, blue: 0.25}
 )
 
@@ -54,17 +42,13 @@ const (
 )
 
 // broadQEMono is a mono sensor's mean response over
-// atmos.CameraLo-CameraHi relative to its peak; broadQEColour each IMX678
-// colour channel's, from the same ZWO curve (the RGGB mean 0.48: the dyes
-// overlap, so each passes more than a third of the band).
+// atmos.CameraLo-CameraHi relative to its peak (a colour one's is
+// config.Response.Broad, each channel's).
 // ponytail: each channel's continuum is its mean response, the moonlight's
 // colour weighted as over the whole band (atmos.BandMean), not by the
 // channel's own curve; a per-channel weighting would give blue more
 // Rayleigh moonlight.
-var (
-	broadQEMono   = 0.8
-	broadQEColour = [3]float64{red: 0.396, green: 0.563, blue: 0.393}
-)
+const broadQEMono = 0.8
 
 // maxSubs caps a count, so an absurdly faint object cannot overflow an int.
 const maxSubs = 1_000_000_000
@@ -84,8 +68,9 @@ type Estimate struct { // betteralign:ignore
 
 // camera is what the estimate needs of the telescope and camera.
 type camera struct {
-	area, qe, readNoise, sub, omega float64 // cm², peak, e⁻, s, arcsec² per pixel
-	beam                            beam    // line filters' cone, beamOf
+	response                        *config.Response // a colour sensor's, cfg.ColourResponse
+	beam                            beam             // line filters' cone, beamOf
+	area, qe, readNoise, sub, omega float64          // cm², peak, e⁻, s, arcsec² per pixel
 	mono                            bool
 }
 
@@ -99,7 +84,7 @@ func newCamera(cfg *config.Config) (camera, bool) {
 
 	return camera{
 		area: math.Pi / 4 * (d*d - o*o), qe: cfg.QE, readNoise: cfg.ReadNoise, sub: cfg.Sub,
-		omega: cfg.Scale * cfg.Scale, mono: cfg.Mono, beam: beamOf(cfg),
+		omega: cfg.Scale * cfg.Scale, mono: cfg.Mono, beam: beamOf(cfg), response: cfg.ColourResponse(),
 	}, true
 }
 
@@ -119,14 +104,14 @@ type channel struct {
 // an object without emission lines (lines zero, Target.Lines), are
 // continuum: unfiltered and broadband spread over the camera band, the glow
 // flat per nm and the moonlight as it scatters (atmos.BandMean against V's),
-// at each channel's mean response over the band (broadQEColour), through a
+// at each channel's mean response over the band (config.Response.Broad), through a
 // broadband filter its passbands' shares (fp). Through a line filter each
 // band passes its own share of the sky (atmos.BandSky, against V) at its
-// line's response, to every channel by its dye's (colourQE). An
+// line's response, to every channel by its dye's (config.Response). An
 // emission-line object's light is its lines wherever the band passes them,
 // collected once, each channel taking its dye's response: through Hα a
-// colour sensor's green pixels see a third of what the red ones do, the
-// blue ones a seventh. The object's gains are 0 when a line filter passes
+// colour IMX678's green pixels respond at 0.34 of the peak against the red
+// ones' 0.77, the blue ones at 0.11. The object's gains are 0 when a line filter passes
 // none of its lines.
 // The channels overwrite dst's, so Score reuses each tally's across targets.
 func (c camera) channels(dst []channel, name string, width float64, lines [catalog.NumLines]float64, fp filterPass) []channel {
@@ -143,7 +128,7 @@ func (c camera) channels(dst []channel, name string, width float64, lines [catal
 			return lineQE[l]
 		}
 
-		return colourQE[l][i]
+		return c.response.Lines[l][i]
 	}
 	emission := lines != [catalog.NumLines]float64{}
 	if ls := config.Filters[name]; ls != nil {
@@ -181,7 +166,7 @@ func (c camera) channels(dst []channel, name string, width float64, lines [catal
 	for i := range chans {
 		qe := broadQEMono
 		if !c.mono {
-			qe = broadQEColour[i]
+			qe = c.response.Broad[i]
 		}
 		cont := g * qe * atmos.CameraBand
 		chans[i].sky = [3]float64{cont * shares[0], cont * ray * shares[1], cont * aer * shares[2]}

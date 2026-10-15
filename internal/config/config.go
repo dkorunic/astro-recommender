@@ -27,29 +27,6 @@ import (
 // errInvalidFlag wraps every flag validation error.
 var errInvalidFlag = errors.New("invalid flag")
 
-// Celestron Origin: 335 mm focal length, IMX678 with 2.0 µm pixels at
-// 3856 x 2180 px, giving 1.32° x 0.75° and 1.23"/px; for the sub-exposure
-// estimate a 152 mm aperture with a 63 mm central obstruction (Celestron,
-// 41% of the aperture), the IMX678's 0.83 peak QE and 2.15 e⁻ read noise
-// (the vendor's figure at 8.5 dB gain, the middle of its 0.6-3.5 e⁻: the
-// Origin's ISO 1000 has no published gain), and its usual 15 s subs.
-const (
-	originFocal                 = 335.0 // mm
-	originPixel                 = 2.0   // µm
-	originPxLong, originPxShort = 3856, 2180
-	originAperture              = 152.0 // mm
-	originObstruction           = 63.0  // mm
-	originQE                    = 0.83
-	originReadNoise             = 2.15 // e⁻
-	originSub                   = 15.0 // s
-)
-
-var (
-	originFOVLong  = fovSide(originPxLong*originPixel/1000, originFocal)  // arc minutes
-	originFOVShort = fovSide(originPxShort*originPixel/1000, originFocal) // arc minutes
-	originScale    = pixelScale(originPixel, originFocal)                 // arc seconds per pixel
-)
-
 // maxSensorPx bounds a frame's long side in pixels; the largest consumer
 // sensors are ~12k px across, so beyond this -fov and -scale disagree.
 const maxSensorPx = 20000
@@ -81,6 +58,8 @@ type Config struct {
 	SkipFile       string   // -skip: file of names to leave out, shown in the header
 	Filter         string   // -filter: comma-separated Filters or Broadband keys, lowercased, without repeats; "" = none
 	SolarBasis     string   // what SolarFlux is: solar.Monthly, Recent or Predicted
+	Camera         string   // -camera's (or -scope's chip's) Cameras key, lower case; "" for a camera given by -sensor/-pixel
+	Scope          string   // -scope's (-origin's: "origin") Scopes key; "" without one
 	Types          []string // -type: catalog.Classes to keep, nil = all
 	Horizon        horizon.Horizon
 	Plan           time.Duration
@@ -133,6 +112,7 @@ func Parse() (Config, error) {
 	var origin bool
 	var fov, sensor string
 	var focal, pixel float64
+	var camera, scopeName string
 	var filterStd bool
 	var horizonFile string
 	var ra, dec, types string
@@ -158,24 +138,26 @@ func Parse() (Config, error) {
 	flag.StringVar(&cfg.TargetsFile, "targets", "", "custom uptonight-style targets YAML file (overrides -list)")
 	flag.StringVar(&cfg.SkipFile, "skip", "", "file of target names to leave out, one per line (e.g. already imaged), # comments; case and spaces do not matter")
 	flag.StringVar(&types, "type", "", "keep only these object classes, comma-separated: "+strings.Join(catalog.Classes, ", ")+" (emission: what the line filters help; default all)")
-	flag.BoolVar(&origin, "origin", false, "frame for the Celestron Origin (IMX678 at 335 mm: 1.32x0.75°, 1.23\"/px): fit the FOV, at least -min-px across")
+	flag.BoolVar(&origin, "origin", false, "frame for the Celestron Origin Mark II (IMX678 at 335 mm: 1.32x0.75°, 1.23\"/px): fit the FOV, at least -min-px across; the same as -scope origin")
+	flag.StringVar(&scopeName, "scope", "", "frame for a smart telescope, its optics and camera, as -origin: "+strings.Join(ScopeNames(), ", "))
 	flag.StringVar(&fov, "fov", "", "frame for another telescope: field of view WxH in degrees up to 180, e.g. 2.1x1.4 (default Origin; -scale optional)")
 	flag.Float64Var(&focal, "focal", 0, "frame for another telescope: focal length in mm; with -sensor sets the field of view (instead of -fov), with -pixel the pixel scale (instead of -scale)")
+	flag.StringVar(&camera, "camera", "", "frame for another telescope (with -focal) by its camera's sensor, setting -sensor, -pixel, -qe and -read-noise (with -mono its mono version): "+strings.Join(CameraNames(), ", "))
 	flag.StringVar(&sensor, "sensor", "", "frame for another telescope: sensor size WxH in mm, e.g. 23.5x15.6; with -focal, sets the field of view instead of -fov")
 	flag.Float64Var(&cfg.Scale, "scale", 0, "frame for another telescope: pixel scale in arc seconds per pixel, 0.01-1000 (Origin default 1.23; -fov optional)")
 	flag.Float64Var(&pixel, "pixel", 0, "frame for another telescope: camera pixel size in µm; with -focal, sets the pixel scale instead of -scale")
 	flag.Float64Var(&minPx, "min-px", 200, "with framing, minimum object size in pixels; 0 or more")
 	flag.IntVar(&cfg.Mosaic, "mosaic", 1, "with framing, most mosaic panels per object, 1-25; an object's score is divided among its panels")
 	flag.BoolVar(&cfg.Rotate, "rotate", false, "with framing, the camera can be rotated to frame the major axis along the long side, so the minor axis counts (not the Origin)")
-	flag.Float64Var(&cfg.Aperture, "aperture", 0, "with framing, the telescope's aperture in mm, for the sub-exposure estimate (SUBS); Origin 152")
-	flag.Float64Var(&cfg.Obstruction, "obstruction", 0, "with framing, the central obstruction's diameter in mm; Origin 63, otherwise 0 when -aperture is given")
-	flag.Float64Var(&cfg.Sub, "sub", 0, "with framing, the sub-exposure length in seconds, 0.001-3600; Origin 15")
+	flag.Float64Var(&cfg.Aperture, "aperture", 0, "with framing, the telescope's aperture in mm, for the sub-exposure estimate (SUBS); Origin 152, -scope's")
+	flag.Float64Var(&cfg.Obstruction, "obstruction", 0, "with framing, the central obstruction's diameter in mm; Origin Mark II 77, -scope's, otherwise 0 when -aperture is given")
+	flag.Float64Var(&cfg.Sub, "sub", 0, "with framing, the sub-exposure length in seconds, 0.001-3600; Origin 10, -scope's")
 	flag.Float64Var(&cfg.QE, "qe", 0, "with framing, the camera's peak quantum efficiency, above 0 and at most 1; Origin (IMX678) 0.83")
 	flag.Float64Var(&cfg.ReadNoise, "read-noise", 0, "with framing, the camera's read noise in electrons, 0 or more; Origin (IMX678) 2.15")
 	flag.BoolVar(&cfg.Mono, "mono", false, "with framing, the camera is monochrome, so every pixel sees every filter band (the Origin's is colour)")
 	flag.StringVar(&cfg.Filter, "filter", "", "filters you own, comma-separated: for emission-line targets dual (Ha + OIII at once), tri (+ Hb), quad (+ Hb and SII), ha, oiii, sii; broadband light pollution filters cls (Astronomik CLS) and lpro (Optolong L-Pro) for any target; each target is scored without and with each worn all night, and FILTER shows the one that gains it most (with framing, the one SUBS needs fewest subs through) (default none)")
 	flag.Float64Var(&cfg.FilterNM, "filter-nm", 7, "with -filter, the width of each line filter band in nm, 1-30")
-	flag.BoolVar(&filterStd, "filter-std", false, "with -filter, the line filters are standard ones, whose bands shift blue in a fast beam: the Origin's f/2.2, or -focal over -aperture (off: made for the beam)")
+	flag.BoolVar(&filterStd, "filter-std", false, "with -filter, the line filters are standard ones, whose bands shift blue in a fast beam: -scope's (the Origin's f/2.2), or -focal over -aperture (off: made for the beam)")
 	flag.IntVar(&cfg.Bortle, "bortle", 0, "Bortle class 1-9 of the site, sets the zenith sky brightness (0 = dark sky)")
 	flag.Float64Var(&cfg.SQM, "sqm", 0, "measured zenith sky brightness in mag/arcsec² (SQM meter or light pollution map); overrides -bortle; default: looked up on DarkSkySites when a key is available (CLI: $DARKSKYSITES_API_KEY; browser: always) and -bortle is not")
 	flag.Float64Var(&cfg.Extinction, "extinction", 0.2, "atmospheric extinction in mag per airmass; default: estimated per hour from elevation and CAMS aerosols, this value if unavailable")
@@ -222,41 +204,15 @@ func Parse() (Config, error) {
 		return Config{}, err
 	}
 
-	// Framing (-origin, -fov or -focal/-sensor, -scale or -focal/-pixel)
-	// replaces the size defaults; explicit -size-min/-size-max still win.
-	// Unset frame values default to the Origin. frameFOV rejects -sensor and
-	// -pixel without -focal, and -focal without either.
-	fovSet, scaleSet := set["fov"] || set["sensor"], set["scale"] || set["pixel"]
-	cfg.Framing = origin || fovSet || scaleSet
-	if cfg.FOVLong, cfg.FOVShort, err = frameFOV(set, fov, sensor, focal); err != nil {
-		return Config{}, err
-	}
-	if cfg.Scale, err = frameScale(set, cfg.Scale, pixel, focal); err != nil {
-		return Config{}, err
-	}
-	if minPx < 0 {
-		return Config{}, fmt.Errorf("%w: -min-px must be 0 or more", errInvalidFlag)
-	}
-	// Only a frame the user fully specified (-fov or -focal/-sensor, and
-	// -scale or -focal/-pixel) can be checked against a sensor.
-	// Deliberate: checking a lone -fov against the Origin's default scale (or
-	// a lone -scale against its field) rejected valid wide fields such as
-	// -fov 10x7, so a lone -fov typed in arc minutes is not caught (parseFOV
-	// only bounds it at 180°).
-	if px, _ := cfg.FramePx(); fovSet && scaleSet && !(px <= maxSensorPx) {
-		return Config{}, fmt.Errorf("%w: frame of %.0f px across is not a sensor; -fov is in degrees, -scale in arcsec/px", errInvalidFlag, px)
-	}
-	if err := cfg.frameSizes(set, minPx); err != nil {
-		return Config{}, err
-	}
-	if err := cfg.camera(set); err != nil {
+	base, err := cfg.framing(set, frameFlags{origin: origin, scope: scopeName, camera: camera, fov: fov, sensor: sensor, focal: focal, pixel: pixel, minPx: minPx})
+	if err != nil {
 		return Config{}, err
 	}
 
 	if err := cfg.validateFlags(set); err != nil {
 		return Config{}, err
 	}
-	if err := cfg.beam(set, filterStd, focal); err != nil {
+	if err := cfg.beam(set, filterStd, focal, base); err != nil {
 		return Config{}, err
 	}
 	if err := cfg.loadFiles(horizonFile); err != nil {
@@ -495,6 +451,59 @@ func (cfg *Config) setTypes(types string) error {
 	return nil
 }
 
+// frameFlags are the frame flags framing reads.
+type frameFlags struct {
+	scope, camera, fov, sensor string
+	focal, pixel, minPx        float64
+	origin                     bool
+}
+
+// framing sets the frame and the sub-exposure camera from the frame flags and
+// returns the base scope, whose values the flags not given take.
+func (cfg *Config) framing(set map[string]bool, f frameFlags) (Scope, error) {
+	// Framing (-scope or -origin, -fov or -focal/-sensor, -scale or
+	// -focal/-pixel) replaces the size defaults; explicit -size-min/-size-max
+	// still win. Unset frame values default to the scope's, else the
+	// Origin's. frameFOV rejects -sensor and -pixel without -focal, and
+	// -focal without either.
+	base, err := cfg.applyScope(set, f.origin, f.scope)
+	if err != nil {
+		return Scope{}, err
+	}
+	preset, err := cfg.applyCamera(set, f.camera, &f.sensor, &f.pixel)
+	if err != nil {
+		return Scope{}, err
+	}
+	fovSet, scaleSet := set["fov"] || set["sensor"], set["scale"] || set["pixel"]
+	cfg.Framing = cfg.Scope != "" || fovSet || scaleSet
+	if cfg.FOVLong, cfg.FOVShort, err = frameFOV(set, f.fov, f.sensor, f.focal, base); err != nil {
+		return Scope{}, err
+	}
+	if cfg.Scale, err = frameScale(set, cfg.Scale, f.pixel, f.focal, base); err != nil {
+		return Scope{}, err
+	}
+	if f.minPx < 0 {
+		return Scope{}, fmt.Errorf("%w: -min-px must be 0 or more", errInvalidFlag)
+	}
+	// Only a frame the user fully specified (-fov or -focal/-sensor, and
+	// -scale or -focal/-pixel) can be checked against a sensor.
+	// Deliberate: checking a lone -fov against the Origin's default scale (or
+	// a lone -scale against its field) rejected valid wide fields such as
+	// -fov 10x7, so a lone -fov typed in arc minutes is not caught (parseFOV
+	// only bounds it at 180°).
+	if px, _ := cfg.FramePx(); fovSet && scaleSet && !(px <= maxSensorPx) {
+		return Scope{}, fmt.Errorf("%w: frame of %.0f px across is not a sensor; -fov is in degrees, -scale in arcsec/px", errInvalidFlag, px)
+	}
+	if err := cfg.frameSizes(set, f.minPx); err != nil {
+		return Scope{}, err
+	}
+	if err := cfg.camera(set, preset, base); err != nil {
+		return Scope{}, err
+	}
+
+	return base, nil
+}
+
 // frameSizes checks -mosaic and -rotate, and with framing replaces the size
 // defaults by -min-px up to the largest object a mosaic holds; explicit
 // -size-min/-size-max still win.
@@ -505,7 +514,7 @@ func (cfg *Config) frameSizes(set map[string]bool, minPx float64) error {
 	// Judged on the values, so an explicit default (-mosaic 1, -rotate=false,
 	// as the web form's shared links carry) asks for nothing.
 	if !cfg.Framing && (cfg.Mosaic > 1 || cfg.Rotate) {
-		return fmt.Errorf("%w: -mosaic and -rotate need framing (-origin, -fov, -scale or -focal)", errInvalidFlag)
+		return fmt.Errorf("%w: -mosaic and -rotate need framing (-scope or -origin, -fov, -scale or -focal)", errInvalidFlag)
 	}
 	if !cfg.Framing {
 		return nil
@@ -527,13 +536,15 @@ func (cfg *Config) frameSizes(set map[string]bool, minPx float64) error {
 }
 
 // camera checks the sub-exposure flags, which need framing like -mosaic,
-// and fills the Origin's values for those not given; -aperture alone
-// describes another telescope, so its obstruction is then 0.
-func (cfg *Config) camera(set map[string]bool) error {
+// and fills the base scope's values for those not given (its camera's QE
+// and read noise, 0 for none, which leaves SUBS out), -camera's preset's QE
+// and read noise when given; -aperture alone describes another telescope,
+// so its obstruction is then 0.
+func (cfg *Config) camera(set map[string]bool, preset *Variant, base Scope) error {
 	given := set["aperture"] || set["obstruction"] || set["sub"] || set["qe"] || set["read-noise"] || cfg.Mono
 	if !cfg.Framing {
 		if given {
-			return fmt.Errorf("%w: -aperture, -obstruction, -sub, -qe, -read-noise and -mono need framing (-origin, -fov, -scale or -focal)", errInvalidFlag)
+			return fmt.Errorf("%w: -aperture, -obstruction, -sub, -qe, -read-noise and -mono need framing (-scope or -origin, -fov, -scale or -focal)", errInvalidFlag)
 		}
 
 		return nil
@@ -543,14 +554,25 @@ func (cfg *Config) camera(set map[string]bool) error {
 		v      *float64
 		origin float64
 	}{
-		{"aperture", &cfg.Aperture, originAperture},
-		{"obstruction", &cfg.Obstruction, originObstruction},
-		{"sub", &cfg.Sub, originSub},
-		{"qe", &cfg.QE, originQE},
-		{"read-noise", &cfg.ReadNoise, originReadNoise},
+		{"aperture", &cfg.Aperture, base.Aperture},
+		{"obstruction", &cfg.Obstruction, base.Obstruction},
+		{"sub", &cfg.Sub, base.Sub},
+		{"qe", &cfg.QE, 0},
+		{"read-noise", &cfg.ReadNoise, 0},
 	} {
 		if !set[d.name] {
 			*d.v = d.origin
+		}
+	}
+	if v := base.variant(); v != nil && preset == nil {
+		preset = &Variant{QE: v.QE, ReadNoise: cmp.Or(base.ReadNoise, v.ReadNoise)}
+	}
+	if preset != nil {
+		if !set["qe"] {
+			cfg.QE = preset.QE
+		}
+		if !set["read-noise"] {
+			cfg.ReadNoise = preset.ReadNoise
 		}
 	}
 	if set["aperture"] && !set["obstruction"] {
@@ -561,7 +583,7 @@ func (cfg *Config) camera(set map[string]bool) error {
 		return fmt.Errorf("%w: -aperture must be above -obstruction, which must be 0 or more", errInvalidFlag)
 	case cfg.Sub < minSub || cfg.Sub > maxSub:
 		return fmt.Errorf("%w: -sub must be %g to %g seconds", errInvalidFlag, minSub, maxSub)
-	case cfg.QE <= 0 || cfg.QE > 1:
+	case set["qe"] && (cfg.QE <= 0 || cfg.QE > 1):
 		return fmt.Errorf("%w: -qe must be above 0 and at most 1", errInvalidFlag)
 	case cfg.ReadNoise < 0:
 		return fmt.Errorf("%w: -read-noise must be 0 or more", errInvalidFlag)
@@ -617,30 +639,31 @@ func (cfg *Config) parseRegion(set map[string]bool, ra, dec string) error {
 	return nil
 }
 
-// beam sets FRatio and Obstructed for -filter-std: the Origin's f/2.2 and
-// obstruction, or another telescope's from -focal and -aperture (camera
-// validated -aperture against -obstruction); without -filter-std, 0.
-func (cfg *Config) beam(set map[string]bool, filterStd bool, focal float64) error {
+// beam sets FRatio and Obstructed for -filter-std: the base scope's (the
+// Origin's f/2.2 without one), or another telescope's from -focal and
+// -aperture (camera validated -aperture against -obstruction); without
+// -filter-std, 0.
+func (cfg *Config) beam(set map[string]bool, filterStd bool, focal float64, base Scope) error {
 	switch {
 	case !filterStd:
 		return nil
 	case !cfg.LineFilter():
 		return fmt.Errorf("%w: -filter-std needs a line filter in -filter (dual, tri, quad, ha, oiii or sii)", errInvalidFlag)
 	case set["focal"] != set["aperture"]:
-		return fmt.Errorf("%w: -filter-std takes the beam from -focal and -aperture together, or the Origin's f/2.2 with neither", errInvalidFlag)
+		return fmt.Errorf("%w: -filter-std takes the beam from -focal and -aperture together, or the scope's (the Origin's f/2.2) with neither", errInvalidFlag)
 	case set["focal"]:
 		cfg.FRatio, cfg.Obstructed = focal/cfg.Aperture, cfg.Obstruction/cfg.Aperture
 	default:
-		cfg.FRatio, cfg.Obstructed = originFocal/originAperture, originObstruction/originAperture
+		cfg.FRatio, cfg.Obstructed = base.Focal/base.Aperture, base.Obstruction/base.Aperture
 	}
 
 	return nil
 }
 
 // frameFOV returns the frame's long and short sides in arc minutes from -fov,
-// or -focal with -sensor, or the Origin's when neither is given. It also
+// or -focal with -sensor, or the base scope's when neither is given. It also
 // validates -focal for frameScale.
-func frameFOV(set map[string]bool, fov, sensor string, focal float64) (float64, float64, error) {
+func frameFOV(set map[string]bool, fov, sensor string, focal float64, base Scope) (float64, float64, error) {
 	switch {
 	case set["fov"] && set["sensor"]:
 		return 0, 0, fmt.Errorf("%w: give either -fov or -focal with -sensor, not both", errInvalidFlag)
@@ -656,12 +679,14 @@ func frameFOV(set map[string]bool, fov, sensor string, focal float64) (float64, 
 		return sensorFOV(sensor, focal)
 	}
 
-	return originFOVLong, originFOVShort, nil
+	long, short := base.fov()
+
+	return long, short, nil
 }
 
 // frameScale returns the pixel scale in arc seconds per pixel from -scale, or
-// -pixel (µm) at -focal (mm, validated by frameFOV), or the Origin's.
-func frameScale(set map[string]bool, scale, pixel, focal float64) (float64, error) {
+// -pixel (µm) at -focal (mm, validated by frameFOV), or the base scope's.
+func frameScale(set map[string]bool, scale, pixel, focal float64, base Scope) (float64, error) {
 	switch {
 	case set["scale"] && set["pixel"]:
 		return 0, fmt.Errorf("%w: give either -scale or -focal with -pixel, not both", errInvalidFlag)
@@ -672,7 +697,7 @@ func frameScale(set map[string]bool, scale, pixel, focal float64) (float64, erro
 			return 0, fmt.Errorf("%w: -pixel %g µm at -focal %g mm is %.3g\"/px, outside %g-%g", errInvalidFlag, pixel, focal, scale, minScale, maxScale)
 		}
 	case !set["scale"]:
-		return originScale, nil
+		return base.scale(), nil
 	case scale < minScale || scale > maxScale:
 		return 0, fmt.Errorf("%w: -scale must be between %g and %g arcsec/px", errInvalidFlag, minScale, maxScale)
 	}
