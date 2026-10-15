@@ -36,6 +36,7 @@ func TestScopes(t *testing.T) {
 		"evscope":       {long: 37.0 / 60, short: 27.0 / 60, tol: 0.04}, // rounded to the minute
 		"evscope-2":     {long: 45.6 / 60, short: 34.2 / 60},
 		"odyssey":       {long: 45.0 / 60, short: 33.6 / 60},
+		"orbis-60edx":   {}, // trade-show specifications state no field
 	}
 	if len(stated) != len(Scopes) {
 		t.Errorf("%d stated fields for %d scopes", len(stated), len(Scopes))

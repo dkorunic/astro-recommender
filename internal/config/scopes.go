@@ -74,6 +74,12 @@ var Scopes = map[string]Scope{
 	// field and 2.39"/px, which are 250 mm's; the stated focal length kept.
 	"vespera-3":     {Name: "Vaonis Vespera 3", Camera: chipIMX585, Focal: 245, Aperture: 50, Pixel: 2.9, PxLong: 3840, PxShort: 2160, Sub: 10},
 	"vespera-pro-2": {Name: "Vaonis Vespera Pro 2", Camera: chipIMX676, Focal: 245, Aperture: 50, Pixel: 2.0, PxLong: 3536, PxShort: 3536, Sub: 10},
+	// Sky-Watcher's first, shown at Imaging World in October 2026 and not yet
+	// on sale: a 60 mm f/5 ED refractor (a flip mirror sends the light to an
+	// eyepiece instead), the IMX585 at 3840x2160, from the trade-show
+	// specifications, "subject to change"; its sub length unstated, 10 s as
+	// the other small refractors'.
+	"orbis-60edx": {Name: "Sky-Watcher ORBIS 60EDX", Camera: chipIMX585, Focal: 300, Aperture: 60, Pixel: 2.9, PxLong: 3840, PxShort: 2160, Sub: 10},
 	// Unistellar's 114 mm f/4 Newtonians, the sensor at prime focus behind
 	// an obstruction of unpublished size; 4 s subs. The eVscope 2's frame
 	// is the 2048x1536 crop that its stated 34.2'x45.6' field gives; the
