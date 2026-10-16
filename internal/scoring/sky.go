@@ -21,36 +21,37 @@ import (
 // Sky holds everything about the night that does not depend on the target,
 // sampled on a 1-minute grid (as in uptonight).
 type Sky struct {
-	Night       [2]time.Time // full night at -twilight's Sun limit; start/end may be clipped inside it
-	Start, End  time.Time
-	Weather     map[int64]weather.HourWeather
-	Astro       map[int64]weather.AstroBlock
-	AOD         map[int64]float64 // aerosol optical depth at 550 nm per unix hour (CAMS)
-	Grid        []time.Time
-	LST         []float64 // local sidereal time per grid minute, degrees
-	SinLST      []float64 // sin and cos of LST, so a fixed target's cos(hour angle) needs no Cos
-	CosLST      []float64
-	MoonPos     [][2]float64 // topocentric RA/Dec of date, degrees
-	MoonUnit    [][3]float64 // astro.Unit of MoonPos, for the per-minute Moon separations
-	MoonAlt     []float64
-	Ext         []float64    // extinction per grid minute, mag per airmass, at 550 nm: ExtRayleigh + atmos.OzoneExtinction + ExtAerosol
-	ExtRayleigh []float64    // its Rayleigh part, which a filter band scales as λ⁻⁴
-	ExtAerosol  []float64    // its aerosol part, scaled as λ^-1.3
-	MoonLight   []atmos.Moon // atmos.MoonLight per grid minute
-	Quality     []float64    // clear-sky fraction x rain x dew x gust x transparency, 1 = perfect
-	Temp        []float64    // air temperature per grid minute, °C: the forecast's, its mean where it has none, nightTemp without one
-	Seeing      []float64    // zenith seeing per grid minute, FWHM arcsec at 500 nm: 7Timer's, else the upper-air estimate, else typicalSeeing
-	Elevation   float64      // site elevation in m, from Open-Meteo; NaN if unknown
-	SunLon      float64      // the Sun's ecliptic longitude at mid-window, degrees, for the zodiacal light
-	Illum       float64
-	MoonPhase   float64 // phase angle in degrees, 0 = full
-	MoonDist    float64 // geocentric distance in Earth radii
-	MoonSep     float64 // uptonight: min separation in degrees = illumination %
-	ZenithNL    float64 // site's moonless zenith sky brightness, nanoLamberts, Airglow included
-	Airglow     float64 // nanoLamberts the solar cycle adds to the configured zenith (atmos.AirglowExcess); 0 when the flux is unknown
-	RefNL       float64 // refZenithMag in nanoLamberts
-	Comets      int     // comets added as targets
-	CometsLost  bool    // the comet elements could not be fetched
+	Night        [2]time.Time // full night at -twilight's Sun limit; start/end may be clipped inside it
+	Start, End   time.Time
+	Weather      map[int64]weather.HourWeather
+	Astro        map[int64]weather.AstroBlock
+	AOD          map[int64]float64 // aerosol optical depth at 550 nm per unix hour (CAMS)
+	Grid         []time.Time
+	LST          []float64 // local sidereal time per grid minute, degrees
+	SinLST       []float64 // sin and cos of LST, so a fixed target's cos(hour angle) needs no Cos
+	CosLST       []float64
+	MoonPos      [][2]float64 // topocentric RA/Dec of date, degrees
+	MoonUnit     [][3]float64 // astro.Unit of MoonPos, for the per-minute Moon separations
+	MoonAlt      []float64
+	Ext          []float64    // extinction per grid minute, mag per airmass, at 550 nm: ExtRayleigh + atmos.OzoneExtinction + ExtAerosol
+	ExtRayleigh  []float64    // its Rayleigh part, which a filter band scales as λ⁻⁴
+	ExtAerosol   []float64    // its aerosol part, scaled as λ^-1.3
+	MoonLight    []atmos.Moon // atmos.MoonLight per grid minute
+	Quality      []float64    // clear-sky fraction x rain x dew x gust x transparency, 1 = perfect
+	Temp         []float64    // air temperature per grid minute, °C: the forecast's, its mean where it has none, nightTemp without one
+	Seeing       []float64    // zenith seeing per grid minute, FWHM arcsec at 500 nm: the upper-air estimate, else 7Timer's, else typicalSeeing
+	Elevation    float64      // site elevation in m, from Open-Meteo; NaN if unknown
+	AODElevation float64      // the ground AOD's column stands on, m (Forecast.AODElevation); NaN if unknown
+	SunLon       float64      // the Sun's ecliptic longitude at mid-window, degrees, for the zodiacal light
+	Illum        float64
+	MoonPhase    float64 // phase angle in degrees, 0 = full
+	MoonDist     float64 // geocentric distance in Earth radii
+	MoonSep      float64 // uptonight: min separation in degrees = illumination %
+	ZenithNL     float64 // site's moonless zenith sky brightness, nanoLamberts, Airglow included
+	Airglow      float64 // nanoLamberts the solar cycle adds to the configured zenith (atmos.AirglowExcess); 0 when the flux is unknown
+	RefNL        float64 // refZenithMag in nanoLamberts
+	Comets       int     // comets added as targets
+	CometsLost   bool    // the comet elements could not be fetched
 }
 
 // Forecast is the network input of BuildSky; the zero value (with NaN
@@ -60,10 +61,13 @@ type Forecast struct {
 	Astro     map[int64]weather.AstroBlock
 	AOD       map[int64]float64
 	Elevation float64 // NaN if unknown
+	// AODElevation is the ground AOD's column stands on (CAMS's cell, by
+	// the IFS grid's orography), NaN if unknown: the site's own then.
+	AODElevation float64
 }
 
 // NoForecast is a Forecast with nothing fetched: perfect sky, fixed extinction.
-func NoForecast() Forecast { return Forecast{Elevation: math.NaN()} }
+func NoForecast() Forecast { return Forecast{Elevation: math.NaN(), AODElevation: math.NaN()} }
 
 // FetchForecast downloads the weather, upper-air profile, transparency and
 // aerosol forecasts for [start, end) concurrently, as -no-weather and
@@ -99,6 +103,12 @@ func FetchForecast(ctx context.Context, cfg *config.Config, start, end time.Time
 				fmt.Fprintln(os.Stderr, "warning: no aerosol forecast, typical aerosols:", err)
 			}
 		})
+		wg.Go(func() {
+			var err error
+			if f.AODElevation, err = weather.GridElevation(ctx, cfg.Lat, cfg.Lon); err != nil {
+				fmt.Fprintln(os.Stderr, "warning: aerosols not moved to the site's elevation:", err)
+			}
+		})
 	}
 	wg.Wait()
 	mergeProfile(f.Weather, profile)
@@ -132,8 +142,8 @@ func mergeProfile(w map[int64]weather.HourWeather, profile map[int64][]weather.L
 }
 
 // seeingWarning is the stderr warning about the upper-air estimate, "" for
-// none: the estimate matters only for hours 7Timer leaves, so with none a
-// failed or thin profile changes nothing and says nothing; else the fetch
+// none: 7Timer's class stands in for an hour without an estimate, so where
+// it covers every hour a failed or thin profile says nothing; else the fetch
 // error (profileErr) when the profile failed, else the hours without an
 // estimate when there are any.
 func seeingWarning(f Forecast, profileErr error, start, end time.Time) string {
@@ -176,7 +186,7 @@ func missingSeeing(f Forecast, start, end time.Time) (int, int) {
 // f; it does no I/O.
 func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 	s := Sky{
-		Start: start, End: end, Weather: f.Weather, Astro: f.Astro, AOD: f.AOD, Elevation: f.Elevation,
+		Start: start, End: end, Weather: f.Weather, Astro: f.Astro, AOD: f.AOD, Elevation: f.Elevation, AODElevation: f.AODElevation,
 		Grid: make([]time.Time, 0, end.Sub(start)/time.Minute+1),
 	}
 	for t := start; t.Before(end); t = t.Add(time.Minute) {
@@ -230,14 +240,24 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 			}
 			skyOK[i] = true
 		}
-		if a, ok := s.Astro[weather.AstroKey(t)]; ok {
-			transp[i] = ramp(float64(a.Transparency), 1, 8, 0.5)
-			transpOK[i] = true
+		// Transparency: CAMS's aerosols are already in Ext, which dims the
+		// target by the airmass; 7Timer's class, its haze too, would count
+		// them twice, so it weighs only the hours without CAMS (-extinction,
+		// a failed or out-of-range fetch).
+		a, astroOK := s.Astro[weather.AstroKey(t)]
+		switch _, cams := s.AOD[t.Truncate(time.Hour).Unix()]; {
+		case cams:
+			transp[i], transpOK[i] = 1, true
+		case astroOK:
+			transp[i], transpOK[i] = ramp(float64(a.Transparency), 1, 8, 0.5), true
+		}
+		// Seeing: the upper-air estimate, calibrated against DIMMs, else
+		// 7Timer's class, else typicalSeeing.
+		s.Seeing[i] = s.Weather[t.Truncate(time.Hour).Unix()].Seeing
+		if astroOK && s.Seeing[i] == 0 {
 			s.Seeing[i] = weather.SeeingArcsec(a.Seeing)
 		}
-		if s.Seeing[i] == 0 {
-			s.Seeing[i] = cmp.Or(s.Weather[t.Truncate(time.Hour).Unix()].Seeing, typicalSeeing)
-		}
+		s.Seeing[i] = cmp.Or(s.Seeing[i], typicalSeeing)
 	}
 	fillGaps("weather", sky, skyOK, len(s.Weather) > 0, end.Sub(start))
 	fillTemp(s.Temp, skyOK)
@@ -348,13 +368,20 @@ func (s *Sky) extinctionParts(t time.Time, fallback float64) (float64, float64) 
 	return atmos.RayleighExtinction(s.Elevation), atmos.AerosolExtinction(s.aodAt(t))
 }
 
-// aodAt returns the hour's aerosol optical depth, TypicalAOD when unknown.
+// aodAt returns the hour's aerosol optical depth above the site: CAMS's
+// over the ground of its cell (AODElevation; the site's when unknown, as
+// it was before), else TypicalAOD over sea level, each thinned by
+// atmos.AerosolAbove for the height the site stands above it.
 func (s *Sky) aodAt(t time.Time) float64 {
 	if aod, ok := s.AOD[t.Truncate(time.Hour).Unix()]; ok {
-		return aod
+		if math.IsNaN(s.AODElevation) {
+			return aod
+		}
+
+		return atmos.AerosolAbove(aod, s.Elevation-s.AODElevation)
 	}
 
-	return atmos.TypicalAOD
+	return atmos.AerosolAbove(atmos.TypicalAOD, s.Elevation)
 }
 
 // hm formats a duration as the report's header does, "10h 05m".

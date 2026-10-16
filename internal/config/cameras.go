@@ -22,6 +22,17 @@ type Response struct {
 	Broad [3]float64
 }
 
+// Line is the response to line l: [O III] 495.9 takes the [O III] entry,
+// the doublet's flux-weighted mean, as the charts' 10 nm grid does not tell
+// the two lines apart.
+func (r *Response) Line(l catalog.Line) [3]float64 {
+	if l == catalog.OIII4959 {
+		l = catalog.OIII
+	}
+
+	return r.Lines[l]
+}
+
 // Variant is a sensor's colour or mono camera: its peak QE and its read
 // noise at Gain, the vendor's deep-sky setting in its own units (ZWO's and
 // Player One's 0.1 dB), where the high conversion gain mode switches on;
@@ -139,7 +150,9 @@ var (
 		},
 		Broad: [3]float64{0.380, 0.485, 0.342},
 	}
-	// Player One's Neptune-C II chart, near the IMX462's (ZWO ASI462MC manual V1.1).
+	// Player One's Neptune-C II chart, relative and peaking in the near
+	// infrared like the ASI462 manual's, so its visible may read low as that
+	// one did (imx462).
 	imx464 = Response{
 		Lines: [catalog.NumLines][3]float64{
 			catalog.Ha:      {0.826, 0.253, 0.124},
@@ -163,17 +176,20 @@ var (
 		},
 		Broad: [3]float64{0.356, 0.452, 0.288},
 	}
-	// ZWO ASI462 manual V1.1, p6 (relative, peaking at 810 nm).
+	// ZWO's ASI662MC/ASI462MC comparison (March 2023, p3), the absolute QE
+	// whose 81% peak is the green at 510 nm (its ASI662MC chart reproduces
+	// starvis2 to 0.007). The ASI462 manual V1.1's relative chart peaks at
+	// 810 nm, and scaled to that 81% it put the visible 10-35% low.
 	imx462 = Response{
 		Lines: [catalog.NumLines][3]float64{
-			catalog.Ha:      {0.814, 0.249, 0.124},
-			catalog.OIII:    {0.041, 0.758, 0.429},
-			catalog.SII:     {0.787, 0.296, 0.150},
-			catalog.Hb:      {0.032, 0.601, 0.553},
-			catalog.NII6548: {0.817, 0.248, 0.122},
-			catalog.NII6583: {0.808, 0.252, 0.128},
+			catalog.Ha:      {0.775, 0.263, 0.117},
+			catalog.OIII:    {0.051, 0.995, 0.553},
+			catalog.SII:     {0.752, 0.295, 0.141},
+			catalog.Hb:      {0.038, 0.949, 0.739},
+			catalog.NII6548: {0.783, 0.263, 0.116},
+			catalog.NII6583: {0.768, 0.264, 0.121},
 		},
-		Broad: [3]float64{0.375, 0.428, 0.293},
+		Broad: [3]float64{0.414, 0.502, 0.391},
 	}
 	// ZWO ASI224MC manual V1.4, p7.
 	imx224 = Response{

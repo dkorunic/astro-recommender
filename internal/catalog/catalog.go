@@ -110,10 +110,6 @@ const minBV, maxBV = -0.3, 1.5
 // object immune to sky glow, is rejected rather than ranked first.
 const maxNumber, minSB = 35, 10
 
-// Cluster reports whether the object is an open or globular cluster without
-// nebulosity: light in point sources that sky glow hardly hurts.
-func (t Target) Cluster() bool { return t.kind() == kindCluster }
-
 // Classes are the object classes -type selects, in help order.
 var Classes = []string{classGalaxy, classCluster, classNebula, classEmission, classComet, classOther}
 
@@ -156,13 +152,16 @@ func (t Target) Is(c string) bool {
 // measured V one, else the B one moved to V by colour() (an estimate when the
 // colour is the type's typical one), else, for galaxies and nebulae only
 // (not groups), one derived by spreading the V magnitude (or B − typicalBV)
-// over a uniform disc of the major axis (an estimate; the disc overstates the
-// area of an elongated object, so it leans faint). Clusters get none, measured
-// or not: skyK (scoring) halves the sky for their point sources instead, and
-// MWSC's sizes are the core only. Clusters with nebulosity derive none, since
+// over a uniform ellipse of the axes (Axes: a disc of the major axis when the
+// minor is unknown, which overstates an elongated object's area, so it leans
+// faint; an estimate either way). Clusters get none, measured
+// or not: their light sits in points a surface brightness would spread, an
+// image of one is judged by its faintest members, sky-limited like light of
+// unknown brightness, and MWSC's sizes are the core only. Clusters with nebulosity derive none, since
 // their integrated magnitude is the stars', not the glow's, so without a
 // measurement they are scored sky-limited, like a nebula without data. Stars,
-// asterisms and comets derive none either.
+// asterisms and comets derive none either, and nor do the nebulae whose
+// catalogued magnitude is a star's or a cluster's (starMag).
 func (t Target) SurfaceBrightness() (float64, bool) {
 	k := t.kind()
 	if k == kindCluster {
@@ -176,7 +175,7 @@ func (t Target) SurfaceBrightness() (float64, bool) {
 
 		return t.BSurfBr - bv, !own
 	}
-	if t.Track != nil || !t.HasSize() || (k != kindGalaxy && k != kindNebula) {
+	if t.Track != nil || !t.HasSize() || (k != kindGalaxy && k != kindNebula) || (k == kindNebula && t.starMag()) {
 		return 0, false
 	}
 	mag := t.Mag
@@ -187,24 +186,82 @@ func (t Target) SurfaceBrightness() (float64, bool) {
 		return 0, false
 	}
 
-	return mag + 2.5*math.Log10(math.Pi/4*(60*t.Size)*(60*t.Size)), true
+	major, minor := t.Axes()
+
+	return mag + 2.5*math.Log10(math.Pi/4*(60*major)*(60*minor)), true
 }
 
-// sbPlanetary is sbClass's planetary nebula class.
-const sbPlanetary = "planetary"
+// starMagWords are the nebula types whose catalogued magnitude is the star
+// lighting them, in the lower-case type: reflection nebulae (NGC 7023 7.1,
+// vdB 150 8.4), Wolf-Rayet shells (WR 134 8.1, NGC 2359 11.5) and variable
+// nebulae (NGC 2261's R Mon).
+var starMagWords = []string{sbReflection, "wolf", "variable"}
+
+// starMagNames are the other nebulae whose catalogued magnitude is not their
+// glow's, in any list's spelling (matched as NameKey): a cluster's or star's
+// inside them, or the Compendium's 18.0 for unknown. Spread over the
+// nebula's area it would derive a surface brightness magnitudes off (IC 1805
+// 25.5, which made the Heart unreachable), so they derive none and are scored
+// as a nebula without data.
+var starMagNames = map[string]bool{
+	"IC 1805": true, "Sh2-190": true, // Heart: Mel 15's 6.5
+	"IC 1848": true, "Sh2-199": true, // Soul: its cluster's 6.5
+	"NGC 7380": true, "Sh2-142": true, // Wizard: its cluster's 7.2
+	"IC 5146": true, "Sh2-125": true, "C 19": true, // Cocoon: its cluster's 7.2
+	"IC 1318": true, "Sh2-108": true, // Gamma Cygni: γ Cyg's 2.2
+	"NGC 2264": true, "Sh2-273": true, // Cone: the Christmas Tree's 4.1
+	"M 16": true, "IC 4703": true, "NGC 6611": true, // Eagle: its cluster's 6.0
+	"NGC 1980": true,                  // ι Ori's 2.5
+	"NGC 1333": true,                  // its cluster's
+	"IC 348":   true, "MCRN 49": true, // its cluster's 7.3
+	"Sh2-308":      true,                   // EZ CMa's 6.9
+	"Rho Ophiuchi": true,                   // ρ Oph's 4.6
+	"NGC 6164":     true, "NGC 6165": true, // HD 148937's 6.7
+	"NGC 6888": true, "C 27": true, "Sh2-105": true, // Crescent: typed emission in some lists, WR 136's
+	"NGC 2467": true, "Sh2-311": true, "RCW 16": true, // its clusters'
+	"NGC 2579": true, "RCW 20": true, "Gum 11": true, // its cluster's 7.5
+	"NGC 3247": true, "RCW 49": true, "Gum 29": true, // Westerlund 2's 7.6
+	"RCW 120": true, "Sh2-3": true, "Gum 58": true, "RCW 86": true, "RCW 104": true, // 18.0, unknown
+	"Jones-Emberson 1": true, "Sh2-174": true, "Sh2-188": true, "NGC 651": true, // planetaries: the central star's
+	"Sh2-216": true, "Abell 35": true, "Sh2-313": true, // the central star's, 12.6 and 10
+}
+
+// starMagKeys is starMagNames keyed by NameKey.
+var starMagKeys = func() map[string]bool {
+	keys := make(map[string]bool, len(starMagNames))
+	for name := range starMagNames {
+		keys[NameKey(name)] = true
+	}
+
+	return keys
+}()
+
+// sbPlanetary and sbReflection are sbClass's planetary and reflection
+// nebula classes, the words that pick them in the type.
+const (
+	sbPlanetary  = "planetary"
+	sbReflection = "reflection"
+)
 
 // typicalSB is the median V surface brightness per sbClass over the embedded
 // lists' objects that have one (TestTypicalSB recomputes it), for the
 // sub-exposure estimate of an object without one; scoring never uses it.
 // Brighter objects are the ones measured, so it likely flatters the object
-// it stands in for.
+// it stands in for. No list gives a reflection nebula's own magnitude
+// (starMagWords), so theirs has no median: typicalSBGuess.
 var typicalSB = map[string]float64{
 	"galaxy":     22.52,
 	sbPlanetary:  21.73,
-	"emission":   22.82,
-	"reflection": 22.03,
-	"nebula":     20.91,
+	"emission":   21.90,
+	sbReflection: 22.0,
+	"nebula":     20.73,
 }
+
+// typicalSBGuess are typicalSB's classes without data, which TestTypicalSB
+// skips.
+// ponytail: reflection 22.0 is a guess at about the galaxies'; measure
+// reflection nebulae's own (e.g. off DSS) if SUBS for them matters.
+var typicalSBGuess = map[string]bool{sbReflection: true}
 
 // ExposureSB returns the surface brightness the sub-exposure estimate uses:
 // the object's own (SurfaceBrightness), else its class's typical one with
@@ -239,18 +296,20 @@ func (t Target) Position() (float64, float64) {
 type Line int
 
 const (
-	Ha      Line = iota // Hα 656.3 nm
-	OIII                // [O III] 500.7 nm
-	SII                 // [S II] 671.6/673.1 nm, one band
-	Hb                  // Hβ 486.1 nm
-	NII6548             // [N II] 654.8 nm, a third of 658.3's flux
-	NII6583             // [N II] 658.3 nm
+	Ha       Line = iota // Hα 656.3 nm
+	OIII                 // [O III] 500.7 nm
+	SII                  // [S II] 671.6/673.1 nm, one band
+	Hb                   // Hβ 486.1 nm
+	NII6548              // [N II] 654.8 nm, a third of 658.3's flux
+	NII6583              // [N II] 658.3 nm
+	OIII4959             // [O III] 495.9 nm, a third of 500.7's flux
 )
 
 // LineNM are the lines' wavelengths in nm (the [S II] doublet's mean). No
-// filter is built around [N II]: it is in whichever band reaches it, a
-// 7 nm Hα band's both lines.
-var LineNM = [...]float64{Ha: 656.3, OIII: 500.7, SII: 672.4, Hb: 486.1, NII6548: 654.8, NII6583: 658.3}
+// filter is built around [N II] or [O III] 495.9: each is in whichever band
+// reaches it, a 7 nm Hα band's both [N II] lines, a 7 nm [O III] band's
+// 500.7 alone.
+var LineNM = [...]float64{Ha: 656.3, OIII: 500.7, SII: 672.4, Hb: 486.1, NII6548: 654.8, NII6583: 658.3, OIII4959: 495.9}
 
 // NumLines is how many Lines there are.
 const NumLines = len(LineNM)
@@ -259,15 +318,17 @@ const NumLines = len(LineNM)
 // (Osterbrock & Ferland 2006), the same for every type; dust raises it.
 const balmer = 2.86
 
-// lineRatio is a type's [O III] 500.7, [S II] and [N II] doublet fluxes
-// relative to Hα.
+// lineRatio is a type's [O III] 500.7 (495.9 adds a third of it), [S II]
+// doublet and [N II] doublet fluxes relative to Hα.
 type lineRatio struct{ oiii, sii, nii float64 }
 
 // hiiRatios are H II regions' (and the default's): Madsen, Reynolds & Haffner
 // (2006)'s average over 13 classical O-star H II regions, whole regions in
-// WHAM's 1° beam: [N II]/Hα 0.27, [S II]/Hα 0.11, [O III]/Hα 0.18, the last
-// with a large scatter.
-var hiiRatios = lineRatio{oiii: 0.18, sii: 0.11, nii: 0.27}
+// WHAM's 1° beam: [N II] 658.3/Hα 0.27, [S II] 671.6/Hα 0.11, [O III]
+// 500.7/Hα 0.18, the last with a large scatter. WHAM measured one line of
+// each doublet, so the doublets are 0.27 × 4/3 (658.3 is 3 of the 4 parts)
+// and 0.11 × (1 + 1/1.45) (671.6/673.1 at low density, Osterbrock & Ferland).
+var hiiRatios = lineRatio{oiii: 0.18, sii: 0.19, nii: 0.36}
 
 // lineRatios are the other types' ratios. Planetary nebulae: [O III]/Hβ 6-9
 // (Magellanic Cloud averages), so 2.8 Hα, [S II] faint (Riesgo & López
@@ -289,7 +350,8 @@ var lineRatios = []struct {
 }
 
 // Lines returns the shares of an emission-line target's light in each Line
-// (Hβ at Hα/balmer, [N II] split 1:3 over its doublet), summing to 1: all of
+// (Hβ at Hα/balmer, [N II] split 1:3 over its doublet, [O III] 495.9 a third
+// of 500.7), summing to 1: all of
 // it is what a camera collects unfiltered, so no filter passes more. From its
 // type's typical ratios (lineRatios; H II regions, and the dark nebulae and
 // clusters emissionNames lists, otherwise); all 0 when it is not
@@ -300,9 +362,22 @@ func (t Target) Lines() [NumLines]float64 {
 	}
 	r := classOf(t.Type).ratios
 	hb := 1 / balmer
-	sum := 1 + r.oiii + r.sii + hb + r.nii
+	sum := 1 + r.oiii*4/3 + r.sii + hb + r.nii
 
-	return [NumLines]float64{Ha: 1 / sum, OIII: r.oiii / sum, SII: r.sii / sum, Hb: hb / sum, NII6548: r.nii / 4 / sum, NII6583: r.nii * 3 / 4 / sum}
+	return [NumLines]float64{Ha: 1 / sum, OIII: r.oiii / sum, SII: r.sii / sum, Hb: hb / sum, NII6548: r.nii / 4 / sum, NII6583: r.nii * 3 / 4 / sum, OIII4959: r.oiii / 3 / sum}
+}
+
+// starMag reports whether t's catalogued magnitude is a star's or a
+// cluster's rather than its nebula's (starMagWords, starMagNames).
+func (t Target) starMag() bool {
+	typ := strings.ToLower(t.Type)
+	for _, w := range starMagWords {
+		if strings.Contains(typ, w) {
+			return true
+		}
+	}
+
+	return HasKey(starMagKeys, t.Name)
 }
 
 // sbClass is t's class for typicalSB; "" when an exposure estimate does not
@@ -324,8 +399,8 @@ func (t Target) sbClass() string {
 		// Dark nebulae, the Compendium's dusty molecular clouds and Pensack's
 		// DN: the median of bright nebulae would make the faintest objects quick.
 		return ""
-	case strings.Contains(typ, "reflection"):
-		return "reflection"
+	case strings.Contains(typ, sbReflection):
+		return sbReflection
 	}
 
 	return "nebula"
@@ -340,8 +415,8 @@ const (
 	kindOther         kind = iota // stars, asterisms, novae, duplicates
 	kindGalaxy                    // a single galaxy
 	kindGroup                     // galaxy group or pair: the magnitude is the brightest member's, the size the whole group's
-	kindCluster                   // open or globular cluster: point sources that sky glow hardly hurts, which skyK (scoring) halves the sky for
-	kindClusterNebula             // cluster with nebulosity: imaged for the glow (skyK keeps 1), but the magnitude is the stars'
+	kindCluster                   // open or globular cluster: point sources, no surface brightness
+	kindClusterNebula             // cluster with nebulosity: imaged for the glow, but the magnitude is the stars'
 	kindNebula                    // every other nebula, emission-line or not
 )
 

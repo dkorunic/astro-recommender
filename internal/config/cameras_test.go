@@ -42,8 +42,8 @@ func TestCameras(t *testing.T) {
 			continue
 		}
 		r := s.Colour.Response
-		for l, ch := range r.Lines {
-			for i, x := range ch {
+		for l := range r.Lines {
+			for i, x := range r.Line(catalog.Line(l)) {
 				if !(x > 0 && x <= 1) {
 					t.Errorf("%s: line %d channel %d response %v", key, l, i, x)
 				}

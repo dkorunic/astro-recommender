@@ -150,20 +150,11 @@ func TestMaxFramed(t *testing.T) {
 	}
 }
 
-func TestSkyK(t *testing.T) {
+func TestEmissionLineKinds(t *testing.T) {
 	pn := catalog.Target{Type: "Planetary Nebula"}
 	gx := catalog.Target{Type: "Galaxy"}
 	if !catalog.EmissionLine(pn) || catalog.EmissionLine(gx) || !catalog.EmissionLine(catalog.Target{Name: "IC 1396", Type: "Dark Nebula"}) {
 		t.Error("emissionLine misclassifies")
-	}
-	if skyK(pn) != 1 || skyK(gx) != 1 {
-		t.Error("skyK discounts a broadband target")
-	}
-	if skyK(catalog.Target{Type: "Open cluster"}) != 0.5 {
-		t.Error("skyK misses LBN's \"Open cluster\" spelling")
-	}
-	if skyK(catalog.Target{Type: "Cluster Nebulosity"}) != 1 || skyK(catalog.Target{Name: "M 16", Type: "Open Cluster"}) != 1 {
-		t.Error("skyK halves the sky for a cluster with nebulosity, which is imaged for the glow")
 	}
 }
 

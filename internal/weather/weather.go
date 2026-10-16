@@ -26,10 +26,11 @@ var (
 	errOpenMeteo  = errors.New("open-meteo")
 	errAirQuality = errors.New("open-meteo air quality")
 	errSevenTimer = errors.New("7timer")
+	errGridElev   = errors.New("grid elevation")
 )
 
 type HourWeather struct {
-	Seeing         float64 // star FWHM estimate in arcseconds from the upper-air profile, 0 = unknown (display-only)
+	Seeing         float64 // star FWHM estimate in arcseconds from the upper-air profile, 0 = unknown (SUBS' blur and the SEEING column; not the score)
 	Cloud          float64 // effective cover, thin high cloud counted half
 	Low, Mid, High float64
 	Temp, DewPoint float64
@@ -676,6 +677,28 @@ func AerosolForecast(ctx context.Context, lat, lon float64, start, end time.Time
 	}
 
 	return out, elev, nil
+}
+
+// GridElevation returns the mean orography of the ECMWF IFS 0.25° cell at
+// lat/lon in metres (Open-Meteo's elevation=nan, which skips downscaling to
+// the site): the ground CAMS's 0.4° aerosol column stands on, about, which
+// the air-quality API does not report.
+func GridElevation(ctx context.Context, lat, lon float64) (float64, error) {
+	url := fmt.Sprintf("https://api.open-meteo.com/v1/forecast?latitude=%.2f&longitude=%.2f"+
+		"&models=ecmwf_ifs025&elevation=nan", lat, lon)
+	var body struct {
+		Elevation *float64 `json:"elevation"`
+		Reason    string   `json:"reason"`
+	}
+	if err := fetch.GetJSON(ctx, url, &body); err != nil {
+		return math.NaN(), fmt.Errorf("%w: %w %s", errGridElev, err, sanitize.Text(body.Reason))
+	}
+	elev := elevation(body.Elevation)
+	if math.IsNaN(elev) {
+		return elev, fmt.Errorf("%w: none in the response", errGridElev)
+	}
+
+	return elev, nil
 }
 
 // getRange GETs an Open-Meteo url for the UTC dates of start to end, decoding

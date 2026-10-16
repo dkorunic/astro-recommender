@@ -16,8 +16,29 @@ import (
 )
 
 // Levels are the stacked SNR per arcsec², at the object's mean surface
-// brightness, of a modest, good and best image.
+// brightness, of a modest, good and best image of an object as bright as a
+// pristine sky (Sky.RefNL) or brighter; a fainter one's are √ of its
+// brightness over the sky's of them (levelScale).
 var Levels = [3]float64{5, 10, 20}
+
+// levelScale is the share of Levels' SNR² that makes a modest, good and best
+// image of tg at surface brightness sb: its light against the pristine sky
+// refNL as scoreTarget sets it (an emission-line target's lines against the
+// camera band), at most 1. Imagers stretch a faint object harder and judge
+// its brighter structure, so what they stack for one grows as 1/S, not the
+// 1/S² of a fixed SNR under a sky-limited stack: against reported totals
+// (Seestar S50 and Origin, 2026) a fixed SNR 10 made M 101 and M 33 20-40x
+// too long while M 51, M 42 and the Veil were 1-3x.
+// ponytail: an acceptance rule fitted to anecdotes, not optics; a profile
+// (the bright arms' own surface brightness) would replace it.
+func levelScale(tg catalog.Target, sb, refNL float64) float64 {
+	nl := lightNL(tg, sb)
+	if catalog.EmissionLine(tg) {
+		nl /= atmos.CameraBand
+	}
+
+	return min(1, nl/refNL)
+}
 
 // photonsV0 is a V = 0 source's photon flux over the V band, photons s⁻¹
 // cm⁻²: 1005 per Å at 550 nm (Bessell 1998) over atmos.VWidth. The sky
@@ -30,7 +51,7 @@ const photonsV0 = 1005 * 10 * atmos.VWidth
 // preset's or the IMX678's); channelShare is each colour channel's share of
 // the array (RGGB).
 var (
-	lineQE       = [catalog.NumLines]float64{catalog.Ha: 0.95, catalog.OIII: 0.85, catalog.SII: 0.9, catalog.Hb: 0.8, catalog.NII6548: 0.95, catalog.NII6583: 0.95}
+	lineQE       = [catalog.NumLines]float64{catalog.Ha: 0.95, catalog.OIII: 0.85, catalog.SII: 0.9, catalog.Hb: 0.8, catalog.NII6548: 0.95, catalog.NII6583: 0.95, catalog.OIII4959: 0.85}
 	channelShare = [3]float64{red: 0.25, green: 0.5, blue: 0.25}
 )
 
@@ -74,8 +95,8 @@ type Estimate struct { // betteralign:ignore
 	Best      int     `json:"best"`                               // Levels[2]
 	Max       int     `json:"max"`                                // subs tonight's time allows per panel (with -plan, its blocks), less the gaps between them and -reject's share
 	Sub       float64 `json:"sub"`                                // sub length, s
-	SNRPerSub float64 `json:"snrPerSub"`                          // per arcsec², √ of the mean SNR² the stack adds, weather included
-	SNRLimit  float64 `json:"snrLimit,omitempty"`                 // per arcsec², the most the stack reaches however many subs (-residual); 0 = none
+	SNRPerSub float64 `json:"snrPerSub"`                          // per arcsec², √ of the mean SNR² the stack adds, weather included, against Levels (levelScale)
+	SNRLimit  float64 `json:"snrLimit,omitempty"`                 // per arcsec² against Levels, the most the stack reaches however many subs (-residual); 0 = none
 	Panels    int     `json:"panels"`                             // the mosaic the counts are per panel of
 	Assumed   bool    `json:"assumedSurfaceBrightness,omitempty"` // the surface brightness is its class's typical one
 }
@@ -169,7 +190,7 @@ func (c camera) channels(dst []channel, name string, width float64, lines [catal
 			return lineQE[l]
 		}
 
-		return c.response.Lines[l][i]
+		return c.response.Line(l)[i]
 	}
 	emission := lines != [catalog.NumLines]float64{}
 	if ls := config.Filters[name]; ls != nil {
@@ -427,16 +448,18 @@ func Subs(cfg *config.Config, s *Sky, r Result, planned time.Duration) Estimate 
 		// The sky's parts and the object as scoreTarget sets them, in
 		// absolute photons: the object's lines are not moved against the
 		// camera band, which the channels' sky gains already span, and what
-		// a filter passes of it is in the channels' object gains.
+		// a filter passes of it is in the channels' object gains. The object
+		// is catalogued above the atmosphere, so the zenith's extinction dims
+		// it too (atmos.Absolute); the sky is measured on the ground, but
+		// for its zodiacal and galactic excess, taken above the atmosphere.
 		air := atmos.Airmass(a)
-		ext := atmos.Transmission(air, s.Ext[i])
 		glow, rayleigh, mie := atmos.SkyParts(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i])
-		glow += extra * ext
+		glow += extra * atmos.Absolute(air, s.Ext[i])
 		var obj float64
 		if fp.w > 0 {
-			obj = objNL * atmos.Transmission(air, s.ExtRayleigh[i]*fp.ray+atmos.OzoneExtinction+s.ExtAerosol[i]*fp.aer)
+			obj = objNL * atmos.Absolute(air, s.ExtRayleigh[i]*fp.ray+atmos.OzoneExtinction+s.ExtAerosol[i]*fp.aer)
 		} else {
-			obj = objNL * atmos.Transmission(air, s.Ext[i]+s.ExtRayleigh[i]*lineRay+s.ExtAerosol[i]*lineAer)
+			obj = objNL * atmos.Absolute(air, s.Ext[i]+s.ExtRayleigh[i]*lineRay+s.ExtAerosol[i]*lineAer)
 		}
 		// The weather loses the minute's subs in proportion, so it weighs
 		// that minute's SNR², not the night's mean: cloud during the best
@@ -448,7 +471,11 @@ func Subs(cfg *config.Config, s *Sky, r Result, planned time.Duration) Estimate 
 	if st.n == 0 {
 		return Estimate{}
 	}
+	// In the levels' units: a faint object's levels are lower (levelScale),
+	// which reads as a higher SNR² against the same levels.
 	m, ceil := c.rates(&st, chans)
+	scale := levelScale(r.Target, sb, s.RefNL)
+	m, ceil = m/scale, ceil/scale
 	panels := max(1, r.Mosaic.Panels())
 	minutes := float64(st.n)
 	if planned > 0 {

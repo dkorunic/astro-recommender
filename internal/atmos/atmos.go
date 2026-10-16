@@ -74,6 +74,22 @@ func SplitExtinction(k float64) (float64, float64) {
 	return rayleigh, k - rayleigh
 }
 
+// AerosolScaleHeight (m) is how fast aerosols thin with height, most of them
+// in the boundary layer: Hayes & Latham (1975)'s 1.5 km, beside their 7996 m
+// for the molecules; CALIOP's profiles give 1.5-2 km over polluted land and
+// more over dust and smoke (Yu et al. 2010).
+const AerosolScaleHeight = 1500
+
+// AerosolAbove returns the optical depth left above a site dz metres above
+// the surface aod was measured or modelled at: a mountain observatory sees
+// only the column over it, CAMS's 0.4° cell the column over its mean
+// orography, mostly lower ground (La Palma's 2334 m in a cell at sea level).
+// ponytail: never more for a site below the surface (a valley's trapped
+// haze), where nothing tells how much more.
+func AerosolAbove(aod, dz float64) float64 {
+	return aod * math.Exp(-max(0, dz)/AerosolScaleHeight)
+}
+
 // TypicalAOD fills hours past the CAMS forecast range: clean continental air.
 const TypicalAOD = 0.1
 
@@ -95,6 +111,14 @@ func Extinction(alt, k float64) float64 {
 // several coefficients at one altitude.
 func Transmission(airmass, k float64) float64 {
 	return exp10(-0.4 * k * (airmass - 1))
+}
+
+// Absolute is the fraction of light from above the atmosphere (a catalogue
+// surface brightness, the photon zero point) that reaches the ground at
+// airmass, for k mag per airmass: Transmission with the zenith's own
+// extinction. A sky brightness is measured on the ground and needs none.
+func Absolute(airmass, k float64) float64 {
+	return exp10(-0.4 * k * airmass)
 }
 
 // meanMoonDist is the Moon's mean distance in Earth radii, the one the
@@ -146,8 +170,12 @@ const (
 	// moonG is the aerosol asymmetry parameter Winkler fitted.
 	moonG = 0.8
 	// moonDelta is Winkler's V-band offset log10(albedo × multiple
-	// scattering), Table 4.
+	// scattering), Table 4, whose albedo is his site's, moonAlbedo.
 	moonDelta = 0.078
+	// moonAlbedo is Winkler's (Sutherland's) single-scattering albedo in V,
+	// τ_s/τ = (0.082 + 0.020)/0.138 (Table 4): MoonLight takes it out of
+	// moonDelta for the minute's own, scattering over all extinction.
+	moonAlbedo = (0.082 + 0.020) / 0.138
 	// arcsec2PerSr converts a radiance per steradian to one per arcsec².
 	arcsec2PerSr = (180 / math.Pi * 3600) * (180 / math.Pi * 3600)
 	// tauPerMag converts an extinction coefficient in mag/airmass to an
@@ -190,13 +218,18 @@ func MoonLight(k, kRayleigh, kAerosol, moonAlt, alpha, moonDist float64) Moon {
 	if alpha < 7 {
 		nl *= 1.35 - 0.05*alpha
 	}
-	ray := 1.0
+	// The scattering's share of the extinction (ozone absorbs), against
+	// Winkler's, which his δ holds.
+	ray, albedo := 1.0, moonAlbedo
 	if s := kRayleigh + kAerosol; s > 0 {
 		ray = kRayleigh / s
+		if k > 0 {
+			albedo = s / k
+		}
 	}
 	x := ks(moonAlt)
 
-	return Moon{NL: nl * exp10(moonDelta) / arcsec2PerSr, X: x, Fade: math.Exp(-tauPerMag * k * x), Ray: ray}
+	return Moon{NL: nl * exp10(moonDelta) * albedo / moonAlbedo / arcsec2PerSr, X: x, Fade: math.Exp(-tauPerMag * k * x), Ray: ray}
 }
 
 // scatter returns the moonlight m scatters to a target at scattering airmass

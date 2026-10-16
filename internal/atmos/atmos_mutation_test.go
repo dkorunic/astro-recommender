@@ -100,8 +100,10 @@ func mutRSSMoon(k, kRay, kAer, alt, moonAlt, rho, alpha, dist float64) float64 {
 		}
 	}
 	gamma := sum / (3 * n) / tau // the gradation function, his τs/τ taken into δ
+	// δ holds Winkler's albedo, 0.102/0.138; the minute's is scattering over all.
+	albedo := (kRay + kAer) / k / (0.102 / 0.138)
 
-	return flux * math.Pow(10, 0.078) * p * gamma * tau / (206264.80624709636 * 206264.80624709636)
+	return flux * math.Pow(10, 0.078) * albedo * p * gamma * tau / (206264.80624709636 * 206264.80624709636)
 }
 
 func TestMutMoonLight(t *testing.T) {
@@ -145,4 +147,10 @@ func TestMutSkyBrightness(t *testing.T) {
 			t.Errorf("moonlight %v = %g, want %g", c, got, want)
 		}
 	}
+}
+
+func TestMutAerosolAbove(t *testing.T) {
+	mutNear(t, "La Palma over a sea-level cell", AerosolAbove(0.24, 2334), 0.24*math.Exp(-2334.0/1500), 1e-12)
+	mutNear(t, "level", AerosolAbove(0.24, 0), 0.24, 0)
+	mutNear(t, "valley below the cell", AerosolAbove(0.24, -500), 0.24, 0)
 }

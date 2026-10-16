@@ -498,3 +498,21 @@ func TestMutDecodePartialLevel(t *testing.T) {
 		t.Errorf("partial level series kept: %v %v", h.Level[2].T, err)
 	}
 }
+
+// GridElevation asks for the IFS cell's orography (elevation=nan, no
+// downscaling) and rejects a response without a usable one.
+func TestMutGridElevation(t *testing.T) {
+	body := `{"elevation":0.0}`
+	m := mutServe(t, func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte(body)) })
+	if e, err := GridElevation(t.Context(), 28.76, -17.88); err != nil || e != 0 {
+		t.Errorf("sea-level cell: %v, %v", e, err)
+	}
+	if q := m.reqs[0].Query(); q.Get("elevation") != "nan" || q.Get("models") != "ecmwf_ifs025" {
+		t.Errorf("request %v", m.reqs[0])
+	}
+	for _, body = range []string{`{}`, `{"elevation":-9999}`} {
+		if e, err := GridElevation(t.Context(), 28.76, -17.88); err == nil || !math.IsNaN(e) {
+			t.Errorf("%s: %v, %v", body, e, err)
+		}
+	}
+}

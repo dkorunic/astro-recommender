@@ -44,10 +44,10 @@ def bessell(nm):
     return BESSELL_V[i] + (x - i) * (BESSELL_V[i + 1] - BESSELL_V[i])
 
 
-# score.go's lineV: Hα, [O III] (495.9 at a third of 500.7), [S II] doublet, Hβ,
-# [N II] 654.8 and 658.3.
-LINE_V = (bessell(656.3), bessell(500.7) + bessell(495.9) / 3,
-          (bessell(671.6) + bessell(673.1)) / 2, bessell(486.1), bessell(654.8), bessell(658.3))
+# score.go's lineV: Hα, [O III] 500.7, [S II] doublet, Hβ, [N II] 654.8 and
+# 658.3, [O III] 495.9.
+LINE_V = (bessell(656.3), bessell(500.7), (bessell(671.6) + bessell(673.1)) / 2, bessell(486.1),
+          bessell(654.8), bessell(658.3), bessell(495.9))
 PHOTONS_V0 = 1005 * 10 * 88                     # V = 0, photons s^-1 cm^-2 over the band
 RAYLEIGH = 1e6 / (4 * math.pi) / 4.2545e10      # photons s^-1 cm^-2 arcsec^-2
 PIXELS = 48

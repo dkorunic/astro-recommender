@@ -95,10 +95,10 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 		// uncapped weight, since under a dark sky every helpful filter's
 		// capped weight is 1 and the band's extinction alone would choose
 		// (Hα's, even for a planetary).
-		var camNL float64
+		camNL, scale := 0.0, 1.0
 		if camOK {
 			if sb, _ := tg.ExposureSB(); sb > 0 {
-				camNL = lightNL(tg, sb)
+				camNL, scale = lightNL(tg, sb), levelScale(tg, sb, s.RefNL)
 			}
 		}
 		active, choice = active[:0], choice[:0]
@@ -121,7 +121,9 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 			if camNL > 0 {
 				// The fewest-subs choice; the stack counted minutes, since
 				// gains runs only for a tally whose result held.
-				return subsGain(cam.rates(&t.st, t.chans))
+				m, ceil := cam.rates(&t.st, t.chans)
+
+				return subsGain(m/scale, ceil/scale)
 			}
 
 			return t.raw
@@ -244,10 +246,6 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, ts []*tally, mos
 	// of a Cos per target-minute.
 	sinRA, cosRA := math.Sincos(ra * deg)
 
-	// Fraction of sky glow (moonlight, light pollution) that counts against
-	// this target; with what a choice passes, it scales its Moon separation
-	// limit.
-	k := skyK(tg)
 	// The Moon separation is the Acos of a dot product of unit vectors, and a
 	// minute closer than every limit (at most 100°, where the cosine still
 	// falls) is rejected on the cosine alone. On a moonlit night with low
@@ -255,7 +253,7 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, ts []*tally, mos
 	unit := astro.Unit(ra, dec) // a comet's is redone per minute
 	loosest := -1.0
 	for _, t := range ts {
-		t.cosMoon = math.Cos(min(k, t.fp.moonK()) * s.MoonSep * deg)
+		t.cosMoon = math.Cos(t.fp.moonK() * s.MoonSep * deg)
 		loosest = max(loosest, t.cosMoon)
 	}
 
@@ -347,6 +345,10 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, ts []*tally, mos
 		// (SkyBrightnessLit's to rounding), computed once for every filter.
 		air := atmos.Airmass(a)
 		ext := atmos.Transmission(air, s.Ext[i])
+		// The zodiacal and galactic excess is tabulated above the
+		// atmosphere, so the whole column dims it, not the zenith-relative
+		// ext of the ground-measured sky and the score.
+		extraNL := extra * atmos.Absolute(air, s.Ext[i])
 		var glow, rayleigh, mie float64
 		parts, blur := false, -1.0
 		for _, t := range ts {
@@ -355,27 +357,34 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, ts []*tally, mos
 			}
 			if !parts && (t.fp.w > 0 || len(t.chans) > 0) {
 				glow, rayleigh, mie = atmos.SkyParts(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i])
-				glow += extra * ext
+				glow += extraNL
 				parts = true
 			}
-			var sb, trans, gain float64
+			// kb is the object's band's extinction coefficient, for the
+			// camera; trans keeps its own inline expression, which the
+			// compiler may fuse (FMA), so the score stays bit for bit.
+			var sb, trans, gain, kb float64
 			if t.fp.w > 0 {
 				sb = glow + rayleigh + mie
 				trans = atmos.Transmission(air, s.ExtRayleigh[i]*t.fp.ray+atmos.OzoneExtinction+s.ExtAerosol[i]*t.fp.aer)
-				gain = t.fp.gain(objNL, objRef, k*glow, k*rayleigh, k*mie)
+				kb = s.ExtRayleigh[i]*t.fp.ray + atmos.OzoneExtinction + s.ExtAerosol[i]*t.fp.aer
+				gain = t.fp.gain(objNL, objRef, glow, rayleigh, mie)
 			} else {
-				sb = atmos.SkyBrightnessLit(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i]) + extra*ext
-				trans = ext
+				sb = atmos.SkyBrightnessLit(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i]) + extraNL
+				trans, kb = ext, s.Ext[i]
 				if emission {
 					trans = atmos.Transmission(air, s.Ext[i]+s.ExtRayleigh[i]*lineRay+s.ExtAerosol[i]*lineAer)
+					kb = s.Ext[i] + s.ExtRayleigh[i]*lineRay + s.ExtAerosol[i]*lineAer
 				}
-				gain = math.Sqrt(objRef / (objNL + k*sb))
+				gain = math.Sqrt(objRef / (objNL + sb))
 			}
 			if len(t.chans) > 0 {
 				if blur < 0 {
 					blur = cam.blur(i, air, ax, bx)
 				}
-				cam.add(&t.st, t.chans, i, s.Quality[i], camNL*trans*blur, glow, rayleigh, mie)
+				// Absolute photons: the object is catalogued above the
+				// atmosphere, so the zenith's extinction dims it too.
+				cam.add(&t.st, t.chans, i, s.Quality[i], camNL*atmos.Absolute(air, kb)*blur, glow, rayleigh, mie)
 			}
 			t.add(i, a, s.Quality[i]*trans*min(1, gain), s.Quality[i]*trans*gain, sb)
 		}
@@ -585,22 +594,21 @@ func (b beam) through(nm float64, band [2]float64) float64 {
 
 // lineV is the V band's transmission at each line, how much of it a V
 // surface brightness measures: Bessell (1990)'s curve, linear between its
-// 10 nm points, [O III] with 495.9 nm at a third of 500.7's flux added and
-// [S II] the doublet's mean. V straddles [O III] and misses Hα.
-var lineV = [catalog.NumLines]float64{catalog.Ha: 0.0324, catalog.OIII: 0.5929, catalog.SII: 0.0161, catalog.Hb: 0.1111, catalog.NII6548: 0.0354, catalog.NII6583: 0.0284}
+// 10 nm points, [S II] the doublet's mean. V straddles [O III] and misses Hα.
+var lineV = [catalog.NumLines]float64{catalog.Ha: 0.0324, catalog.OIII: 0.4805, catalog.SII: 0.0161, catalog.Hb: 0.1111, catalog.NII6548: 0.0354, catalog.NII6583: 0.0284, catalog.OIII4959: 0.3370}
 
 // vContinuum (mag) is the share of an emission nebula's catalogued V light
 // that is not its lines (the stars inside it, scattered continuum), fitted by
-// scripts/calibrate_lines.py: the median over 29 nebulae of 30' and more of
+// scripts/calibrate_lines.py: the median over 16 nebulae of 30' and more of
 // Finkbeiner (2003)'s Hα map against their lines derived from V by lineV
-// (interquartile range 0.34-1.76 mag).
-const vContinuum = 1.25
+// (interquartile range 0.23-1.90 mag).
+const vContinuum = 0.96
 
 // lightNL returns the light in nanoLamberts of tg at V surface brightness
 // sb: a continuum's is its V; an emission-line target's is its lines, which
 // V measures only as far as its passband reaches them (lineV) less what of
-// it is continuum (vContinuum): 1.27 mag brighter than V for an H II region,
-// about as bright for a planetary, whose [O III] V holds.
+// it is continuum (vContinuum): 1.66 mag brighter than V for an H II region,
+// 0.39 for a planetary, whose [O III] V holds.
 func lightNL(tg catalog.Target, sb float64) float64 {
 	nl := atmos.NanoLamberts(sb)
 	var fv float64
@@ -686,16 +694,4 @@ func (fp filterPass) moonK() float64 {
 	}
 
 	return max(minMoonK, min(1, fp.rayleigh/(fp.w*fp.w)))
-}
-
-// skyK returns the fraction of sky glow (moonlight, light pollution) that
-// counts against a target imaged without a filter: 1 for faint targets, 0.5
-// for clusters (point sources; a cluster with nebulosity is imaged for the
-// glow and is not a catalog.Target.Cluster).
-func skyK(tg catalog.Target) float64 {
-	if tg.Cluster() {
-		return 0.5
-	}
-
-	return 1
 }

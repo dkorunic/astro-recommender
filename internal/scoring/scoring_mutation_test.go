@@ -53,7 +53,7 @@ func mutZenith(ra, dec float64) float64 { return atmos.NanoLamberts(22) + mutExt
 
 // mutExtra is the zodiacal and galactic excess at ra/dec over what mutSky's
 // pristine 22 includes, held where the zenith would fall below both minima.
-// Scoring adds it outside K&S's dark-sky term, dimmed by extinction alone.
+// Scoring adds it outside K&S's dark-sky term, dimmed by extinction alone (atmos.Absolute: the whole column).
 func mutExtra(ra, dec float64) float64 {
 	lon, lat := astro.Ecliptic(ra, dec, mutEpoch)
 
@@ -77,7 +77,7 @@ func mutTarget(name string, ra, dec float64) catalog.Target {
 // brightened by K&S's scattering airmass X = 1/√(1 − 0.96 sin² z), plus
 // extra nanoLamberts of zodiacal and galactic light (mutExtra), with
 // SNR ∝ S/√(S+B) against the pristine 22.
-func mutWeight(a, sb, k, extra float64) float64 {
+func mutWeight(a, sb, extra float64) float64 {
 	z := (90 - a) * math.Pi / 180
 	x := 1 / math.Sqrt(1-0.96*math.Sin(z)*math.Sin(z))
 	ref := atmos.NanoLamberts(22)
@@ -86,7 +86,7 @@ func mutWeight(a, sb, k, extra float64) float64 {
 		obj = atmos.NanoLamberts(sb)
 	}
 
-	return min(1, math.Sqrt((obj+ref)/(obj+k*(ref*x+extra))))
+	return min(1, math.Sqrt((obj+ref)/(obj+ref*x+extra)))
 }
 
 func mutOne(t *testing.T, cfg *config.Config, s *Sky, tg catalog.Target, perMinute bool) (Result, bool) {
@@ -120,7 +120,7 @@ func TestMutScoreGeometry(t *testing.T) {
 		if a < 30 || a > 80 {
 			continue
 		}
-		sum += mutWeight(a, 0, 1, extra)
+		sum += mutWeight(a, 0, extra)
 		altSum += a
 		z := (90 - a) * math.Pi / 180
 		skySum += atmos.MagFromNL(atmos.NanoLamberts(22)/math.Sqrt(1-0.96*math.Sin(z)*math.Sin(z)) + extra)
@@ -143,7 +143,7 @@ func TestMutScoreGeometry(t *testing.T) {
 	if len(r.Alt) != 141 || math.Abs(r.Alt[0]-(90-90.5)) > 1e-5 || math.Abs(r.Alt[90]-89.5) > 1e-5 {
 		t.Errorf("Alt %v %v", r.Alt[0], r.Alt[90])
 	}
-	if r.Weight[30] != 0 || r.Weight[90] != 0 || math.Abs(r.Weight[31]-mutWeight(30.5, 0, 1, extra)) > 1e-7 {
+	if r.Weight[30] != 0 || r.Weight[90] != 0 || math.Abs(r.Weight[31]-mutWeight(30.5, 0, extra)) > 1e-7 {
 		t.Errorf("Weight %v %v %v", r.Weight[30], r.Weight[90], r.Weight[31])
 	}
 	// RA 50.5: minutes 0..40 (41) then 61..110 (50): the later run is longer.
@@ -217,9 +217,9 @@ func TestMutMoonSeparation(t *testing.T) {
 	if !ok || r.Runs != 1 {
 		t.Errorf("galaxy 55° from the Moon: %v %d", ok, r.Runs)
 	}
-	// A cluster's limit is half: 40° passes.
-	if _, ok := mutOne(t, cfg, s, catalog.Target{Name: "C", Type: "Open Cluster", RADeg: 90.5, DecDeg: 40, Size: 20}, false); !ok {
-		t.Error("cluster 40° from a half Moon dropped")
+	// A cluster's limit is a galaxy's: its faintest members are sky-limited.
+	if _, ok := mutOne(t, cfg, s, catalog.Target{Name: "C", Type: "Open Cluster", RADeg: 90.5, DecDeg: 40, Size: 20}, false); ok {
+		t.Error("cluster 40° from a half Moon kept")
 	}
 	// Emission nebula: with a 7 nm dual-band filter moonK is 0.19 → 9°; without, 50°.
 	neb := catalog.Target{Name: "N", Type: "Emission Nebula", RADeg: 90.5, DecDeg: 20, Size: 20}
@@ -276,13 +276,13 @@ func TestMutSurfaceBrightnessWeight(t *testing.T) {
 	for _, sb := range []float64{16, 21, 24} {
 		tg := catalog.Target{Name: "S", Type: "Galaxy", RADeg: 90.5, Size: 20, SurfBr: sb}
 		r, _ := mutOne(t, cfg, s, tg, true)
-		if w := mutWeight(40.5, sb, 1, extra); math.Abs(r.Weight[41]-w) > 1e-7 {
+		if w := mutWeight(40.5, sb, extra); math.Abs(r.Weight[41]-w) > 1e-7 {
 			t.Errorf("SB %v: weight %v, want %v", sb, r.Weight[41], w)
 		}
 	}
-	// Cluster: half the sky, no surface brightness.
+	// Cluster: no surface brightness, the whole sky, as light of unknown brightness.
 	r, _ := mutOne(t, cfg, s, catalog.Target{Name: "K", Type: "Open Cluster", RADeg: 90.5, Size: 20, SurfBr: 16}, true)
-	if w := mutWeight(40.5, 0, 0.5, extra); math.Abs(r.Weight[41]-w) > 1e-7 {
+	if w := mutWeight(40.5, 0, extra); math.Abs(r.Weight[41]-w) > 1e-7 {
 		t.Errorf("cluster weight %v, want %v", r.Weight[41], w)
 	}
 	// Quality and extinction multiply in.
@@ -290,7 +290,7 @@ func TestMutSurfaceBrightnessWeight(t *testing.T) {
 	r, _ = mutOne(t, cfg, s, mutTarget("Q", 90.5, 0), true)
 	z := 49.5 * math.Pi / 180
 	x := 1 / math.Sqrt(1-0.96*math.Sin(z)*math.Sin(z))
-	sky := atmos.NanoLamberts(22)*math.Pow(10, -0.4*0.2*(x-1))*x + extra*atmos.Extinction(40.5, 0.2)
+	sky := atmos.NanoLamberts(22)*math.Pow(10, -0.4*0.2*(x-1))*x + extra*atmos.Absolute(atmos.Airmass(40.5), 0.2)
 	want := 0.5 * math.Pow(10, -0.4*0.2*(atmos.Airmass(40.5)-1)) * math.Sqrt(atmos.NanoLamberts(22)/sky)
 	if math.Abs(r.Weight[41]-want) > 1e-7 {
 		t.Errorf("weight with quality+extinction %v, want %v", r.Weight[41], want)
@@ -352,22 +352,6 @@ func TestMutFraming(t *testing.T) {
 	for fill, want := range map[float64]float64{0: 0, 0.125: 0.5, 0.22: 0.88, 0.25: 1, 0.5: 1, 0.8: 1, 0.9: 0.5, 1: 0, 1.2: 0} {
 		if got := frameFill(fill); math.Abs(got-want) > 1e-12 {
 			t.Errorf("frameFill(%v) = %v, want %v", fill, got, want)
-		}
-	}
-}
-
-func TestMutSkyK(t *testing.T) {
-	for _, c := range []struct {
-		tg   catalog.Target
-		want float64
-	}{
-		{catalog.Target{Type: "Galaxy"}, 1},
-		{catalog.Target{Type: "Open Cluster"}, 0.5},
-		{catalog.Target{Name: "M 16", Type: "Open Cluster"}, 1},
-		{catalog.Target{Type: "Emission Nebula"}, 1},
-	} {
-		if got := skyK(c.tg); got != c.want {
-			t.Errorf("skyK(%+v) = %v, want %v", c.tg, got, c.want)
 		}
 	}
 }
@@ -517,8 +501,24 @@ func TestMutBuildSkyGaps(t *testing.T) {
 	if math.Abs(s.Quality[0]-0.8) > 1e-12 || math.Abs(s.Quality[119]-0.8) > 1e-12 {
 		t.Errorf("gap quality %v %v", s.Quality[0], s.Quality[119])
 	}
-	if math.Abs(s.Ext[0]-atmos.ExtinctionCoeff(300, 0.4)) > 1e-12 || math.Abs(s.Ext[60]-atmos.ExtinctionCoeff(300, atmos.TypicalAOD)) > 1e-12 {
+	// AODs thinned for the 300 m the site stands above CAMS's ground (0 m in
+	// a hand-built Forecast) and TypicalAOD's sea level.
+	thin := math.Exp(-300.0 / atmos.AerosolScaleHeight)
+	if math.Abs(s.Ext[0]-atmos.ExtinctionCoeff(300, 0.4*thin)) > 1e-12 || math.Abs(s.Ext[60]-atmos.ExtinctionCoeff(300, atmos.TypicalAOD*thin)) > 1e-12 {
 		t.Errorf("ext %v %v", s.Ext[0], s.Ext[60])
+	}
+	// CAMS's ground unknown: its AOD as given; ground above the site: no more.
+	for _, ground := range []float64{math.NaN(), 800} {
+		f.AODElevation = ground
+		if s := BuildSky(cfg, f, start, start.Add(2*time.Hour)); math.Abs(s.Ext[0]-atmos.ExtinctionCoeff(300, 0.4)) > 1e-12 {
+			t.Errorf("CAMS ground %v: ext %v", ground, s.Ext[0])
+		}
+	}
+	// 7Timer's transparency counts only where CAMS's aerosols do not.
+	f.Astro = map[int64]weather.AstroBlock{weather.AstroKey(start): {Transparency: 8}, weather.AstroKey(start.Add(time.Hour)): {Transparency: 8}}
+	s = BuildSky(cfg, f, start, start.Add(2*time.Hour))
+	if math.Abs(s.Quality[0]-0.8) > 1e-12 || math.Abs(s.Quality[61]-0.8*0.5) > 1e-12 {
+		t.Errorf("transparency over CAMS %v, without %v", s.Quality[0], s.Quality[61])
 	}
 	cfg.SQM, cfg.Bortle = 20.5, 5
 	s = BuildSky(cfg, NoForecast(), start, start.Add(time.Hour))
@@ -681,7 +681,7 @@ func TestMutBandExtinction(t *testing.T) {
 	lon, lat := astro.Ecliptic(90.5, 0, mutEpoch)
 	extra := max(atmos.ZodiacalExcess(lon-s.SunLon, lat)+mutGalactic(90.5, 0), atmos.ZodiacalPoleNL+atmos.GalacticMinNL-s.ZenithNL)
 	glow, _, _ := atmos.SkyParts(s.ZenithNL, 0.2, 40.5, 180, atmos.Moon{})
-	glow += extra * atmos.Extinction(40.5, 0.2)
+	glow += extra * atmos.Absolute(atmos.Airmass(40.5), 0.2)
 	band := ray*fp.ray + atmos.OzoneExtinction + aer*fp.aer
 	want := atmos.Transmission(atmos.Airmass(40.5), band) * min(1, fp.gain(0, s.RefNL, glow, 0, 0))
 	if math.Abs(r.Weight[41]-want) > 1e-7 || band >= 0.2 {
@@ -755,8 +755,8 @@ func TestMutEmissionCameraBand(t *testing.T) {
 	if want := math.Sqrt((obj + s.RefNL) / (obj + glow)); math.Abs(r.Weight[41]-want) > 1e-7 {
 		t.Errorf("nebula weight %v, want %v", r.Weight[41], want)
 	}
-	if r, _ := mutOne(t, cfg, s, catalog.Target{Name: "G", Type: "Galaxy", RADeg: 90.5, Size: 20, SurfBr: 18}, true); math.Abs(r.Weight[41]-mutWeight(40.5, 18, 1, extra)) > 1e-7 {
-		t.Errorf("galaxy weight %v, want %v", r.Weight[41], mutWeight(40.5, 18, 1, extra))
+	if r, _ := mutOne(t, cfg, s, catalog.Target{Name: "G", Type: "Galaxy", RADeg: 90.5, Size: 20, SurfBr: 18}, true); math.Abs(r.Weight[41]-mutWeight(40.5, 18, extra)) > 1e-7 {
+		t.Errorf("galaxy weight %v, want %v", r.Weight[41], mutWeight(40.5, 18, extra))
 	}
 }
 

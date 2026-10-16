@@ -240,14 +240,16 @@ func Weather(cfg *config.Config, s *scoring.Sky) {
 			spread := h.Temp - h.DewPoint // < 2-3 °C: dew on the optics
 			dew = paint(scale(spread, 4, 2), fmt.Sprintf("%.1f°C", spread))
 			wind = paint(scale(h.Gust, 20, 35), fmt.Sprintf("%.0f/%.0f km/h", h.Wind, h.Gust))
-			// The upper-air estimate stands in for hours 7Timer does not cover.
+			// The upper-air estimate, as scoring's blur; 7Timer's class stands in for hours without one.
 			if h.Seeing > 0 {
 				seeing = paint(scale(h.Seeing, 2, 2.5), fmt.Sprintf("~%.1f\"", h.Seeing)) // 7Timer's classes 6 and 8
 			}
 		}
 		if a, ok := s.Astro[weather.AstroKey(t)]; ok {
 			transp = paint(scale(float64(a.Transparency), 3, 6), fmt.Sprintf("%d/8", a.Transparency))
-			seeing = paint(scale(float64(a.Seeing), 6, 8), weather.SeeingLabel(a.Seeing))
+			if s.Weather[t.Unix()].Seeing == 0 {
+				seeing = paint(scale(float64(a.Seeing), 6, 8), weather.SeeingLabel(a.Seeing))
+			}
 		}
 		row(w, "", paint("39", clock(s, t.In(cfg.Loc))), cloud, layers, transp, ext, seeing, dew, wind)
 	}

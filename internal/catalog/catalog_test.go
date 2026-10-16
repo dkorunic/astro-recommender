@@ -247,12 +247,12 @@ func TestEmissionLineLists(t *testing.T) {
 func TestEmissionNameKey(t *testing.T) {
 	for _, name := range []string{"M 16", "M16", "m16", " M 16 "} {
 		tg := Target{Name: name, Type: "Open Cluster"}
-		if !EmissionLine(tg) || tg.kind() != kindClusterNebula || tg.Cluster() {
-			t.Errorf("%q: EmissionLine %v, kind %v, Cluster %v; want true, cluster+nebula, false",
-				name, EmissionLine(tg), tg.kind(), tg.Cluster())
+		if !EmissionLine(tg) || tg.kind() != kindClusterNebula {
+			t.Errorf("%q: EmissionLine %v, kind %v; want true, cluster+nebula",
+				name, EmissionLine(tg), tg.kind())
 		}
 	}
-	if tg := (Target{Name: "M 166", Type: "Open Cluster"}); EmissionLine(tg) || !tg.Cluster() {
+	if tg := (Target{Name: "M 166", Type: "Open Cluster"}); EmissionLine(tg) || tg.kind() != kindCluster {
 		t.Error("M 166 matched M 16")
 	}
 }
@@ -276,12 +276,15 @@ func TestSurfaceBrightness(t *testing.T) {
 		"derived galaxy":       {Target{Type: "Galaxy", Mag: 10, Size: 10}, 10 + disc, true},
 		"derived from B":       {Target{Type: "Galaxy", BMag: 10.8, Size: 10}, 10 + disc, true},
 		"derived HII from B":   {Target{Type: "HII Emission Nebula", BMag: 10, Size: 10}, 10 + disc, true},
-		"derived reflection":   {Target{Type: "Reflection Nebula", Mag: 10, Size: 10}, 10 + disc, true},
+		"reflection star mag":  {Target{Type: "Reflection Nebula", Mag: 10, Size: 10}, 0, false},                  // the star lighting it
+		"Wolf-Rayet star mag":  {Target{Type: "Wolf-Rayet Nebula", Mag: 8.1, Size: 25}, 0, false},                 // WR 134
+		"Heart cluster mag":    {Target{Name: "Sh2-190", Type: "Emission Nebula", Mag: 6.5, Size: 150}, 0, false}, // Mel 15's, any list's spelling
+		"Heart measured":       {Target{Name: "IC 1805", Type: "Emission Nebula", SurfBr: 23}, 23, false},         // a measurement still wins
 		"derived cloud":        {Target{Type: "Molecular Cloud", Mag: 10, Size: 10}, 10 + disc, true},
 		"derived DN":           {Target{Type: "DN", Mag: 10, Size: 10}, 10 + disc, true},   // Pensack's dark nebula
 		"cluster not derived":  {Target{Type: "Open Cluster", Mag: 6, Size: 13}, 0, false}, // stars, and MWSC sizes are the core only
 		"globular not derived": {Target{Type: "Globular Cluster", Mag: 6, Size: 13}, 0, false},
-		"cluster measured":     {Target{Type: "Open Cluster", SurfBr: 22.49}, 0, false},                                      // Toadstool: skyK's 0.5 already counts
+		"cluster measured":     {Target{Type: "Open Cluster", SurfBr: 22.49}, 0, false},                                      // Toadstool: points, not a surface
 		"cluster nebulosity":   {Target{Type: "Cluster Nebulosity", Mag: 3.8, Size: 8}, 0, false},                            // NGC 2362: the stars' magnitude
 		"Cl+N not derived":     {Target{Type: "Cl+N Emission Nebula", Mag: 4.8, Size: 24}, 0, false},                         // NGC 2244
 		"N+CL not derived":     {Target{Type: "N+CL", Mag: 4.8, Size: 24}, 0, false},                                         // Pensack's spelling
@@ -403,12 +406,15 @@ func TestLines(t *testing.T) {
 		if math.Abs(l[NII6583]/l[NII6548]-3) > 1e-12 {
 			t.Errorf("shares %v: [N II] 658.3/654.8 %v, want 3", l, l[NII6583]/l[NII6548])
 		}
+		if math.Abs(l[OIII]/l[OIII4959]-3) > 1e-12 {
+			t.Errorf("shares %v: [O III] 500.7/495.9 %v, want 3", l, l[OIII]/l[OIII4959])
+		}
 	}
 	nii := func(l [NumLines]float64) float64 { return (l[NII6548] + l[NII6583]) / l[Ha] }
 	if nii(hii) >= nii(snr) || nii(hii) >= nii(pn) || nii(snr)*3/4 < 0.5 {
 		t.Errorf("[N II]/Hα: H II %v, SNR %v, PN %v", nii(hii), nii(snr), nii(pn))
 	}
-	if hii[Ha] < 0.5 || pn[OIII] < 0.5 || snr[SII] <= hii[SII] || snr[SII]/snr[Ha] < 0.4 {
+	if hii[Ha] < 0.45 || pn[OIII]+pn[OIII4959] < 0.5 || snr[SII] <= hii[SII] || snr[SII]/snr[Ha] < 0.4 {
 		t.Errorf("H II %v, PN %v, SNR %v", hii, pn, snr)
 	}
 	if (Target{Type: "Spiral Galaxy"}).Lines() != [NumLines]float64{} {
@@ -458,7 +464,7 @@ func TestNoAllocs(t *testing.T) {
 	}
 	tg := Target{Name: "Cr 375", Type: "Open Cluster", Size: 10, Mag: 6}
 	if n := testing.AllocsPerRun(100, func() {
-		_ = tg.Cluster() || EmissionLine(tg) || tg.Is(classOther)
+		_ = tg.kind() == kindCluster || EmissionLine(tg) || tg.Is(classOther)
 		_, _ = tg.SurfaceBrightness()
 		_ = tg.Lines()
 	}); n != 0 {
@@ -489,6 +495,13 @@ func TestTypicalSB(t *testing.T) {
 	}
 	for class, want := range typicalSB {
 		v := vals[class]
+		if typicalSBGuess[class] {
+			if len(v) > 0 {
+				t.Errorf("%s: %d objects now have data, compute its median", class, len(v))
+			}
+
+			continue
+		}
 		if len(v) == 0 {
 			t.Errorf("%s: no data", class)
 

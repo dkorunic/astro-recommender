@@ -215,3 +215,24 @@ func TestFetchForecastNoWeather(t *testing.T) {
 		t.Errorf("-no-weather: %+v, stderr %q", got, out)
 	}
 }
+
+// The blur's seeing is the upper-air estimate, which matches DIMMs better
+// than 7Timer's class does; the class stands in for hours without one, then
+// typicalSeeing.
+func TestSkySeeingOrder(t *testing.T) {
+	start := time.Date(2026, 10, 9, 18, 0, 0, 0, time.UTC)
+	h0 := start.Unix()
+	astro := map[int64]weather.AstroBlock{weather.AstroKey(start): {Seeing: 6}}
+	for name, c := range map[string]struct {
+		f    Forecast
+		want float64
+	}{
+		"estimate over 7Timer": {Forecast{Weather: map[int64]weather.HourWeather{h0: {Seeing: 0.8}}, Astro: astro}, 0.8},
+		"7Timer without one":   {Forecast{Weather: map[int64]weather.HourWeather{h0: {}}, Astro: astro}, weather.SeeingArcsec(6)},
+		"neither":              {Forecast{Weather: map[int64]weather.HourWeather{h0: {}}}, typicalSeeing},
+	} {
+		if s := BuildSky(mutCfg(), c.f, start, start.Add(time.Hour)); s.Seeing[0] != c.want {
+			t.Errorf("%s: seeing %v, want %v", name, s.Seeing[0], c.want)
+		}
+	}
+}

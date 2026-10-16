@@ -20,9 +20,9 @@ func TestSkyBrightness(t *testing.T) {
 		t.Errorf("moonless zenith = %v mag, want 22", m)
 	}
 	// Full Moon (with the opposition surge) at 60°, target at 60° and 90°
-	// away: 18.60 mag/arcsec² from Winkler's model, where K&S gave 18.45.
-	if m := MagFromNL(SkyBrightness(dark, 0.172, 60, 60, 90, 0, meanMoonDist)); math.Abs(m-18.60) > 0.01 {
-		t.Errorf("full-moon sky = %v mag, want 18.60", m)
+	// away: 18.48 mag/arcsec² from Winkler's model, where K&S gave 18.45.
+	if m := MagFromNL(SkyBrightness(dark, 0.172, 60, 60, 90, 0, meanMoonDist)); math.Abs(m-18.48) > 0.01 {
+		t.Errorf("full-moon sky = %v mag, want 18.48", m)
 	}
 	// Moonlight alone: x1.35 at full, tapering to none at 7°; and as distance⁻².
 	moon := func(alpha, dist float64) float64 {
@@ -322,7 +322,7 @@ func TestMoonScatter(t *testing.T) {
 	for _, c := range []struct{ moonAlt, alt, rho, lo, hi float64 }{
 		{5, 60, 80, 1.05, 1.3},  // low Moon: brighter
 		{60, 60, 10, 1.5, 2.5},  // near the Moon: the forward peak
-		{60, 60, 90, 0.8, 0.95}, // 90° away: a little darker
+		{60, 60, 90, 0.9, 1.05}, // 90° away: about as K&S
 	} {
 		if r := rss(c.moonAlt, c.alt, c.rho) / ks91(c.moonAlt, c.alt, c.rho); r < c.lo || r > c.hi {
 			t.Errorf("%+v: Winkler/K&S %v, want %v..%v", c, r, c.lo, c.hi)

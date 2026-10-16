@@ -25,11 +25,13 @@ func mutSB(t *testing.T, name string, tg Target, want float64, est bool) {
 func TestMutSurfaceBrightness(t *testing.T) {
 	gal := Target{Type: "Galaxy", Size: 10, Mag: 10}
 	mutSB(t, "derived V", gal, 10+mutDisc10, true)
+	mutSB(t, "derived ellipse", Target{Type: "Galaxy", Size: 10, Minor: 2.5, Mag: 10}, 10+mutDisc10-2.5*math.Log10(4), true)
 	mutSB(t, "derived 1'", Target{Type: "Galaxy", Size: 1, Mag: 12}, 12+2.5*math.Log10(math.Pi/4*3600), true)
 	mutSB(t, "V beats B", Target{Type: "Galaxy", Size: 10, Mag: 10, BMag: 11}, 10+mutDisc10, true)
 	mutSB(t, "unknown V, plausible-looking B-V", Target{Type: "Galaxy", BMag: 1, BSurfBr: 23}, 22.2, true)
 	mutSB(t, "derived B", Target{Type: "Galaxy", Size: 10, BMag: 11}, 11-0.8+mutDisc10, true)
-	mutSB(t, "derived B nebula", Target{Type: "Reflection Nebula", Size: 10, BMag: 11}, 11-0.5+mutDisc10, true)
+	mutSB(t, "derived B nebula", Target{Type: "Nebula", Size: 10, BMag: 11}, 11-0.5+mutDisc10, true)
+	mutSB(t, "reflection: the star's", Target{Type: "Reflection Nebula", Size: 10, BMag: 11}, 0, false)
 	mutSB(t, "derived B emission", Target{Type: "HII region", Size: 10, BMag: 11}, 11+mutDisc10, true)
 	mutSB(t, "measured V wins", Target{Type: "Galaxy", Size: 10, Mag: 10, SurfBr: 21.5, BSurfBr: 23}, 21.5, false)
 	mutSB(t, "own colour", Target{Type: "Galaxy", Mag: 10.2, BMag: 11, BSurfBr: 23}, 22.2, false)
@@ -96,8 +98,8 @@ func TestMutKind(t *testing.T) {
 			t.Errorf("kind(%q, %q) = %v, want %v", c.name, c.typ, got, c.want)
 		}
 	}
-	if (Target{Name: "M 16", Type: "Open Cluster"}).Cluster() || !(Target{Name: "M 11", Type: "Open Cluster"}).Cluster() {
-		t.Error("Cluster() wrong for M 16 / M 11")
+	if (Target{Name: "M 16", Type: "Open Cluster"}).kind() == kindCluster || (Target{Name: "M 11", Type: "Open Cluster"}).kind() != kindCluster {
+		t.Error("kind() wrong for M 16 / M 11")
 	}
 }
 

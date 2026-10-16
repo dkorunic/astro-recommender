@@ -284,9 +284,11 @@ func TestSubsNoCamera(t *testing.T) {
 	if e := Subs(cfg, s, never, 0); e != (Estimate{}) {
 		t.Errorf("never observable: %+v", e)
 	}
-	// Absurdly faint: capped, not an overflowed int.
+	// Absurdly faint in 1 ms subs: capped, not an overflowed int.
 	faint := expResult(t, cfg, s, expGalaxy(34))
-	if e := Subs(cfg, s, faint, 0); e.Best != maxSubs || e.Good <= 0 {
+	short := *cfg
+	short.Sub = 0.001 // config's minSub
+	if e := Subs(&short, s, faint, 0); e.Best != maxSubs || e.Good <= 0 {
 		t.Errorf("faint: %+v", e)
 	}
 	// An unknown surface brightness takes the class's typical one.
@@ -350,7 +352,7 @@ func TestSubsEmissionLines(t *testing.T) {
 	for i := range ch {
 		var want float64
 		for l, share := range lines {
-			want += g * share * imx678.Lines[l][i]
+			want += g * share * imx678.Line(catalog.Line(l))[i]
 		}
 		if math.Abs(ch[i].obj/want-1) > 1e-12 || math.Abs(ch[i].sky[0]/(g*imx678.Broad[i]*300/88)-1) > 1e-12 {
 			t.Errorf("unfiltered emission channel %d %+v, want object %v", i, ch[i], want)
@@ -381,7 +383,7 @@ func TestSubsEmissionLines(t *testing.T) {
 func TestSubsLineShare(t *testing.T) {
 	s := mutSky(141)
 	// Short subs keep the count large enough to resolve.
-	neb := catalog.Target{Name: "N", Type: "HII region", RADeg: 90.5, Size: 20, SurfBr: 16}
+	neb := catalog.Target{Name: "N", Type: "HII region", RADeg: 90.5, Size: 20, SurfBr: 18}
 	plain, quad := expCfg(), expCfg()
 	plain.Mono, plain.ReadNoise, plain.Sub = true, 0, 0.05
 	quad.Mono, quad.ReadNoise, quad.Sub, quad.Filter = true, 0, 0.05, "quad"
@@ -454,13 +456,13 @@ func TestSubsCloudedOut(t *testing.T) {
 // An emission-line target's V surface brightness measures its lines only as
 // far as the V passband reaches them, and its catalogue magnitude also counts
 // stars and continuum (vContinuum, fitted by scripts/calibrate_lines.py):
-// an H II region's lines are 1.27 mag brighter than its V, a planetary's,
-// [O III] inside V, about as bright; a galaxy's light is its V.
+// an H II region's lines are 1.66 mag brighter than its V, a planetary's,
+// [O III] inside V, 0.39; a galaxy's light is its V.
 func TestLightNL(t *testing.T) {
 	for _, c := range []struct {
 		typ   string
 		boost float64
-	}{{"HII region", 1.27}, {"Supernova Remnant", 1.02}, {"Wolf-Rayet Nebula", 0.41}, {"Planetary Nebula", -0.08}, {"Galaxy", 0}} {
+	}{{"HII region", 1.66}, {"Supernova Remnant", 1.37}, {"Wolf-Rayet Nebula", 0.81}, {"Planetary Nebula", 0.39}, {"Galaxy", 0}} {
 		tg := catalog.Target{Type: c.typ}
 		if got := atmos.MagFromNL(atmos.NanoLamberts(22)) - atmos.MagFromNL(lightNL(tg, 22)); math.Abs(got-c.boost) > 0.01 {
 			t.Errorf("%s: lines %.3f mag brighter than V, want %.2f", c.typ, got, c.boost)
@@ -507,7 +509,7 @@ func TestCalibrationSample(t *testing.T) {
 // all four would need far more; one that saw Hα on red only, 4x either way.
 func TestSubsBayerChannels(t *testing.T) {
 	s := mutSky(141)
-	neb := catalog.Target{Name: "N", Type: "HII region", RADeg: 90.5, Size: 20, SurfBr: 16}
+	neb := catalog.Target{Name: "N", Type: "HII region", RADeg: 90.5, Size: 20, SurfBr: 18}
 	var lin, sq float64
 	for i, share := range channelShare {
 		r := imx678.Lines[catalog.Ha][i]
@@ -526,7 +528,7 @@ func TestSubsBayerChannels(t *testing.T) {
 		r := expResult(t, colour, s, neb)
 		r.Filter = "ha"
 		if ratio := float64(Subs(colour, s, r, 0).Good) / float64(Subs(mono, s, r, 0).Good); math.Abs(ratio/c.want-1) > 0.025 {
-			t.Errorf("%s: colour needs %.2fx mono's subs through Hα, want %.2f", c.name, ratio, c.want)
+			t.Errorf("%s %d/%d: colour needs %.2fx mono's subs through Hα, want %.2f", c.name, Subs(colour, s, r, 0).Good, Subs(mono, s, r, 0).Good, ratio, c.want)
 		}
 	}
 }
@@ -668,5 +670,60 @@ func TestSubsResidualSeeing(t *testing.T) {
 	}
 	if good, poor := seeing(1), seeing(4); good >= poor {
 		t.Errorf("12\" planetary: %d subs under 1\", %d under 4\"", good, poor)
+	}
+}
+
+// The object is catalogued above the atmosphere and the sky measured on the
+// ground, so the estimate dims the object by the whole airmass, zenith
+// included (atmos.Absolute), not relative to the zenith as the score's
+// weights do. Object limited (SB 12, no read noise or residual), a sub's
+// SNR² goes as its signal: k = 0.25 against none is the mean of
+// 10^(−0.4·k·X) over the observable minutes.
+func TestSubsZenithExtinction(t *testing.T) {
+	cfg, s := expCfg(), mutSky(141)
+	cfg.ReadNoise, cfg.Residual = 0, 0
+	r := expResult(t, cfg, s, expGalaxy(12))
+	clear0 := Subs(cfg, s, r, 0)
+	const k = 0.25
+	var want float64
+	var n int
+	for i, up := range r.Obs {
+		s.Ext[i] = k
+		s.ExtRayleigh[i], s.ExtAerosol[i] = atmos.SplitExtinction(k)
+		if up {
+			want += atmos.Absolute(atmos.Airmass(r.Alt[i]), k)
+			n++
+		}
+	}
+	want /= float64(n)
+	got := Subs(cfg, s, r, 0)
+	if ratio := got.SNRPerSub * got.SNRPerSub / (clear0.SNRPerSub * clear0.SNRPerSub); math.Abs(ratio/want-1) > 2e-3 {
+		t.Errorf("SNR² ratio %.4f, want %.4f (zenith extinction %.4f)", ratio, want, atmos.Absolute(1, k))
+	}
+}
+
+// A good image of an object fainter than a pristine sky takes √ of its
+// brightness over the sky's of the levels' SNR, so its subs grow as 1/S,
+// not 1/S²; one brighter keeps the levels. An emission-line target's light
+// counts against the camera band, as in the score.
+func TestLevelScale(t *testing.T) {
+	ref := atmos.NanoLamberts(atmos.RefZenithMag)
+	gx := catalog.Target{Type: "Galaxy"}
+	for sb, want := range map[float64]float64{20: 1, atmos.RefZenithMag: 1, 24.5: atmos.NanoLamberts(24.5) / ref} {
+		if got := levelScale(gx, sb, ref); math.Abs(got/want-1) > 1e-9 {
+			t.Errorf("galaxy SB %v: %v, want %v", sb, got, want)
+		}
+	}
+	neb := catalog.Target{Type: "HII region"}
+	if got, want := levelScale(neb, 25, ref), lightNL(neb, 25)/atmos.CameraBand/ref; math.Abs(got/want-1) > 1e-9 {
+		t.Errorf("H II SB 25: %v, want %v", got, want)
+	}
+	// Through Subs: a 24.5 galaxy's SNR per sub reads √(1/scale) higher
+	// against the levels than the same stack would against fixed ones.
+	cfg, s := expCfg(), mutSky(141)
+	e := Subs(cfg, s, expResult(t, cfg, s, expGalaxy(24.5)), 0)
+	raw := Subs(cfg, s, expResult(t, cfg, s, expGalaxy(atmos.RefZenithMag)), 0)
+	if e.SNRPerSub <= 0 || raw.SNRPerSub <= 0 || e.Good >= raw.Good*12 {
+		t.Errorf("24.5 against 22.0: %d subs against %d, want under 12x (1/S², 100x, without the scale)", e.Good, raw.Good)
 	}
 }
