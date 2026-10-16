@@ -629,6 +629,18 @@ func SeeingLabel(s int) string {
 	return labels[s-1]
 }
 
+// SeeingArcsec returns a 7Timer seeing class's (1-8) FWHM in arcseconds,
+// the middle of its SeeingLabel range (2.75" for the open-ended >2.5"); 0
+// for any other value.
+func SeeingArcsec(s int) float64 {
+	mids := [...]float64{0.4, 0.625, 0.875, 1.125, 1.375, 1.75, 2.25, 2.75}
+	if s < 1 || s > len(mids) {
+		return 0
+	}
+
+	return mids[s-1]
+}
+
 // AerosolForecast fetches hourly aerosol optical depth at 550 nm (CAMS) from
 // the Open-Meteo Air Quality API, keyed by unix hour, plus the site elevation.
 func AerosolForecast(ctx context.Context, lat, lon float64, start, end time.Time) (map[int64]float64, float64, error) {

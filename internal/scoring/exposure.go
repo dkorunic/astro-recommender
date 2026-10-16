@@ -50,6 +50,19 @@ const (
 // Rayleigh moonlight.
 const broadQEMono = 0.8
 
+// An uncooled sensor runs sensorWarm (°C) above the air, its dark current
+// doubling every darkDoubling (ZWO's charts: the IMX585's and IMX676's at
+// 15-30 °C); subGap is the time between subs (download and the live stack,
+// s), which tonight's sub count (Estimate.Max) loses.
+// ponytail: sensorWarm from Seestar's note that its battery runs about 10 °C
+// above the air, in the same housing; no smart telescope publishes its
+// sensor's. -sensor-temp sets a cooled camera's.
+const (
+	sensorWarm   = 10.0
+	darkDoubling = 5.0
+	subGap       = 1.0
+)
+
 // maxSubs caps a count, so an absurdly faint object cannot overflow an int.
 const maxSubs = 1_000_000_000
 
@@ -59,33 +72,61 @@ type Estimate struct { // betteralign:ignore
 	Modest    int     `json:"modest"`                             // subs to shoot for Levels[0], per panel
 	Good      int     `json:"good"`                               // Levels[1]
 	Best      int     `json:"best"`                               // Levels[2]
-	Max       int     `json:"max"`                                // subs tonight's time allows per panel (with -plan, its blocks)
+	Max       int     `json:"max"`                                // subs tonight's time allows per panel (with -plan, its blocks), less the gaps between them and -reject's share
 	Sub       float64 `json:"sub"`                                // sub length, s
 	SNRPerSub float64 `json:"snrPerSub"`                          // per arcsec², √ of the mean SNR² the stack adds, weather included
+	SNRLimit  float64 `json:"snrLimit,omitempty"`                 // per arcsec², the most the stack reaches however many subs (-residual); 0 = none
 	Panels    int     `json:"panels"`                             // the mosaic the counts are per panel of
 	Assumed   bool    `json:"assumedSurfaceBrightness,omitempty"` // the surface brightness is its class's typical one
+}
+
+// Unreachable reports whether no number of subs reaches stacked SNR level
+// under the stack's ceiling (SNRLimit, -residual).
+func (e *Estimate) Unreachable(level float64) bool {
+	return e.SNRLimit > 0 && e.SNRLimit <= level
 }
 
 // camera is what the estimate needs of the telescope and camera.
 type camera struct {
 	response                        *config.Response // a colour sensor's, cfg.ColourResponse
+	dark                            []float64        // e⁻/s per pixel per grid minute; nil for none
+	seeing                          []float64        // Sky.Seeing
 	beam                            beam             // line filters' cone, beamOf
-	area, qe, readNoise, sub, omega float64          // cm², peak, e⁻, s, arcsec² per pixel
-	mono                            bool
+	area, qe, readNoise, sub, omega float64          // cm² (times the throughput), peak, e⁻, s, arcsec² per pixel
+	optics2, residual               float64          // the optics' and pixels' blur, FWHM² arcsec²; cfg.Residual
+	mono, mean                      bool             // mean: cfg.MeanStack
 }
 
-// newCamera returns cfg's camera; false without framing or with a
-// hand-built Config that does not describe one.
-func newCamera(cfg *config.Config) (camera, bool) {
+// newCamera returns cfg's camera under s's temperatures; false without
+// framing or with a hand-built Config that does not describe one (a zero
+// Throughput there is 1, a zero Dark none).
+func newCamera(cfg *config.Config, s *Sky) (camera, bool) {
 	if !cfg.Framing || cfg.Aperture <= cfg.Obstruction || cfg.Sub <= 0 || cfg.QE <= 0 || cfg.Scale <= 0 {
 		return camera{}, false
 	}
 	d, o := cfg.Aperture/10, cfg.Obstruction/10
-
-	return camera{
-		area: math.Pi / 4 * (d*d - o*o), qe: cfg.QE, readNoise: cfg.ReadNoise, sub: cfg.Sub,
+	c := camera{
+		area: math.Pi / 4 * (d*d - o*o) * cmp.Or(cfg.Throughput, 1), qe: cfg.QE, readNoise: cfg.ReadNoise, sub: cfg.Sub,
 		omega: cfg.Scale * cfg.Scale, mono: cfg.Mono, beam: beamOf(cfg), response: cfg.ColourResponse(),
-	}, true
+		mean: cfg.MeanStack, residual: cfg.Residual, seeing: s.Seeing,
+	}
+	// The diffraction FWHM, 1.03 λ/D at 550 nm, and a pixel's width, added
+	// in quadrature to the seeing.
+	diff := 1.03 * 550e-9 / (cfg.Aperture / 1000) * 206265
+	c.optics2 = diff*diff + cfg.Scale*cfg.Scale
+	if cfg.Dark > 0 && len(s.Temp) > 0 {
+		c.dark = make([]float64, len(s.Temp))
+		for i, t := range s.Temp {
+			if cfg.SensorTempSet {
+				t = cfg.SensorTemp
+			} else {
+				t += sensorWarm
+			}
+			c.dark[i] = cfg.Dark * math.Exp2((t-25)/darkDoubling)
+		}
+	}
+
+	return c, true
 }
 
 // channel is one set of pixels that see alike, which an optimally weighted
@@ -202,28 +243,124 @@ func inBands(nm float64, bands [][2]float64) bool {
 	return false
 }
 
-// perSub is one sub's SNR² per arcsec² for object and sky rates in e⁻/s
-// per pixel: S²/(S + B + RN²) over the sub, a pixel holding omega arcsec².
-// Dark current is left out.
-func (c camera) perSub(obj, sky float64) float64 {
-	sig := obj * c.sub
-
-	return sig * sig / (sig + sky*c.sub + c.readNoise*c.readNoise) / c.omega
+// stack sums what a target's stacked SNR needs over its observable minutes
+// (n), each weighted by the share q of its subs the weather lets through:
+// the optimally weighted stack's SNR² per pixel (snr2), and per channel the
+// object's e⁻ per sub per pixel (sig), their variance (noise: object, sky,
+// dark current and read noise) and the sky's alone (sky), which equal
+// weights and the residual need. Dark current is subtracted with a master
+// dark, whose own noise is left out.
+type stack struct {
+	sig, noise, sky [3]float64
+	snr2            float64
+	n               int
 }
 
-// minuteSNR2 is one minute's per-sub SNR² per arcsec² over chans: the
-// object's light obj (nanoLamberts, absolute, dimmed by its extinction)
-// under a sky of glow, rayleigh and mie; scoring chooses a filter by it, so
-// it must stay Subs' own.
-func (c camera) minuteSNR2(chans []channel, obj, glow, rayleigh, mie float64) float64 {
-	var snr2 float64
-	for _, ch := range chans {
-		if ch.obj > 0 {
-			snr2 += ch.share * c.perSub(ch.obj*obj, ch.sky[0]*glow+ch.sky[1]*rayleigh+ch.sky[2]*mie)
+// add counts grid minute i into st: the object's light obj (nanoLamberts,
+// absolute, dimmed by its extinction and blur) under a sky of glow,
+// rayleigh and mie, with that minute's dark current, the weather letting q
+// of its subs through. Scoring chooses a filter by it, so it must stay Subs'
+// own.
+func (c camera) add(st *stack, chans []channel, i int, q, obj, glow, rayleigh, mie float64) {
+	st.n++
+	var dark float64
+	if c.dark != nil {
+		dark = c.dark[i] * c.sub
+	}
+	rn2 := c.readNoise * c.readNoise
+	for j, ch := range chans {
+		if ch.obj <= 0 {
+			continue
+		}
+		sig := ch.obj * obj * c.sub
+		sky := (ch.sky[0]*glow + ch.sky[1]*rayleigh + ch.sky[2]*mie) * c.sub
+		v := sig + sky + dark + rn2
+		st.snr2 += q * ch.share * sig * sig / v
+		st.sig[j] += q * sig
+		st.noise[j] += q * v
+		st.sky[j] += q * sky
+	}
+}
+
+// rates returns what each sub the night allows adds to the stack's SNR² per
+// arcsec² (m) and the stack's ceiling (ceil, SNR² per arcsec², +Inf without
+// -residual). An optimally weighted stack adds each sub's SNR², S²/σ²; one
+// of equal weights (-stack mean) reaches (ΣS)²/Σσ², so a noisy sub dilutes
+// it rather than adding little. The residual, a share of the sky that flats
+// and gradient removal leave, does not average down and spans many pixels,
+// so it caps the SNR at S/(residual·B) whatever the pixel count; the
+// channels add by share, as the subs' SNR² do.
+func (c camera) rates(st *stack, chans []channel) (float64, float64) {
+	if st.n == 0 {
+		return 0, math.Inf(1)
+	}
+	m, ceil := st.snr2, 0.0
+	if c.mean {
+		m = 0
+		for j, ch := range chans {
+			if st.noise[j] > 0 {
+				m += ch.share * st.sig[j] * st.sig[j] / st.noise[j]
+			}
 		}
 	}
+	for j, ch := range chans {
+		if r := c.residual * st.sky[j]; r > 0 {
+			ceil += ch.share * (st.sig[j] / r) * (st.sig[j] / r)
+		}
+	}
+	if ceil == 0 {
+		ceil = math.Inf(1)
+	}
 
-	return snr2
+	return m / float64(st.n) / c.omega, ceil
+}
+
+// need is the subs a stack adding m per sub reaches level with under its
+// ceiling: 1/level² = 1/(N·m) + 1/ceil; maxSubs when it cannot.
+func need(level, m, ceil float64) int {
+	l2 := level * level
+	if m <= 0 || l2 >= ceil {
+		return maxSubs
+	}
+
+	return int(min(math.Ceil(l2/m/(1-l2/ceil)), maxSubs))
+}
+
+// subsGain orders the -filter choices by the subs the good level needs, most
+// gain first: m(1 - L²/ceil) is L²/N for a reachable level; an unreachable
+// one is negative, the higher ceiling ranking first.
+func subsGain(m, ceil float64) float64 {
+	l2 := Levels[1] * Levels[1]
+	if l2 >= ceil {
+		return ceil/l2 - 1
+	}
+
+	return m * (1 - l2/ceil)
+}
+
+// blur is the share of an object of axes a and b (arcseconds; 0: no size,
+// none) whose surface brightness survives minute i's blur at airmass air:
+// spread by a FWHM F of the seeing (as X^0.6), the optics' diffraction and
+// the pixels in quadrature, a uniform ellipse keeps about
+// ab/√((a²+F²)(b²+F²)) of it.
+func (c camera) blur(i int, air, a, b float64) float64 {
+	if a <= 0 || c.seeing == nil {
+		return 1
+	}
+	see := c.seeing[i] * math.Pow(air, 0.6)
+	f2 := see*see + c.optics2
+
+	return a * b / math.Sqrt((a*a+f2)*(b*b+f2))
+}
+
+// axesArcsec returns tg's axes in arcseconds for blur, 0 without a size.
+func axesArcsec(tg catalog.Target) (float64, float64) {
+	if !tg.HasSize() || tg.Track != nil {
+		return 0, 0
+	}
+	a, b := tg.Axes()
+
+	return a * 60, b * 60
 }
 
 // Subs estimates the subs r needs tonight through r.Filter for each of
@@ -237,7 +374,7 @@ func (c camera) minuteSNR2(chans []channel, obj, glow, rayleigh, mie float64) fl
 // observable minute; a night the weather loses entirely is maxSubs counts
 // with SNRPerSub 0.
 func Subs(cfg *config.Config, s *Sky, r Result, planned time.Duration) Estimate {
-	c, ok := newCamera(cfg)
+	c, ok := newCamera(cfg, s)
 	sb, assumed := r.ExposureSB()
 	if !ok || sb <= 0 {
 		return Estimate{}
@@ -272,11 +409,11 @@ func Subs(cfg *config.Config, s *Sky, r Result, planned time.Duration) Estimate 
 		lineRay, lineAer = all.ray-1, all.aer-1
 	}
 	objNL := lightNL(r.Target, sb)
+	ax, bx := axesArcsec(r.Target)
 	ra, dec, extra := where(s, r.Target)
 	hz := astro.NewHorizontal(cfg.Lat, dec)
 	unit := astro.Unit(ra, dec)
-	var snr2 float64
-	n := 0
+	var st stack
 	for i, up := range obs {
 		if !up {
 			continue
@@ -304,25 +441,27 @@ func Subs(cfg *config.Config, s *Sky, r Result, planned time.Duration) Estimate 
 		// The weather loses the minute's subs in proportion, so it weighs
 		// that minute's SNR², not the night's mean: cloud during the best
 		// minutes costs more than the same cloud during the worst.
-		snr2 += s.Quality[i] * c.minuteSNR2(chans, obj, glow, rayleigh, mie)
-		n++
+		c.add(&st, chans, i, s.Quality[i], obj*c.blur(i, air, ax, bx), glow, rayleigh, mie)
 	}
 	// A night the weather loses entirely still has its observable time: the
 	// counts hit maxSubs, past Max, rather than reading as no estimate.
-	if n == 0 {
+	if st.n == 0 {
 		return Estimate{}
 	}
-	mean := snr2 / float64(n)
+	m, ceil := c.rates(&st, chans)
 	panels := max(1, r.Mosaic.Panels())
-	minutes := float64(n)
+	minutes := float64(st.n)
 	if planned > 0 {
 		minutes = planned.Minutes()
 	}
-	need := func(level float64) int { return int(min(math.Ceil(level*level/mean), maxSubs)) }
+	var limit float64
+	if !math.IsInf(ceil, 1) {
+		limit = math.Sqrt(ceil)
+	}
 
 	return Estimate{
-		Modest: need(Levels[0]), Good: need(Levels[1]), Best: need(Levels[2]),
-		Max: int(minutes*60/c.sub) / panels, Sub: c.sub, SNRPerSub: math.Sqrt(mean),
+		Modest: need(Levels[0], m, ceil), Good: need(Levels[1], m, ceil), Best: need(Levels[2], m, ceil), SNRLimit: limit,
+		Max: int(minutes*60/(c.sub+subGap)*(1-cfg.Reject)) / panels, Sub: c.sub, SNRPerSub: math.Sqrt(m),
 		Panels: panels, Assumed: assumed,
 	}
 }

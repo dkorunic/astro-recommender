@@ -36,7 +36,7 @@ var usageGroups = []usageGroup{
 	{"Altitude and region", []string{"alt-min", "alt-max", "horizon", "ra", "dec", "tol"}},
 	{"Selection", []string{"type", "size-min", "size-max", "targets", "skip", "comet-mag"}},
 	{"Framing", []string{"focal", "camera", "fov", "sensor", "pixel", "scale", "min-px", "mosaic", "rotate"}},
-	{"Camera and exposure", []string{"aperture", "obstruction", "qe", "read-noise", "mono", "sub"}},
+	{"Camera and exposure", append(slices.Clone(cameraFlags), "mono")},
 	{"Sky and filters", []string{"extinction", "filter-nm", "filter-std"}},
 	{"Data sources", []string{"no-weather", "no-sqm", "no-geocode", "no-comets", "no-solar"}},
 	{"Output", []string{"csv", "json", "version"}},

@@ -39,6 +39,10 @@ const minScale, maxScale = 0.01, 1000.0
 // or the per-sub SNR does, and no camera takes such subs.
 const minSub, maxSub = 0.001, 3600.0
 
+// maxDark bounds -dark, e⁻/s per pixel at 25 °C: ten times the warmest
+// preset's, past which it is a typo (e⁻/min, or a hot pixel's).
+const maxDark = 10.0
+
 // maxMosaic bounds -mosaic; mosaicOverlap is the fraction of a frame side
 // shared with the next panel, for registration.
 const (
@@ -82,6 +86,11 @@ type Config struct {
 	Sub            float64 // s, sub-exposure length
 	QE             float64 // the camera's peak quantum efficiency, 0-1
 	ReadNoise      float64 // e⁻ per pixel per sub
+	Throughput     float64 // the optics' share of the light reaching the sensor, 0-1; 0 in a hand-built Config is 1
+	Dark           float64 // e⁻/s per pixel at a sensor temperature of 25 °C
+	SensorTemp     float64 // °C, a cooled camera's setpoint; see SensorTempSet
+	Reject         float64 // the share of subs lost to tracking, satellites and wind, 0-0.9
+	Residual       float64 // -residual: flats' and gradients' residual, a share of the sky the stack keeps; 0 = none
 	Top            int
 	Mosaic         int // -mosaic: most panels per object, 1 = single frame
 	Bortle         int
@@ -98,6 +107,8 @@ type Config struct {
 	Framing        bool    // -scope, -fov, -scale or -focal with -sensor/-pixel: fit and score objects against the frame
 	Rotate         bool    // -rotate: the camera turns to put an object's major axis along the frame's long side
 	Mono           bool    // -mono: a monochrome camera, every pixel sees every band
+	SensorTempSet  bool    // -sensor-temp given: the sensor is held there, else ambient + scoring's sensorWarm
+	MeanStack      bool    // -stack mean: subs averaged with equal weight (smart telescopes' live stacks), else weighted by SNR²
 	NoWeather      bool
 	NoGeocode      bool
 	NoSQM          bool
@@ -113,6 +124,7 @@ func Parse() (Config, error) {
 	var focal, pixel float64
 	var camera, scopeName string
 	var filterStd bool
+	var stack string
 	var horizonFile string
 	var ra, dec, types string
 	flag.Float64Var(&cfg.Lat, "lat", 0, "latitude in degrees, north positive (required)")
@@ -152,6 +164,12 @@ func Parse() (Config, error) {
 	flag.Float64Var(&cfg.Sub, "sub", 0, "with framing, the sub-exposure length in seconds, 0.001-3600; Origin 10, -scope's")
 	flag.Float64Var(&cfg.QE, "qe", 0, "with framing, the camera's peak quantum efficiency, above 0 and at most 1; Origin (IMX678) 0.83")
 	flag.Float64Var(&cfg.ReadNoise, "read-noise", 0, "with framing, the camera's read noise in electrons, 0 or more; Origin (IMX678) 2.15")
+	flag.Float64Var(&cfg.Throughput, "throughput", 0, "with framing, the share of the light the telescope's optics pass, above 0 and at most 1; a refractor 0.88, a prime-focus mirror (Origin) 0.81, another telescope (-aperture) 0.85")
+	flag.Float64Var(&cfg.Dark, "dark", 0, "with framing, the camera's dark current in e⁻/s per pixel at a sensor temperature of 25 °C, doubling every 5 °C; the -camera or -scope chip's from its maker's chart, else 0.16")
+	flag.Float64Var(&cfg.SensorTemp, "sensor-temp", 0, "with framing, a cooled camera's sensor temperature in °C, -60 to 60; without it the sensor is uncooled, 10 °C above the forecast air")
+	flag.Float64Var(&cfg.Reject, "reject", 0.15, "with framing, the share of subs discarded (tracking, satellites, wind), 0-0.9, which tonight's time must make up")
+	flag.StringVar(&stack, "stack", "", "with framing, how the subs are stacked: mean (equal weights, as smart telescopes' live stacks; the default with -scope) or weighted (by each sub's SNR², as PixInsight or Siril can; the default otherwise)")
+	flag.Float64Var(&cfg.Residual, "residual", 0.002, "with framing, what flats and gradient removal leave of the sky in the stack, a share 0-0.05, which caps its SNR however many subs (0 = none)")
 	flag.BoolVar(&cfg.Mono, "mono", false, "with framing, the camera is monochrome, so every pixel sees every filter band; not with -scope, whose cameras are colour")
 	flag.StringVar(&cfg.Filter, "filter", "", "filters you own, comma-separated: for emission-line targets dual (Ha + OIII at once), tri (+ Hb), quad (+ Hb and SII), ha, oiii, sii; broadband light pollution filters cls (Astronomik CLS) and lpro (Optolong L-Pro) for any target; each target is scored without and with each worn all night, and FILTER shows the one that gains it most (with framing, the one SUBS needs fewest subs through) (default none)")
 	flag.Float64Var(&cfg.FilterNM, "filter-nm", 7, "with -filter, the width of each line filter band in nm, 1-30")
@@ -209,6 +227,10 @@ func Parse() (Config, error) {
 
 	if err := cfg.validateFlags(set); err != nil {
 		return Config{}, err
+	}
+	cfg.MeanStack = stack == "mean" || stack == "" && cfg.Scope != ""
+	if stack != "" && stack != "mean" && stack != "weighted" {
+		return Config{}, fmt.Errorf("%w: -stack must be mean or weighted", errInvalidFlag)
 	}
 	if err := cfg.beam(set, filterStd, focal, base); err != nil {
 		return Config{}, err
@@ -532,16 +554,20 @@ func (cfg *Config) frameSizes(set map[string]bool, minPx float64) error {
 	return nil
 }
 
+// cameraFlags are the sub-exposure flags, besides -mono, that need framing.
+// Their order is -h's ("Camera and exposure").
+var cameraFlags = []string{"aperture", "obstruction", "throughput", "qe", "read-noise", "dark", "sensor-temp", "sub", "reject", "stack", "residual"}
+
 // camera checks the sub-exposure flags, which need framing like -mosaic,
 // and fills the base scope's values for those not given (its camera's QE
 // and read noise, 0 for none, which leaves SUBS out), -camera's preset's QE
 // and read noise when given; -aperture alone describes another telescope,
 // so its obstruction is then 0.
 func (cfg *Config) camera(set map[string]bool, preset *Variant, base Scope) error {
-	given := set["aperture"] || set["obstruction"] || set["sub"] || set["qe"] || set["read-noise"] || cfg.Mono
+	given := cfg.Mono || slices.ContainsFunc(cameraFlags, func(f string) bool { return set[f] })
 	if !cfg.Framing {
 		if given {
-			return fmt.Errorf("%w: -aperture, -obstruction, -sub, -qe, -read-noise and -mono need framing (-scope, -fov, -scale or -focal)", errInvalidFlag)
+			return fmt.Errorf("%w: -aperture, -obstruction, -sub, -qe, -read-noise, -mono, -throughput, -dark, -sensor-temp, -reject, -stack and -residual need framing (-scope, -fov, -scale or -focal)", errInvalidFlag)
 		}
 
 		return nil
@@ -587,6 +613,37 @@ func (cfg *Config) camera(set map[string]bool, preset *Variant, base Scope) erro
 		return fmt.Errorf("%w: -qe must be above 0 and at most 1", errInvalidFlag)
 	case cfg.ReadNoise < 0:
 		return fmt.Errorf("%w: -read-noise must be 0 or more", errInvalidFlag)
+	}
+
+	return cfg.losses(set, base)
+}
+
+// losses fills and checks what the sub-exposure estimate loses on the way:
+// the optics' throughput (the base scope's by design, another telescope's
+// with -aperture), the dark current (the chip's, -camera's or the base
+// scope's, else typicalDark), -sensor-temp, -reject and -residual.
+func (cfg *Config) losses(set map[string]bool, base Scope) error {
+	if !set["throughput"] {
+		cfg.Throughput = base.throughput()
+		if set["aperture"] {
+			cfg.Throughput = throughputOther
+		}
+	}
+	if !set["dark"] {
+		cfg.Dark = cmp.Or(Cameras[cmp.Or(cfg.Camera, base.Camera)].Dark, typicalDark)
+	}
+	cfg.SensorTempSet = set["sensor-temp"]
+	switch {
+	case cfg.Throughput <= 0 || cfg.Throughput > 1:
+		return fmt.Errorf("%w: -throughput must be above 0 and at most 1", errInvalidFlag)
+	case cfg.Dark < 0 || cfg.Dark > maxDark:
+		return fmt.Errorf("%w: -dark must be 0 to %g e⁻/s per pixel", errInvalidFlag, maxDark)
+	case cfg.SensorTemp < -60 || cfg.SensorTemp > 60:
+		return fmt.Errorf("%w: -sensor-temp must be -60 to 60 °C", errInvalidFlag)
+	case cfg.Reject < 0 || cfg.Reject > 0.9:
+		return fmt.Errorf("%w: -reject must be 0 to 0.9", errInvalidFlag)
+	case cfg.Residual < 0 || cfg.Residual > 0.05:
+		return fmt.Errorf("%w: -residual must be 0 to 0.05", errInvalidFlag)
 	}
 
 	return nil
@@ -714,14 +771,20 @@ func frameFOV(set map[string]bool, fov, sensor string, focal float64, base Scope
 }
 
 // frameScale returns the pixel scale in arc seconds per pixel from -scale, or
-// -pixel (µm) at -focal (mm, validated by frameFOV), or the base scope's.
+// -pixel (µm, else the base scope's with -focal) at -focal (mm, validated by
+// frameFOV), or the base scope's.
 func frameScale(set map[string]bool, scale, pixel, focal float64, base Scope) (float64, error) {
 	switch {
 	case set["scale"] && set["pixel"]:
 		return 0, fmt.Errorf("%w: give either -scale or -focal with -pixel, not both", errInvalidFlag)
 	case set["pixel"] && pixel <= 0:
 		return 0, fmt.Errorf("%w: -pixel must be above 0 µm", errInvalidFlag)
-	case set["pixel"]:
+	case set["pixel"] || !set["scale"] && set["focal"]:
+		// -focal with -sensor alone keeps the base scope's pixels, as -pixel
+		// alone keeps its sensor: the scale must follow the focal length.
+		if !set["pixel"] {
+			pixel = base.Pixel
+		}
 		if scale = pixelScale(pixel, focal); scale < minScale || scale > maxScale {
 			return 0, fmt.Errorf("%w: -pixel %g µm at -focal %g mm is %.3g\"/px, outside %g-%g", errInvalidFlag, pixel, focal, scale, minScale, maxScale)
 		}

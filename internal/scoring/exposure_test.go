@@ -58,7 +58,7 @@ func TestChannelsReuse(t *testing.T) {
 	cfg := expCfg()
 	for _, mono := range []bool{false, true} {
 		cfg.Mono = mono
-		c, _ := newCamera(cfg)
+		c, _ := newCamera(cfg, &Sky{})
 		// Every channel non-zero, and three of them even for mono.
 		dirty := c.channels(nil, "", 7, catalog.Target{Type: "HII region"}.Lines(), filterPass{})
 		dirty = append(dirty[:0:0], dirty[0], dirty[0], dirty[0])
@@ -79,7 +79,7 @@ func TestChannelsReuse(t *testing.T) {
 // per nanoLambert for the Origin, unfiltered, colour, each channel at its
 // own mean response over the camera band.
 func TestCameraGain(t *testing.T) {
-	c, ok := newCamera(expCfg())
+	c, ok := newCamera(expCfg(), &Sky{})
 	if !ok {
 		t.Fatal("no camera")
 	}
@@ -100,7 +100,7 @@ func TestCameraGain(t *testing.T) {
 	// every pixel at the mono response.
 	cfg := expCfg()
 	cfg.Mono = true
-	mono, _ := newCamera(cfg)
+	mono, _ := newCamera(cfg, &Sky{})
 	ha := [catalog.NumLines]float64{catalog.Ha: 1}
 	col, mon := c.channels(nil, "ha", 7, ha, filterPass{}), mono.channels(nil, "ha", 7, ha, filterPass{})
 	if len(mon) != 1 || mon[0].share != 1 || math.Abs(mon[0].obj/(g*0.95)-1) > 1e-9 || col[red].share != 0.25 {
@@ -150,8 +150,9 @@ func TestSubsReality(t *testing.T) {
 	if e.Modest >= e.Good || e.Good >= e.Best || e.Best < 15*e.Modest || e.Best > 17*e.Modest {
 		t.Errorf("levels %+v: best should be 16x modest (SNR 20 vs 5)", e)
 	}
-	// 90 observable minutes (altitude 30-80°: minutes 31-80 and 101-140) of 15 s subs.
-	if e.Max != 90*60/15 || e.Panels != 1 || e.Assumed {
+	// 90 observable minutes (altitude 30-80°: minutes 31-80 and 101-140) of
+	// 15 s subs, each followed by subGap.
+	if e.Max != int(math.Floor(90*60/(15+subGap))) || e.Panels != 1 || e.Assumed {
 		t.Errorf("%+v", e)
 	}
 }
@@ -257,7 +258,7 @@ func TestSubsMosaicAndPlan(t *testing.T) {
 		t.Errorf("mosaic %+v, single %+v", two, single)
 	}
 	r.Mosaic = config.Mosaic{}
-	if e := Subs(cfg, s, r, time.Hour); e.Max != 240 || e.Good != single.Good {
+	if e := Subs(cfg, s, r, time.Hour); e.Max != int(math.Floor(3600/(15+subGap))) || e.Good != single.Good {
 		t.Errorf("planned hour: %+v", e)
 	}
 }
@@ -342,7 +343,7 @@ func TestInBands(t *testing.T) {
 // the lines' response, and through a dual-band filter under the Moon the
 // Origin needs fewer subs than without, as scoring's FILTER choice says.
 func TestSubsEmissionLines(t *testing.T) {
-	c, _ := newCamera(expCfg())
+	c, _ := newCamera(expCfg(), &Sky{})
 	lines := catalog.Target{Type: "HII region"}.Lines()
 	ch := c.channels(nil, "", 7, lines, filterPass{})
 	g := c.area * c.qe * c.omega * photonsV0 / atmos.NanoLamberts(0)
@@ -532,3 +533,140 @@ func TestSubsBayerChannels(t *testing.T) {
 
 // imx678 is the default colour response, the Origin's sensor's.
 var imx678 = (&config.Config{}).ColourResponse()
+
+// Dark current adds to each pixel's noise as the sky does, doubling every
+// darkDoubling from 25 °C: an uncooled sensor sensorWarm above the air, a
+// cooled one at -sensor-temp, where it all but vanishes.
+func TestSubsDarkCurrent(t *testing.T) {
+	cfg, s := expCfg(), mutSky(141)
+	r := expResult(t, cfg, s, expGalaxy(22))
+	none := Subs(cfg, s, r, 0).Best
+	cfg.Dark = 0.25
+	at := func(temp float64) int {
+		s.Temp = make([]float64, len(s.Grid))
+		for i := range s.Temp {
+			s.Temp[i] = temp
+		}
+
+		return Subs(cfg, s, r, 0).Best
+	}
+	cool, warm := at(5), at(25)
+	if none >= cool || cool >= warm {
+		t.Errorf("best: no dark %d, 5 °C %d, 25 °C %d", none, cool, warm)
+	}
+	c, _ := newCamera(cfg, s)
+	if want := 0.25 * math.Exp2((25+sensorWarm-25)/darkDoubling); math.Abs(c.dark[0]/want-1) > 1e-12 {
+		t.Errorf("dark at 25 °C air %v, want %v", c.dark[0], want)
+	}
+	cfg.SensorTemp, cfg.SensorTempSet = -20, true
+	if cooled := at(25); math.Abs(float64(cooled)/float64(none)-1) > 0.01 {
+		t.Errorf("cooled to -20 °C: %d, no dark %d", cooled, none)
+	}
+	// A hand-built Sky without temperatures has no dark current.
+	if c, _ := newCamera(cfg, &Sky{}); c.dark != nil {
+		t.Errorf("dark without temperatures: %v", c.dark)
+	}
+}
+
+// The throughput scales the collecting area; -reject and subGap only the
+// subs tonight allows, never the count a level needs.
+func TestSubsThroughputReject(t *testing.T) {
+	cfg, s := expCfg(), mutSky(141)
+	r := expResult(t, cfg, s, expGalaxy(22))
+	full := Subs(cfg, s, r, 0)
+	cfg.Throughput = 0.5
+	half := Subs(cfg, s, r, 0)
+	if half.SNRPerSub >= full.SNRPerSub*0.75 || half.Good <= full.Good {
+		t.Errorf("throughput 0.5: %+v, 1: %+v", half, full)
+	}
+	cfg.Throughput, cfg.Reject = 0, 0.2
+	if e := Subs(cfg, s, r, 0); e.Good != full.Good || e.Max != int(math.Floor(90*60/(15+subGap)*0.8)) {
+		t.Errorf("reject 0.2: %+v, none %+v", e, full)
+	}
+}
+
+// Equal weights reach (ΣS)²/Σσ², so a noisy sub dilutes the stack where an
+// optimally weighted one adds S²/σ²; the residual caps the SNR at
+// S/(residual·B), and need solves 1/L² = 1/(N·m) + 1/ceil.
+func TestStackRates(t *testing.T) {
+	chans := []channel{{share: 1}}
+	// Two minutes of S = 10: σ² 20 (dark) and 180 (moonlit), 2000 e⁻ of sky.
+	st := stack{n: 2, snr2: 100.0/20 + 100.0/180, sig: [3]float64{20}, noise: [3]float64{200}, sky: [3]float64{2000}}
+	c := camera{omega: 1}
+	if m, ceil := c.rates(&st, chans); math.Abs(m-(100.0/20+100.0/180)/2) > 1e-12 || !math.IsInf(ceil, 1) {
+		t.Errorf("weighted: m %v, ceil %v", m, ceil)
+	}
+	c.mean = true
+	if m, _ := c.rates(&st, chans); math.Abs(m-400.0/200/2) > 1e-12 {
+		t.Errorf("mean: m %v, want 1", m)
+	}
+	// 1% of 1000 e⁻ of sky per sub against 10 e⁻ of object: SNR 1 at most.
+	c.residual = 0.01
+	if _, ceil := c.rates(&st, chans); math.Abs(ceil-1) > 1e-12 {
+		t.Errorf("ceil %v, want 1", ceil)
+	}
+	if n := need(10, 1, 400); n != 134 {
+		t.Errorf("need(10, 1, 400) = %d, want 134", n)
+	}
+	if need(10, 1, 100) != maxSubs || need(10, 0, math.Inf(1)) != maxSubs || need(10, 1, math.Inf(1)) != 100 {
+		t.Error("need at and past the ceiling, or without signal, must be maxSubs")
+	}
+	// A reachable level always beats an unreachable one, and among those
+	// the higher ceiling wins.
+	if subsGain(0.01, 101) <= 0 || subsGain(5, 50) >= 0 || subsGain(5, 50) <= subsGain(5, 20) {
+		t.Errorf("subsGain: %v, %v, %v", subsGain(0.01, 101), subsGain(5, 50), subsGain(5, 20))
+	}
+}
+
+// The blur keeps a large object's surface brightness, halves a disc as wide
+// as the FWHM and grows with the airmass (X^0.6).
+func TestBlur(t *testing.T) {
+	c := camera{seeing: []float64{2}}
+	if f := c.blur(0, 1, 600, 600); f < 0.9999 {
+		t.Errorf("10' disc: %v", f)
+	}
+	if f := c.blur(0, 1, 2, 2); math.Abs(f-0.5) > 1e-12 {
+		t.Errorf("2\" disc under 2\": %v, want 0.5", f)
+	}
+	if c.blur(0, 2, 2, 2) >= c.blur(0, 1, 2, 2) || c.blur(0, 1, 0, 0) != 1 {
+		t.Error("blur must grow with airmass, and leave a sizeless object")
+	}
+	c.optics2 = 4
+	if f := c.blur(0, 1, 2, 2); math.Abs(f-4.0/12) > 1e-12 {
+		t.Errorf("with 2\" optics: %v, want 1/3", f)
+	}
+}
+
+// Through Subs: the residual caps a faint galaxy under a bright sky (a
+// finite SNRLimit, more subs, unreachable past it), and a small planetary
+// needs more subs under worse seeing.
+func TestSubsResidualSeeing(t *testing.T) {
+	cfg, s := expCfg(), mutSky(141)
+	s.ZenithNL = atmos.NanoLamberts(18)
+	r := expResult(t, cfg, s, expGalaxy(22))
+	free := Subs(cfg, s, r, 0)
+	cfg.Residual = 0.002
+	capped := Subs(cfg, s, r, 0)
+	if free.SNRLimit != 0 || capped.SNRLimit <= 0 || capped.Good <= free.Good {
+		t.Errorf("residual: %+v, none %+v", capped, free)
+	}
+	cfg.Residual = 0.05
+	if e := Subs(cfg, s, r, 0); e.Good != maxSubs || e.SNRLimit >= Levels[1] {
+		t.Errorf("residual 5%%: %+v", e)
+	}
+	cfg.Residual = 0
+	cfg.SizeMin = 0
+	pn := catalog.Target{Name: "P", Type: "Planetary Nebula", RADeg: 90.5, Size: 0.2, SurfBr: 20}
+	pr := expResult(t, cfg, s, pn)
+	seeing := func(fwhm float64) int {
+		s.Seeing = make([]float64, len(s.Grid))
+		for i := range s.Seeing {
+			s.Seeing[i] = fwhm
+		}
+
+		return Subs(cfg, s, pr, 0).Good
+	}
+	if good, poor := seeing(1), seeing(4); good >= poor {
+		t.Errorf("12\" planetary: %d subs under 1\", %d under 4\"", good, poor)
+	}
+}

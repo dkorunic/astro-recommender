@@ -599,6 +599,10 @@ func subsText(e *scoring.Estimate) (string, string) {
 	if e == nil {
 		return "39", "-"
 	}
+	// Past the stack's ceiling (-residual) no number of subs reaches it.
+	if e.Unreachable(scoring.Levels[1]) {
+		return "33", "never"
+	}
 	// Past what tonight allows, the nights like tonight it takes: what a
 	// small scope stacks across, where every row's >N would read alike. The
 	// count is tonight's limit, which no assumed surface brightness enters,
@@ -849,7 +853,7 @@ var resultColumns = []column{
 	{"SB", "object surface brightness, mag/arcsec² (higher is fainter)"},
 	{filterColumn, "the filter of yours that helps most, worn all night"},
 	{pxColumn, "size in pixels (NxM: mosaic panels needed)"},
-	{subsColumn, "-sub second subs for a good image, per panel; N nights: more than tonight fits"},
+	{subsColumn, "-sub second subs for a good image, per panel; N nights: more than tonight fits; never: past what flats leave of the sky"},
 }
 
 // columns returns cols without FILTER when there is no -filter and without

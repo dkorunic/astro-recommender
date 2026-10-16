@@ -443,14 +443,17 @@ function showSubs(e) {
   const box = $("subs");
   if (!e) { box.hidden = true; return; }
   const dur = (n) => { const m = n * e.sub / 60; return m < 60 ? `${Math.max(1, Math.round(m))} min` : `${(m / 60).toFixed(1)} h`; };
-  const lvl = (name, n) => `<span class="lvl${n > e.max ? " over" : ""}">${name} ${n} (${dur(n)})</span>`;
+  // Past snrLimit (-residual: what flats leave of the sky) no count reaches a level.
+  const lvl = (name, n, snr) => e.snrLimit && e.snrLimit <= snr ? `<span class="lvl over">${name} never</span>` :
+    `<span class="lvl${n > e.max ? " over" : ""}">${name} ${n} (${dur(n)})</span>`;
   const nights = (x) => !e.max ? "no sub fits tonight" : x < 9.95 ? `${x.toFixed(1)} nights like tonight` :
     x < 99.5 ? `${Math.round(x)} nights like tonight` : "over 99 nights like tonight";
   // snrPerSub 0: the forecast loses every sub, and the counts are only a cap.
   box.innerHTML = !e.snrPerSub ? `Subs of ${e.sub} s: none tonight, the forecast loses them all` :
-    (e.good > e.max ? `<span class="lead">Good image: ${nights(e.good / e.max)}</span>` : "") +
+    (e.snrLimit && e.snrLimit <= 10 ? `<span class="lead">Good image: never, the stack stops at SNR ${e.snrLimit.toFixed(1)}</span>` :
+      e.good > e.max ? `<span class="lead">Good image: ${nights(e.good / e.max)}</span>` : "") +
     `Subs of ${e.sub} s${e.panels > 1 ? `, per panel of ${e.panels}` : ""}${e.assumedSurfaceBrightness ? ", typical SB" : ""}, ${e.max} fit tonight:<br>` +
-    `${lvl("modest", e.modest)} · ${lvl("good", e.good)} · ${lvl("best", e.best)}`;
+    `${lvl("modest", e.modest, 5)} · ${lvl("good", e.good, 10)} · ${lvl("best", e.best, 20)}`;
   box.hidden = false;
 }
 

@@ -5,6 +5,7 @@ package config
 
 import (
 	"math"
+	"slices"
 	"strings"
 	"testing"
 
@@ -99,5 +100,89 @@ func TestCameraFlag(t *testing.T) {
 	}
 	if cfg, _ := mutParse(t, mutBase("-fov", "2x1")...); cfg.ColourResponse() != &imx678 || cfg.CameraLabel() != "" || cfg.ScopeLabel() != "" {
 		t.Error("a camera given by -fov alone is not the IMX678's")
+	}
+}
+
+// typicalDark is the median of the charted chips' dark currents, each die
+// once (the IMX492 is the IMX294's).
+func TestTypicalDark(t *testing.T) {
+	var darks []float64
+	for key, s := range Cameras {
+		if s.Dark > 0 && key != "imx492" {
+			darks = append(darks, s.Dark)
+		}
+	}
+	slices.Sort(darks)
+	n := len(darks)
+	if median := (darks[(n-1)/2] + darks[n/2]) / 2; math.Abs(median-typicalDark) > 0.005 {
+		t.Errorf("median of %v = %v, typicalDark %v", darks, median, typicalDark)
+	}
+}
+
+// The throughput and dark current defaults: the scope's design and chip, a
+// typical chip's without a chart, another telescope's with -aperture, the
+// flags' own when given.
+func TestCameraDefaults(t *testing.T) {
+	for _, tc := range []struct {
+		args             []string
+		throughput, dark float64
+	}{
+		{[]string{"-scope", "origin"}, throughputMirror, typicalDark},
+		{[]string{"-scope", "seestar-s30-pro"}, throughputLens, 0.25},
+		{[]string{"-scope", "origin", "-aperture", "200"}, throughputOther, typicalDark},
+		{[]string{"-camera", "imx571", "-focal", "400", "-aperture", "80"}, throughputOther, 0.065},
+		{[]string{"-scope", "origin", "-throughput", "0.7", "-dark", "0"}, 0.7, 0},
+	} {
+		cfg, err := mutParse(t, mutBase(tc.args...)...)
+		if err != nil {
+			t.Fatalf("%v: %v", tc.args, err)
+		}
+		if cfg.Throughput != tc.throughput || cfg.Dark != tc.dark || cfg.SensorTempSet || cfg.Reject != 0.15 {
+			t.Errorf("%v: throughput %v, dark %v, sensor-temp set %v, reject %v", tc.args, cfg.Throughput, cfg.Dark, cfg.SensorTempSet, cfg.Reject)
+		}
+	}
+	for _, args := range [][]string{
+		{"-scope", "origin", "-throughput", "0"},
+		{"-scope", "origin", "-throughput", "1.1"},
+		{"-scope", "origin", "-dark", "-1"},
+		{"-scope", "origin", "-dark", "60"},
+		{"-scope", "origin", "-sensor-temp", "-80"},
+		{"-scope", "origin", "-reject", "0.95"},
+		{"-reject", "0.1"},
+	} {
+		if _, err := mutParse(t, mutBase(args...)...); err == nil {
+			t.Errorf("%v: no error", args)
+		}
+	}
+	if cfg, err := mutParse(t, mutBase("-scope", "origin", "-sensor-temp", "-10")...); err != nil || !cfg.SensorTempSet || cfg.SensorTemp != -10 {
+		t.Errorf("-sensor-temp -10: %+v, %v", cfg.SensorTemp, err)
+	}
+}
+
+// -stack defaults to mean with -scope (smart telescopes' live stacks) and
+// to weighted otherwise; -residual is bounded.
+func TestStackDefaults(t *testing.T) {
+	for _, tc := range []struct {
+		args []string
+		mean bool
+	}{
+		{[]string{"-scope", "seestar-s50"}, true},
+		{[]string{"-fov", "2x1.5", "-scale", "2"}, false},
+		{[]string{"-scope", "origin", "-stack", "weighted"}, false},
+		{[]string{"-camera", "imx571", "-focal", "400", "-aperture", "80", "-stack", "mean"}, true},
+	} {
+		cfg, err := mutParse(t, mutBase(tc.args...)...)
+		if err != nil || cfg.MeanStack != tc.mean || cfg.Residual != 0.002 {
+			t.Errorf("%v: mean %v, residual %v, %v", tc.args, cfg.MeanStack, cfg.Residual, err)
+		}
+	}
+	for _, args := range [][]string{
+		{"-scope", "origin", "-stack", "median"},
+		{"-scope", "origin", "-residual", "0.1"},
+		{"-residual", "0.01"},
+	} {
+		if _, err := mutParse(t, mutBase(args...)...); err == nil {
+			t.Errorf("%v: no error", args)
+		}
 	}
 }

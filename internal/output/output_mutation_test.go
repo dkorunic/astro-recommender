@@ -685,6 +685,9 @@ func TestMutSubsText(t *testing.T) {
 		{&scoring.Estimate{Good: 39_799, Max: 400}, "33", "99 nights"},
 		{&scoring.Estimate{Good: 1_000_000_000, Max: 400}, "33", ">99 nights"},
 		{&scoring.Estimate{Good: 5, Max: 0}, "33", ">0"},
+		{&scoring.Estimate{Good: 1_000_000_000, Max: 400, SNRLimit: 9.5}, "33", "never"},
+		{&scoring.Estimate{Good: 1_000_000_000, Max: 400, SNRLimit: 10}, "33", "never"},
+		{&scoring.Estimate{Good: 300, Max: 400, SNRLimit: 14}, "39", "300"},
 	} {
 		if code, text := subsText(c.e); code != c.code || text != c.text {
 			t.Errorf("%+v: %q %q, want %q %q", c.e, code, text, c.code, c.text)

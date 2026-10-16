@@ -4,6 +4,7 @@
 package scoring
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"math"
@@ -37,6 +38,8 @@ type Sky struct {
 	ExtAerosol  []float64    // its aerosol part, scaled as λ^-1.3
 	MoonLight   []atmos.Moon // atmos.MoonLight per grid minute
 	Quality     []float64    // clear-sky fraction x rain x dew x gust x transparency, 1 = perfect
+	Temp        []float64    // air temperature per grid minute, °C: the forecast's, its mean where it has none, nightTemp without one
+	Seeing      []float64    // zenith seeing per grid minute, FWHM arcsec at 500 nm: 7Timer's, else the upper-air estimate, else typicalSeeing
 	Elevation   float64      // site elevation in m, from Open-Meteo; NaN if unknown
 	SunLon      float64      // the Sun's ecliptic longitude at mid-window, degrees, for the zodiacal light
 	Illum       float64
@@ -208,6 +211,8 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 	s.MoonLight = make([]atmos.Moon, len(s.Grid))
 	// Weather and transparency per minute; ok marks the minutes each forecast covers.
 	sky, skyOK := make([]float64, len(s.Grid)), make([]bool, len(s.Grid))
+	s.Temp = make([]float64, len(s.Grid))
+	s.Seeing = make([]float64, len(s.Grid))
 	transp, transpOK := make([]float64, len(s.Grid)), make([]bool, len(s.Grid))
 	for i, t := range s.Grid {
 		s.Ext[i] = s.ExtinctionAt(t, cfg.Extinction)
@@ -219,6 +224,7 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 			// in the hour) all of them, whatever the cloud layers say. Like cloud it
 			// weighs the score only: FOTO and the observable runs are geometric.
 			sky[i] = (1 - h.Cloud/100) * ramp(h.Temp-h.DewPoint, 4, 1, 0.7) * ramp(h.Gust, 20, 40, 0.5)
+			s.Temp[i] = h.Temp
 			if h.Precip > 0 { // NaN (unknown) does not gate
 				sky[i] *= ramp(h.Precip, 0, weather.RainGate, 0)
 			}
@@ -227,9 +233,14 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 		if a, ok := s.Astro[weather.AstroKey(t)]; ok {
 			transp[i] = ramp(float64(a.Transparency), 1, 8, 0.5)
 			transpOK[i] = true
+			s.Seeing[i] = weather.SeeingArcsec(a.Seeing)
+		}
+		if s.Seeing[i] == 0 {
+			s.Seeing[i] = cmp.Or(s.Weather[t.Truncate(time.Hour).Unix()].Seeing, typicalSeeing)
 		}
 	}
 	fillGaps("weather", sky, skyOK, len(s.Weather) > 0, end.Sub(start))
+	fillTemp(s.Temp, skyOK)
 	fillGaps("transparency", transp, transpOK, len(s.Astro) > 0, end.Sub(start))
 	for i := range s.Quality {
 		s.Quality[i] = sky[i] * transp[i]
@@ -271,6 +282,39 @@ func fillGaps(what string, v []float64, ok []bool, fetched bool, window time.Dur
 	default:
 		fmt.Fprintf(os.Stderr, "warning: no %s forecast for %s of the %s window; those hours get the rest's mean (%.0f%%)\n",
 			what, hm(time.Duration(len(v)-n)*time.Minute), hm(window), 100*mean)
+	}
+}
+
+// typicalSeeing is the zenith seeing (FWHM arcsec) assumed for the minutes
+// neither 7Timer nor the upper-air estimate covers.
+// ponytail: one value for every site; amateur sites see 2-3".
+const typicalSeeing = 2.5
+
+// nightTemp is the air temperature (°C) assumed without a forecast, for the
+// dark current of an uncooled camera.
+// ponytail: one value for every site and season; the forecast's replaces it.
+const nightTemp = 10.0
+
+// fillTemp gives the minutes the forecast does not cover (ok false) the
+// covered minutes' mean temperature, or nightTemp without any; fillGaps has
+// already warned about them.
+func fillTemp(temp []float64, ok []bool) {
+	var sum float64
+	var n int
+	for i, t := range temp {
+		if ok[i] {
+			sum += t
+			n++
+		}
+	}
+	mean := nightTemp
+	if n > 0 {
+		mean = sum / float64(n)
+	}
+	for i := range temp {
+		if !ok[i] {
+			temp[i] = mean
+		}
 	}
 }
 

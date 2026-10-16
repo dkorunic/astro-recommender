@@ -33,12 +33,20 @@ type Variant struct {
 }
 
 // Sensor is a -camera preset: the chip's pixels and its colour and mono
-// cameras, nil when no astro camera ships that version.
+// cameras, nil when no astro camera ships that version. Dark is its dark
+// current at a sensor temperature of 25 °C, e⁻/s per pixel, read off the
+// maker's chart; 0 where none is published (typicalDark stands in).
 type Sensor struct {
 	Colour, Mono    *Variant
 	Pixel           float64 // µm
+	Dark            float64 // e⁻/s per pixel at 25 °C
 	PxLong, PxShort int
 }
+
+// typicalDark is the dark current at 25 °C (e⁻/s per pixel) of a chip whose
+// maker publishes no chart: the median of the charted presets', each chip
+// once (the IMX492 is the IMX294's die), which TestTypicalDark recomputes.
+const typicalDark = 0.16
 
 // The colour responses, each digitized by scripts/qe_digitize.py from the
 // vendor's chart (gridlines found, curves told apart by hue, relative to the
@@ -239,18 +247,21 @@ const (
 // IMX678 preset is ZWO's ASI678MC/MM at gain 182 (one QE for both, as ZWO
 // quotes it); the Origin keeps its own read noise (Scopes' ReadNoise).
 var Cameras = map[string]Sensor{
+	// Dark current: ZWO ASI2600MC/MM Pro manual (2024), §3.5.
 	"imx571": {
-		Pixel: 3.76, PxLong: 6248, PxShort: 4176,
+		Pixel: 3.76, Dark: 0.065, PxLong: 6248, PxShort: 4176,
 		Colour: &Variant{Response: &imx571, Gain: 100, QE: 0.80, ReadNoise: 1.4},
 		Mono:   &Variant{Gain: 100, QE: 0.91, ReadNoise: 1.4},
 	},
+	// Dark current: ZWO ASI533MC Pro manual (2026), §3.6.
 	"imx533": {
-		Pixel: 3.76, PxLong: 3008, PxShort: 3008,
+		Pixel: 3.76, Dark: 0.063, PxLong: 3008, PxShort: 3008,
 		Colour: &Variant{Response: &imx533, Gain: 100, QE: 0.80, ReadNoise: 1.5},
 		Mono:   &Variant{Gain: 100, QE: 0.91, ReadNoise: 1.5},
 	},
+	// Dark current: ZWO ASI585MC/MM Pro manual (2026), §3.6.
 	chipIMX585: {
-		Pixel: 2.9, PxLong: 3840, PxShort: 2160,
+		Pixel: 2.9, Dark: 0.25, PxLong: 3840, PxShort: 2160,
 		Colour: &Variant{Response: &imx585, Gain: 200, QE: 0.91, ReadNoise: 1.0},
 		Mono:   &Variant{Gain: 200, QE: 0.91, ReadNoise: 1.0},
 	},
@@ -261,13 +272,15 @@ var Cameras = map[string]Sensor{
 		Colour: &Variant{Response: &imx455, Gain: 100, QE: 0.80, ReadNoise: 1.35},
 		Mono:   &Variant{Gain: 100, QE: 0.91, ReadNoise: 1.35},
 	},
+	// Dark current: ZWO ASI294MC Pro manual (2026), §3.6.
 	"imx294": {
-		Pixel: 4.63, PxLong: 4144, PxShort: 2822,
+		Pixel: 4.63, Dark: 0.37, PxLong: 4144, PxShort: 2822,
 		Colour: &Variant{Response: &imx294, Gain: 120, QE: 0.75, ReadNoise: 1.7},
 	},
 	// The ASI294MM's chip, at its default 2x2 binning.
+	// Dark current: the IMX294's die (ZWO's ASI294MC Pro chart).
 	"imx492": {
-		Pixel: 4.63, PxLong: 4144, PxShort: 2822,
+		Pixel: 4.63, Dark: 0.37, PxLong: 4144, PxShort: 2822,
 		Mono: &Variant{Gain: 120, QE: 0.90, ReadNoise: 1.8},
 	},
 	// No high conversion gain mode: unity gain.
@@ -275,6 +288,8 @@ var Cameras = map[string]Sensor{
 		Pixel: 2.4, PxLong: 5496, PxShort: 3672,
 		Mono: &Variant{Gain: 120, QE: 0.84, ReadNoise: 2.1},
 	},
+	// No dark current: the ASI678 CN manual's chart labels its -20 °C point
+	// 0.0078 e⁻/s against an axis reading 0.12, so typicalDark stands in.
 	chipIMX678: {
 		Pixel: 2.0, PxLong: 3840, PxShort: 2160,
 		Colour: &Variant{Response: &imx678, Gain: 182, QE: 0.83, ReadNoise: 0.9},
@@ -289,8 +304,9 @@ var Cameras = map[string]Sensor{
 		Pixel: 2.9, PxLong: 2704, PxShort: 1536,
 		Colour: &Variant{Response: &starvis2, Gain: 252, QE: 0.91, ReadNoise: 0.8},
 	},
+	// Dark current: ZWO ASI676MC manual (2024), §3.4.
 	chipIMX676: {
-		Pixel: 2.0, PxLong: 3552, PxShort: 3552,
+		Pixel: 2.0, Dark: 0.060, PxLong: 3552, PxShort: 3552,
 		Colour: &Variant{Response: &imx676, Gain: 180, QE: 0.83, ReadNoise: 0.75},
 		Mono:   &Variant{Gain: 180, QE: 0.83, ReadNoise: 0.75},
 	},
@@ -322,8 +338,9 @@ var Cameras = map[string]Sensor{
 	// ASI178 manual says TBD); 0.70 is the colour figure rk.edu.pl quotes
 	// from Sony's datasheet, second-hand. The read noise ZWO's chart's at
 	// gain 100.
+	// Dark current: ZWO ASI678 CN manual V1.0's ASI178MC chart.
 	chipIMX178: {
-		Pixel: 2.4, PxLong: 3096, PxShort: 2080,
+		Pixel: 2.4, Dark: 0.95, PxLong: 3096, PxShort: 2080,
 		Colour: &Variant{Response: &imx178, Gain: 100, QE: 0.70, ReadNoise: 1.7},
 	},
 	"imx485": {

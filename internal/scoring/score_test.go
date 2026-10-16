@@ -586,3 +586,37 @@ func TestBeamThrough(t *testing.T) {
 		t.Errorf("Hα through f/2.2: %+v, want w %.4f and the collimated sky of %+v", shifted, want, slow)
 	}
 }
+
+// FILTER stays the fewest-subs choice under equal weights, the residual and
+// the dark current, on a bright sky where they matter.
+func TestScoreFilterCameraModes(t *testing.T) {
+	for _, mode := range []struct {
+		mean           bool
+		residual, dark float64
+	}{{true, 0, 0}, {false, 0.002, 0}, {true, 0.002, 0.16}} {
+		cfg := &config.Config{Lat: 45.8, Lon: 16, AltMin: 30, AltMax: 80, SizeMax: 300, NoWeather: true, ExtinctionSet: true, Extinction: 0.2, FilterNM: 7, Filter: "ha,dual,cls", Bortle: 7}
+		cfg.Framing, cfg.Scale, cfg.FOVLong, cfg.FOVShort = true, 1.2314, 79.2, 45
+		cfg.Aperture, cfg.Obstruction, cfg.Sub, cfg.QE, cfg.ReadNoise = 152, 63, 15, 0.83, 2.15
+		cfg.MeanStack, cfg.Residual, cfg.Dark = mode.mean, mode.residual, mode.dark
+		start, end, _ := astro.Window(time.Date(2026, 1, 26, 12, 0, 0, 0, time.UTC), cfg.Lat, cfg.Lon, astro.Astronomical)
+		s := BuildSky(cfg, NoForecast(), start, end)
+		neb := catalog.Target{Name: "N", Type: "HII Region", RADeg: 60, DecDeg: 40, Size: 20}
+		r := Score(cfg, &s, []catalog.Target{neb}, false)
+		if len(r) != 1 {
+			t.Fatalf("%+v: not observable", mode)
+		}
+		fewest, best := "", 0
+		for _, f := range []string{"", "ha", "dual", "cls"} {
+			one := *cfg
+			one.Filter = f
+			rr := r[0]
+			rr.Filter, rr.Obs = f, nil
+			if e := Subs(&one, &s, rr, 0); best == 0 || e.Good < best {
+				fewest, best = f, e.Good
+			}
+		}
+		if r[0].Filter != fewest {
+			t.Errorf("%+v: filter %q, fewest subs %q (%d)", mode, r[0].Filter, fewest, best)
+		}
+	}
+}

@@ -120,7 +120,8 @@ func TestParseFrame(t *testing.T) {
 		"sensor alone":     {[]string{"-sensor", "23.5x15.6"}, "need -focal", frame{}},
 		"camera":           {[]string{"-focal", "400", "-sensor", "23.5x15.6", "-pixel", "3.76"}, "", frame{side(23.5), side(15.6), scale, 200 * scale / 60, side(15.6)}},
 		"pixel and fov":    {[]string{"-fov", "2.5x1.7", "-focal", "400", "-pixel", "3.76"}, "", frame{150, 102, scale, 200 * scale / 60, 102}},
-		"pixel, no field":  {[]string{"-focal", "400", "-pixel", "3.76"}, "", frame{side(7.712), side(4.36), scale, 200 * scale / 60, side(4.36)}}, // the Origin's sensor
+		"pixel, no field":  {[]string{"-focal", "400", "-pixel", "3.76"}, "", frame{side(7.712), side(4.36), scale, 200 * scale / 60, side(4.36)}},                                          // the Origin's sensor
+		"sensor, no pixel": {[]string{"-focal", "400", "-sensor", "23.5x15.6"}, "", frame{side(23.5), side(15.6), originScale * 335 / 400, 200 * originScale * 335 / 400 / 60, side(15.6)}}, // the Origin's pixels at 400 mm
 		"pixel alone":      {[]string{"-pixel", "3.76"}, "need -focal", frame{}},
 		"pixel and scale":  {[]string{"-focal", "400", "-pixel", "3.76", "-scale", "2"}, "not both", frame{}},
 		"pixel 0":          {[]string{"-focal", "400", "-pixel", "0"}, "-pixel must be above 0", frame{}},

@@ -64,7 +64,7 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 		alt = make([]float64, len(s.Grid))
 	}
 	active, choice := make([]*tally, 0, len(names)), make([]int, 0, len(names))
-	cam, camOK := newCamera(cfg)
+	cam, camOK := newCamera(cfg, s)
 	for _, tg := range targets {
 		// Comet comae have no catalog size, so size limits do not apply.
 		// An unknown size counts as 0, so -size-min 0 keeps it.
@@ -119,9 +119,9 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 		}
 		gains := func(t *tally) float64 {
 			if camNL > 0 {
-				// Mean per-sub SNR², the fewest-subs choice; t.good > 0, since
+				// The fewest-subs choice; the stack counted minutes, since
 				// gains runs only for a tally whose result held.
-				return t.snr2 / float64(t.good)
+				return subsGain(cam.rates(&t.st, t.chans))
 			}
 
 			return t.raw
@@ -166,7 +166,8 @@ type tally struct {
 	fp                       filterPass
 	cosMoon                  float64 // the Moon limit's cosine: a minute closer is not observable
 	altSum, weighted, skySum float64
-	raw, snr2                float64
+	raw                      float64
+	st                       stack // the sub-exposure model's sums, with chans
 	good, runs, prev         int
 	// Continuous observable stretches: the current one starts at runStart
 	// and the longest so far is [best, best+bestLen).
@@ -182,8 +183,8 @@ func (t *tally) reset(fp filterPass) {
 }
 
 // add counts minute i, observable at altitude a under a sky of sb with
-// weight w (raw uncapped) and per-sub SNR² snr2.
-func (t *tally) add(i int, a, w, raw, snr2, sb float64) {
+// weight w (raw uncapped).
+func (t *tally) add(i int, a, w, raw, sb float64) {
 	if i != t.prev+1 {
 		t.runStart = i
 		t.runs++
@@ -201,7 +202,6 @@ func (t *tally) add(i int, a, w, raw, snr2, sb float64) {
 	}
 	t.weighted += w
 	t.raw += raw
-	t.snr2 += snr2
 }
 
 // result completes base (scoreTarget's frame, mosaic and peak) with what t
@@ -292,6 +292,7 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, ts []*tally, mos
 		lineRay, lineAer = all.ray-1, all.aer-1
 	}
 	objRef := objNL + s.RefNL // the same object under a pristine sky
+	ax, bx := axesArcsec(tg)
 	maxSin, maxAt := -2.0, 0
 	for i := range s.Grid {
 		if tg.Track != nil {
@@ -347,7 +348,7 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, ts []*tally, mos
 		air := atmos.Airmass(a)
 		ext := atmos.Transmission(air, s.Ext[i])
 		var glow, rayleigh, mie float64
-		parts := false
+		parts, blur := false, -1.0
 		for _, t := range ts {
 			if c > t.cosMoon {
 				continue
@@ -370,11 +371,13 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, ts []*tally, mos
 				}
 				gain = math.Sqrt(objRef / (objNL + k*sb))
 			}
-			var snr2 float64
 			if len(t.chans) > 0 {
-				snr2 = s.Quality[i] * cam.minuteSNR2(t.chans, camNL*trans, glow, rayleigh, mie)
+				if blur < 0 {
+					blur = cam.blur(i, air, ax, bx)
+				}
+				cam.add(&t.st, t.chans, i, s.Quality[i], camNL*trans*blur, glow, rayleigh, mie)
 			}
-			t.add(i, a, s.Quality[i]*trans*min(1, gain), s.Quality[i]*trans*gain, snr2, sb)
+			t.add(i, a, s.Quality[i]*trans*min(1, gain), s.Quality[i]*trans*gain, sb)
 		}
 	}
 	r.MaxAlt, r.MaxAt = math.Asin(maxSin)/deg, s.Grid[maxAt]

@@ -19,6 +19,8 @@ import (
 // IMX347, the IMX415), and NoSubs when the central obstruction is
 // unpublished: either way SUBS needs -qe and -read-noise (and -obstruction)
 // given. ReadNoise, when set, is the scope's own figure over the preset's.
+// Mirror marks a mirror at prime focus (the Origin's RASA, Unistellar's
+// Newtonians), the rest being refractors; it sets the throughput.
 type Scope struct {
 	Name, Sensor                 string // as shown; Sensor names a chip without a preset
 	Camera                       string
@@ -26,7 +28,7 @@ type Scope struct {
 	Pixel                        float64 // µm
 	Sub, ReadNoise               float64 // s, e⁻
 	PxLong, PxShort              int
-	NoSubs                       bool
+	NoSubs, Mirror               bool
 }
 
 // originKey is the Origin Mark II's -scope, the default frame.
@@ -41,13 +43,13 @@ var Scopes = map[string]Scope{
 	// of its 0.6-3.5 e⁻ (the Origin's ISO 1000 has no published gain).
 	"origin": {
 		Name: "Celestron Origin Mark II", Camera: chipIMX678, Focal: 335, Aperture: 152, Obstruction: 77,
-		Pixel: 2.0, PxLong: 3856, PxShort: 2180, Sub: 10, ReadNoise: 2.15,
+		Pixel: 2.0, PxLong: 3856, PxShort: 2180, Sub: 10, ReadNoise: 2.15, Mirror: true,
 	},
 	// The original (2023, discontinued): the IMX178 behind a 63 mm
 	// obstruction (41%).
 	"origin-mk1": {
 		Name: "Celestron Origin 2023", Camera: chipIMX178, Focal: 335, Aperture: 152, Obstruction: 63,
-		Pixel: 2.4, PxLong: 3096, PxShort: 2080, Sub: 10,
+		Pixel: 2.4, PxLong: 3096, PxShort: 2080, Sub: 10, Mirror: true,
 	},
 	// ZWO's refractors, saving portrait frames (here long x short); 10 s
 	// subs in alt-az.
@@ -85,9 +87,9 @@ var Scopes = map[string]Scope{
 	// is the 2048x1536 crop that its stated 34.2'x45.6' field gives; the
 	// Odyssey's chip is unnamed, its frame worked out from the stated
 	// 33.6'x45' and 1.45 µm.
-	"evscope":   {Name: "Unistellar eVscope / eQuinox", Camera: chipIMX224, Focal: 450, Aperture: 114, Pixel: 3.75, PxLong: 1304, PxShort: 976, Sub: 4, NoSubs: true},
-	"evscope-2": {Name: "Unistellar eVscope 2 / eQuinox 2", Sensor: "IMX347", Focal: 450, Aperture: 114, Pixel: 2.9, PxLong: 2048, PxShort: 1536, Sub: 4, NoSubs: true},
-	"odyssey":   {Name: "Unistellar Odyssey / Odyssey Pro", Sensor: "unnamed 1.45 µm", Focal: 320, Aperture: 85, Pixel: 1.45, PxLong: 2888, PxShort: 2156, Sub: 4, NoSubs: true},
+	"evscope":   {Name: "Unistellar eVscope / eQuinox", Camera: chipIMX224, Focal: 450, Aperture: 114, Pixel: 3.75, PxLong: 1304, PxShort: 976, Sub: 4, NoSubs: true, Mirror: true},
+	"evscope-2": {Name: "Unistellar eVscope 2 / eQuinox 2", Sensor: "IMX347", Focal: 450, Aperture: 114, Pixel: 2.9, PxLong: 2048, PxShort: 1536, Sub: 4, NoSubs: true, Mirror: true},
+	"odyssey":   {Name: "Unistellar Odyssey / Odyssey Pro", Sensor: "unnamed 1.45 µm", Focal: 320, Aperture: 85, Pixel: 1.45, PxLong: 2888, PxShort: 2156, Sub: 4, NoSubs: true, Mirror: true},
 }
 
 // ScopeNames returns the -scope presets, sorted.
@@ -124,6 +126,29 @@ func scopeChoices() string {
 // fov returns the scope's frame's long and short sides in arc minutes.
 func (s Scope) fov() (float64, float64) {
 	return fovSide(float64(s.PxLong)*s.Pixel/1000, s.Focal), fovSide(float64(s.PxShort)*s.Pixel/1000, s.Focal)
+}
+
+// The optics' throughput, the share of the light reaching the sensor that the
+// glass and mirrors pass (the obstruction and the sensor's QE apart):
+// throughputLens a refractor's (an apochromat with its flattener, about 10
+// coated surfaces at 0.5% each, and the sensor's IR-cut window, 93% in ZWO's
+// ASI676MC chart), throughputMirror a prime-focus mirror's (aluminium at
+// 0.92, a corrector and the window), throughputOther another telescope's
+// (-aperture), between them.
+// ponytail: by design, not measured per scope; -throughput sets it.
+const (
+	throughputLens   = 0.88
+	throughputMirror = 0.81
+	throughputOther  = 0.85
+)
+
+// throughput returns the scope's optics' throughput.
+func (s Scope) throughput() float64 {
+	if s.Mirror {
+		return throughputMirror
+	}
+
+	return throughputLens
 }
 
 // scale returns the scope's pixel scale in arc seconds per pixel.
