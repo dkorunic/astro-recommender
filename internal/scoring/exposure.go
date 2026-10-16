@@ -7,7 +7,6 @@ import (
 	"cmp"
 	"math"
 	"slices"
-	"time"
 
 	"github.com/dkorunic/astro-recommender/internal/astro"
 	"github.com/dkorunic/astro-recommender/internal/atmos"
@@ -112,6 +111,11 @@ type camera struct {
 	mono, mean                      bool             // mean: cfg.MeanStack
 }
 
+// pixelFWHM is a square pixel's blur as a Gaussian FWHM, in pixels: its
+// box response has the variance p²/12 of a Gaussian of σ = p/√12, whose
+// FWHM is 2√(2 ln 2) σ = 0.68 p (a full pixel, p², would count it twice).
+var pixelFWHM = 2 * math.Sqrt(2*math.Ln2) / math.Sqrt(12)
+
 // newCamera returns cfg's camera under s's temperatures; false without
 // framing or with a hand-built Config that does not describe one (a zero
 // Throughput there is 1, a zero Dark none).
@@ -125,10 +129,11 @@ func newCamera(cfg *config.Config, s *Sky) (camera, bool) {
 		omega: cfg.Scale * cfg.Scale, mono: cfg.Mono, beam: beamOf(cfg), response: cfg.ColourResponse(),
 		mean: cfg.MeanStack, residual: cfg.Residual, seeing: s.Seeing,
 	}
-	// The diffraction FWHM, 1.03 λ/D at 550 nm, and a pixel's width, added
-	// in quadrature to the seeing.
+	// The diffraction FWHM, 1.03 λ/D at 550 nm, and a pixel's, added in
+	// quadrature to the seeing.
 	diff := 1.03 * 550e-9 / (cfg.Aperture / 1000) * 206265
-	c.optics2 = diff*diff + cfg.Scale*cfg.Scale
+	px := pixelFWHM * cfg.Scale
+	c.optics2 = diff*diff + px*px
 	if cfg.Dark > 0 && len(s.Temp) > 0 {
 		c.dark = make([]float64, len(s.Temp))
 		for i, t := range s.Temp {
@@ -383,12 +388,14 @@ func axesArcsec(tg catalog.Target) (float64, float64) {
 // over r's observable minutes (r.Obs; rescored through r.Filter when nil,
 // whose Moon limit sets them), each weighted by
 // the share of its subs the weather (Quality) lets through, sets the count.
-// Counts are per panel of r.Mosaic. planned is the time -plan gives r (0: its observable
-// time), which with the panels sets Max. The zero Estimate means none: no
-// camera, no surface brightness (catalog.Target.ExposureSB), or no
-// observable minute; a night the weather loses entirely is maxSubs counts
-// with SNRPerSub 0.
-func Subs(cfg *config.Config, s *Sky, r Result, planned time.Duration) Estimate {
+// Counts are per panel of r.Mosaic. planned marks the grid minutes -plan
+// gives r (nil: not planned, the whole night): the estimate then counts only
+// its observable minutes within them, for both the mean per-sub SNR² and
+// Max, so a block the target sets in or spends low counts as it is. The
+// zero Estimate means none: no camera, no surface brightness
+// (catalog.Target.ExposureSB), or no observable minute; a night the weather
+// loses entirely is maxSubs counts with SNRPerSub 0.
+func Subs(cfg *config.Config, s *Sky, r Result, planned []bool) Estimate {
 	c, ok := newCamera(cfg, s)
 	sb, assumed := r.ExposureSB()
 	if !ok || sb <= 0 {
@@ -410,6 +417,13 @@ func Subs(cfg *config.Config, s *Sky, r Result, planned time.Duration) Estimate 
 			return Estimate{}
 		}
 		obs = ta.obs
+	}
+	if planned != nil {
+		in := make([]bool, len(obs))
+		for i, up := range obs {
+			in[i] = up && i < len(planned) && planned[i]
+		}
+		obs = in
 	}
 	lines := r.Lines()
 	chans := c.channels(nil, r.Filter, cfg.FilterNM, lines, fp)
@@ -451,7 +465,7 @@ func Subs(cfg *config.Config, s *Sky, r Result, planned time.Duration) Estimate 
 		glow += extra * atmos.Absolute(air, s.Ext[i])
 		var obj float64
 		if fp.w > 0 {
-			obj = objNL * atmos.Absolute(air, s.ExtRayleigh[i]*fp.ray+atmos.OzoneExtinction+s.ExtAerosol[i]*fp.aer)
+			obj = objNL * atmos.Absolute(air, s.ExtRayleigh[i]*fp.ray+s.ozone(i)+s.ExtAerosol[i]*fp.aer)
 		} else {
 			obj = objNL * atmos.Absolute(air, s.Ext[i]+s.ExtRayleigh[i]*lineRay+s.ExtAerosol[i]*lineAer)
 		}
@@ -472,9 +486,6 @@ func Subs(cfg *config.Config, s *Sky, r Result, planned time.Duration) Estimate 
 	m, ceil = m/scale, ceil/scale
 	panels := max(1, r.Mosaic.Panels())
 	minutes := float64(st.n)
-	if planned > 0 {
-		minutes = planned.Minutes()
-	}
 	var limit float64
 	if !math.IsInf(ceil, 1) {
 		limit = math.Sqrt(ceil)

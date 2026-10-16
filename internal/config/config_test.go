@@ -326,7 +326,8 @@ func TestCamera(t *testing.T) {
 		"origin mk1": {[]string{"-scope", "origin-mk1"}, "", cam{152, 63, 10, 0.70, 1.7}},
 		"seestar":    {[]string{"-scope", "Seestar-S50"}, "", cam{50, 0, 10, 0.81, 1.05}},
 		// No chip preset or no published obstruction: no SUBS unless given.
-		"no preset":      {[]string{"-scope", "seestar-s50-pro"}, "", cam{50, 0, 10, 0, 0}},
+		"no preset":      {[]string{"-scope", "dwarf-2"}, "", cam{24, 0, 15, 0, 0}},
+		"os08b10":        {[]string{"-scope", "seestar-s50-pro"}, "", cam{50, 0, 10, 0.80, 0.84}},
 		"no obstruction": {[]string{"-scope", "evscope"}, "", cam{114, 0, 4, 0, 0}},
 		"unknown scope":  {[]string{"-scope", "hubble"}, "-scope must be one of", cam{}},
 		"scope camera":   {[]string{"-scope", "vespera", "-camera", "imx571", "-focal", "400"}, "-scope fixes its camera", cam{}},
@@ -334,9 +335,15 @@ func TestCamera(t *testing.T) {
 		// Another telescope's aperture drops the Origin's obstruction.
 		"other scope": {[]string{"-scope", "origin", "-aperture", "200"}, "", cam{200, 0, 10, 0.83, 2.15}},
 		"all given": {[]string{
-			"-focal", "400", "-pixel", "3.76", "-sensor", "23.5x15.6", "-aperture", "200", "-obstruction", "70",
+			"-camera", "imx571", "-focal", "400", "-pixel", "3.76", "-sensor", "23.5x15.6", "-aperture", "200", "-obstruction", "70",
 			"-sub", "60", "-qe", "0.6", "-read-noise", "1", "-mono",
 		}, "", cam{200, 70, 60, 0.6, 1}},
+		// Without -scope the sensor comes from -camera alone: -qe and
+		// -read-noise without it would keep the Origin's colour response.
+		"no -camera": {[]string{
+			"-focal", "400", "-pixel", "3.76", "-sensor", "23.5x15.6", "-aperture", "200", "-obstruction", "70",
+			"-sub", "60", "-qe", "0.6", "-read-noise", "1", "-mono",
+		}, "", cam{200, 70, 60, 0, 1}},
 		"sub alone":      {[]string{"-sub", "30"}, "need framing", cam{}},
 		"mono alone":     {[]string{"-mono"}, "need framing", cam{}},
 		"obstruction=ap": {[]string{"-scope", "origin", "-obstruction", "152"}, "-aperture must be above -obstruction", cam{}},

@@ -80,6 +80,28 @@ func filterDesc(cfg *config.Config) string {
 	return desc + " (" + bands + ")"
 }
 
+// frameDesc is the header's Frame line: the instrument first, as it is
+// what the numbers describe, then the field, the scale and the options.
+func frameDesc(cfg *config.Config) string {
+	pxLong, pxShort := cfg.FramePx()
+	lead, extra := "", ""
+	if label := cmp.Or(cfg.ScopeLabel(), cfg.CameraLabel()); label != "" {
+		lead = label + ", "
+	}
+	if cfg.Mosaic > 1 {
+		extra += fmt.Sprintf(", mosaics of up to %d panels", cfg.Mosaic)
+	}
+	if cfg.Rotate {
+		extra += ", rotatable"
+	}
+	if cfg.SubsNeeds != "" {
+		extra += ", SUBS needs " + cfg.SubsNeeds
+	}
+
+	return fmt.Sprintf("%s%.2f° x %.2f°, %.2f\"/px (%.0f x %.0f px)%s", lead, cfg.FOVLong/60, cfg.FOVShort/60,
+		cfg.Scale, pxLong, pxShort, extra)
+}
+
 // Header prints the site, window, Moon and sky; place is the reverse
 // geocoded name, empty if unknown.
 func Header(cfg *config.Config, s *scoring.Sky, place string) {
@@ -138,20 +160,7 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 	}
 	headerLine("Targets: ", targetsDesc)
 	if cfg.Framing {
-		pxLong, pxShort := cfg.FramePx()
-		// The instrument first: it is what the numbers describe.
-		lead, extra := "", ""
-		if label := cmp.Or(cfg.ScopeLabel(), cfg.CameraLabel()); label != "" {
-			lead = label + ", "
-		}
-		if cfg.Mosaic > 1 {
-			extra += fmt.Sprintf(", mosaics of up to %d panels", cfg.Mosaic)
-		}
-		if cfg.Rotate {
-			extra += ", rotatable"
-		}
-		headerLine("Frame:   ", fmt.Sprintf("%s%.2f° x %.2f°, %.2f\"/px (%.0f x %.0f px)%s", lead, cfg.FOVLong/60, cfg.FOVShort/60,
-			cfg.Scale, pxLong, pxShort, extra))
+		headerLine("Frame:   ", frameDesc(cfg))
 	}
 	if len(cfg.Horizon) > 0 {
 		headerLine("Horizon: ", fmt.Sprintf("%d points, %.0f° - %.0f°", len(cfg.Horizon),

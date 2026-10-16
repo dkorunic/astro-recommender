@@ -241,15 +241,33 @@ var (
 	}
 )
 
+// The Seestar S50 Pro's OmniVision OS08B10: no maker's chart for the chip,
+// so OmniVision's absolute QE chart for its Nyxel 2 technology, which a ZWO
+// user group slide (October 2026) attributes to it ("believed to be used");
+// digitized from that slide's 971 px copy, a second copy agreeing to 0.03.
+// The weakest-sourced response here.
+var os08b10 = Response{
+	Lines: [catalog.NumLines][3]float64{
+		catalog.Ha:      {0.912, 0.207, 0.082},
+		catalog.OIII:    {0.038, 0.933, 0.546},
+		catalog.SII:     {0.859, 0.263, 0.113},
+		catalog.Hb:      {0.032, 0.695, 0.722},
+		catalog.NII6548: {0.916, 0.206, 0.079},
+		catalog.NII6583: {0.908, 0.207, 0.084},
+	},
+	Broad: [3]float64{0.378, 0.482, 0.346},
+}
+
 // The chips the -scope presets share, as Cameras keys.
 const (
-	chipIMX178 = "imx178"
-	chipIMX224 = "imx224"
-	chipIMX462 = "imx462"
-	chipIMX585 = "imx585"
-	chipIMX662 = "imx662"
-	chipIMX676 = "imx676"
-	chipIMX678 = "imx678"
+	chipIMX178  = "imx178"
+	chipIMX224  = "imx224"
+	chipIMX462  = "imx462"
+	chipIMX585  = "imx585"
+	chipIMX662  = "imx662"
+	chipIMX676  = "imx676"
+	chipIMX678  = "imx678"
+	chipOS08B10 = "os08b10"
 )
 
 // Cameras are the -camera presets by lower-case chip name, from the camera
@@ -370,6 +388,15 @@ var Cameras = map[string]Sensor{
 	chipIMX224: {
 		Pixel: 3.75, PxLong: 1304, PxShort: 976,
 		Colour: &Variant{Response: &imx224, Gain: 60, QE: 0.78, ReadNoise: 1.6},
+	},
+	// The Seestar S50 Pro's, in no astro camera: the peak QE the Nyxel 2
+	// chart's (os08b10's comment), 80% green at 530 nm; the read noise
+	// Cuiv's measurement (The Lazy Geek, 2026) at gain 150, where it drops
+	// from 2.4 e⁻ at 100 (the conversion gain switch). Neither is the
+	// maker's.
+	chipOS08B10: {
+		Pixel: 2.9, PxLong: 3840, PxShort: 2160,
+		Colour: &Variant{Response: &os08b10, Gain: 150, QE: 0.80, ReadNoise: 0.84},
 	},
 	// Player One's Neptune-C II, gain 83 its HCG step.
 	"imx464": {

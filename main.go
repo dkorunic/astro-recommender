@@ -59,7 +59,7 @@ func main() {
 	}
 	now := cfg.Day.Truncate(time.Minute)
 	if inProgress {
-		dawnT = astro.ContinuePolar(day, duskT, dawnT, now, cfg.Lat, cfg.Lon, cfg.SunAlt())
+		dawnT = astro.ContinuePolar(day, dawnT, now, cfg.Lat, cfg.Lon, cfg.SunAlt())
 	}
 	duskT, dawnT = duskT.In(cfg.Loc), dawnT.In(cfg.Loc) // all times display in -tz
 	start, end, err := astro.ClipWindow(day, cfg.Loc, duskT, dawnT, cfg.From, cfg.To)
@@ -219,21 +219,30 @@ func exposures(cfg *config.Config, s *scoring.Sky, slots []plan.Slot, results []
 				results[i].Obs = rs[0].Obs
 			}
 		}
-		if e := scoring.Subs(cfg, s, results[i], planned(slots, &results[i])); e.Good > 0 {
+		if e := scoring.Subs(cfg, s, results[i], planned(slots, s.Grid, &results[i])); e.Good > 0 {
 			results[i].Exposure = &e
 		}
 	}
 }
 
-// planned returns the time the plan gives r, its blocks' length; 0 without
-// -plan or for a listed target it does not plan.
-func planned(slots []plan.Slot, r *scoring.Result) time.Duration {
-	var d time.Duration
+// planned marks the grid minutes the plan gives r, its blocks; nil without
+// -plan or for a listed target it does not plan, which Subs reads as the
+// whole night.
+func planned(slots []plan.Slot, grid []time.Time, r *scoring.Result) []bool {
+	var in []bool
 	for _, sl := range slots {
-		if sl.Result == r {
-			d += sl.End.Sub(sl.Start)
+		if sl.Result != r {
+			continue
+		}
+		if in == nil {
+			in = make([]bool, len(grid))
+		}
+		for i, t := range grid {
+			if !t.Before(sl.Start) && t.Before(sl.End) {
+				in[i] = true
+			}
 		}
 	}
 
-	return d
+	return in
 }

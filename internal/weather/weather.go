@@ -675,6 +675,12 @@ func AerosolForecast(ctx context.Context, lat, lon float64, start, end time.Time
 			out[t] = *a
 		}
 	}
+	// No usable hour is no forecast, as for the weather sources, so that it
+	// is warned about rather than taken silently for typical aerosols; the
+	// elevation still stands.
+	if len(out) == 0 {
+		return out, elev, fmt.Errorf("%w: no usable hour of %d", errAirQuality, len(body.Hourly.Time))
+	}
 
 	return out, elev, nil
 }

@@ -64,6 +64,7 @@ type Config struct {
 	SolarBasis     string   // what SolarFlux is: solar.Monthly, Recent or Predicted
 	Camera         string   // -camera's (or -scope's chip's) Cameras key, lower case; "" for a camera given by -sensor/-pixel
 	Scope          string   // -scope's Scopes key; "" without one
+	SubsNeeds      string   // framing without -scope: the flags SUBS lacks ("-aperture", "-camera", both), without which it would borrow the Origin's optics or sensor and is left out; "" when it has them
 	Types          []string // -type: catalog.Classes to keep, nil = all
 	Horizon        horizon.Horizon
 	Plan           time.Duration
@@ -615,7 +616,27 @@ func (cfg *Config) camera(set map[string]bool, preset *Variant, base Scope) erro
 		return fmt.Errorf("%w: -read-noise must be 0 or more", errInvalidFlag)
 	}
 
-	return cfg.losses(set, base)
+	if err := cfg.losses(set, base); err != nil {
+		return err
+	}
+	// Framing without -scope describes another telescope: the base scope's
+	// aperture, obstruction and throughput, or its sensor's QE, read noise
+	// and colour response, would give its SUBS another instrument's counts,
+	// so without -aperture and -camera there are none (QE 0).
+	if cfg.Scope == "" {
+		var need []string
+		if !set["aperture"] {
+			need = append(need, "-aperture")
+		}
+		if !set["camera"] {
+			need = append(need, "-camera")
+		}
+		if len(need) > 0 {
+			cfg.SubsNeeds, cfg.QE = strings.Join(need, " and "), 0
+		}
+	}
+
+	return nil
 }
 
 // losses fills and checks what the sub-exposure estimate loses on the way:

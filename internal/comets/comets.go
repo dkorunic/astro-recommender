@@ -154,10 +154,12 @@ func parseComets(data []byte) (Elements, error) {
 			Add(time.Duration((day - 1) * 24 * float64(time.Hour)))
 		name := sanitize.Text(strings.TrimSpace(l[102:min(len(l), 158)]))
 		// Columns 1-4 the periodic number, 5 the orbit type, 6-12 the packed
-		// provisional designation.
+		// provisional designation, which for a numbered comet holds only a
+		// fragment's letters (73P-BT's "bt"), kept so that a fragment does
+		// not take its parent's observations.
 		key := strings.TrimSpace(l[5:12])
 		if n, err := strconv.Atoi(strings.TrimSpace(l[0:4])); err == nil && n > 0 {
-			key = strconv.Itoa(n) + l[4:5]
+			key = strconv.Itoa(n) + l[4:5] + strings.ToLower(key)
 		}
 		out = append(out, comet{
 			name: name, key: key, perihelion: t, q: q, e: e,

@@ -410,3 +410,30 @@ func TestMutFilterStdBeam(t *testing.T) {
 		t.Errorf("-focal without -aperture: %v", err)
 	}
 }
+
+// Framing without -scope describes another telescope: without -aperture
+// and -camera its SUBS would be the Origin's optics' or sensor's counts, so
+// there are none (QE 0); with both, or with -scope, the estimate stands.
+func TestMutSubsNeeds(t *testing.T) {
+	for _, c := range []struct {
+		args []string
+		need string
+	}{
+		{[]string{"-focal", "400", "-sensor", "23.5x15.6", "-pixel", "3.76"}, "-aperture and -camera"},
+		{[]string{"-focal", "400", "-sensor", "23.5x15.6", "-pixel", "3.76", "-aperture", "80"}, "-camera"},
+		{[]string{"-focal", "400", "-sensor", "23.5x15.6", "-pixel", "3.76", "-aperture", "80", "-qe", "0.8", "-read-noise", "1.5"}, "-camera"},
+		{[]string{"-camera", "imx571", "-focal", "400"}, "-aperture"},
+		{[]string{"-fov", "60x40"}, "-aperture and -camera"},
+		{[]string{"-camera", "imx571", "-focal", "400", "-aperture", "80"}, ""},
+		{[]string{"-scope", "origin"}, ""},
+		{[]string{"-scope", "seestar-s50", "-fov", "60x40"}, ""},
+	} {
+		cfg, err := mutParse(t, mutBase(c.args...)...)
+		if err != nil {
+			t.Fatalf("%v: %v", c.args, err)
+		}
+		if cfg.SubsNeeds != c.need || (cfg.QE == 0) != (c.need != "") {
+			t.Errorf("%v: SubsNeeds %q, QE %v; want %q", c.args, cfg.SubsNeeds, cfg.QE, c.need)
+		}
+	}
+}

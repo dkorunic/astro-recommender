@@ -15,8 +15,8 @@ import (
 // main camera saves (pixel size after any binning) and its usual sub
 // length, from the maker's pages (October 2026; a value from elsewhere says
 // so). Camera is its chip's Cameras key, whose colour version gives the QE,
-// read noise and response; "" when the chip has no preset (OmniVision's, the
-// IMX347, the IMX415), and NoSubs when the central obstruction is
+// read noise and response; "" when the chip has no preset (the IMX347, the
+// IMX415, the Odyssey's unnamed one), and NoSubs when the central obstruction is
 // unpublished: either way SUBS needs -qe and -read-noise (and -obstruction)
 // given. ReadNoise, when set, is the scope's own figure over the preset's.
 // Mirror marks a mirror at prime focus (the Origin's RASA, Unistellar's
@@ -56,7 +56,7 @@ var Scopes = map[string]Scope{
 	"seestar-s50":     {Name: "ZWO Seestar S50", Camera: chipIMX462, Focal: 250, Aperture: 50, Pixel: 2.9, PxLong: 1920, PxShort: 1080, Sub: 10},
 	"seestar-s30":     {Name: "ZWO Seestar S30", Camera: chipIMX662, Focal: 150, Aperture: 30, Pixel: 2.9, PxLong: 1920, PxShort: 1080, Sub: 10},
 	"seestar-s30-pro": {Name: "ZWO Seestar S30 Pro", Camera: chipIMX585, Focal: 160, Aperture: 30, Pixel: 2.9, PxLong: 3840, PxShort: 2160, Sub: 10},
-	"seestar-s50-pro": {Name: "ZWO Seestar S50 Pro", Sensor: "OmniVision OS08B10", Focal: 260, Aperture: 50, Pixel: 2.9, PxLong: 3840, PxShort: 2160, Sub: 10},
+	"seestar-s50-pro": {Name: "ZWO Seestar S50 Pro", Camera: chipOS08B10, Focal: 260, Aperture: 50, Pixel: 2.9, PxLong: 3840, PxShort: 2160, Sub: 10},
 	// DwarfLab: 15 s, the auto mode's limit on the DWARF II and mini (the
 	// DWARF 3's is unpublished). The DWARF II's IMX415 and focal length are
 	// from reviews; its 1.45 µm the chip's, which matches their 3° field.

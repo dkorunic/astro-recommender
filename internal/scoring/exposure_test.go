@@ -143,7 +143,7 @@ func TestCameraGain(t *testing.T) {
 func TestSubsReality(t *testing.T) {
 	cfg, s := expCfg(), mutSky(141)
 	s.ZenithNL = atmos.NanoLamberts(21)
-	e := Subs(cfg, s, expResult(t, cfg, s, expGalaxy(22)), 0)
+	e := Subs(cfg, s, expResult(t, cfg, s, expGalaxy(22)), nil)
 	if minutes := float64(e.Good) * e.Sub / 60; minutes < 10 || minutes > 120 {
 		t.Errorf("good level in %.0f minutes (%+v)", minutes, e)
 	}
@@ -159,25 +159,25 @@ func TestSubsReality(t *testing.T) {
 
 func TestSubsMonotonic(t *testing.T) {
 	cfg, s := expCfg(), mutSky(141)
-	base := Subs(cfg, s, expResult(t, cfg, s, expGalaxy(22)), 0).Good
-	if g := Subs(cfg, s, expResult(t, cfg, s, expGalaxy(23)), 0).Good; g <= base {
+	base := Subs(cfg, s, expResult(t, cfg, s, expGalaxy(22)), nil).Good
+	if g := Subs(cfg, s, expResult(t, cfg, s, expGalaxy(23)), nil).Good; g <= base {
 		t.Errorf("fainter: %d, base %d", g, base)
 	}
 	s2 := mutSky(141)
 	s2.ZenithNL = atmos.NanoLamberts(19)
-	if g := Subs(cfg, s2, expResult(t, cfg, s2, expGalaxy(22)), 0).Good; g <= base {
+	if g := Subs(cfg, s2, expResult(t, cfg, s2, expGalaxy(22)), nil).Good; g <= base {
 		t.Errorf("brighter sky: %d, base %d", g, base)
 	}
 	s3 := mutSky(141)
 	for i := range s3.Quality {
 		s3.Quality[i] = 0.5
 	}
-	if g := Subs(cfg, s3, expResult(t, cfg, s3, expGalaxy(22)), 0).Good; g < 2*base-1 || g > 2*base+1 {
+	if g := Subs(cfg, s3, expResult(t, cfg, s3, expGalaxy(22)), nil).Good; g < 2*base-1 || g > 2*base+1 {
 		t.Errorf("half the subs lost: %d, want ~%d", g, 2*base)
 	}
 	big := expCfg()
 	big.Aperture, big.Obstruction = 300, 0
-	if g := Subs(big, s, expResult(t, big, s, expGalaxy(22)), 0).Good; g >= base {
+	if g := Subs(big, s, expResult(t, big, s, expGalaxy(22)), nil).Good; g >= base {
 		t.Errorf("larger aperture: %d, base %d", g, base)
 	}
 }
@@ -198,19 +198,19 @@ func TestSubsFilter(t *testing.T) {
 	neb := catalog.Target{Name: "N", Type: "HII region", RADeg: 90.5, Size: 20, SurfBr: 22}
 	plain := expCfg()
 	plain.Mono, plain.Sub = true, 300
-	none := Subs(plain, s, expResult(t, plain, s, neb), 0).Good
+	none := Subs(plain, s, expResult(t, plain, s, neb), nil).Good
 	ha := expCfg()
 	ha.Filter, ha.Mono, ha.Sub = "ha", true, 300
 	r := expResult(t, ha, s, neb)
 	if r.Filter != "ha" {
 		t.Fatalf("the Hα filter did not help: %+v", r)
 	}
-	mono := Subs(ha, s, r, 0).Good
+	mono := Subs(ha, s, r, nil).Good
 	if mono >= none {
 		t.Errorf("Hα %d, unfiltered %d", mono, none)
 	}
 	ha.Mono = false
-	if colour := Subs(ha, s, r, 0).Good; colour <= mono {
+	if colour := Subs(ha, s, r, nil).Good; colour <= mono {
 		t.Errorf("colour %d, mono %d", colour, mono)
 	}
 }
@@ -229,9 +229,9 @@ func TestSubsSNR2Average(t *testing.T) {
 		h.Obs = make([]bool, len(r.Obs))
 		copy(h.Obs[from:to], r.Obs[from:to])
 
-		return Subs(cfg, s, h, 0).Best
+		return Subs(cfg, s, h, nil).Best
 	}
-	dark, lit, both := half(0, 70), half(70, len(s.Grid)), Subs(cfg, s, r, 0).Best
+	dark, lit, both := half(0, 70), half(70, len(s.Grid)), Subs(cfg, s, r, nil).Best
 	// Weighted by each half's observable minutes.
 	nd, nl := 0, 0
 	for i, ok := range r.Obs {
@@ -251,15 +251,31 @@ func TestSubsSNR2Average(t *testing.T) {
 func TestSubsMosaicAndPlan(t *testing.T) {
 	cfg, s := expCfg(), mutSky(141)
 	r := expResult(t, cfg, s, expGalaxy(22))
-	single := Subs(cfg, s, r, 0)
+	single := Subs(cfg, s, r, nil)
 	r.Mosaic = config.Mosaic{Cols: 2, Rows: 1}
-	two := Subs(cfg, s, r, 0)
+	two := Subs(cfg, s, r, nil)
 	if two.Good != single.Good || two.Panels != 2 || two.Max != single.Max/2 {
 		t.Errorf("mosaic %+v, single %+v", two, single)
 	}
 	r.Mosaic = config.Mosaic{}
-	if e := Subs(cfg, s, r, time.Hour); e.Max != int(math.Floor(3600/(15+subGap))) || e.Good != single.Good {
-		t.Errorf("planned hour: %+v", e)
+	// A planned hour of observable minutes: Max counts that hour, and the
+	// mean per-sub SNR² those minutes alone, exactly as a result observable
+	// only then.
+	planned, n := make([]bool, len(s.Grid)), 0
+	for i, up := range r.Obs {
+		if up && n < 60 {
+			planned[i], n = true, n+1
+		}
+	}
+	only := r
+	only.Obs = slices.Clone(planned)
+	e := Subs(cfg, s, r, planned)
+	if n != 60 || e.Max != int(math.Floor(3600/(15+subGap))) || e != Subs(cfg, s, only, nil) {
+		t.Errorf("planned hour: %+v, want %+v", e, Subs(cfg, s, only, nil))
+	}
+	// Planned, with no observable minute in its blocks: no estimate.
+	if e := Subs(cfg, s, r, make([]bool, len(s.Grid))); e != (Estimate{}) {
+		t.Errorf("planned, unobservable: %+v", e)
 	}
 }
 
@@ -270,34 +286,34 @@ func TestSubsNoCamera(t *testing.T) {
 	noFraming.Framing = false
 	handBuilt.Aperture, handBuilt.Sub, handBuilt.QE = 0, 0, 0
 	for name, c := range map[string]*config.Config{"no framing": noFraming, "hand-built cfg": handBuilt} {
-		if e := Subs(c, s, r, 0); e != (Estimate{}) {
+		if e := Subs(c, s, r, nil); e != (Estimate{}) {
 			t.Errorf("%s: %+v", name, e)
 		}
 	}
 	cl := r
 	cl.Target = catalog.Target{Name: "K", Type: "Open Cluster", RADeg: 90.5, Size: 20}
-	if e := Subs(cfg, s, cl, 0); e != (Estimate{}) {
+	if e := Subs(cfg, s, cl, nil); e != (Estimate{}) {
 		t.Errorf("cluster: %+v", e)
 	}
 	never := r
 	never.Obs = make([]bool, len(r.Obs))
-	if e := Subs(cfg, s, never, 0); e != (Estimate{}) {
+	if e := Subs(cfg, s, never, nil); e != (Estimate{}) {
 		t.Errorf("never observable: %+v", e)
 	}
 	// Absurdly faint in 1 ms subs: capped, not an overflowed int.
 	faint := expResult(t, cfg, s, expGalaxy(34))
 	short := *cfg
 	short.Sub = 0.001 // config's minSub
-	if e := Subs(&short, s, faint, 0); e.Best != maxSubs || e.Good <= 0 {
+	if e := Subs(&short, s, faint, nil); e.Best != maxSubs || e.Good <= 0 {
 		t.Errorf("faint: %+v", e)
 	}
 	// An unknown surface brightness takes the class's typical one.
-	if e := Subs(cfg, s, expResult(t, cfg, s, expGalaxy(0)), 0); !e.Assumed || e.Good == 0 {
+	if e := Subs(cfg, s, expResult(t, cfg, s, expGalaxy(0)), nil); !e.Assumed || e.Good == 0 {
 		t.Errorf("unknown SB: %+v", e)
 	}
 	// Without per-minute data Subs rescores the target.
 	r.Obs = nil
-	if e := Subs(cfg, s, r, 0); e.Good == 0 {
+	if e := Subs(cfg, s, r, nil); e.Good == 0 {
 		t.Errorf("rescored: %+v", e)
 	}
 	// Rescored, none for one no mosaic frames (scoreTarget) or one never up,
@@ -307,13 +323,13 @@ func TestSubsNoCamera(t *testing.T) {
 	big.Target.Size = 60 // over the 45' short side
 	low.Target.DecDeg = -80
 	for name, rr := range map[string]Result{"unframable": big, "never up": low} {
-		if e := Subs(cfg, s, rr, 0); e != (Estimate{}) {
+		if e := Subs(cfg, s, rr, nil); e != (Estimate{}) {
 			t.Errorf("rescored %s: %+v", name, e)
 		}
 	}
 	long := expCfg()
 	long.MinRun = time.Hour
-	if e := Subs(long, s, r, 0); e != (Estimate{}) {
+	if e := Subs(long, s, r, nil); e != (Estimate{}) {
 		t.Errorf("rescored under -min-run: %+v", e)
 	}
 	// A line filter passes none of a continuum's light: no channel sees it.
@@ -321,7 +337,7 @@ func TestSubsNoCamera(t *testing.T) {
 	ha.Filter = "ha"
 	g := expResult(t, ha, s, expGalaxy(22))
 	g.Filter = "ha"
-	if e := Subs(ha, s, g, 0); e != (Estimate{}) {
+	if e := Subs(ha, s, g, nil); e != (Estimate{}) {
 		t.Errorf("galaxy through Hα: %+v", e)
 	}
 }
@@ -370,7 +386,7 @@ func TestSubsEmissionLines(t *testing.T) {
 	if r.Filter != "dual" {
 		t.Fatalf("dual did not help: %+v", r)
 	}
-	if f, n := Subs(dual, s, r, 0).Good, Subs(plain, s, expResult(t, plain, s, neb), 0).Good; f >= n {
+	if f, n := Subs(dual, s, r, nil).Good, Subs(plain, s, expResult(t, plain, s, neb), nil).Good; f >= n {
 		t.Errorf("dual %d, unfiltered %d", f, n)
 	}
 }
@@ -389,7 +405,7 @@ func TestSubsLineShare(t *testing.T) {
 	quad.Mono, quad.ReadNoise, quad.Sub, quad.Filter = true, 0, 0.05, "quad"
 	r := expResult(t, quad, s, neb)
 	r.Filter = "quad"
-	n, q := Subs(plain, s, expResult(t, plain, s, neb), 0).Best, Subs(quad, s, r, 0).Best
+	n, q := Subs(plain, s, expResult(t, plain, s, neb), nil).Best, Subs(quad, s, r, nil).Best
 	if float64(q) < 0.98*float64(n) {
 		t.Errorf("quad %d subs, unfiltered %d: quad collects more than every line", q, n)
 	}
@@ -416,7 +432,7 @@ func TestSubsWeatherPerMinute(t *testing.T) {
 			}
 		}
 	}
-	darkOnly := Subs(cfg, s, dark, 0).Best
+	darkOnly := Subs(cfg, s, dark, nil).Best
 	// Clear only while moonlit: the dark minutes' subs are all lost.
 	for i := range s.Quality {
 		if i < 70 {
@@ -431,10 +447,10 @@ func TestSubsWeatherPerMinute(t *testing.T) {
 	for i := range s2.Quality {
 		s2.Quality[i] = 1
 	}
-	litOnly := Subs(cfg, &s2, lit, 0).Best
+	litOnly := Subs(cfg, &s2, lit, nil).Best
 	// Over the whole night, only the lit minutes count, each at 1/n of it.
 	want := float64(litOnly) * float64(n) / float64(n-nd)
-	if got := Subs(cfg, s, r, 0).Best; math.Abs(float64(got)/want-1) > 0.02 {
+	if got := Subs(cfg, s, r, nil).Best; math.Abs(float64(got)/want-1) > 0.02 {
 		t.Errorf("clouded dark half: %d subs, want %.0f (dark-only %d)", got, want, darkOnly)
 	}
 }
@@ -447,7 +463,7 @@ func TestSubsCloudedOut(t *testing.T) {
 	for i := range s.Quality {
 		s.Quality[i] = 0
 	}
-	e := Subs(cfg, s, r, 0)
+	e := Subs(cfg, s, r, nil)
 	if e.Good != maxSubs || e.Max <= 0 || e.Good <= e.Max || e.SNRPerSub != 0 {
 		t.Errorf("clouded out: %+v, want good %d past a positive max, no SNR", e, maxSubs)
 	}
@@ -528,8 +544,8 @@ func TestSubsBayerChannels(t *testing.T) {
 		mono.Filter, mono.ReadNoise, mono.Sub, mono.Mono = "ha", c.rn, c.sub, true
 		r := expResult(t, colour, s, neb)
 		r.Filter = "ha"
-		if ratio := float64(Subs(colour, s, r, 0).Good) / float64(Subs(mono, s, r, 0).Good); math.Abs(ratio/c.want-1) > 0.025 {
-			t.Errorf("%s %d/%d: colour needs %.2fx mono's subs through Hα, want %.2f", c.name, Subs(colour, s, r, 0).Good, Subs(mono, s, r, 0).Good, ratio, c.want)
+		if ratio := float64(Subs(colour, s, r, nil).Good) / float64(Subs(mono, s, r, nil).Good); math.Abs(ratio/c.want-1) > 0.025 {
+			t.Errorf("%s %d/%d: colour needs %.2fx mono's subs through Hα, want %.2f", c.name, Subs(colour, s, r, nil).Good, Subs(mono, s, r, nil).Good, ratio, c.want)
 		}
 	}
 }
@@ -543,7 +559,7 @@ var imx678 = (&config.Config{}).ColourResponse()
 func TestSubsDarkCurrent(t *testing.T) {
 	cfg, s := expCfg(), mutSky(141)
 	r := expResult(t, cfg, s, expGalaxy(22))
-	none := Subs(cfg, s, r, 0).Best
+	none := Subs(cfg, s, r, nil).Best
 	cfg.Dark = 0.25
 	at := func(temp float64) int {
 		s.Temp = make([]float64, len(s.Grid))
@@ -551,7 +567,7 @@ func TestSubsDarkCurrent(t *testing.T) {
 			s.Temp[i] = temp
 		}
 
-		return Subs(cfg, s, r, 0).Best
+		return Subs(cfg, s, r, nil).Best
 	}
 	cool, warm := at(5), at(25)
 	if none >= cool || cool >= warm {
@@ -576,14 +592,14 @@ func TestSubsDarkCurrent(t *testing.T) {
 func TestSubsThroughputReject(t *testing.T) {
 	cfg, s := expCfg(), mutSky(141)
 	r := expResult(t, cfg, s, expGalaxy(22))
-	full := Subs(cfg, s, r, 0)
+	full := Subs(cfg, s, r, nil)
 	cfg.Throughput = 0.5
-	half := Subs(cfg, s, r, 0)
+	half := Subs(cfg, s, r, nil)
 	if half.SNRPerSub >= full.SNRPerSub*0.75 || half.Good <= full.Good {
 		t.Errorf("throughput 0.5: %+v, 1: %+v", half, full)
 	}
 	cfg.Throughput, cfg.Reject = 0, 0.2
-	if e := Subs(cfg, s, r, 0); e.Good != full.Good || e.Max != int(math.Floor(90*60/(15+subGap)*0.8)) {
+	if e := Subs(cfg, s, r, nil); e.Good != full.Good || e.Max != int(math.Floor(90*60/(15+subGap)*0.8)) {
 		t.Errorf("reject 0.2: %+v, none %+v", e, full)
 	}
 }
@@ -647,14 +663,14 @@ func TestSubsResidualSeeing(t *testing.T) {
 	cfg, s := expCfg(), mutSky(141)
 	s.ZenithNL = atmos.NanoLamberts(18)
 	r := expResult(t, cfg, s, expGalaxy(22))
-	free := Subs(cfg, s, r, 0)
+	free := Subs(cfg, s, r, nil)
 	cfg.Residual = 0.002
-	capped := Subs(cfg, s, r, 0)
+	capped := Subs(cfg, s, r, nil)
 	if free.SNRLimit != 0 || capped.SNRLimit <= 0 || capped.Good <= free.Good {
 		t.Errorf("residual: %+v, none %+v", capped, free)
 	}
 	cfg.Residual = 0.05
-	if e := Subs(cfg, s, r, 0); e.Good != maxSubs || e.SNRLimit >= Levels[1] {
+	if e := Subs(cfg, s, r, nil); e.Good != maxSubs || e.SNRLimit >= Levels[1] {
 		t.Errorf("residual 5%%: %+v", e)
 	}
 	cfg.Residual = 0
@@ -667,7 +683,7 @@ func TestSubsResidualSeeing(t *testing.T) {
 			s.Seeing[i] = fwhm
 		}
 
-		return Subs(cfg, s, pr, 0).Good
+		return Subs(cfg, s, pr, nil).Good
 	}
 	if good, poor := seeing(1), seeing(4); good >= poor {
 		t.Errorf("12\" planetary: %d subs under 1\", %d under 4\"", good, poor)
@@ -684,7 +700,7 @@ func TestSubsZenithExtinction(t *testing.T) {
 	cfg, s := expCfg(), mutSky(141)
 	cfg.ReadNoise, cfg.Residual = 0, 0
 	r := expResult(t, cfg, s, expGalaxy(12))
-	clear0 := Subs(cfg, s, r, 0)
+	clear0 := Subs(cfg, s, r, nil)
 	const k = 0.25
 	var want float64
 	var n int
@@ -697,7 +713,7 @@ func TestSubsZenithExtinction(t *testing.T) {
 		}
 	}
 	want /= float64(n)
-	got := Subs(cfg, s, r, 0)
+	got := Subs(cfg, s, r, nil)
 	if ratio := got.SNRPerSub * got.SNRPerSub / (clear0.SNRPerSub * clear0.SNRPerSub); math.Abs(ratio/want-1) > 2e-3 {
 		t.Errorf("SNR² ratio %.4f, want %.4f (zenith extinction %.4f)", ratio, want, atmos.Absolute(1, k))
 	}
@@ -722,8 +738,8 @@ func TestLevelScale(t *testing.T) {
 	// Through Subs: a 24.5 galaxy's SNR per sub reads √(1/scale) higher
 	// against the levels than the same stack would against fixed ones.
 	cfg, s := expCfg(), mutSky(141)
-	e := Subs(cfg, s, expResult(t, cfg, s, expGalaxy(24.5)), 0)
-	raw := Subs(cfg, s, expResult(t, cfg, s, expGalaxy(atmos.RefZenithMag)), 0)
+	e := Subs(cfg, s, expResult(t, cfg, s, expGalaxy(24.5)), nil)
+	raw := Subs(cfg, s, expResult(t, cfg, s, expGalaxy(atmos.RefZenithMag)), nil)
 	if e.SNRPerSub <= 0 || raw.SNRPerSub <= 0 || e.Good >= raw.Good*12 {
 		t.Errorf("24.5 against 22.0: %d subs against %d, want under 12x (1/S², 100x, without the scale)", e.Good, raw.Good)
 	}
@@ -744,5 +760,17 @@ func TestLightNLFlux(t *testing.T) {
 	// To 0.1%: K&S's nanoLamberts go as e^(-0.92104 m), not 10^(-0.4 m).
 	if got := lightNL(pn, sb) * atmos.PhotonsV0 / atmos.NanoLamberts(0) * area; math.Abs(got/photons-1) > 1e-3 {
 		t.Errorf("photons %v, want %v", got, photons)
+	}
+}
+
+// The optics' blur: diffraction and a pixel's box response as a Gaussian
+// FWHM (0.68 px), in quadrature, not the pixel's whole width.
+func TestCameraOpticsBlur(t *testing.T) {
+	cfg, s := expCfg(), mutSky(141)
+	c, ok := newCamera(cfg, s)
+	diff := 1.03 * 550e-9 / (cfg.Aperture / 1000) * 206265
+	px := 0.6798 * cfg.Scale
+	if !ok || math.Abs(c.optics2-(diff*diff+px*px)) > 1e-3*c.optics2 {
+		t.Errorf("optics² %v, want %v", c.optics2, diff*diff+px*px)
 	}
 }

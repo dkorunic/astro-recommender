@@ -239,19 +239,30 @@ func TestContinuePolar(t *testing.T) {
 		t.Fatalf("Window(pole, 20 Dec) = %v - %v, %v; want polar night", dusk, dawn, ok)
 	}
 	now := dawn.Add(-10 * time.Minute) // 11:50, ten minutes before the noon it would end at
-	if got, want := ContinuePolar(day, dusk, dawn, now, lat, lon, Astronomical), now.Add(24*time.Hour); !got.Equal(want) {
+	if got, want := ContinuePolar(day, dawn, now, lat, lon, Astronomical), now.Add(24*time.Hour); !got.Equal(want) {
 		t.Errorf("ContinuePolar at 11:50 = %v, want %v", got, want)
 	}
 	zg, _ := time.LoadLocation("Europe/Zagreb")
 	day = time.Date(2026, 10, 5, 0, 0, 0, 0, zg)
 	dusk, dawn, _ = Window(day, 45.8, 16, Astronomical)
-	if got := ContinuePolar(day, dusk, dawn, dusk.Add(time.Hour), 45.8, 16, Astronomical); !got.Equal(dawn) {
+	if got := ContinuePolar(day, dawn, dusk.Add(time.Hour), 45.8, 16, Astronomical); !got.Equal(dawn) {
 		t.Errorf("ContinuePolar(Zagreb) = %v, want its dawn %v", got, dawn)
 	}
 	// A 24 h night whose next night does not start at its dawn keeps that
 	// dawn rather than borrowing the next night's.
-	if got := ContinuePolar(day, dusk, dusk.Add(24*time.Hour), dusk.Add(time.Hour), 45.8, 16, Astronomical); !got.Equal(dusk.Add(24 * time.Hour)) {
+	if got := ContinuePolar(day, dusk.Add(24*time.Hour), dusk.Add(time.Hour), 45.8, 16, Astronomical); !got.Equal(dusk.Add(24 * time.Hour)) {
 		t.Errorf("ContinuePolar(24 h, unmatched) = %v, want %v", got, dusk.Add(24*time.Hour))
+	}
+	// The polar night's first night, from an afternoon dusk to the next
+	// noon, is shorter than 24 h and still carries on into the next one.
+	day = time.Date(2026, 12, 2, 0, 0, 0, 0, time.UTC)
+	dusk, dawn, ok = Window(day, 86, 10, Astronomical)
+	if !ok || dawn.Sub(dusk) >= 24*time.Hour {
+		t.Fatalf("Window(86° N, 2 Dec) = %v - %v, %v; want the polar night's first, under 24 h", dusk, dawn, ok)
+	}
+	now = dawn.Add(-10 * time.Minute)
+	if got, want := ContinuePolar(day, dawn, now, 86, 10, Astronomical), now.Add(24*time.Hour); !got.Equal(want) {
+		t.Errorf("ContinuePolar(86° N, 2 Dec) = %v, want %v", got, want)
 	}
 }
 
@@ -266,8 +277,8 @@ func TestWindowPolarNightEnd(t *testing.T) {
 		t.Fatalf("Window(85° N, 31 Dec) = %v - %v, %v; want a night of 23-24 h", dusk, dawn, ok)
 	}
 	prev := day.AddDate(0, 0, -1)
-	pDusk, pDawn, _ := Window(prev, 85, 0, Astronomical)
-	if got := ContinuePolar(prev, pDusk, pDawn, pDawn.Add(-time.Minute), 85, 0, Astronomical); !got.Equal(dawn) {
+	_, pDawn, _ := Window(prev, 85, 0, Astronomical)
+	if got := ContinuePolar(prev, pDawn, pDawn.Add(-time.Minute), 85, 0, Astronomical); !got.Equal(dawn) {
 		t.Errorf("ContinuePolar(30 Dec) = %v, want the 31st's dawn %v", got, dawn)
 	}
 }

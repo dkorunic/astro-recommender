@@ -418,6 +418,20 @@ func TestMutAerosolForecast(t *testing.T) {
 	if _, _, err := AerosolForecast(context.Background(), 1, 2, start, start); err == nil {
 		t.Error("malformed accepted")
 	}
+	// No usable hour is an error, so it is warned about, but keeps the
+	// elevation, which the extinction still uses.
+	mutServe(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"elevation":158,"hourly":{"time":[10,20],"aerosol_optical_depth":[null,-1]}}`))
+	})
+	if _, elev, err := AerosolForecast(context.Background(), 1, 2, start, start); err == nil || elev != 158 {
+		t.Errorf("no usable hour: elevation %v, err %v; want 158 and an error", elev, err)
+	}
+	mutServe(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"elevation":158,"hourly":{}}`))
+	})
+	if _, _, err := AerosolForecast(context.Background(), 1, 2, start, start); err == nil {
+		t.Error("empty hourly accepted")
+	}
 }
 
 // A 400 for a multi-day range is retried once for the first day only, with

@@ -456,7 +456,7 @@ func TestScoreFilterCamera(t *testing.T) {
 		one.Filter = f
 		rr := r[0]
 		rr.Filter, rr.Obs = f, nil
-		if e := Subs(&one, &s, rr, 0); best == 0 || e.Good < best {
+		if e := Subs(&one, &s, rr, nil); best == 0 || e.Good < best {
 			fewest, best = f, e.Good
 		}
 	}
@@ -488,7 +488,7 @@ func TestScoreFilterCamera(t *testing.T) {
 	for f, e := range map[string]*Estimate{"": &none, "ha": &ha} {
 		rr := r[0]
 		rr.Filter, rr.Obs = f, nil
-		*e = Subs(cfg, &s, rr, 0)
+		*e = Subs(cfg, &s, rr, nil)
 		goods[f] = e.Good
 		t.Logf("moonlit %4q: good %d, max %d", f, e.Good, e.Max)
 	}
@@ -602,7 +602,7 @@ func TestScoreFilterCameraModes(t *testing.T) {
 			one.Filter = f
 			rr := r[0]
 			rr.Filter, rr.Obs = f, nil
-			if e := Subs(&one, &s, rr, 0); best == 0 || e.Good < best {
+			if e := Subs(&one, &s, rr, nil); best == 0 || e.Good < best {
 				fewest, best = f, e.Good
 			}
 		}

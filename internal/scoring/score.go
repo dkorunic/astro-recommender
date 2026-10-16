@@ -366,8 +366,8 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, ts []*tally, mos
 			var sb, trans, gain, kb float64
 			if t.fp.w > 0 {
 				sb = glow + rayleigh + mie
-				trans = atmos.Transmission(air, s.ExtRayleigh[i]*t.fp.ray+atmos.OzoneExtinction+s.ExtAerosol[i]*t.fp.aer)
-				kb = s.ExtRayleigh[i]*t.fp.ray + atmos.OzoneExtinction + s.ExtAerosol[i]*t.fp.aer
+				trans = atmos.Transmission(air, s.ExtRayleigh[i]*t.fp.ray+s.ozone(i)+s.ExtAerosol[i]*t.fp.aer)
+				kb = s.ExtRayleigh[i]*t.fp.ray + s.ozone(i) + s.ExtAerosol[i]*t.fp.aer
 				gain = t.fp.gain(objNL, objRef, glow, rayleigh, mie)
 			} else {
 				sb = atmos.SkyBrightnessLit(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i]) + extraNL

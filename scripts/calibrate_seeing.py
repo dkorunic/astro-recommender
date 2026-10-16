@@ -138,7 +138,7 @@ def levels(h, i, elev):
         l, below = (float(p), v[0], v[1], v[2], v[3]), lv[-1]
         if plausible(l) and l[1] >= below[1] + MIN_LAYER and hypsometric(below, l):
             lv.append(l)
-    return lv if len(lv) > 4 and lv[-1][0] <= 300 else None  # the surface and minPressureLevels = 3, up to the jet
+    return lv if len(lv) > 3 and lv[-1][0] <= 300 else None  # the surface and minPressureLevels = 3, up to the jet
 
 
 def integrals(lv):

@@ -66,14 +66,29 @@ func TestPlanned(t *testing.T) {
 		{Start: t0.Add(2 * time.Hour), End: t0.Add(150 * time.Minute), Result: &results[0]},
 		{Start: t0.Add(150 * time.Minute), End: t0.Add(3 * time.Hour)}, // empty block
 	}
-	if got := planned(slots, &results[0]); got != 90*time.Minute {
-		t.Errorf("two blocks: %v", got)
+	grid := make([]time.Time, 180)
+	for i := range grid {
+		grid[i] = t0.Add(time.Duration(i) * time.Minute)
 	}
-	// Listed but not planned: 0, so Subs takes its whole observable time.
-	if got := planned(slots, &results[2]); got != 0 {
+	// The first and third blocks: minutes 0-59 and 120-149.
+	got := planned(slots, grid, &results[0])
+	n := 0
+	for i, in := range got {
+		if in {
+			n++
+		}
+		if in != (i < 60 || i >= 120 && i < 150) {
+			t.Fatalf("two blocks: minute %d %v", i, in)
+		}
+	}
+	if n != 90 {
+		t.Errorf("two blocks: %d minutes", n)
+	}
+	// Listed but not planned: nil, so Subs takes the whole night.
+	if got := planned(slots, grid, &results[2]); got != nil {
 		t.Errorf("unplanned: %v", got)
 	}
-	if got := planned(nil, &results[0]); got != 0 {
+	if got := planned(nil, grid, &results[0]); got != nil {
 		t.Errorf("no -plan: %v", got)
 	}
 }

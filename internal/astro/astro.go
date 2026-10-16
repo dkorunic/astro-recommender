@@ -105,15 +105,14 @@ func Tonight(now time.Time, lat, lon, sunAlt float64) (time.Time, bool) {
 	return now, false
 }
 
-// ContinuePolar returns the dawn to plan to for the night [dusk, dawn) of
+// ContinuePolar returns the dawn to plan to for the night ending at dawn of
 // day in progress at now. Polar night runs noon to noon, so one in progress
 // would end at the next noon however near it is (at 11:50, ten minutes): it
 // carries on into the next day's night when that one is dark from the same
-// noon, up to 24 hours from now. Any other night keeps its dawn.
-func ContinuePolar(day, dusk, dawn, now time.Time, lat, lon, sunAlt float64) time.Time {
-	if dawn.Sub(dusk) < 24*time.Hour {
-		return dawn
-	}
+// noon, up to 24 hours from now. That includes the first night of a polar
+// night, which runs from an afternoon dusk and so is shorter than 24 hours.
+// Any other night keeps its dawn.
+func ContinuePolar(day, dawn, now time.Time, lat, lon, sunAlt float64) time.Time {
 	if next, nextDawn, ok := Window(day.AddDate(0, 0, 1), lat, lon, sunAlt); ok && next.Equal(dawn) {
 		if limit := now.Add(24 * time.Hour); nextDawn.After(limit) {
 			return limit

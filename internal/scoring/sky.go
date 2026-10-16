@@ -393,6 +393,14 @@ func (s *Sky) extinctionParts(t time.Time, fallback float64) (float64, float64) 
 	return atmos.RayleighExtinction(s.Elevation), atmos.AerosolExtinction(s.aodAt(t))
 }
 
+// ozone returns minute i's ozone part of Ext, which a filter band keeps
+// whole: atmos.OzoneExtinction, or all of Ext when a fixed -extinction is
+// below it (atmos.SplitExtinction then leaves no Rayleigh or aerosol part),
+// so that no band is dimmed more than the unfiltered light.
+func (s *Sky) ozone(i int) float64 {
+	return min(atmos.OzoneExtinction, s.Ext[i])
+}
+
 // aodAt returns the hour's aerosol optical depth above the site: CAMS's
 // over the ground of its cell (AODElevation; the site's when unknown, as
 // it was before), else TypicalAOD over sea level, each thinned by
