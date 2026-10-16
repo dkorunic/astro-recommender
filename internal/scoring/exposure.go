@@ -217,7 +217,7 @@ func (c camera) channels(dst []channel, name string, width float64, lines [catal
 		}
 	}
 	if emission {
-		// A zero share adds nothing here, and minuteSNR2's ch.obj > 0 gate is
+		// A zero share adds nothing here, and camera.add's ch.obj > 0 gate is
 		// where a channel that sees none of the object drops out, read noise
 		// included: change the two together.
 		for l, share := range lines {

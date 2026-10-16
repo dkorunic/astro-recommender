@@ -86,11 +86,11 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 		// beat no filter; a target none beats (a galaxy, which a broadband
 		// filter dims as much as the sky) keeps exactly its unfiltered
 		// weights. Gains most: with a camera and a surface brightness to
-		// estimate subs from (catalog.Target.ExposureSB), the best mean
-		// per-sub SNR² of the sub-exposure model, read noise included, over
-		// the choice's own observable minutes — Subs' count for a level is
-		// level²/mean, so FILTER is the fewest-subs choice SUBS promises (the
-		// total would let a narrowband filter win on minutes alone: its
+		// estimate subs from (catalog.Target.ExposureSB), the fewest subs
+		// the sub-exposure model needs for the good level (subsGain over
+		// rates: read noise, dark current, -stack and the -residual ceiling
+		// included), over the choice's own observable minutes, so FILTER is
+		// the choice SUBS counts for (the total SNR² would let a narrowband filter win on minutes alone: its
 		// moonK admits moonlit, poor minutes no filter keeps); else the most
 		// uncapped weight, since under a dark sky every helpful filter's
 		// capped weight is 1 and the band's extinction alone would choose
@@ -157,8 +157,8 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 // tally is one -filter choice's running score in scoreTarget: what it
 // passes, its Moon limit, and the observable minutes it has counted, with
 // their weights (capped at 1, the score), uncapped (raw) and, with a camera
-// (chans), the per-sub SNR² the sub-exposure model stacks (snr2), each
-// weighted by the minute's weather.
+// (chans), the sub-exposure model's stack sums (st), each weighted by the
+// minute's weather.
 type tally struct {
 	chans                    []channel
 	weight                   []float64 // per-minute weight, len(s.Grid)
