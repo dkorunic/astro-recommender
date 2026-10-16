@@ -63,7 +63,7 @@ func TestTrackNaN(t *testing.T) {
 func TestTargetsNaN(t *testing.T) {
 	grid := []time.Time{time.Date(2026, 10, 6, 0, 0, 0, 0, time.UTC)}
 	el := Elements{{name: "C/2026 X1", q: 1e-300, e: 2, h: 5, k: 4}}
-	if out := el.Targets(grid, 99); len(out) != 0 {
+	if out := el.Targets(grid, 99, nil); len(out) != 0 {
 		t.Errorf("Targets = %v, want none", out)
 	}
 }

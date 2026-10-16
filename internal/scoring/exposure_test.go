@@ -348,7 +348,7 @@ func TestSubsEmissionLines(t *testing.T) {
 	c, _ := newCamera(expCfg(), &Sky{})
 	lines := catalog.Target{Type: "HII region"}.Lines()
 	ch := c.channels(nil, "", 7, lines, filterPass{})
-	g := c.area * c.qe * c.omega * photonsV0 / atmos.NanoLamberts(0)
+	g := c.area * c.qe * c.omega * atmos.PhotonsV0 / atmos.NanoLamberts(0)
 	for i := range ch {
 		var want float64
 		for l, share := range lines {
@@ -456,13 +456,13 @@ func TestSubsCloudedOut(t *testing.T) {
 // An emission-line target's V surface brightness measures its lines only as
 // far as the V passband reaches them, and its catalogue magnitude also counts
 // stars and continuum (vContinuum, fitted by scripts/calibrate_lines.py):
-// an H II region's lines are 1.66 mag brighter than its V, a planetary's,
-// [O III] inside V, 0.39; a galaxy's light is its V.
+// an H II region's lines are 1.63 mag brighter than its V, a planetary's,
+// [O III] inside V, 0.36; a galaxy's light is its V.
 func TestLightNL(t *testing.T) {
 	for _, c := range []struct {
 		typ   string
 		boost float64
-	}{{"HII region", 1.66}, {"Supernova Remnant", 1.37}, {"Wolf-Rayet Nebula", 0.81}, {"Planetary Nebula", 0.39}, {"Galaxy", 0}} {
+	}{{"HII region", 1.63}, {"Supernova Remnant", 1.34}, {"Wolf-Rayet Nebula", 0.78}, {"Planetary Nebula", 0.36}, {"Galaxy", 0}} {
 		tg := catalog.Target{Type: c.typ}
 		if got := atmos.MagFromNL(atmos.NanoLamberts(22)) - atmos.MagFromNL(lightNL(tg, 22)); math.Abs(got-c.boost) > 0.01 {
 			t.Errorf("%s: lines %.3f mag brighter than V, want %.2f", c.typ, got, c.boost)
@@ -485,7 +485,8 @@ func TestCalibrationSample(t *testing.T) {
 		}
 		for _, x := range ts {
 			sb, _ := x.SurfaceBrightness()
-			if !catalog.EmissionLine(x) || x.Size < 30 || sb <= 0 || seen[catalog.NameKey(x.Name)] {
+			// A flux-derived surface brightness has no continuum to fit.
+			if _, flux := x.FluxSB(); flux || !catalog.EmissionLine(x) || x.Size < 30 || sb <= 0 || seen[catalog.NameKey(x.Name)] {
 				continue
 			}
 			seen[catalog.NameKey(x.Name)] = true
@@ -725,5 +726,23 @@ func TestLevelScale(t *testing.T) {
 	raw := Subs(cfg, s, expResult(t, cfg, s, expGalaxy(atmos.RefZenithMag)), 0)
 	if e.SNRPerSub <= 0 || raw.SNRPerSub <= 0 || e.Good >= raw.Good*12 {
 		t.Errorf("24.5 against 22.0: %d subs against %d, want under 12x (1/S², 100x, without the scale)", e.Good, raw.Good)
+	}
+}
+
+// A flux-derived surface brightness turns back into exactly the lines'
+// photons: lightNL's nanoLamberts are PhotonsV0 per V = 0 per arcsec².
+func TestLightNLFlux(t *testing.T) {
+	pn := catalog.Target{Type: "Planetary Nebula", Size: 10, HaFlux: -10.3}
+	sb, _ := pn.FluxSB()
+	shares := pn.Lines()
+	total := math.Pow(10, -10.3) / shares[catalog.Ha]
+	var photons float64
+	for l, s := range shares {
+		photons += s * total * catalog.LineNM[l] / 1.98644586e-9
+	}
+	area := math.Pi / 4 * 600 * 600
+	// To 0.1%: K&S's nanoLamberts go as e^(-0.92104 m), not 10^(-0.4 m).
+	if got := lightNL(pn, sb) * atmos.PhotonsV0 / atmos.NanoLamberts(0) * area; math.Abs(got/photons-1) > 1e-3 {
+		t.Errorf("photons %v, want %v", got, photons)
 	}
 }

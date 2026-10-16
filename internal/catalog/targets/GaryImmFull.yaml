@@ -18,6 +18,7 @@
   ra: "00 45 36.0"
   rating: 2
   size: 0.5
+  haflux: -11.61
   type: "Planetary Nebula"
 - constellation: "Cas"
   dec: "+64 09 05.0"
@@ -63,6 +64,7 @@
   ra: "05 03 08.0"
   rating: 2
   size: 13.0
+  haflux: -10.41
   type: "Planetary Nebula"
 - constellation: "Aur"
   dec: "+39 08 08.0"
@@ -72,6 +74,7 @@
   ra: "05 06 38.0"
   rating: 1
   size: 1.0
+  haflux: -12.00
   type: "Planetary Nebula"
 - constellation: "Aur"
   dec: "+36 02 00.0"
@@ -90,6 +93,7 @@
   ra: "05 31 48.0"
   rating: 2
   size: 0.5
+  haflux: -11.52
   type: "Planetary Nebula"
 - constellation: "Cet"
   dec: "+08 15 31.0"
@@ -117,6 +121,7 @@
   ra: "06 04 47.0"
   rating: 3
   size: 3.0
+  haflux: -11.40
   type: "Planetary Nebula"
 - constellation: "Ori"
   dec: "+11 46 47.0"
@@ -126,6 +131,7 @@
   ra: "06 11 09.0"
   rating: 2
   size: 0.7
+  haflux: -12.45
   type: "Planetary Nebula"
 - constellation: "CMa"
   dec: "-25 22 54.0"
@@ -135,6 +141,7 @@
   ra: "06 27 02.0"
   rating: 2
   size: 0.6
+  haflux: -11.90
   type: "Planetary Nebula"
 - constellation: "Lyn"
   dec: "+61 47 25.0"
@@ -144,6 +151,7 @@
   ra: "06 43 55.0"
   rating: 1
   size: 2.4
+  haflux: -11.68
   type: "Planetary Nebula"
 - constellation: "Mon"
   dec: "-02 53 08.0"
@@ -153,6 +161,7 @@
   ra: "06 56 14.0"
   rating: 2
   size: 1.4
+  haflux: -12.00
   type: "Planetary Nebula"
 - constellation: "Gem"
   dec: "+14 36 47.0"
@@ -162,6 +171,7 @@
   ra: "06 59 57.0"
   rating: 2
   size: 1.4
+  haflux: -12.05
   type: "Planetary Nebula"
 - constellation: "CMi"
   dec: "+01 45 37.0"
@@ -171,6 +181,7 @@
   ra: "07 22 58.0"
   rating: 1
   size: 1.0
+  haflux: -11.65
   type: "Planetary Nebula"
 - constellation: "Gem"
   dec: "+13 14 48.0"
@@ -180,6 +191,7 @@
   ra: "07 29 03.0"
   rating: 5
   size: 8.0
+  haflux: -9.91
   type: "Planetary Nebula"
 - constellation: "CMi"
   dec: "+02 24 00.0"
@@ -198,6 +210,7 @@
   ra: "07 43 19.0"
   rating: 1
   size: 1.0
+  haflux: -11.86
   type: "Planetary Nebula"
 - constellation: "CMi"
   dec: "+03 00 27.0"
@@ -207,6 +220,7 @@
   ra: "07 51 38.0"
   rating: 3
   size: 7.0
+  haflux: -10.67
   type: "Planetary Nebula"
 - constellation: "Mon"
   dec: "-02 52 43.0"
@@ -216,6 +230,7 @@
   ra: "08 06 45.0"
   rating: 2
   size: 3.0
+  haflux: -11.95
   type: "Planetary Nebula"
 - constellation: "Pup"
   dec: "-32 40 15.0"
@@ -225,6 +240,7 @@
   ra: "08 09 01.0"
   rating: 2
   size: 0.7
+  haflux: -12.24
   type: "Planetary Nebula"
 - constellation: "Pyx"
   dec: "-32 06 07.0"
@@ -234,6 +250,7 @@
   ra: "08 31 53.0"
   rating: 2
   size: 1.0
+  haflux: -12.01
   type: "Planetary Nebula"
 - constellation: "UMa"
   dec: "+58 13 54.0"
@@ -252,6 +269,7 @@
   ra: "08 40 14.0"
   rating: 2
   size: 6.0
+  haflux: -11.04
   type: "Planetary Nebula"
 - constellation: "Cnc"
   dec: "+17 52 33.0"
@@ -270,6 +288,7 @@
   ra: "08 54 13.0"
   rating: 4
   size: 15.0
+  haflux: -10.20
   type: "Planetary Nebula"
 - constellation: "Hya"
   dec: "-02 48 33.0"
@@ -288,6 +307,7 @@
   ra: "09 45 35.0"
   rating: 2
   size: 5.0
+  haflux: -11.41
   type: "Planetary Nebula"
 - constellation: "Hya"
   dec: "-22 51 42.0"
@@ -306,6 +326,7 @@
   ra: "13 40 41.0"
   rating: 2
   size: 8.0
+  haflux: -10.41
   type: "Planetary Nebula"
 - constellation: "Vir"
   dec: "-17 13 41.0"
@@ -315,6 +336,7 @@
   ra: "14 04 26.0"
   rating: 2
   size: 1.0
+  haflux: -11.56
   type: "Planetary Nebula"
 - constellation: "Sco"
   dec: "-31 44 57.0"
@@ -324,6 +346,7 @@
   ra: "16 23 17.0"
   rating: 3
   size: 2.5
+  haflux: -11.67
   type: "Planetary Nebula"
 - constellation: "Her"
   dec: "+27 54 34.0"
@@ -342,6 +365,7 @@
   ra: "16 48 34.0"
   rating: 2
   size: 0.6
+  haflux: -12.25
   type: "Planetary Nebula"
 - constellation: "Ser"
   dec: "-15 13 21.0"
@@ -351,6 +375,7 @@
   ra: "17 29 04.0"
   rating: 2
   size: 0.4
+  haflux: -11.57
   type: "Planetary Nebula"
 - constellation: "Oph"
   dec: "-08 19 10.0"
@@ -360,6 +385,7 @@
   ra: "17 31 31.0"
   rating: 1
   size: 1.0
+  haflux: -11.67
   type: "Planetary Nebula"
 - constellation: "Oph"
   dec: "+10 37 20.0"
@@ -369,6 +395,7 @@
   ra: "17 53 32.0"
   rating: 3
   size: 1.3
+  haflux: -11.56
   type: "Planetary Nebula"
 - constellation: "Sgr"
   dec: "-16 45 27.0"
@@ -378,6 +405,7 @@
   ra: "18 30 11.0"
   rating: 2
   size: 1.0
+  haflux: -11.49
   type: "Planetary Nebula"
 - constellation: "Sct"
   dec: "-11 36 54.0"
@@ -387,6 +415,7 @@
   ra: "18 30 17.0"
   rating: 2
   size: 7.0
+  haflux: -11.26
   type: "Planetary Nebula"
 - constellation: "Lyr"
   dec: "+26 56 17.0"
@@ -414,6 +443,7 @@
   ra: "18 42 49.0"
   rating: 2
   size: 0.8
+  haflux: -11.52
   type: "Planetary Nebula"
 - constellation: "Sct"
   dec: "-06 29 14.0"
@@ -423,6 +453,7 @@
   ra: "18 53 29.0"
   rating: 2
   size: 1.0
+  haflux: -11.72
   type: "Planetary Nebula"
 - constellation: "Dra"
   dec: "+48 27 57.0"
@@ -441,6 +472,7 @@
   ra: "19 01 01.0"
   rating: 2
   size: 1.0
+  haflux: -11.56
   type: "Planetary Nebula"
 - constellation: "Aql"
   dec: "+17 57 10.0"
@@ -450,6 +482,7 @@
   ra: "19 04 32.0"
   rating: 2
   size: 1.0
+  haflux: -11.93
   type: "Planetary Nebula"
 - constellation: "Aql"
   dec: "+06 23 56.0"
@@ -459,6 +492,7 @@
   ra: "19 06 46.0"
   rating: 2
   size: 0.5
+  haflux: -11.61
   type: "Planetary Nebula"
 - constellation: "Vul"
   dec: "+22 58 51.0"
@@ -468,6 +502,7 @@
   ra: "19 08 39.0"
   rating: 1
   size: 1.0
+  haflux: -12.10
   type: "Planetary Nebula"
 - constellation: "Aql"
   dec: "-02 21 02.0"
@@ -486,6 +521,7 @@
   ra: "19 13 07.0"
   rating: 2
   size: 3.0
+  haflux: -11.56
   type: "Planetary Nebula"
 - constellation: "Vul"
   dec: "+25 37 26.0"
@@ -495,6 +531,7 @@
   ra: "19 17 04.0"
   rating: 2
   size: 1.0
+  haflux: -11.86
   type: "Planetary Nebula"
 - constellation: "Aql"
   dec: "+01 46 51.0"
@@ -504,6 +541,7 @@
   ra: "19 18 20.0"
   rating: 2
   size: 0.8
+  haflux: -12.37
   type: "Planetary Nebula"
 - constellation: "Sge"
   dec: "+19 33 56.0"
@@ -522,6 +560,7 @@
   ra: "19 19 17.0"
   rating: 2
   size: 1.7
+  haflux: -11.94
   type: "Planetary Nebula"
 - constellation: "Cyg"
   dec: "+46 14 36.0"
@@ -531,6 +570,7 @@
   ra: "19 19 10.0"
   rating: 2
   size: 3.0
+  haflux: -11.38
   type: "Planetary Nebula"
 - constellation: "Aql"
   dec: "+10 37 01.0"
@@ -540,6 +580,7 @@
   ra: "19 33 18.0"
   rating: 3
   size: 3.0
+  haflux: -11.09
   type: "Planetary Nebula"
 - constellation: "Sge"
   dec: "+17 05 08.0"
@@ -549,6 +590,7 @@
   ra: "19 42 10.0"
   rating: 2
   size: 0.7
+  haflux: -11.47
   type: "Planetary Nebula"
 - constellation: "Aql"
   dec: "+05 34 00.0"
@@ -567,6 +609,7 @@
   ra: "19 46 34.0"
   rating: 3
   size: 4.0
+  haflux: -10.95
   type: "Planetary Nebula"
 - constellation: "Sgr"
   dec: "-21 36 37.0"
@@ -576,6 +619,7 @@
   ra: "19 57 32.0"
   rating: 2
   size: 4.5
+  haflux: -10.80
   type: "Planetary Nebula"
 - constellation: "Aql"
   dec: "+03 02 23.0"
@@ -585,6 +629,7 @@
   ra: "19 58 29.0"
   rating: 2
   size: 1.0
+  haflux: -11.89
   type: "Planetary Nebula"
 - constellation: "Vul"
   dec: "+21 42 58.0"
@@ -594,6 +639,7 @@
   ra: "20 00 11.0"
   rating: 2
   size: 0.7
+  haflux: -11.61
   type: "Planetary Nebula"
 - constellation: "Cyg"
   dec: "+38 24 31.0"
@@ -612,6 +658,7 @@
   ra: "20 31 33.0"
   rating: 2
   size: 1.0
+  haflux: -12.07
   type: "Planetary Nebula"
 - constellation: "Cyg"
   dec: "+47 21 04.0"
@@ -630,6 +677,7 @@
   ra: "20 50 02.0"
   rating: 3
   size: 3.0
+  haflux: -11.70
   type: "Planetary Nebula"
 - constellation: "Cep"
   dec: "+57 25 56.0"
@@ -648,6 +696,7 @@
   ra: "21 16 52.0"
   rating: 2
   size: 9.0
+  haflux: -10.76
   type: "Planetary Nebula"
 - constellation: "Cep"
   dec: "+62 53 28.0"
@@ -693,6 +742,7 @@
   ra: "22 26 17.0"
   rating: 3
   size: 2.0
+  haflux: -11.20
   type: "Planetary Nebula"
 - constellation: "Lac"
   dec: "+52 26 04.0"
@@ -702,6 +752,7 @@
   ra: "22 34 46.0"
   rating: 2
   size: 2.2
+  haflux: -11.45
   type: "Planetary Nebula"
 - constellation: "Cep"
   dec: "+80 26 33.0"
@@ -720,6 +771,7 @@
   ra: "23 45 47.0"
   rating: 2
   size: 1.7
+  haflux: -11.37
   type: "Planetary Nebula"
 - constellation: "Cas"
   dec: "+54 44 40.0"
@@ -738,6 +790,7 @@
   ra: "23 47 45.0"
   rating: 2
   size: 2.7
+  haflux: -11.13
   type: "Planetary Nebula"
 - constellation: "Cas"
   dec: "+62 26 51.0"
@@ -4255,6 +4308,7 @@
   ra: "03 53 37.0"
   rating: 2
   size: 1.0
+  haflux: -11.69
   type: "Planetary Nebula"
 - constellation: "Per"
   dec: "+31 10 00.0"
@@ -7459,6 +7513,7 @@
   ra: "00 37 18.0"
   rating: 0
   size: 0.05
+  haflux: -12.05
   type: "Planetary Nebula"
 - constellation: "Cas"
   dec: "+62 59 06.0"
@@ -7468,6 +7523,7 @@
   ra: "00 19 59.0"
   rating: 2
   size: 1.5
+  haflux: -11.62
   type: "Planetary Nebula"
 - constellation: "Per"
   dec: "+56 24 00.0"
@@ -7504,6 +7560,7 @@
   ra: "19 34 45.0"
   rating: 2
   size: 0.2
+  haflux: -9.41
   type: "Planetary Nebula"
 - constellation: "Sgr"
   dec: "-31 29 53.0"
@@ -7513,6 +7570,7 @@
   ra: "18 29 14.0"
   rating: 1
   size: 0.2
+  haflux: -10.68
   type: "Planetary Nebula"
 - constellation: "Cas"
   dec: "+58 48 00.0"
@@ -7684,6 +7742,7 @@
   ra: "04 42 54.0"
   rating: 2
   size: 0.2
+  haflux: -11.98
   type: "Preplanetary Nebula"
 - constellation: "Cep"
   dec: "+72 47 00.0"
@@ -7783,6 +7842,7 @@
   ra: "19 17 06.0"
   rating: 2
   size: 0.5
+  haflux: -11.68
   type: "Planetary Nebula"
 - constellation: "Aql"
   dec: "+13 19 35.0"
@@ -7792,6 +7852,7 @@
   ra: "19 26 27.0"
   rating: 2
   size: 1.5
+  haflux: -12.43
   type: "Planetary Nebula"
 - constellation: "Cep"
   dec: "+70 56 01.0"
@@ -7882,6 +7943,7 @@
   ra: "09 53 00.0"
   rating: 1
   size: 12.0
+  haflux: -11.03
   type: "Planetary Nebula"
 - constellation: "Dra"
   dec: "+71 35 58.0"
@@ -8296,6 +8358,7 @@
   ra: "09 27 03.0"
   rating: 4
   size: 2.0
+  haflux: -10.55
   type: "Planetary Nebula"
 - constellation: "Pup"
   dec: "-68 14 00.0"
@@ -8683,6 +8746,7 @@
   ra: "04 37 24.0"
   rating: 2
   size: 0.3
+  haflux: -11.63
   type: "Planetary Nebula"
 - constellation: "Ori"
   dec: "+12 21 00.0"
@@ -8692,6 +8756,7 @@
   ra: "05 40 42.0"
   rating: 2
   size: 0.5
+  haflux: -11.43
   type: "Planetary Nebula"
 - constellation: "Aql"
   dec: "-01 24 00.0"
@@ -8710,6 +8775,7 @@
   ra: "19 02 59.0"
   rating: 2
   size: 1.0
+  haflux: -12.19
   type: "Planetary Nebula"
 - constellation: "Oph"
   dec: "-24 42 08.0"
@@ -8719,6 +8785,7 @@
   ra: "17 41 53.0"
   rating: 2
   size: 0.6
+  haflux: -10.91
   type: "Planetary Nebula"
 - constellation: "Mon"
   dec: "-07 46 39.0"
@@ -8737,6 +8804,7 @@
   ra: "03 27 15.0"
   rating: 3
   size: 9.0
+  haflux: -11.45
   type: "Planetary Nebula"
 - constellation: "Mon"
   dec: "-10 13 00.0"
@@ -8746,6 +8814,7 @@
   ra: "06 23 36.0"
   rating: 2
   size: 1.5
+  haflux: -11.29
   type: "Planetary Nebula"
 - constellation: "CMi"
   dec: "+09 33 00.0"
@@ -8755,6 +8824,7 @@
   ra: "07 55 12.0"
   rating: 2
   size: 1.5
+  haflux: -12.02
   type: "Planetary Nebula"
 - constellation: "Oph"
   dec: "-28 24 00.0"
@@ -8800,6 +8870,7 @@
   ra: "20 11 56.0"
   rating: 2
   size: 0.2
+  haflux: -11.42
   type: "Preplanetary Nebula"
 - constellation: "Cas"
   dec: "+64 58 00.0"
@@ -9782,6 +9853,7 @@
   ra: "21 33 06.0"
   rating: 3
   size: 0.5
+  haflux: -10.57
   type: "Planetary Nebula"
 - constellation: "UMa"
   dec: "+62 12 58.0"
@@ -9879,6 +9951,7 @@
   ra: "03 10 19.0"
   rating: 2
   size: 0.75
+  haflux: -10.82
   type: "Planetary Nebula"
 - constellation: "Per"
   dec: "+40 00 13.0"
@@ -9993,6 +10066,7 @@
   ra: "05 27 28.0"
   rating: 1
   size: 0.2
+  haflux: -9.02
   type: "Planetary Nebula"
 - constellation: "Ori"
   dec: "-07 55 05.0"
@@ -10216,6 +10290,7 @@
   ra: "18 54 37.0"
   rating: 3
   size: 2.0
+  haflux: -10.65
   type: "Planetary Nebula"
 - constellation: "Cyg"
   dec: "+40 15 24.0"
@@ -10712,6 +10787,7 @@
   ra: "14 22 26.0"
   rating: 4
   size: 1.8
+  haflux: -10.16
   type: "Planetary Nebula"
 - constellation: "Boo"
   dec: "+43 28 05.0"
@@ -10740,6 +10816,7 @@
   ra: "16 11 44.0"
   rating: 1
   size: 0.1
+  haflux: -10.07
   type: "Planetary Nebula"
 - constellation: "Sco"
   dec: "-20 04 54.0"
@@ -10767,6 +10844,7 @@
   ra: "17 01 34.0"
   rating: 2
   size: 0.2
+  haflux: -10.26
   type: "Planetary Nebula"
 - constellation: "Oph"
   dec: "+05 39 00.0"
@@ -10897,6 +10975,7 @@
   ra: "21 59 35.0"
   rating: 4
   size: 2.0
+  haflux: -10.52
   type: "Planetary Nebula"
 - constellation: "PsA"
   dec: "-33 48 12.0"
@@ -10916,6 +10995,7 @@
   ra: "22 23 56.0"
   rating: 1
   size: 0.1
+  haflux: -10.64
   type: "Planetary Nebula"
 - constellation: "Gru"
   dec: "-44 46 03.0"
@@ -10963,6 +11043,7 @@
   ra: "03 49 00.0"
   rating: 2
   size: 20.0
+  haflux: -10.88
   type: "Planetary Nebula"
 - constellation: "Cep"
   dec: "+65 54 00.0"
@@ -10990,6 +11071,7 @@
   ra: "23 35 53.0"
   rating: 3
   size: 5.0
+  haflux: -10.82
   type: "Planetary Nebula"
 - constellation: "Lyn"
   dec: "+53 25 00.0"
@@ -11071,6 +11153,7 @@
   ra: "07 07 15.0"
   rating: 2
   size: 1.0
+  haflux: -12.42
   type: "Planetary Nebula"
 - constellation: "CMa"
   dec: "-16 06 00.0"
@@ -11080,6 +11163,7 @@
   ra: "07 12 36.0"
   rating: 2
   size: 1.5
+  haflux: -12.44
   type: "Planetary Nebula"
 - constellation: "Pup"
   dec: "-19 18 16.0"
@@ -11089,6 +11173,7 @@
   ra: "07 50 12.0"
   rating: 2
   size: 1.0
+  haflux: -12.12
   type: "Planetary Nebula"
 - constellation: "Her"
   dec: "+21 30 00.0"
@@ -11125,6 +11210,7 @@
   ra: "23 39 10.0"
   rating: 2
   size: 0.7
+  haflux: -12.20
   type: "Planetary Nebula"
 - constellation: "Hya"
   dec: "-34 22 00.0"
@@ -11134,6 +11220,7 @@
   ra: "11 26 42.0"
   rating: 3
   size: 3.0
+  haflux: -10.81
   type: "Planetary Nebula"
 - constellation: "Hya"
   dec: "-29 07 00.0"
@@ -11215,6 +11302,7 @@
   ra: "18 31 00.0"
   rating: 1
   size: 0.3
+  haflux: -11.86
   type: "Planetary Nebula"
 - constellation: "Aql"
   dec: "+07 07 23.0"
@@ -11224,6 +11312,7 @@
   ra: "18 56 18.0"
   rating: 2
   size: 0.5
+  haflux: -12.19
   type: "Planetary Nebula"
 - constellation: "Aql"
   dec: "+00 13 37.0"
@@ -11233,6 +11322,7 @@
   ra: "19 14 39.0"
   rating: 1
   size: 0.2
+  haflux: -11.81
   type: "Planetary Nebula"
 - constellation: "Cyg"
   dec: "+33 28 00.0"
@@ -11323,6 +11413,7 @@
   ra: "07 33 25.0"
   rating: 1
   size: 2.0
+  haflux: -12.00
   type: "Planetary Nebula"
 - constellation: "Cyg"
   dec: "+46 19 12.0"
@@ -11361,11 +11452,11 @@
   size: 150.0
   type: "Molecular Cloud"
 - constellation: "Lac"
-  dec: "+41 05 24.0"
+  dec: "+40 34 48.0"
   description: "Gecko Nebula"
   mag: -9999
   name: "LBN 437"
-  ra: "22 38 13.0"
+  ra: "22 32 12.0"
   rating: 4
   size: 80.0
   type: "Molecular Cloud"
@@ -11435,11 +11526,11 @@
   size: 90.0
   type: "Molecular Cloud"
 - constellation: "Cep"
-  dec: "+73 25 00.0"
+  dec: "+72 54 00.0"
   description: "Shark Nebula"
   mag: -9999
   name: "LBN 535"
-  ra: "22 14 55.0"
+  ra: "22 01 12.0"
   rating: 4
   size: 120.0
   type: "Molecular Cloud"
@@ -11775,6 +11866,7 @@
   ra: "16 09 46.0"
   rating: 2
   size: 1.2
+  haflux: -12.08
   type: "Planetary Nebula"
 - constellation: "Pav"
   dec: "-55 35 10.0"
@@ -11784,6 +11876,7 @@
   ra: "19 09 48.0"
   rating: 2
   size: 1.0
+  haflux: -12.12
   type: "Planetary Nebula"
 - constellation: "Com"
   dec: "+25 53 00.0"
@@ -12320,6 +12413,7 @@
   ra: "18 53 35.0"
   rating: 5
   size: 1.5
+  haflux: -9.56
   type: "Planetary Nebula"
 - constellation: "Vir"
   dec: "+11 49 06.0"
@@ -12500,6 +12594,7 @@
   ra: "01 42 18.0"
   rating: 4
   size: 3.0
+  haflux: -10.19
   type: "Planetary Nebula"
 - constellation: "Cet"
   dec: "-00 00 48.0"
@@ -12931,6 +13026,7 @@
   ra: "15 34 18.0"
   rating: 2
   size: 1.3
+  haflux: -10.64
   type: "Planetary Nebula"
 - constellation: "Nor"
   dec: "-54 57 00.0"
@@ -12940,6 +13036,7 @@
   ra: "16 14 30.0"
   rating: 3
   size: 0.4
+  haflux: -10.92
   type: "Planetary Nebula"
 - constellation: "Gem"
   dec: "+24 00 36.0"
@@ -12949,6 +13046,7 @@
   ra: "06 37 21.0"
   rating: 2
   size: 0.5
+  haflux: -11.09
   type: "Planetary Nebula"
 - constellation: "Mon"
   dec: "+03 08 24.0"
@@ -12958,6 +13056,7 @@
   ra: "06 53 34.0"
   rating: 1
   size: 0.3
+  haflux: -11.57
   type: "Planetary Nebula"
 - constellation: "Pup"
   dec: "-14 12 00.0"
@@ -12985,6 +13084,7 @@
   ra: "18 09 30.0"
   rating: 3
   size: 2.0
+  haflux: -11.60
   type: "Planetary Nebula"
 - constellation: "Sgr"
   dec: "-28 58 59.0"
@@ -12994,6 +13094,7 @@
   ra: "18 11 05.0"
   rating: 1
   size: 0.5
+  haflux: -10.88
   type: "Planetary Nebula"
 - constellation: "Sct"
   dec: "-10 39 47.0"
@@ -13003,6 +13104,7 @@
   ra: "18 40 20.0"
   rating: 2
   size: 0.5
+  haflux: -11.38
   type: "Planetary Nebula"
 - constellation: "Sct"
   dec: "-09 04 49.0"
@@ -13012,6 +13114,7 @@
   ra: "18 43 20.0"
   rating: 2
   size: 0.5
+  haflux: -10.93
   type: "Planetary Nebula"
 - constellation: "Lyr"
   dec: "+35 15 00.0"
@@ -13039,6 +13142,7 @@
   ra: "21 37 02.0"
   rating: 3
   size: 0.8
+  haflux: -10.95
   type: "Planetary Nebula"
 - constellation: "Vul"
   dec: "+26 52 41.0"
@@ -13048,6 +13152,7 @@
   ra: "19 32 58.0"
   rating: 3
   size: 0.4
+  haflux: -11.74
   type: "Preplanetary Nebula"
 - constellation: "Cyg"
   dec: "+29 33 00.0"
@@ -13066,6 +13171,7 @@
   ra: "17 05 38.0"
   rating: 3
   size: 0.5
+  haflux: -10.49
   type: "Preplanetary Nebula"
 - constellation: "Sct"
   dec: "-08 28 00.0"
@@ -13075,6 +13181,7 @@
   ra: "18 46 35.0"
   rating: 1
   size: 0.3
+  haflux: -11.72
   type: "Planetary Nebula"
 - constellation: "Vul"
   dec: "+25 54 22.0"
@@ -13093,6 +13200,7 @@
   ra: "22 16 03.0"
   rating: 2
   size: 1.0
+  haflux: -11.14
   type: "Planetary Nebula"
 - constellation: "Cep"
   dec: "+57 36 18.0"
@@ -13102,6 +13210,7 @@
   ra: "22 20 31.0"
   rating: 3
   size: 0.5
+  haflux: -11.69
   type: "Planetary Nebula"
 - constellation: "Cep"
   dec: "+70 22 00.0"
@@ -13111,6 +13220,7 @@
   ra: "23 31 54.0"
   rating: 3
   size: 1.0
+  haflux: -11.21
   type: "Planetary Nebula"
 - constellation: "CMa"
   dec: "-31 35 30.0"
@@ -13120,6 +13230,7 @@
   ra: "07 02 50.0"
   rating: 3
   size: 0.5
+  haflux: -10.80
   type: "Planetary Nebula"
 - constellation: "Mon"
   dec: "-05 21 52.0"
@@ -13129,6 +13240,7 @@
   ra: "07 26 34.0"
   rating: 2
   size: 0.3
+  haflux: -11.72
   type: "Planetary Nebula"
 - constellation: "Oph"
   dec: "-26 11 56.0"
@@ -13138,6 +13250,7 @@
   ra: "17 25 43.0"
   rating: 2
   size: 0.3
+  haflux: -11.80
   type: "Planetary Nebula"
 - constellation: "Sct"
   dec: "-10 05 48.0"
@@ -13147,6 +13260,7 @@
   ra: "18 32 41.0"
   rating: 3
   size: 0.4
+  haflux: -11.92
   type: "Planetary Nebula"
 - constellation: "Sct"
   dec: "-15 33 44.0"
@@ -13156,6 +13270,7 @@
   ra: "18 41 15.0"
   rating: 1
   size: 0.3
+  haflux: -11.50
   type: "Planetary Nebula"
 - constellation: "Sct"
   dec: "-10 15 07.0"
@@ -13165,6 +13280,7 @@
   ra: "18 33 15.0"
   rating: 1
   size: 0.2
+  haflux: -12.61
   type: "Planetary Nebula"
 - constellation: "Ser"
   dec: "-04 59 22.0"
@@ -13174,6 +13290,7 @@
   ra: "18 14 18.0"
   rating: 2
   size: 0.7
+  haflux: -11.31
   type: "Planetary Nebula"
 - constellation: "Sct"
   dec: "-10 03 00.0"
@@ -13192,6 +13309,7 @@
   ra: "19 21 01.0"
   rating: 1
   size: 0.2
+  haflux: -11.82
   type: "Planetary Nebula"
 - constellation: "Cyg"
   dec: "+43 44 00.0"
@@ -13237,6 +13355,7 @@
   ra: "21 17 08.0"
   rating: 2
   size: 13.0
+  haflux: -10.74
   type: "Planetary Nebula"
 - constellation: "Dor"
   dec: "-66 25 25.0"
@@ -13291,6 +13410,7 @@
   ra: "19 43 59.0"
   rating: 2
   size: 0.5
+  haflux: -11.88
   type: "Planetary Nebula"
 - constellation: "Peg"
   dec: "+27 42 30.0"
@@ -13592,6 +13712,7 @@
   ra: "00 47 03.0"
   rating: 4
   size: 4.5
+  haflux: -10.07
   type: "Planetary Nebula"
 - constellation: "Cet"
   dec: "-20 45 35.0"
@@ -14997,6 +15118,7 @@
   ra: "03 33 15.0"
   rating: 4
   size: 9.0
+  haflux: -9.78
   type: "Planetary Nebula"
 - constellation: "For"
   dec: "-36 08 25.0"
@@ -15328,6 +15450,7 @@
   ra: "04 14 16.0"
   rating: 3
   size: 0.8
+  haflux: -9.95
   type: "Planetary Nebula"
 - constellation: "Eri"
   dec: "-28 28 46.0"
@@ -15763,6 +15886,7 @@
   ra: "05 42 06.0"
   rating: 2
   size: 0.5
+  haflux: -10.61
   type: "Planetary Nebula"
 - constellation: "Ori"
   dec: "-01 51 24.0"
@@ -16013,6 +16137,7 @@
   ra: "06 34 07.0"
   rating: 1
   size: 0.5
+  haflux: -11.58
   type: "Planetary Nebula"
 - constellation: "Mon"
   dec: "+04 54 50.0"
@@ -16458,6 +16583,7 @@
   ra: "07 41 51.0"
   rating: 3
   size: 1.5
+  haflux: -10.39
   type: "Planetary Nebula"
 - constellation: "Pup"
   dec: "-31 41 36.0"
@@ -16476,6 +16602,7 @@
   ra: "07 41 55.0"
   rating: 3
   size: 1.3
+  haflux: -9.86
   type: "Planetary Nebula"
 - constellation: "Vol"
   dec: "-69 32 00.0"
@@ -16504,6 +16631,7 @@
   ra: "07 47 26.0"
   rating: 2
   size: 0.5
+  haflux: -10.80
   type: "Planetary Nebula"
 - constellation: "Pup"
   dec: "-27 11 38.0"
@@ -16737,6 +16865,7 @@
   ra: "08 33 23.0"
   rating: 2
   size: 1.2
+  haflux: -10.84
   type: "Planetary Nebula"
 - constellation: "Pyx"
   dec: "-22 58 23.0"
@@ -16972,6 +17101,7 @@
   ra: "09 16 01.0"
   rating: 4
   size: 2.0
+  haflux: -10.73
   type: "Planetary Nebula"
 - constellation: "Hya"
   dec: "-22 21 18.0"
@@ -17011,6 +17141,7 @@
   ra: "09 21 24.0"
   rating: 2
   size: 1.2
+  haflux: -9.97
   type: "Planetary Nebula"
 - constellation: "Hya"
   dec: "-06 43 01.0"
@@ -17288,6 +17419,7 @@
   ra: "10 07 02.0"
   rating: 4
   size: 1.2
+  haflux: -9.84
   type: "Planetary Nebula"
 - constellation: "Dra"
   dec: "+73 24 02.0"
@@ -17356,6 +17488,7 @@
   ra: "10 09 24.0"
   rating: 4
   size: 0.6
+  haflux: -10.45
   type: "Planetary Nebula"
 - constellation: "UMa"
   dec: "+45 33 00.0"
@@ -17441,6 +17574,7 @@
   ra: "10 24 46.0"
   rating: 4
   size: 1.0
+  haflux: -9.31
   type: "Planetary Nebula"
 - constellation: "LMi"
   dec: "+28 30 00.0"
@@ -18321,6 +18455,7 @@
   ra: "11 50 18.0"
   rating: 2
   size: 0.7
+  haflux: -9.52
   type: "Planetary Nebula"
 - constellation: "Hya"
   dec: "-28 48 23.0"
@@ -19054,6 +19189,7 @@
   ra: "12 24 31.0"
   rating: 3
   size: 1.8
+  haflux: -10.09
   type: "Planetary Nebula"
 - constellation: "Vir"
   dec: "+07 19 03.0"
@@ -20173,6 +20309,7 @@
   ra: "13 33 33.0"
   rating: 4
   size: 3.0
+  haflux: -9.93
   type: "Planetary Nebula"
 - constellation: "CVn"
   dec: "+47 16 00.0"
@@ -20959,6 +21096,7 @@
   ra: "15 10 41.0"
   rating: 4
   size: 1.1
+  haflux: -10.86
   type: "Planetary Nebula"
 - constellation: "Vir"
   dec: "+01 36 20.0"
@@ -21305,6 +21443,7 @@
   ra: "16 01 21.0"
   rating: 2
   size: 1.0
+  haflux: -11.02
   type: "Planetary Nebula"
 - constellation: "Her"
   dec: "+40 40 59.0"
@@ -21352,6 +21491,7 @@
   ra: "16 12 58.0"
   rating: 2
   size: 1.8
+  haflux: -10.44
   type: "Planetary Nebula"
 - constellation: "Nor"
   dec: "-57 54 00.0"
@@ -21447,6 +21587,7 @@
   ra: "16 31 31.0"
   rating: 1
   size: 0.6
+  haflux: -9.96
   type: "Planetary Nebula"
 - constellation: "Her"
   dec: "+19 49 32.0"
@@ -21625,6 +21766,7 @@
   ra: "17 13 44.0"
   rating: 4
   size: 2.5
+  haflux: -9.53
   type: "Planetary Nebula"
 - constellation: "Oph"
   dec: "-29 27 43.0"
@@ -21653,6 +21795,7 @@
   ra: "17 14 04.0"
   rating: 2
   size: 0.6
+  haflux: -10.55
   type: "Planetary Nebula"
 - constellation: "Oph"
   dec: "-28 08 00.0"
@@ -21680,6 +21823,7 @@
   ra: "17 22 16.0"
   rating: 4
   size: 1.0
+  haflux: -10.46
   type: "Planetary Nebula"
 - constellation: "Dra"
   dec: "+57 24 41.0"
@@ -21823,6 +21967,7 @@
   ra: "17 29 21.0"
   rating: 1
   size: 1.2
+  haflux: -10.10
   type: "Planetary Nebula"
 - constellation: "Dra"
   dec: "+56 58 29.0"
@@ -21926,6 +22071,7 @@
   ra: "17 49 15.0"
   rating: 3
   size: 2.5
+  haflux: -10.24
   type: "Planetary Nebula"
 - constellation: "Her"
   dec: "+35 34 20.0"
@@ -22049,6 +22195,7 @@
   ra: "18 05 13.0"
   rating: 2
   size: 2.0
+  haflux: -10.47
   type: "Planetary Nebula"
 - constellation: "Sgr"
   dec: "-27 49 00.0"
@@ -22076,6 +22223,7 @@
   ra: "17 58 33.0"
   rating: 5
   size: 5.0
+  haflux: -9.10
   type: "Planetary Nebula"
 - constellation: "Sgr"
   dec: "-24 59 53.0"
@@ -22122,6 +22270,7 @@
   ra: "18 12 03.0"
   rating: 3
   size: 1.0
+  haflux: -10.48
   type: "Planetary Nebula"
 - constellation: "Sgr"
   dec: "-28 10 41.0"
@@ -22131,6 +22280,7 @@
   ra: "18 11 53.0"
   rating: 2
   size: 0.2
+  haflux: -10.65
   type: "Planetary Nebula"
 - constellation: "Sgr"
   dec: "-21 36 00.0"
@@ -22168,6 +22318,7 @@
   ra: "18 12 06.0"
   rating: 1
   size: 0.25
+  haflux: -9.23
   type: "Planetary Nebula"
 - constellation: "Her"
   dec: "+21 25 33.0"
@@ -22242,6 +22393,7 @@
   ra: "18 25 42.0"
   rating: 2
   size: 0.4
+  haflux: -10.17
   type: "Planetary Nebula"
 - constellation: "Her"
   dec: "+27 32 06.0"
@@ -22480,6 +22632,7 @@
   ra: "19 05 56.0"
   rating: 3
   size: 0.7
+  haflux: -10.64
   type: "Planetary Nebula"
 - constellation: "Pav"
   dec: "-59 59 00.0"
@@ -22535,6 +22688,7 @@
   ra: "19 11 07.0"
   rating: 2
   size: 1.0
+  haflux: -11.30
   type: "Planetary Nebula"
 - constellation: "Aql"
   dec: "-02 42 24.0"
@@ -22544,6 +22698,7 @@
   ra: "19 14 36.0"
   rating: 2
   size: 1.5
+  haflux: -10.64
   type: "Planetary Nebula"
 - constellation: "Aql"
   dec: "-01 35 48.0"
@@ -22553,6 +22708,7 @@
   ra: "19 18 25.0"
   rating: 2
   size: 0.5
+  haflux: -10.57
   type: "Planetary Nebula"
 - constellation: "Aql"
   dec: "+06 32 20.0"
@@ -22562,6 +22718,7 @@
   ra: "19 18 28.0"
   rating: 4
   size: 1.9
+  haflux: -10.10
   type: "Planetary Nebula"
 - constellation: "Dra"
   dec: "+73 24 36.0"
@@ -22629,6 +22786,7 @@
   ra: "19 31 35.0"
   rating: 2
   size: 2.5
+  haflux: -10.61
   type: "Planetary Nebula"
 - constellation: "Cyg"
   dec: "+46 23 18.0"
@@ -22666,6 +22824,7 @@
   ra: "19 43 58.0"
   rating: 2
   size: 0.4
+  haflux: -9.95
   type: "Planetary Nebula"
 - constellation: "Cyg"
   dec: "+40 11 12.0"
@@ -22798,6 +22957,7 @@
   ra: "20 00 39.0"
   rating: 2
   size: 0.5
+  haflux: -11.50
   type: "Planetary Nebula"
 - constellation: "Cyg"
   dec: "+33 31 33.0"
@@ -22871,6 +23031,7 @@
   ra: "20 15 09.0"
   rating: 2
   size: 0.3
+  haflux: -10.15
   type: "Planetary Nebula"
 - constellation: "Cyg"
   dec: "+30 33 55.0"
@@ -22889,6 +23050,7 @@
   ra: "20 22 23.0"
   rating: 2
   size: 1.5
+  haflux: -10.48
   type: "Planetary Nebula"
 - constellation: "Aql"
   dec: "+06 26 36.0"
@@ -23146,6 +23308,7 @@
   ra: "21 04 11.0"
   rating: 4
   size: 0.7
+  haflux: -9.29
   type: "Planetary Nebula"
 - constellation: "Cyg"
   dec: "+29 53 49.0"
@@ -23184,6 +23347,7 @@
   ra: "21 06 19.0"
   rating: 4
   size: 0.7
+  haflux: -10.16
   type: "Planetary Nebula"
 - constellation: "Cyg"
   dec: "+42 14 10.0"
@@ -23193,6 +23357,7 @@
   ra: "21 07 02.0"
   rating: 2
   size: 0.25
+  haflux: -9.29
   type: "Planetary Nebula"
 - constellation: "Peg"
   dec: "+13 34 24.0"
@@ -23221,6 +23386,7 @@
   ra: "21 14 15.0"
   rating: 4
   size: 1.0
+  haflux: -10.85
   type: "Planetary Nebula"
 - constellation: "Aqr"
   dec: "-08 47 00.0"
@@ -23287,6 +23453,7 @@
   ra: "21 36 53.0"
   rating: 3
   size: 1.8
+  haflux: -11.23
   type: "Planetary Nebula"
 - constellation: "Oct"
   dec: "-75 07 00.0"
@@ -23657,6 +23824,7 @@
   ra: "22 29 38.0"
   rating: 5
   size: 12.0
+  haflux: -8.86
   type: "Planetary Nebula"
 - constellation: "Lac"
   dec: "+52 17 00.0"
@@ -23745,6 +23913,7 @@
   ra: "22 40 20.0"
   rating: 3
   size: 0.4
+  haflux: -10.49
   type: "Planetary Nebula"
 - constellation: "PsA"
   dec: "-30 03 29.0"
@@ -24387,6 +24556,7 @@
   ra: "19 42 04.0"
   rating: 2
   size: 1.0
+  haflux: -11.55
   type: "Planetary Nebula"
 - constellation: "Mon"
   dec: "-06 18 00.0"
@@ -24396,6 +24566,7 @@
   ra: "07 22 00.0"
   rating: 1
   size: 25.0
+  haflux: -10.70
   type: "Planetary Nebula"
 - constellation: "Scl"
   dec: "-33 42 59.0"
@@ -24693,6 +24864,7 @@
   ra: "05 52 48.0"
   rating: 2
   size: 1.0
+  haflux: -12.40
   type: "Planetary Nebula"
 - constellation: "Pup"
   dec: "-42 59 48.0"
@@ -24891,6 +25063,7 @@
   ra: "21 14 06.0"
   rating: 3
   size: 3.0
+  haflux: -11.38
   type: "Planetary Nebula"
 - constellation: "Cas"
   dec: "+64 57 21.0"
@@ -25386,6 +25559,7 @@
   ra: "18 24 58.0"
   rating: 3
   size: 8.0
+  haflux: -10.36
   type: "Planetary Nebula"
 - constellation: "Aql"
   dec: "-00 18 53.0"
@@ -25413,6 +25587,7 @@
   ra: "19 02 00.0"
   rating: 3
   size: 3.0
+  haflux: -10.89
   type: "Planetary Nebula"
 - constellation: "Aql"
   dec: "+02 19 00.0"
@@ -26232,6 +26407,7 @@
   ra: "00 40 24.0"
   rating: 3
   size: 0.7
+  haflux: -11.60
   type: "Planetary Nebula"
 - constellation: "Cas"
   dec: "+62 55 00.0"
@@ -29276,6 +29452,7 @@
   ra: "06 14 34.0"
   rating: 2
   size: 0.7
+  haflux: -12.39
   type: "Planetary Nebula"
 - constellation: "Mon"
   dec: "-10 07 00.0"
@@ -29447,6 +29624,7 @@
   ra: "18 54 57.0"
   rating: 2
   size: 6.0
+  haflux: -11.50
   type: "Planetary Nebula"
 - constellation: "Her"
   dec: "+51 03 39.0"

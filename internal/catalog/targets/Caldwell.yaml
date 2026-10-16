@@ -52,6 +52,7 @@
   name: "C 6"
   ra: "17 58 33.0"
   size: 5.0
+  haflux: -9.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+65 36 07.0"
@@ -498,6 +499,7 @@
   ra: "21 04 11.0"
   size: 0.7
   minor: 0.52
+  haflux: -9.29
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-11 52 19.0"
@@ -506,6 +508,7 @@
   name: "C 56"
   ra: "00 47 03.0"
   size: 4.5
+  haflux: -10.07
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-14 48 10.0"
@@ -532,6 +535,7 @@
   name: "C 59"
   ra: "10 24 46.0"
   size: 1.0
+  haflux: -9.31
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-18 52 07.0"
@@ -569,6 +573,7 @@
   name: "C 63"
   ra: "22 29 38.0"
   size: 12.0
+  haflux: -8.86
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-24 57 18.0"
@@ -621,6 +626,7 @@
   name: "C 69"
   ra: "17 13 44.0"
   size: 2.5
+  haflux: -9.53
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-37 41 03.0"
@@ -665,6 +671,7 @@
   name: "C 74"
   ra: "10 07 02.0"
   size: 1.2
+  haflux: -9.84
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-40 39 12.0"
@@ -797,6 +804,7 @@
   name: "C 90"
   ra: "09 21 24.0"
   size: 1.2
+  haflux: -9.97
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-58 44 00.0"
@@ -951,4 +959,5 @@
   name: "C 109"
   ra: "10 09 24.0"
   size: 0.6
+  haflux: -10.45
   type: "Planetary Nebula"

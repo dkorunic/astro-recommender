@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/dkorunic/astro-recommender/internal/astro"
+	"github.com/dkorunic/astro-recommender/internal/atmos"
 	"github.com/dkorunic/astro-recommender/internal/constellation"
 	"go.yaml.in/yaml/v4"
 )
@@ -270,7 +271,8 @@ func TestSurfaceBrightness(t *testing.T) {
 		"own colour on bound":  {Target{Type: "Galaxy", BSurfBr: 23.3, BMag: 9.7, Mag: 10}, 23.6, false}, // 9.7 - 10 rounds below -0.3
 		"B minus galaxy 0.8":   {Target{Type: "Galaxy", BSurfBr: 23.3, Mag: 9.1}, 22.5, true},
 		"B minus group 0.8":    {Target{Type: "GTrpl", BSurfBr: 23.3}, 22.5, true},
-		"B minus emission 0":   {Target{Type: "Planetary Nebula", BSurfBr: 23.3}, 23.3, true},
+		"B minus emission 0":   {Target{Type: "HII Emission Nebula", BSurfBr: 23.3}, 23.3, true},
+		"B minus planetary":    {Target{Type: "Planetary Nebula", BSurfBr: 23.3}, 23.3 - bvPlanetary, true},
 		"B minus other 0.5":    {Target{Type: "Reflection Nebula", BSurfBr: 23.3}, 22.8, true},
 		"implausible colour":   {Target{Type: "Galaxy", BSurfBr: 23.3, BMag: 15.35, Mag: 9.2}, 22.5, true}, // IC 127: typical instead
 		"derived galaxy":       {Target{Type: "Galaxy", Mag: 10, Size: 10}, 10 + disc, true},
@@ -569,6 +571,69 @@ func TestLoadFileErrors(t *testing.T) {
 		}
 		if tg, _, err := Load("", f); err == nil || !strings.Contains(err.Error(), f) {
 			t.Errorf("%q: Load = %d targets, %v; want an error naming the file", yml, len(tg), err)
+		}
+	}
+}
+
+// TestTypicalBV recomputes typicalBV's values: the median B−V, within
+// minBV-maxBV, of the lists' objects that carry both magnitudes, each name
+// once, by the class typicalBV picks; a regeneration that moves one by more
+// than 0.15 fails here.
+func TestTypicalBV(t *testing.T) {
+	vals := map[float64][]float64{}
+	seen := map[string]bool{}
+	for _, name := range Lists {
+		ts, _, err := Load(name, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, tg := range ts {
+			if seen[NameKey(tg.Name)] || tg.BMag <= 0 || !tg.HasMag() {
+				continue
+			}
+			seen[NameKey(tg.Name)] = true
+			if bv := tg.BMag - tg.Mag; bv >= minBV && bv <= maxBV {
+				typ := tg.typicalBV(tg.kind())
+				vals[typ] = append(vals[typ], bv)
+			}
+		}
+	}
+	for _, want := range []float64{0.8, bvPlanetary, 0, 0.5} {
+		v := vals[want]
+		if len(v) < 20 {
+			t.Errorf("typical %v: %d objects", want, len(v))
+
+			continue
+		}
+		slices.Sort(v)
+		if got := v[len(v)/2]; math.Abs(got-want) > 0.15 {
+			t.Errorf("typical %v: median %.2f over %d objects", want, got, len(v))
+		}
+	}
+}
+
+// A planetary with a measured Hα flux takes its surface brightness from it,
+// not from a catalogued magnitude (often the central star's): every line's
+// photons through V over the ellipse, against a V = 0 source's.
+func TestFluxSB(t *testing.T) {
+	pn := Target{Type: "Planetary Nebula", Size: 10, Minor: 5, Mag: 17, HaFlux: -10.3}
+	shares := pn.Lines()
+	total := math.Pow(10, -10.3) / shares[Ha]
+	var v float64
+	for l, s := range shares {
+		v += s * total * LineNM[l] * 1e-7 / (6.62607015e-27 * 2.99792458e10) * LineV[l]
+	}
+	want := -2.5 * math.Log10(v/(math.Pi/4*600*300)/atmos.PhotonsV0)
+	if sb, est := pn.SurfaceBrightness(); math.Abs(sb-want) > 1e-6 || est {
+		t.Errorf("flux SB %v %v, want %v", sb, est, want)
+	}
+	for name, tg := range map[string]Target{
+		"no size":   {Type: "Planetary Nebula", HaFlux: -10.3},
+		"no flux":   {Type: "Planetary Nebula", Size: 10},
+		"continuum": {Type: "Galaxy", Size: 10, HaFlux: -10.3},
+	} {
+		if _, ok := tg.FluxSB(); ok {
+			t.Errorf("%s: a flux surface brightness", name)
 		}
 	}
 }

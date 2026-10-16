@@ -198,6 +198,9 @@ func TestMutLoadFile(t *testing.T) {
 		mutEntry("12 00 00", "+10", "  size: .nan\n"),
 		mutEntry("12 00 00", "+10", "  mag: .inf\n"),
 		mutEntry("12 00 00", "+10", "  bsurfbr: -.inf\n"),
+		mutEntry("12 00 00", "+10", "  haflux: 10.3\n"),
+		mutEntry("12 00 00", "+10", "  haflux: -20\n"),
+		mutEntry("12 00 00", "+10", "  haflux: .nan\n"),
 		mutEntry("12 00 00", "+10", "") + "---\n" + mutEntry("12 00 00", "+10", ""),
 		mutEntry("12 00 00", "+10", "") + mutEntry("13 00 00", "+10", "") + mutEntry("bad", "+10", ""),
 	} {

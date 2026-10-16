@@ -228,13 +228,23 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 		s.Ext[i] = s.ExtinctionAt(t, cfg.Extinction)
 		s.ExtRayleigh[i], s.ExtAerosol[i] = s.extinctionParts(t, cfg.Extinction)
 		s.MoonLight[i] = atmos.MoonLight(s.Ext[i], s.ExtRayleigh[i], s.ExtAerosol[i], s.MoonAlt[i], s.MoonPhase, s.MoonDist)
-		if h, ok := s.Weather[t.Truncate(time.Hour).Unix()]; ok {
+		// Cloud, temperature, dew point, wind and the upper-air seeing are
+		// Open-Meteo's values at the hour, so a minute takes the nearest
+		// hour's (a cloud bank arrives half an hour sooner than read from the
+		// hour before); gusts and rain are over the hour that starts at the
+		// key (hourly.weather shifts them), so the minute's own hour.
+		hour := t.Truncate(time.Hour).Unix()
+		if h, ok := s.Weather[hour]; ok {
+			at := h
+			if n, ok := s.Weather[t.Round(time.Hour).Unix()]; ok {
+				at = n
+			}
 			// ponytail: guessed ramps; dew (spread 4 -> 1 °C) and gusts (20 -> 40 km/h)
 			// cost up to 30% and 50% of usable frames; rain (0 -> RainGate mm
 			// in the hour) all of them, whatever the cloud layers say. Like cloud it
 			// weighs the score only: FOTO and the observable runs are geometric.
-			sky[i] = (1 - h.Cloud/100) * ramp(h.Temp-h.DewPoint, 4, 1, 0.7) * ramp(h.Gust, 20, 40, 0.5)
-			s.Temp[i] = h.Temp
+			sky[i] = (1 - at.Cloud/100) * ramp(at.Temp-at.DewPoint, 4, 1, 0.7) * ramp(gust(h.Gust, at.Wind), 20, 40, 0.5)
+			s.Temp[i] = at.Temp
 			if h.Precip > 0 { // NaN (unknown) does not gate
 				sky[i] *= ramp(h.Precip, 0, weather.RainGate, 0)
 			}
@@ -253,7 +263,10 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 		}
 		// Seeing: the upper-air estimate, calibrated against DIMMs, else
 		// 7Timer's class, else typicalSeeing.
-		s.Seeing[i] = s.Weather[t.Truncate(time.Hour).Unix()].Seeing
+		s.Seeing[i] = s.Weather[hour].Seeing
+		if n, ok := s.Weather[t.Round(time.Hour).Unix()]; ok && n.Seeing > 0 {
+			s.Seeing[i] = n.Seeing
+		}
 		if astroOK && s.Seeing[i] == 0 {
 			s.Seeing[i] = weather.SeeingArcsec(a.Seeing)
 		}
@@ -304,6 +317,18 @@ func fillGaps(what string, v []float64, ok []bool, fetched bool, window time.Dur
 			what, hm(time.Duration(len(v)-n)*time.Minute), hm(window), 100*mean)
 	}
 }
+
+// maxGustFactor caps a forecast gust at this many times the mean wind:
+// Open-Meteo's gust over the hour runs a median 2.5x the 10 m wind at
+// lowland and Paranal points, but 4.8x at La Palma's and 10.6x at Mauna
+// Kea's, where the grid's gust parameterisation, not the summit's air,
+// makes 30-50 km/h gusts in a 5-10 km/h breeze.
+// ponytail: one factor for every site; measured gusts would calibrate it.
+const maxGustFactor = 3
+
+// gust is the gust the sky factor counts: the forecast's, at most
+// maxGustFactor times the mean wind.
+func gust(g, wind float64) float64 { return min(g, maxGustFactor*wind) }
 
 // typicalSeeing is the zenith seeing (FWHM arcsec) assumed for the minutes
 // neither 7Timer nor the upper-air estimate covers.

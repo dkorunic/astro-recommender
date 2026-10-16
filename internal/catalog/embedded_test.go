@@ -58,7 +58,7 @@ func pack(targets []Target) packed {
 			Name: uint32(len(t.Name)), Description: uint32(len(t.Description)), Type: uint32(len(t.Type)),
 			Constellation: uint32(len(t.Constellation)), RA: uint32(len(t.RA)), Dec: uint32(len(t.Dec)),
 			RADeg: t.RADeg, DecDeg: t.DecDeg, Size: t.Size, Minor: t.Minor,
-			Mag: t.Mag, BMag: t.BMag, SurfBr: t.SurfBr, BSurfBr: t.BSurfBr,
+			Mag: t.Mag, BMag: t.BMag, SurfBr: t.SurfBr, BSurfBr: t.BSurfBr, HaFlux: t.HaFlux,
 		}
 		for _, s := range []string{t.Name, t.Description, t.Type, t.Constellation, t.RA, t.Dec} {
 			blob.WriteString(s)

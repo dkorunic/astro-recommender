@@ -302,6 +302,11 @@ const vCenter = 551.0
 // estimate's photon zero point spreads over it.
 const VWidth = 88.0
 
+// PhotonsV0 is a V = 0 source's photon flux over the V band, photons s⁻¹
+// cm⁻²: 1005 per Å at 550 nm (Bessell 1998) over VWidth. The sky model's
+// nanoLamberts are V-band, so x nL is PhotonsV0·x/NanoLamberts(0) per arcsec².
+const PhotonsV0 = 1005 * 10 * VWidth
+
 // angstrom is the aerosol scattering's Ångström exponent: aerosol optical
 // depth goes as λ^-1.3 for typical continental aerosol.
 const angstrom = 1.3

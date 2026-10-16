@@ -10583,6 +10583,7 @@
   name: "AM 0331-260"
   ra: "03 33 14.8"
   size: 6.7
+  haflux: -9.78
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-65 21 02.3"
@@ -16047,6 +16048,7 @@
   name: "AM 0501-395"
   ra: "05 03 02.8"
   size: 0.3
+  haflux: -12.02
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-34 25 21.1"
@@ -18231,6 +18233,7 @@
   name: "AM 0553-225"
   ra: "05 55 06.5"
   size: 1.8
+  haflux: -11.87
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-51 58 32.2"
@@ -18511,6 +18514,7 @@
   name: "AM 0558-754"
   ra: "05 57 00.0"
   size: 0.6
+  haflux: -12.08
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-60 04 38.9"
@@ -20791,6 +20795,7 @@
   name: "AM 0713-465"
   ra: "07 14 48.0"
   size: 1.1
+  haflux: -11.23
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-72 06 12.6"
@@ -21807,6 +21812,7 @@
   name: "AM 0838-321"
   ra: "08 40 40.4"
   size: 0.3
+  haflux: -10.36
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-75 09 16.9"
@@ -22039,6 +22045,7 @@
   name: "AM 0855-284"
   ra: "08 57 46.3"
   size: 2.0
+  haflux: -11.78
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-67 52 24.5"
@@ -22319,6 +22326,7 @@
   name: "AM 0910-421"
   ra: "09 12 23.9"
   size: -9999
+  haflux: -10.66
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-79 14 15.7"
@@ -22415,6 +22423,7 @@
   name: "AM 0914-362"
   ra: "09 16 01.1"
   size: 1.3
+  haflux: -10.73
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-23 38 16.1"
@@ -22911,6 +22920,7 @@
   name: "AM 0945-484"
   ra: "09 47 23.7"
   size: 4.5
+  haflux: -11.53
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 30 27.3"
@@ -23551,6 +23561,7 @@
   name: "AM 1003-440"
   ra: "10 05 45.4"
   size: 0.7
+  haflux: -12.03
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-41 19 26.3"
@@ -23623,6 +23634,7 @@
   name: "AM 1004-401"
   ra: "10 07 03.7"
   size: 1.4
+  haflux: -9.84
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-26 24 05.1"
@@ -23791,6 +23803,7 @@
   name: "AM 1009-803"
   ra: "10 09 18.0"
   size: 1.0
+  haflux: -10.45
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-34 43 46.0"
@@ -23975,6 +23988,7 @@
   name: "AM 1016-622"
   ra: "10 17 51.9"
   size: -9999
+  haflux: -10.54
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-37 23 52.3"
@@ -24447,6 +24461,7 @@
   name: "AM 1032-285"
   ra: "10 34 31.1"
   size: 1.0
+  haflux: -12.26
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 39 07.5"
@@ -26007,6 +26022,7 @@
   name: "AM 1124-340"
   ra: "11 26 46.0"
   size: 2.6
+  haflux: -10.81
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 42 18.9"
@@ -26055,6 +26071,7 @@
   name: "AM 1125-594"
   ra: "11 27 56.2"
   size: -9999
+  haflux: -10.74
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 17 38.1"
@@ -26351,6 +26368,7 @@
   name: "AM 1139-621"
   ra: "11 41 37.9"
   size: -9999
+  haflux: -11.15
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 26 15.0"
@@ -26527,6 +26545,7 @@
   name: "AM 1147-565"
   ra: "11 50 16.8"
   size: -9999
+  haflux: -9.52
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-75 22 23.2"
@@ -26559,6 +26578,7 @@
   name: "AM 1149-420"
   ra: "11 52 28.4"
   size: 0.4
+  haflux: -12.12
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 38 41.5"
@@ -26583,6 +26603,7 @@
   name: "AM 1150-503"
   ra: "11 53 06.9"
   size: 1.2
+  haflux: -11.04
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-32 39 11.6"
@@ -26735,6 +26756,7 @@
   name: "AM 1158-471"
   ra: "12 00 40.6"
   size: 1.0
+  haflux: -11.72
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-35 11 42.2"
@@ -26855,6 +26877,7 @@
   name: "AM 1201-670"
   ra: "12 04 14.8"
   size: -9999
+  haflux: -10.95
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 07 00.0"
@@ -27471,6 +27494,7 @@
   name: "AM 1221-595"
   ra: "12 23 54.2"
   size: -9999
+  haflux: -11.60
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-42 11 31.4"
@@ -27663,6 +27687,7 @@
   name: "AM 1228-435"
   ra: "12 30 52.1"
   size: 0.9
+  haflux: -11.22
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-33 23 39.8"
@@ -30071,6 +30096,7 @@
   name: "AM 1322-372"
   ra: "13 25 38.2"
   size: 2.2
+  haflux: -11.81
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-24 39 05.3"
@@ -30511,6 +30537,7 @@
   name: "AM 1329-753"
   ra: "13 34 13.9"
   size: 1.0
+  haflux: -11.77
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-65 58 41.1"
@@ -30519,6 +30546,7 @@
   name: "AM 1329-654"
   ra: "13 33 30.8"
   size: -9999
+  haflux: -9.93
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-24 12 11.3"
@@ -30975,6 +31003,7 @@
   name: "AM 1340-603"
   ra: "13 44 01.2"
   size: 0.8
+  haflux: -11.72
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-45 49 52.1"
@@ -31207,6 +31236,7 @@
   name: "AM 1347-505"
   ra: "13 51 08.8"
   size: -9999
+  haflux: -10.62
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-52 55 07.5"
@@ -31935,6 +31965,7 @@
   name: "AM 1410-735"
   ra: "14 15 30.5"
   size: 0.6
+  haflux: -11.05
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 11 47.3"
@@ -32319,6 +32350,7 @@
   name: "AM 1429-603"
   ra: "14 33 13.9"
   size: -9999
+  haflux: -10.90
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-23 11 29.7"
@@ -32831,6 +32863,7 @@
   name: "AM 1502-610"
   ra: "15 06 02.4"
   size: -9999
+  haflux: -11.49
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 20 25.1"
@@ -32871,6 +32904,7 @@
   name: "AM 1504-613"
   ra: "15 08 42.8"
   size: -9999
+  haflux: -11.85
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-33 24 19.3"
@@ -32911,6 +32945,7 @@
   name: "AM 1506-642"
   ra: "15 10 38.8"
   size: -9999
+  haflux: -10.86
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-37 52 54.4"
@@ -32927,6 +32962,7 @@
   name: "AM 1508-552"
   ra: "15 11 54.7"
   size: -9999
+  haflux: -11.25
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-22 48 35.4"
@@ -33127,6 +33163,7 @@
   name: "AM 1530-585"
   ra: "15 34 16.9"
   size: 1.3
+  haflux: -10.64
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-38 41 22.2"
@@ -33263,6 +33300,7 @@
   name: "AM 1547-512"
   ra: "15 51 39.5"
   size: -9999
+  haflux: -10.72
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-32 24 30.3"
@@ -33287,6 +33325,7 @@
   name: "AM 1551-511"
   ra: "15 54 51.7"
   size: 0.1
+  haflux: -11.48
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-68 02 50.6"
@@ -33399,6 +33438,7 @@
   name: "AM 1558-342"
   ra: "16 01 21.5"
   size: 1.1
+  haflux: -11.02
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-64 06 59.7"
@@ -33415,6 +33455,7 @@
   name: "AM 1600-355"
   ra: "16 03 22.9"
   size: 1.3
+  haflux: -11.95
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-41 41 21.6"
@@ -33479,6 +33520,7 @@
   name: "AM 1606-304"
   ra: "16 09 45.0"
   size: 1.1
+  haflux: -12.08
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-32 04 48.6"
@@ -33511,6 +33553,7 @@
   name: "AM 1609-360"
   ra: "16 12 58.2"
   size: 1.8
+  haflux: -10.44
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 21 34.6"
@@ -33527,6 +33570,7 @@
   name: "AM 1610-544"
   ra: "16 14 32.6"
   size: -9999
+  haflux: -10.92
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-60 54 31.9"
@@ -33567,6 +33611,7 @@
   name: "AM 1615-420"
   ra: "16 19 23.4"
   size: 1.1
+  haflux: -10.86
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 45 02.3"
@@ -33599,6 +33644,7 @@
   name: "AM 1623-535"
   ra: "16 27 54.0"
   size: -9999
+  haflux: -11.24
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-35 23 42.7"
@@ -33623,6 +33669,7 @@
   name: "AM 1628-400"
   ra: "16 31 31.9"
   size: 0.6
+  haflux: -9.96
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-48 04 46.1"
@@ -33831,6 +33878,7 @@
   name: "AM 1716-514"
   ra: "17 20 46.1"
   size: -9999
+  haflux: -10.56
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-65 01 01.0"
@@ -33847,6 +33895,7 @@
   name: "AM 1718-382"
   ra: "17 22 14.1"
   size: 0.1
+  haflux: -10.46
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-70 27 46.7"
@@ -33911,6 +33960,7 @@
   name: "AM 1726-234"
   ra: "17 29 20.9"
   size: 1.0
+  haflux: -10.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-60 52 20.0"
@@ -33935,6 +33985,7 @@
   name: "AM 1732-400"
   ra: "17 35 40.8"
   size: -9999
+  haflux: -10.76
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-59 56 41.5"
@@ -34063,6 +34114,7 @@
   name: "AM 1803-510"
   ra: "18 07 15.4"
   size: 0.9
+  haflux: -10.38
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-45 25 10.5"
@@ -34335,6 +34387,7 @@
   name: "AM 1824-371"
   ra: "18 27 51.3"
   size: 0.1
+  haflux: -11.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-79 56 32.5"
@@ -35063,6 +35116,7 @@
   name: "AM 1905-554"
   ra: "19 09 47.3"
   size: 0.8
+  haflux: -12.12
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-62 13 12.3"
@@ -35887,6 +35941,7 @@
   name: "AM 1943-231"
   ra: "19 46 33.5"
   size: 2.0
+  haflux: -10.95
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-34 47 17.4"
@@ -41591,6 +41646,7 @@
   name: "AM 2156-393"
   ra: "21 59 34.7"
   size: 2.3
+  haflux: -10.52
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-47 51 00.0"

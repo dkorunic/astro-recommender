@@ -3090,6 +3090,7 @@
   name: "IC 289"
   ra: "03 10 19.26"
   size: 0.58
+  haflux: -10.82
   type: "Planetary Nebula"
 - bmag: 15.43
   bsurfbr: 23.74
@@ -4481,6 +4482,7 @@
   name: "IC 418"
   ra: "05 27 28.19"
   size: 0.20
+  haflux: -9.02
   type: "Planetary Nebula"
 - constellation: "Auriga"
   dec: "+30 07 04.5"
@@ -10570,6 +10572,7 @@
   name: "IC 972"
   ra: "14 04 25.91"
   size: 0.70
+  haflux: -11.56
   type: "Planetary Nebula"
 - constellation: "Virgo"
   dec: "-05 28 53.3"
@@ -13864,6 +13867,7 @@
   name: "IC 1266"
   ra: "17 45 35.30"
   size: 0.16
+  haflux: -10.06
   type: "Planetary Nebula"
 - bmag: 14.17
   bsurfbr: 23.33
@@ -14152,6 +14156,7 @@
   name: "IC 1295"
   ra: "18 54 37.13"
   size: 1.50
+  haflux: -10.65
   type: "Planetary Nebula"
 - bmag: 15.35
   bsurfbr: 23.63
@@ -14172,6 +14177,7 @@
   name: "IC 1297"
   ra: "19 17 23.40"
   size: 0.12
+  haflux: -10.50
   type: "Planetary Nebula"
 - constellation: "Aquila"
   dec: "-01 35 46.3"
@@ -15181,10 +15187,9 @@
   dec: "+57 29 20.6"
   description: ""
   mag: -9999
-  minor: 4.00
   name: "IC 1396"
   ra: "21 38 57.62"
-  size: 14.00
+  size: 146.00
   type: "Cl+N Emission Nebula"
 - bmag: 15.29
   bsurfbr: 23.55
@@ -23301,6 +23306,7 @@
   name: "IC 2165"
   ra: "06 21 42.70"
   size: 0.15
+  haflux: -10.21
   type: "Planetary Nebula"
 - bmag: 13.39
   bsurfbr: 23.27
@@ -26078,6 +26084,7 @@
   name: "IC 2448"
   ra: "09 07 06.26"
   size: 0.15
+  haflux: -10.41
   type: "Planetary Nebula"
 - constellation: "Cancer"
   dec: "+30 00 00.5"
@@ -26631,6 +26638,7 @@
   name: "IC 2501"
   ra: "09 38 47.18"
   size: 0.03
+  haflux: -10.01
   type: "Planetary Nebula"
 - bmag: 15.57
   bsurfbr: 23.00
@@ -27198,6 +27206,7 @@
   name: "IC 2553"
   ra: "10 09 20.87"
   size: 0.15
+  haflux: -10.25
   type: "Planetary Nebula"
 - bmag: 12.50
   bsurfbr: 23.11
@@ -27894,6 +27903,7 @@
   name: "IC 2621"
   ra: "11 00 19.99"
   size: 0.08
+  haflux: -10.59
   type: "Planetary Nebula"
 - constellation: "Crater"
   dec: "-16 17 22.0"
@@ -44260,6 +44270,7 @@
   name: "IC 4191"
   ra: "13 08 47.23"
   size: 0.08
+  haflux: -10.31
   type: "Planetary Nebula"
 - constellation: "Canes Venatici"
   dec: "+37 36 20.0"
@@ -46547,6 +46558,7 @@
   name: "IC 4406"
   ra: "14 22 26.48"
   size: 0.58
+  haflux: -10.16
   type: "Planetary Nebula"
 - bmag: 14.75
   bsurfbr: 23.66
@@ -48571,6 +48583,7 @@
   name: "IC 4593"
   ra: "16 11 44.50"
   size: 0.66
+  haflux: -10.07
   type: "Planetary Nebula"
 - constellation: "Hercules"
   dec: "+23 57 54.0"
@@ -48632,6 +48645,7 @@
   name: "IC 4599"
   ra: "16 19 23.17"
   size: 0.24
+  haflux: -10.86
   type: "Planetary Nebula"
 - constellation: "Scorpius"
   dec: "-22 47 07.9"
@@ -48970,6 +48984,7 @@
   name: "IC 4634"
   ra: "17 01 33.59"
   size: 0.14
+  haflux: -10.26
   type: "Planetary Nebula"
 - bmag: 14.87
   bsurfbr: 23.77
@@ -48998,6 +49013,7 @@
   name: "IC 4637"
   ra: "17 05 10.82"
   size: 0.31
+  haflux: -10.41
   type: "Planetary Nebula"
 - bmag: 15.63
   bsurfbr: 23.29
@@ -49050,6 +49066,7 @@
   name: "IC 4642"
   ra: "17 11 45.22"
   size: 0.28
+  haflux: -10.78
   type: "Planetary Nebula"
 - constellation: "Hercules"
   dec: "+42 20 20.8"
@@ -49255,6 +49272,7 @@
   name: "IC 4663"
   ra: "17 45 28.20"
   size: 0.22
+  haflux: -10.85
   type: "Planetary Nebula"
 - bmag: 13.63
   bsurfbr: 23.03
@@ -49319,6 +49337,7 @@
   name: "IC 4670"
   ra: "17 55 07.00"
   size: 0.08
+  haflux: -10.92
   type: "Planetary Nebula"
 - constellation: "Serpens"
   dec: "-10 17 09.3"
@@ -49347,6 +49366,7 @@
   name: "IC 4673"
   ra: "18 03 18.40"
   size: 0.25
+  haflux: -11.08
   type: "Planetary Nebula"
 - bmag: 14.93
   bsurfbr: 23.85
@@ -49605,6 +49625,7 @@
   name: "IC 4699"
   ra: "18 18 32.79"
   size: 0.08
+  haflux: -11.19
   type: "Planetary Nebula"
 - constellation: "Sagittarius"
   dec: "-19 51 57.8"
@@ -49946,6 +49967,7 @@
   name: "IC 4732"
   ra: "18 33 54.60"
   size: 0.07
+  haflux: -10.95
   type: "Planetary Nebula"
 - constellation: "Draco"
   dec: "+64 58 02.7"
@@ -50430,6 +50452,7 @@
   name: "IC 4776"
   ra: "18 45 50.70"
   size: 0.12
+  haflux: -10.26
   type: "Planetary Nebula"
 - bmag: 14.68
   bsurfbr: 23.21
@@ -51201,6 +51224,7 @@
   name: "IC 4846"
   ra: "19 16 28.30"
   size: 0.03
+  haflux: -10.75
   type: "Planetary Nebula"
 - bmag: 14.98
   bsurfbr: 23.59
@@ -52806,6 +52830,7 @@
   name: "IC 4997"
   ra: "20 20 08.80"
   size: 0.03
+  haflux: -9.92
   type: "Planetary Nebula"
 - bmag: 14.03
   bsurfbr: 23.39
@@ -54052,6 +54077,7 @@
   name: "IC 5117"
   ra: "21 32 30.97"
   size: 0.02
+  haflux: -10.55
   type: "Planetary Nebula"
 - bmag: 15.49
   bsurfbr: 23.49
@@ -54358,6 +54384,7 @@
   name: "IC 5148"
   ra: "21 59 35.20"
   size: 2.30
+  haflux: -10.52
   type: "Planetary Nebula"
 - bmag: 14.45
   bsurfbr: 23.38
@@ -55084,6 +55111,7 @@
   name: "IC 5217"
   ra: "22 23 55.70"
   size: 0.11
+  haflux: -10.64
   type: "Planetary Nebula"
 - bmag: 15.12
   bsurfbr: 23.71

@@ -71,6 +71,7 @@
   name: "PN VV 2"
   ra: "00 18 42.2"
   size: 0.09
+  haflux: -10.95
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+62 59 01.7"
@@ -79,6 +80,7 @@
   name: "BV 5-1"
   ra: "00 19 58.7"
   size: 0.7
+  haflux: -11.62
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+54 11 40.4"
@@ -103,6 +105,7 @@
   name: "Hu 1-1"
   ra: "00 28 15.6"
   size: 0.13
+  haflux: -11.00
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+61 24 34.3"
@@ -135,6 +138,7 @@
   name: "BoBn 1"
   ra: "00 37 16.0"
   size: 0.04
+  haflux: -12.05
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+66 23 49.3"
@@ -151,6 +155,7 @@
   name: "Abell 2"
   ra: "00 45 34.7"
   size: 0.61
+  haflux: -11.61
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-11 52 19.1"
@@ -159,6 +164,7 @@
   name: "NGC 246"
   ra: "00 47 03.3"
   size: 4.33
+  haflux: -10.07
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+63 10 59.1"
@@ -175,6 +181,7 @@
   name: "WeSb 1"
   ra: "01 00 54.1"
   size: 3.08
+  haflux: -12.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+72 45 52.5"
@@ -263,6 +270,7 @@
   name: "K 3-90"
   ra: "01 24 58.6"
   size: 0.17
+  haflux: -11.90
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+63 56 52.8"
@@ -327,6 +335,7 @@
   name: "M 1-1"
   ra: "01 37 19.4"
   size: 0.12
+  haflux: -11.33
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+56 34 54.6"
@@ -343,6 +352,7 @@
   name: "NGC 650-1"
   ra: "01 42 19.9"
   size: 2.8
+  haflux: -10.19
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+60 09 47.2"
@@ -535,6 +545,7 @@
   name: "Lo 1"
   ra: "02 56 58.4"
   size: 7.52
+  haflux: -11.14
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+64 30 06.3"
@@ -575,6 +586,7 @@
   name: "IC 289"
   ra: "03 10 19.3"
   size: 0.77
+  haflux: -10.82
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+62 47 54.9"
@@ -607,6 +619,7 @@
   name: "Fr 2-23"
   ra: "03 14 46.0"
   size: 27.5
+  haflux: -10.15
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+46 53 37.4"
@@ -631,6 +644,7 @@
   name: "HaWe 4"
   ra: "03 27 15.4"
   size: 10.33
+  haflux: -11.45
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+55 38 51.4"
@@ -663,6 +677,7 @@
   name: "NGC 1360"
   ra: "03 33 14.6"
   size: 7.33
+  haflux: -9.78
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+63 16 41.9"
@@ -695,6 +710,7 @@
   name: "M 1-4"
   ra: "03 41 43.4"
   size: 0.07
+  haflux: -11.28
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+10 29 38.8"
@@ -727,6 +743,7 @@
   name: "IsWe 1"
   ra: "03 49 05.9"
   size: 12.5
+  haflux: -10.88
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+19 29 38.9"
@@ -735,6 +752,7 @@
   name: "Ba 1"
   ra: "03 53 36.4"
   size: 0.9
+  haflux: -11.69
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+33 52 30.6"
@@ -791,6 +809,7 @@
   name: "M 2-2"
   ra: "04 13 15.0"
   size: 0.22
+  haflux: -11.14
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+51 51 00.9"
@@ -799,6 +818,7 @@
   name: "K 3-64"
   ra: "04 13 27.3"
   size: 0.12
+  haflux: -12.30
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-12 44 22.0"
@@ -807,6 +827,7 @@
   name: "NGC 1535"
   ra: "04 14 15.8"
   size: 0.55
+  haflux: -9.95
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+30 23 30.8"
@@ -887,6 +908,7 @@
   name: "K 3-66"
   ra: "04 36 37.2"
   size: 0.04
+  haflux: -11.42
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+42 47 10.5"
@@ -903,6 +925,7 @@
   name: "H 3-29"
   ra: "04 37 23.4"
   size: 0.4
+  haflux: -11.63
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+48 39 07.8"
@@ -919,6 +942,7 @@
   name: "K 3-67"
   ra: "04 39 47.9"
   size: 0.12
+  haflux: -11.14
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+46 42 05.8"
@@ -1055,6 +1079,7 @@
   name: "PRTM 1"
   ra: "05 03 01.7"
   size: 0.36
+  haflux: -12.02
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-15 36 22.8"
@@ -1063,6 +1088,7 @@
   name: "Abell 7"
   ra: "05 03 07.5"
   size: 13.17
+  haflux: -10.41
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-06 10 03.0"
@@ -1071,6 +1097,7 @@
   name: "MaC 2-1"
   ra: "05 03 41.9"
   size: 0.07
+  haflux: -11.77
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+10 42 22.7"
@@ -1079,6 +1106,7 @@
   name: "J 320"
   ra: "05 05 34.3"
   size: 0.16
+  haflux: -10.92
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-74 21 12.3"
@@ -1095,6 +1123,7 @@
   name: "Abell 8"
   ra: "05 06 38.4"
   size: 1.0
+  haflux: -12.00
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+30 49 18.4"
@@ -1103,6 +1132,7 @@
   name: "K 2-1"
   ra: "05 07 08.3"
   size: 2.1
+  haflux: -11.03
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+53 10 28.2"
@@ -1135,6 +1165,7 @@
   name: "IPHASX J051152.2+302751"
   ra: "05 11 52.2"
   size: 6.25
+  haflux: -11.78
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+39 30 27.5"
@@ -1199,6 +1230,7 @@
   name: "IC 418"
   ra: "05 27 28.2"
   size: 0.23
+  haflux: -9.02
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+34 41 33.9"
@@ -1231,6 +1263,7 @@
   name: "K 3-68"
   ra: "05 31 35.9"
   size: 0.2
+  haflux: -11.80
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+06 56 02.0"
@@ -1239,6 +1272,7 @@
   name: "Abell 10"
   ra: "05 31 45.7"
   size: 0.62
+  haflux: -11.52
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+39 56 03.2"
@@ -1303,6 +1337,7 @@
   name: "H 3-75"
   ra: "05 40 45.0"
   size: 0.52
+  haflux: -11.43
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+39 15 08.1"
@@ -1311,6 +1346,7 @@
   name: "K 3-69"
   ra: "05 41 22.1"
   size: -9999
+  haflux: -12.30
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+09 05 10.5"
@@ -1319,6 +1355,7 @@
   name: "NGC 2022"
   ra: "05 42 06.2"
   size: 0.46
+  haflux: -10.61
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+04 43 02.7"
@@ -1375,6 +1412,7 @@
   name: "M 1-5"
   ra: "05 46 50.0"
   size: 0.05
+  haflux: -11.19
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+32 21 56.5"
@@ -1407,6 +1445,7 @@
   name: "Pu 1"
   ra: "05 52 48.5"
   size: 1.22
+  haflux: -12.40
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+24 02 27.1"
@@ -1423,6 +1462,7 @@
   name: "LoTr 1"
   ra: "05 55 06.7"
   size: 2.37
+  haflux: -11.87
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+46 06 17.3"
@@ -1439,6 +1479,7 @@
   name: "K 1-27"
   ra: "05 57 02.1"
   size: 1.02
+  haflux: -12.08
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+15 25 31.0"
@@ -1447,6 +1488,7 @@
   name: "KLSS 1-5"
   ra: "05 57 08.0"
   size: 1.2
+  haflux: -12.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+28 23 22.4"
@@ -1479,6 +1521,7 @@
   name: "WeDe 1"
   ra: "05 59 24.9"
   size: 17.0
+  haflux: -10.47
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+09 28 40.0"
@@ -1535,6 +1578,7 @@
   name: "Abell 13"
   ra: "06 04 47.9"
   size: 2.83
+  haflux: -11.40
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+54 58 24.1"
@@ -1551,6 +1595,7 @@
   name: "Abell 14"
   ra: "06 11 08.7"
   size: 0.67
+  haflux: -12.45
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+19 37 07.8"
@@ -1575,6 +1620,7 @@
   name: "We 1-4"
   ra: "06 14 33.7"
   size: 0.69
+  haflux: -12.39
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+18 49 15.0"
@@ -1655,6 +1701,7 @@
   name: "IC 2165"
   ra: "06 21 42.8"
   size: 0.15
+  haflux: -10.21
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+07 18 57.3"
@@ -1679,6 +1726,7 @@
   name: "HaWe 7"
   ra: "06 23 37.1"
   size: 1.57
+  haflux: -11.29
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+05 30 12.9"
@@ -1687,6 +1735,7 @@
   name: "K 3-72"
   ra: "06 23 54.9"
   size: 0.38
+  haflux: -12.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+38 15 14.5"
@@ -1703,6 +1752,7 @@
   name: "J 900"
   ra: "06 25 57.3"
   size: 0.14
+  haflux: -10.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-25 22 49.8"
@@ -1711,6 +1761,7 @@
   name: "Abell 15"
   ra: "06 27 02.0"
   size: 0.61
+  haflux: -11.90
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+12 46 21.8"
@@ -1775,6 +1826,7 @@
   name: "NGC 2242"
   ra: "06 34 07.4"
   size: 0.33
+  haflux: -11.58
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+07 22 20.2"
@@ -1799,6 +1851,7 @@
   name: "M 1-7"
   ra: "06 37 20.9"
   size: 0.43
+  haflux: -11.09
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-18 57 23.2"
@@ -1847,6 +1900,7 @@
   name: "We 1-5"
   ra: "06 41 34.6"
   size: 0.4
+  haflux: -12.17
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-04 17 48.6"
@@ -1871,6 +1925,7 @@
   name: "Abell 16"
   ra: "06 43 55.5"
   size: 2.47
+  haflux: -11.68
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+11 49 08.3"
@@ -1927,6 +1982,7 @@
   name: "PHR J0650+0013"
   ra: "06 50 40.5"
   size: 0.67
+  haflux: -11.96
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-22 26 11.2"
@@ -1951,6 +2007,7 @@
   name: "PHR J0652-0951"
   ra: "06 52 19.4"
   size: 1.0
+  haflux: -12.52
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-12 40 41.3"
@@ -1959,6 +2016,7 @@
   name: "PHR J0652-1240"
   ra: "06 52 19.7"
   size: 3.12
+  haflux: -11.64
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+09 04 22.7"
@@ -1975,6 +2033,7 @@
   name: "M 1-8"
   ra: "06 53 33.8"
   size: 0.35
+  haflux: -11.57
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-10 45 38.3"
@@ -1983,6 +2042,7 @@
   name: "PM 1-23"
   ra: "06 54 13.4"
   size: 0.45
+  haflux: -12.19
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-25 24 33.6"
@@ -1991,6 +2051,7 @@
   name: "HaWe 9"
   ra: "06 54 20.8"
   size: 3.5
+  haflux: -11.58
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-44 58 32.6"
@@ -2023,6 +2084,7 @@
   name: "Abell 18"
   ra: "06 56 14.4"
   size: 1.33
+  haflux: -12.00
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+18 26 48.8"
@@ -2039,6 +2101,7 @@
   name: "Abell 19"
   ra: "06 59 56.9"
   size: 1.25
+  haflux: -12.05
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-11 43 48.6"
@@ -2047,6 +2110,7 @@
   name: "PHR J0700-1144"
   ra: "07 00 05.7"
   size: 0.82
+  haflux: -12.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+12 14 41.3"
@@ -2063,6 +2127,7 @@
   name: "We 2-34"
   ra: "07 00 28.4"
   size: 5.75
+  haflux: -12.14
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-26 07 18.6"
@@ -2079,6 +2144,7 @@
   name: "PHR J0701-0749"
   ra: "07 01 09.4"
   size: 1.12
+  haflux: -12.19
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-03 24 32.4"
@@ -2095,6 +2161,7 @@
   name: "PB 1"
   ra: "07 02 46.8"
   size: 0.18
+  haflux: -11.68
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 35 30.1"
@@ -2103,6 +2170,7 @@
   name: "M 3-1"
   ra: "07 02 49.9"
   size: 0.21
+  haflux: -10.80
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-34 03 45.3"
@@ -2135,6 +2203,7 @@
   name: "M 1-9"
   ra: "07 05 19.2"
   size: 0.05
+  haflux: -11.09
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-12 24 51.9"
@@ -2167,6 +2236,7 @@
   name: "PHR J0705-0924"
   ra: "07 05 51.5"
   size: 1.42
+  haflux: -12.31
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+69 43 39.6"
@@ -2191,6 +2261,7 @@
   name: "St 3-1"
   ra: "07 06 50.9"
   size: 0.25
+  haflux: -11.60
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-05 10 07.0"
@@ -2199,6 +2270,7 @@
   name: "K 1-9"
   ra: "07 07 15.6"
   size: 0.8
+  haflux: -12.42
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-12 07 50.9"
@@ -2231,6 +2303,7 @@
   name: "M 1-11"
   ra: "07 11 16.7"
   size: 0.09
+  haflux: -10.80
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-12 38 04.9"
@@ -2239,6 +2312,7 @@
   name: "PHR J0711-1238"
   ra: "07 11 44.4"
   size: 0.94
+  haflux: -12.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-16 05 59.7"
@@ -2247,6 +2321,7 @@
   name: "K 1-10"
   ra: "07 12 35.5"
   size: 1.03
+  haflux: -12.44
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-04 05 07.8"
@@ -2279,6 +2354,7 @@
   name: "Lo 3"
   ra: "07 14 49.4"
   size: 1.8
+  haflux: -11.23
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 50 23.3"
@@ -2287,6 +2363,7 @@
   name: "M 3-2"
   ra: "07 14 49.8"
   size: 0.67
+  haflux: -12.08
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 05 43.7"
@@ -2295,6 +2372,7 @@
   name: "BMP J0715-2805"
   ra: "07 15 02.3"
   size: 0.32
+  haflux: -12.09
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-08 26 49.1"
@@ -2319,6 +2397,7 @@
   name: "We 1-6"
   ra: "07 17 25.9"
   size: 1.58
+  haflux: -11.64
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-13 34 07.7"
@@ -2343,6 +2422,7 @@
   name: "M 1-12"
   ra: "07 19 21.5"
   size: 0.03
+  haflux: -10.96
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-07 13 11.0"
@@ -2359,6 +2439,7 @@
   name: "PHR J0719-1222"
   ra: "07 19 46.7"
   size: 3.22
+  haflux: -11.99
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-18 08 36.9"
@@ -2367,6 +2448,7 @@
   name: "M 1-13"
   ra: "07 21 15.0"
   size: 0.45
+  haflux: -11.15
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-37 33 37.4"
@@ -2383,6 +2465,7 @@
   name: "FP J0721+0133"
   ra: "07 21 41.0"
   size: 12.0
+  haflux: -11.18
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+27 13 33.5"
@@ -2415,6 +2498,7 @@
   name: "PFP 1"
   ra: "07 22 20.3"
   size: 19.17
+  haflux: -10.70
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+01 45 32.8"
@@ -2423,6 +2507,7 @@
   name: "Abell 20"
   ra: "07 22 57.7"
   size: 1.12
+  haflux: -11.65
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+00 36 31.5"
@@ -2431,6 +2516,7 @@
   name: "PHR J0723+0036"
   ra: "07 23 48.3"
   size: 1.33
+  haflux: -12.27
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-20 21 48.9"
@@ -2447,6 +2533,7 @@
   name: "PHR J0724-1757"
   ra: "07 24 43.3"
   size: 2.85
+  haflux: -12.90
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-14 57 10.1"
@@ -2455,6 +2542,7 @@
   name: "PHR J0725-1457"
   ra: "07 25 23.6"
   size: 1.55
+  haflux: -12.23
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+29 29 26.4"
@@ -2487,6 +2575,7 @@
   name: "M 3-3"
   ra: "07 26 34.2"
   size: 0.42
+  haflux: -11.72
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-17 07 14.1"
@@ -2495,6 +2584,7 @@
   name: "PHR J0727-1707"
   ra: "07 27 08.3"
   size: 0.73
+  haflux: -12.80
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-12 59 30.2"
@@ -2511,6 +2601,7 @@
   name: "M 1-14"
   ra: "07 27 56.5"
   size: 0.1
+  haflux: -11.09
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-35 45 13.9"
@@ -2519,6 +2610,7 @@
   name: "M 4-2"
   ra: "07 28 53.8"
   size: 0.14
+  haflux: -11.35
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+13 14 48.8"
@@ -2527,6 +2619,7 @@
   name: "Abell 21"
   ra: "07 29 02.7"
   size: 12.5
+  haflux: -9.91
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+20 54 42.4"
@@ -2591,6 +2684,7 @@
   name: "BMP J0733-3108"
   ra: "07 33 24.1"
   size: 11.62
+  haflux: -11.42
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-23 25 40.8"
@@ -2599,6 +2693,7 @@
   name: "KLSS 1-8"
   ra: "07 33 25.2"
   size: 3.57
+  haflux: -12.00
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-73 48 40.0"
@@ -2623,6 +2718,7 @@
   name: "PHR J0735-2122"
   ra: "07 35 23.3"
   size: 1.0
+  haflux: -12.40
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+02 42 27.8"
@@ -2631,6 +2727,7 @@
   name: "Abell 22"
   ra: "07 36 07.9"
   size: 2.08
+  haflux: -11.51
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-05 00 20.3"
@@ -2655,6 +2752,7 @@
   name: "M 1-16"
   ra: "07 37 19.0"
   size: 0.13
+  haflux: -11.29
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-21 55 31.0"
@@ -2671,6 +2769,7 @@
   name: "FP J0739-2709"
   ra: "07 39 38.1"
   size: 6.37
+  haflux: -11.33
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-14 18 25.7"
@@ -2695,6 +2794,7 @@
   name: "M 1-17"
   ra: "07 40 22.2"
   size: 0.06
+  haflux: -11.42
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-20 55 52.5"
@@ -2703,6 +2803,7 @@
   name: "PHR J0740-2055"
   ra: "07 40 23.4"
   size: 4.0
+  haflux: -12.33
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-33 33 22.8"
@@ -2719,6 +2820,7 @@
   name: "NGC 2438"
   ra: "07 41 50.5"
   size: 1.34
+  haflux: -10.39
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-18 12 31.3"
@@ -2727,6 +2829,7 @@
   name: "NGC 2440"
   ra: "07 41 55.4"
   size: 1.2
+  haflux: -9.86
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-14 21 16.9"
@@ -2735,6 +2838,7 @@
   name: "M 1-18"
   ra: "07 42 04.1"
   size: 0.58
+  haflux: -11.81
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-13 38 24.0"
@@ -2759,6 +2863,7 @@
   name: "HFG 2"
   ra: "07 42 23.8"
   size: 3.01
+  haflux: -10.97
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-34 45 11.5"
@@ -2767,6 +2872,7 @@
   name: "Abell 23"
   ra: "07 43 18.2"
   size: 0.86
+  haflux: -11.86
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+16 07 52.9"
@@ -2783,6 +2889,7 @@
   name: "PHR J0743-1951"
   ra: "07 43 55.1"
   size: 6.7
+  haflux: -11.42
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-35 53 56.9"
@@ -2799,6 +2906,7 @@
   name: "PHR J0745-3535"
   ra: "07 45 40.7"
   size: 0.93
+  haflux: -12.09
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-21 46 49.0"
@@ -2807,6 +2915,7 @@
   name: "PHR J0747-2146"
   ra: "07 47 18.6"
   size: 2.38
+  haflux: -11.64
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-51 15 03.4"
@@ -2815,6 +2924,7 @@
   name: "Hen 2-5"
   ra: "07 47 20.0"
   size: 0.06
+  haflux: -10.80
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 29 16.1"
@@ -2831,6 +2941,7 @@
   name: "NGC 2452"
   ra: "07 47 26.2"
   size: 0.55
+  haflux: -10.80
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-14 07 40.4"
@@ -2839,6 +2950,7 @@
   name: "SaSt 2-3"
   ra: "07 48 03.7"
   size: 0.04
+  haflux: -11.69
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-19 18 16.1"
@@ -2847,6 +2959,7 @@
   name: "K 1-12"
   ra: "07 50 11.5"
   size: 0.73
+  haflux: -12.12
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+03 00 20.2"
@@ -2855,6 +2968,7 @@
   name: "Abell 24"
   ra: "07 51 37.6"
   size: 6.6
+  haflux: -10.67
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 03 06.7"
@@ -2879,6 +2993,7 @@
   name: "HaWe 10"
   ra: "07 55 11.3"
   size: 1.75
+  haflux: -12.02
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-23 38 12.6"
@@ -2887,6 +3002,7 @@
   name: "M 3-4"
   ra: "07 55 11.4"
   size: 0.55
+  haflux: -11.46
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-33 46 00.9"
@@ -2895,6 +3011,7 @@
   name: "PHR J0755-3346"
   ra: "07 55 56.5"
   size: 1.67
+  haflux: -12.24
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-36 06 50.0"
@@ -2959,6 +3076,7 @@
   name: "PHR J0800-1635"
   ra: "08 00 59.1"
   size: 2.62
+  haflux: -12.04
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 41 55.4"
@@ -2967,6 +3085,7 @@
   name: "M 3-5"
   ra: "08 02 28.9"
   size: 0.17
+  haflux: -11.44
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-33 31 02.0"
@@ -2975,6 +3094,7 @@
   name: "NeVe 3-3"
   ra: "08 03 12.7"
   size: 1.0
+  haflux: -12.07
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 06 02.1"
@@ -2991,6 +3111,7 @@
   name: "AlvKn 1"
   ra: "08 04 04.4"
   size: 16.83
+  haflux: -11.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-34 16 00.1"
@@ -2999,6 +3120,7 @@
   name: "K 1-21"
   ra: "08 04 14.4"
   size: 0.47
+  haflux: -12.05
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-48 23 31.9"
@@ -3031,6 +3153,7 @@
   name: "Abell 25"
   ra: "08 06 46.5"
   size: 2.93
+  haflux: -11.95
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-35 26 39.0"
@@ -3047,6 +3170,7 @@
   name: "PHR J0808-3745"
   ra: "08 08 24.4"
   size: 2.77
+  haflux: -11.87
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-35 04 40.1"
@@ -3063,6 +3187,7 @@
   name: "Sa 2-21"
   ra: "08 08 44.3"
   size: 0.67
+  haflux: -11.49
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-16 50 01.8"
@@ -3071,6 +3196,7 @@
   name: "PHR J0809-1650"
   ra: "08 09 01.4"
   size: 0.23
+  haflux: -12.39
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-32 40 24.9"
@@ -3079,6 +3205,7 @@
   name: "Abell 26"
   ra: "08 09 01.6"
   size: 0.62
+  haflux: -12.24
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-20 31 32.2"
@@ -3087,6 +3214,7 @@
   name: "Y-C 2-5"
   ra: "08 10 41.6"
   size: 0.23
+  haflux: -11.44
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-48 43 17.3"
@@ -3095,6 +3223,7 @@
   name: "Hen 2-7"
   ra: "08 11 31.9"
   size: 0.37
+  haflux: -10.81
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 56 41.4"
@@ -3111,6 +3240,7 @@
   name: "WRAY 17-15"
   ra: "08 13 21.5"
   size: 0.43
+  haflux: -12.13
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-40 53 07.7"
@@ -3175,6 +3305,7 @@
   name: "PB 2"
   ra: "08 20 40.2"
   size: 0.05
+  haflux: -11.58
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-35 36 01.3"
@@ -3191,6 +3322,7 @@
   name: "MeWe 2-1"
   ra: "08 20 52.6"
   size: 0.35
+  haflux: -12.11
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 59 33.0"
@@ -3207,6 +3339,7 @@
   name: "FP J0821-2755"
   ra: "08 21 18.3"
   size: 5.08
+  haflux: -12.24
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-36 00 14.0"
@@ -3239,6 +3372,7 @@
   name: "RCW 24"
   ra: "08 25 47.6"
   size: 12.0
+  haflux: -10.90
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+31 30 08.5"
@@ -3263,6 +3397,7 @@
   name: "Hen 2-9"
   ra: "08 28 28.0"
   size: 0.1
+  haflux: -11.13
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-38 18 07.0"
@@ -3271,6 +3406,7 @@
   name: "RCW 21"
   ra: "08 30 54.2"
   size: 1.9
+  haflux: -11.52
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-48 31 22.8"
@@ -3287,6 +3423,7 @@
   name: "Abell 27"
   ra: "08 31 52.6"
   size: 0.85
+  haflux: -12.01
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-16 08 57.8"
@@ -3295,6 +3432,7 @@
   name: "NGC 2610"
   ra: "08 33 23.4"
   size: 0.83
+  haflux: -10.84
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-47 16 38.5"
@@ -3303,6 +3441,7 @@
   name: "LoTr 3"
   ra: "08 34 06.8"
   size: 0.47
+  haflux: -11.76
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 19 03.3"
@@ -3311,6 +3450,7 @@
   name: "PHR J0834-2819"
   ra: "08 34 18.1"
   size: 2.69
+  haflux: -12.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-60 39 42.6"
@@ -3335,6 +3475,7 @@
   name: "Wray 16-22"
   ra: "08 36 16.6"
   size: 0.33
+  haflux: -11.97
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-39 25 08.3"
@@ -3343,6 +3484,7 @@
   name: "Hen 2-11"
   ra: "08 37 08.3"
   size: 2.03
+  haflux: -10.97
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-40 38 07.5"
@@ -3375,6 +3517,7 @@
   name: "Abell 29"
   ra: "08 40 18.9"
   size: 7.58
+  haflux: -11.04
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-48 42 30.2"
@@ -3391,6 +3534,7 @@
   name: "Fr 2-6"
   ra: "08 40 23.0"
   size: 5.83
+  haflux: -10.74
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-38 01 26.0"
@@ -3399,6 +3543,7 @@
   name: "PHR J0840-3801"
   ra: "08 40 29.9"
   size: 0.71
+  haflux: -12.15
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-32 22 33.2"
@@ -3407,6 +3552,7 @@
   name: "M 3-6"
   ra: "08 40 40.2"
   size: 0.27
+  haflux: -10.36
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-47 59 40.1"
@@ -3543,6 +3689,7 @@
   name: "Hen 2-15"
   ra: "08 53 30.9"
   size: 1.55
+  haflux: -11.21
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-54 05 08.6"
@@ -3551,6 +3698,7 @@
   name: "MeWe 1-1"
   ra: "08 53 36.8"
   size: 2.47
+  haflux: -11.42
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+08 53 53.0"
@@ -3559,6 +3707,7 @@
   name: "Abell 31"
   ra: "08 54 13.2"
   size: 16.17
+  haflux: -10.20
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-50 32 22.3"
@@ -3567,6 +3716,7 @@
   name: "PB 3"
   ra: "08 54 18.3"
   size: 0.13
+  haflux: -11.36
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-53 10 37.6"
@@ -3599,6 +3749,7 @@
   name: "K 1-2"
   ra: "08 57 46.0"
   size: 1.83
+  haflux: -11.78
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-38 05 24.5"
@@ -3615,6 +3766,7 @@
   name: "Wray 17-23"
   ra: "08 59 03.0"
   size: 0.17
+  haflux: -12.11
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-40 23 15.0"
@@ -3623,6 +3775,7 @@
   name: "FP J0904-4023"
   ra: "09 04 02.3"
   size: 9.0
+  haflux: -10.97
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-30 32 23.4"
@@ -3631,6 +3784,7 @@
   name: "FP J0905-3033"
   ra: "09 04 52.1"
   size: 14.7
+  haflux: -10.57
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-48 22 56.1"
@@ -3647,6 +3801,7 @@
   name: "BRAN 229"
   ra: "09 05 41.0"
   size: 2.45
+  haflux: -11.70
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-55 48 54.2"
@@ -3663,6 +3818,7 @@
   name: "IC 2448"
   ra: "09 07 06.3"
   size: 0.37
+  haflux: -10.41
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-41 46 13.8"
@@ -3695,6 +3851,7 @@
   name: "Hen 2-18"
   ra: "09 08 40.0"
   size: 0.27
+  haflux: -11.64
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-40 51 58.5"
@@ -3727,6 +3884,7 @@
   name: "NGC 2792"
   ra: "09 12 26.6"
   size: 0.3
+  haflux: -10.66
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-54 45 36.3"
@@ -3751,6 +3909,7 @@
   name: "Hen 2-21"
   ra: "09 13 52.8"
   size: 0.05
+  haflux: -11.32
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-55 55 22.0"
@@ -3775,6 +3934,7 @@
   name: "PB 4"
   ra: "09 15 07.7"
   size: 0.2
+  haflux: -11.03
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-36 37 38.7"
@@ -3783,6 +3943,7 @@
   name: "NGC 2818"
   ra: "09 16 01.7"
   size: 0.94
+  haflux: -10.73
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-45 28 42.8"
@@ -3791,6 +3952,7 @@
   name: "PB 5"
   ra: "09 16 09.6"
   size: 0.03
+  haflux: -11.42
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-51 35 38.2"
@@ -3831,6 +3993,7 @@
   name: "My 47"
   ra: "09 19 27.5"
   size: 0.04
+  haflux: -10.91
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-58 18 40.7"
@@ -3839,6 +4002,7 @@
   name: "NGC 2867"
   ra: "09 21 25.3"
   size: 0.24
+  haflux: -9.97
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-43 22 06.1"
@@ -3855,6 +4019,7 @@
   name: "Hen 2-28"
   ra: "09 22 06.8"
   size: 0.18
+  haflux: -11.71
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-50 53 25.0"
@@ -3871,6 +4036,7 @@
   name: "PHR0924-5506"
   ra: "09 24 15.1"
   size: 1.13
+  haflux: -12.26
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-54 36 15.4"
@@ -3879,6 +4045,7 @@
   name: "Hen 2-29"
   ra: "09 24 45.8"
   size: 0.27
+  haflux: -11.40
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 45 02.9"
@@ -3895,6 +4062,7 @@
   name: "NGC 2899"
   ra: "09 27 03.1"
   size: 1.14
+  haflux: -10.55
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-67 51 25.0"
@@ -3951,6 +4119,7 @@
   name: "Pe 2-4"
   ra: "09 30 48.4"
   size: 0.12
+  haflux: -11.69
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-57 16 21.1"
@@ -3967,6 +4136,7 @@
   name: "Hen 2-32"
   ra: "09 30 54.8"
   size: 0.75
+  haflux: -12.07
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-56 17 39.4"
@@ -3975,6 +4145,7 @@
   name: "Wray 17-31"
   ra: "09 31 20.5"
   size: 2.48
+  haflux: -11.20
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-55 35 44.2"
@@ -4015,6 +4186,7 @@
   name: "NeVe 3-1"
   ra: "09 34 01.2"
   size: 0.67
+  haflux: -12.32
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-52 23 20.0"
@@ -4023,6 +4195,7 @@
   name: "PHR J0934-5223"
   ra: "09 34 17.2"
   size: 0.95
+  haflux: -11.89
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-52 39 18.1"
@@ -4047,6 +4220,7 @@
   name: "IRAS 09362-5413"
   ra: "09 37 51.9"
   size: 0.17
+  haflux: -12.07
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-56 07 56.6"
@@ -4071,6 +4245,7 @@
   name: "IC 2501"
   ra: "09 38 47.2"
   size: 0.13
+  haflux: -10.01
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-02 48 31.5"
@@ -4103,6 +4278,7 @@
   name: "VBRC 3"
   ra: "09 40 52.5"
   size: 0.96
+  haflux: -11.96
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-49 57 58.7"
@@ -4111,6 +4287,7 @@
   name: "Hen 2-35"
   ra: "09 41 37.5"
   size: 0.07
+  haflux: -11.43
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-52 20 42.0"
@@ -4119,6 +4296,7 @@
   name: "PHR J0942-5220"
   ra: "09 42 01.2"
   size: 2.75
+  haflux: -11.58
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-53 00 03.6"
@@ -4151,6 +4329,7 @@
   name: "Hen 2-36"
   ra: "09 43 25.6"
   size: 0.41
+  haflux: -10.85
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-13 10 15.6"
@@ -4159,6 +4338,7 @@
   name: "Abell 34"
   ra: "09 45 35.3"
   size: 4.83
+  haflux: -11.41
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-48 58 14.7"
@@ -4167,6 +4347,7 @@
   name: "Hen 2-37"
   ra: "09 47 24.8"
   size: 0.43
+  haflux: -11.53
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+53 09 30.7"
@@ -4183,6 +4364,7 @@
   name: "HbDs 1"
   ra: "09 52 44.5"
   size: 2.13
+  haflux: -11.55
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+13 44 46.9"
@@ -4191,6 +4373,7 @@
   name: "EGB 6"
   ra: "09 53 00.5"
   size: 13.0
+  haflux: -11.03
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-54 52 39.6"
@@ -4199,6 +4382,7 @@
   name: "IRAS 09517-5438"
   ra: "09 53 27.1"
   size: -9999
+  haflux: -12.22
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-54 58 47.1"
@@ -4239,6 +4423,7 @@
   name: "MeWe 2-2"
   ra: "09 58 10.3"
   size: 0.46
+  haflux: -12.40
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-61 26 40.0"
@@ -4279,6 +4464,7 @@
   name: "Hen 2-39"
   ra: "10 03 49.2"
   size: 0.21
+  haflux: -11.58
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-59 46 51.0"
@@ -4295,6 +4481,7 @@
   name: "Lo 4"
   ra: "10 05 45.8"
   size: 0.69
+  haflux: -12.03
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-58 16 29.0"
@@ -4311,6 +4498,7 @@
   name: "Wray 17-40"
   ra: "10 06 59.6"
   size: 1.23
+  haflux: -11.29
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-40 26 12.2"
@@ -4319,6 +4507,7 @@
   name: "NGC 3132"
   ra: "10 07 01.7"
   size: 1.43
+  haflux: -9.84
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-53 02 48.5"
@@ -4343,6 +4532,7 @@
   name: "Hen 2-41"
   ra: "10 07 23.6"
   size: 0.07
+  haflux: -11.24
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-61 24 24.0"
@@ -4367,6 +4557,7 @@
   name: "NGC 3195"
   ra: "10 09 20.8"
   size: 0.66
+  haflux: -10.45
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-62 36 48.4"
@@ -4375,6 +4566,7 @@
   name: "IC 2553"
   ra: "10 09 20.9"
   size: 0.19
+  haflux: -10.25
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-60 00 15.8"
@@ -4407,6 +4599,7 @@
   name: "Sa 2-56"
   ra: "10 11 57.7"
   size: 0.17
+  haflux: -11.85
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-50 19 59.3"
@@ -4415,6 +4608,7 @@
   name: "PB 6"
   ra: "10 13 15.9"
   size: 0.2
+  haflux: -11.26
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-57 58 16.2"
@@ -4439,6 +4633,7 @@
   name: "MeWe 1-2"
   ra: "10 14 24.1"
   size: 4.38
+  haflux: -11.35
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-58 51 10.4"
@@ -4447,6 +4642,7 @@
   name: "Hf 4"
   ra: "10 15 35.1"
   size: 0.49
+  haflux: -11.94
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-62 40 14.4"
@@ -4455,6 +4651,7 @@
   name: "NGC 3211"
   ra: "10 17 50.3"
   size: 0.27
+  haflux: -10.54
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-60 59 10.0"
@@ -4463,6 +4660,7 @@
   name: "BRAN 303"
   ra: "10 19 27.6"
   size: 0.95
+  haflux: -11.93
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-61 20 18.9"
@@ -4487,6 +4685,7 @@
   name: "My 59"
   ra: "10 23 09.1"
   size: 0.08
+  haflux: -10.35
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-56 00 32.0"
@@ -4503,6 +4702,7 @@
   name: "NGC 3242"
   ra: "10 24 46.1"
   size: 0.53
+  haflux: -9.31
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-61 15 23.1"
@@ -4511,6 +4711,7 @@
   name: "PHR J1025-6115"
   ra: "10 25 46.3"
   size: 1.1
+  haflux: -12.05
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-60 14 03.4"
@@ -4535,6 +4736,7 @@
   name: "Hen 2-48"
   ra: "10 31 32.0"
   size: 0.54
+  haflux: -11.62
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-55 20 50.8"
@@ -4543,6 +4745,7 @@
   name: "My 60"
   ra: "10 31 33.4"
   size: 0.17
+  haflux: -11.03
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-53 41 03.8"
@@ -4551,6 +4754,7 @@
   name: "Hen 2-50"
   ra: "10 34 19.0"
   size: 0.23
+  haflux: -11.36
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-59 28 46.8"
@@ -4567,6 +4771,7 @@
   name: "K 1-28"
   ra: "10 34 30.6"
   size: 0.9
+  haflux: -12.26
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-64 19 11.7"
@@ -4575,6 +4780,7 @@
   name: "Hen 2-51"
   ra: "10 35 45.8"
   size: 0.27
+  haflux: -11.52
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-59 09 19.9"
@@ -4599,6 +4805,7 @@
   name: "Pe 1-1"
   ra: "10 38 27.6"
   size: 0.05
+  haflux: -11.27
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-57 06 13.7"
@@ -4607,6 +4814,7 @@
   name: "Pe 1-2"
   ra: "10 39 32.7"
   size: 0.07
+  haflux: -11.28
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-54 18 12.5"
@@ -4615,6 +4823,7 @@
   name: "PHR J1040-5417"
   ra: "10 40 45.2"
   size: 3.03
+  haflux: -11.56
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-56 09 16.3"
@@ -4631,6 +4840,7 @@
   name: "Pe 1-3"
   ra: "10 44 31.1"
   size: 0.18
+  haflux: -11.69
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-63 32 29.0"
@@ -4687,6 +4897,7 @@
   name: "Hen 2-55"
   ra: "10 48 43.2"
   size: 0.3
+  haflux: -11.58
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-55 48 23.4"
@@ -4711,6 +4922,7 @@
   name: "PHR J1052-5042"
   ra: "10 52 26.7"
   size: 1.5
+  haflux: -11.68
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-59 03 02.1"
@@ -4735,6 +4947,7 @@
   name: "Hf 38"
   ra: "10 54 35.0"
   size: 0.58
+  haflux: -11.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-62 00 14.8"
@@ -4751,6 +4964,7 @@
   name: "DS 1"
   ra: "10 54 40.6"
   size: 5.9
+  haflux: -10.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-61 28 26.0"
@@ -4799,6 +5013,7 @@
   name: "IC 2621"
   ra: "11 00 20.1"
   size: 0.07
+  haflux: -10.59
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-60 36 04.6"
@@ -4807,6 +5022,7 @@
   name: "Hf 48"
   ra: "11 03 56.0"
   size: 0.37
+  haflux: -11.93
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-62 00 25.9"
@@ -4935,6 +5151,7 @@
   name: "Lo 5"
   ra: "11 13 54.2"
   size: 2.53
+  haflux: -11.03
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-61 00 02.9"
@@ -4959,6 +5176,7 @@
   name: "Hen 2-62"
   ra: "11 17 43.2"
   size: 0.05
+  haflux: -11.37
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-52 10 02.3"
@@ -4967,6 +5185,7 @@
   name: "ESO 216-2"
   ra: "11 18 09.7"
   size: 0.6
+  haflux: -12.33
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-61 50 57.0"
@@ -4975,6 +5194,7 @@
   name: "PHR J1118-6150"
   ra: "11 18 32.0"
   size: 5.2
+  haflux: -11.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-60 02 05.0"
@@ -5047,6 +5267,7 @@
   name: "PHR J1124-5711"
   ra: "11 24 50.9"
   size: 1.33
+  haflux: -12.04
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-60 14 33.1"
@@ -5055,6 +5276,7 @@
   name: "PHR1125-6014"
   ra: "11 25 42.7"
   size: 0.63
+  haflux: -12.00
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-34 22 11.0"
@@ -5063,6 +5285,7 @@
   name: "K 1-22"
   ra: "11 26 43.8"
   size: 3.33
+  haflux: -10.81
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-57 17 58.9"
@@ -5071,6 +5294,7 @@
   name: "Hen 2-64"
   ra: "11 27 24.3"
   size: 0.15
+  haflux: -11.64
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-60 33 37.0"
@@ -5087,6 +5311,7 @@
   name: "NGC 3699"
   ra: "11 27 57.7"
   size: 0.78
+  haflux: -10.74
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-61 21 03.1"
@@ -5103,6 +5328,7 @@
   name: "Fg 1"
   ra: "11 28 36.2"
   size: 0.92
+  haflux: -10.49
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-60 06 37.3"
@@ -5111,6 +5337,7 @@
   name: "He 2-67"
   ra: "11 28 47.4"
   size: 0.09
+  haflux: -11.06
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-59 02 41.0"
@@ -5127,6 +5354,7 @@
   name: "PHR J1129-6012"
   ra: "11 29 50.4"
   size: 0.33
+  haflux: -12.40
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-59 17 05.9"
@@ -5135,6 +5363,7 @@
   name: "Wray 16-93"
   ra: "11 30 48.5"
   size: 0.18
+  haflux: -12.20
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-61 14 51.0"
@@ -5151,6 +5380,7 @@
   name: "Hen 2-68"
   ra: "11 31 45.4"
   size: 0.04
+  haflux: -11.09
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-57 21 35.0"
@@ -5167,6 +5397,7 @@
   name: "PB 8"
   ra: "11 33 17.7"
   size: 0.11
+  haflux: -10.82
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-64 17 20.9"
@@ -5183,6 +5414,7 @@
   name: "PHR J1134-5243"
   ra: "11 34 38.6"
   size: 0.7
+  haflux: -12.33
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-60 17 01.0"
@@ -5191,6 +5423,7 @@
   name: "Hen 2-70"
   ra: "11 35 11.0"
   size: 0.58
+  haflux: -11.40
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-64 06 18.8"
@@ -5207,6 +5440,7 @@
   name: "PHR J1136-5235"
   ra: "11 36 00.0"
   size: 4.47
+  haflux: -11.47
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-57 41 20.0"
@@ -5223,6 +5457,7 @@
   name: "PHR J1137-6548"
   ra: "11 37 03.8"
   size: 5.37
+  haflux: -10.81
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-68 06 44.9"
@@ -5247,6 +5482,7 @@
   name: "Hen 2-71"
   ra: "11 39 11.2"
   size: 0.08
+  haflux: -11.05
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-60 22 10.2"
@@ -5255,6 +5491,7 @@
   name: "PHR J1140-6022"
   ra: "11 40 36.8"
   size: 0.67
+  haflux: -12.60
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-64 54 58.9"
@@ -5271,6 +5508,7 @@
   name: "Hf 69"
   ra: "11 41 37.3"
   size: 1.08
+  haflux: -11.15
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-59 26 03.2"
@@ -5295,6 +5533,7 @@
   name: "Hen 2-73"
   ra: "11 48 38.2"
   size: 0.06
+  haflux: -11.14
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-63 58 50.8"
@@ -5319,6 +5558,7 @@
   name: "NGC 3918"
   ra: "11 50 17.7"
   size: 0.31
+  haflux: -9.52
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-67 04 57.1"
@@ -5327,6 +5567,7 @@
   name: "PHR J1150-6704"
   ra: "11 50 27.6"
   size: 0.98
+  haflux: -12.20
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-59 59 56.5"
@@ -5343,6 +5584,7 @@
   name: "LoTr 4"
   ra: "11 52 29.2"
   size: 0.51
+  haflux: -12.12
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-62 34 10.1"
@@ -5359,6 +5601,7 @@
   name: "BlDz 1"
   ra: "11 53 06.5"
   size: 1.57
+  haflux: -11.04
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+59 39 56.9"
@@ -5399,6 +5642,7 @@
   name: "KFR 1"
   ra: "12 00 16.3"
   size: 1.63
+  haflux: -11.71
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-59 29 48.9"
@@ -5407,6 +5651,7 @@
   name: "PHR1200-5929"
   ra: "12 00 35.9"
   size: 0.38
+  haflux: -12.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-47 33 10.8"
@@ -5415,6 +5660,7 @@
   name: "Lo 6"
   ra: "12 00 43.1"
   size: 1.28
+  haflux: -11.72
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-61 12 45.3"
@@ -5431,6 +5677,7 @@
   name: "PHR J1202-7001"
   ra: "12 02 55.7"
   size: 5.28
+  haflux: -11.80
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-64 03 41.0"
@@ -5447,6 +5694,7 @@
   name: "NGC 4071"
   ra: "12 04 14.7"
   size: 1.21
+  haflux: -10.95
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-66 00 20.9"
@@ -5495,6 +5743,7 @@
   name: "Hen 2-76"
   ra: "12 08 25.4"
   size: 0.34
+  haflux: -11.82
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-58 42 37.4"
@@ -5503,6 +5752,7 @@
   name: "Hen 2-78"
   ra: "12 09 10.2"
   size: 0.06
+  haflux: -12.28
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-58 46 00.6"
@@ -5647,6 +5897,7 @@
   name: "HaTr 1"
   ra: "12 16 31.2"
   size: 1.17
+  haflux: -11.55
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-64 43 27.1"
@@ -5655,6 +5906,7 @@
   name: "PHR J1217-6443"
   ra: "12 17 53.1"
   size: 0.73
+  haflux: -11.92
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-62 45 38.1"
@@ -5679,6 +5931,7 @@
   name: "Po 1"
   ra: "12 18 32.7"
   size: 0.37
+  haflux: -12.29
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-63 47 01.1"
@@ -5727,6 +5980,7 @@
   name: "Hen 2-81"
   ra: "12 23 01.2"
   size: 0.12
+  haflux: -12.07
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-60 13 13.4"
@@ -5735,6 +5989,7 @@
   name: "Hen 2-82"
   ra: "12 23 53.6"
   size: 0.53
+  haflux: -11.60
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-62 36 21.9"
@@ -5759,6 +6014,7 @@
   name: "NGC 4361"
   ra: "12 24 30.8"
   size: 1.98
+  haflux: -10.09
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-49 24 05.8"
@@ -5791,6 +6047,7 @@
   name: "Hen 2-83"
   ra: "12 28 44.0"
   size: 0.08
+  haflux: -11.77
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-63 44 37.1"
@@ -5799,6 +6056,7 @@
   name: "Hen 2-84"
   ra: "12 28 46.9"
   size: 0.6
+  haflux: -11.77
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-58 39 06.2"
@@ -5815,6 +6073,7 @@
   name: "Hen 2-85"
   ra: "12 30 07.6"
   size: 0.15
+  haflux: -11.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-66 14 25.8"
@@ -5823,6 +6082,7 @@
   name: "ESO 95-12"
   ra: "12 30 24.5"
   size: 0.3
+  haflux: -12.17
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-64 52 05.6"
@@ -5831,6 +6091,7 @@
   name: "He 2-86"
   ra: "12 30 30.4"
   size: 0.05
+  haflux: -11.14
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-64 57 28.7"
@@ -5847,6 +6108,7 @@
   name: "K 1-23"
   ra: "12 30 52.5"
   size: 1.07
+  haflux: -11.22
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+82 33 50.3"
@@ -5967,6 +6229,7 @@
   name: "RCW 69"
   ra: "12 44 27.4"
   size: 4.13
+  haflux: -10.96
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-66 01 02.1"
@@ -5983,6 +6246,7 @@
   name: "Wray 16-120"
   ra: "12 45 54.5"
   size: 0.26
+  haflux: -12.03
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-63 24 28.1"
@@ -5991,6 +6255,7 @@
   name: "WRAY 17-56"
   ra: "12 46 26.9"
   size: 0.41
+  haflux: -12.17
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-61 58 34.0"
@@ -6015,6 +6280,7 @@
   name: "VBRC 4"
   ra: "12 48 31.6"
   size: 1.08
+  haflux: -11.45
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-64 14 27.0"
@@ -6031,6 +6297,7 @@
   name: "PHR J1250-6346"
   ra: "12 50 04.4"
   size: 1.38
+  haflux: -11.98
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-67 36 41.9"
@@ -6079,6 +6346,7 @@
   name: "PHR J1255-6251"
   ra: "12 55 17.8"
   size: 5.25
+  haflux: -13.00
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+25 53 30.6"
@@ -6127,6 +6395,7 @@
   name: "PHR J1300-5621"
   ra: "13 00 21.2"
   size: 0.55
+  haflux: -12.12
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-56 53 40.5"
@@ -6135,6 +6404,7 @@
   name: "Wray 16-122"
   ra: "13 00 41.2"
   size: 0.6
+  haflux: -11.81
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-45 37 22.4"
@@ -6151,6 +6421,7 @@
   name: "PHR J1304-6024"
   ra: "13 04 13.3"
   size: 1.05
+  haflux: -12.70
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-57 39 24.3"
@@ -6167,6 +6438,7 @@
   name: "IC 4191"
   ra: "13 08 47.3"
   size: 0.09
+  haflux: -10.31
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-64 57 17.8"
@@ -6191,6 +6463,7 @@
   name: "Wray 17-58"
   ra: "13 10 19.6"
   size: 0.33
+  haflux: -12.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-65 34 25.2"
@@ -6255,6 +6528,7 @@
   name: "PHR J1318-5601"
   ra: "13 18 18.7"
   size: 2.58
+  haflux: -12.32
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-63 58 54.0"
@@ -6279,6 +6553,7 @@
   name: "Wray 17-59"
   ra: "13 19 29.9"
   size: 0.4
+  haflux: -11.41
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-63 49 44.8"
@@ -6295,6 +6570,7 @@
   name: "Th 2-A"
   ra: "13 22 34.0"
   size: 0.46
+  haflux: -11.13
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-63 30 34.0"
@@ -6327,6 +6603,7 @@
   name: "Wray 16-128"
   ra: "13 24 21.9"
   size: 0.3
+  haflux: -11.75
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-64 48 13.0"
@@ -6351,6 +6628,7 @@
   name: "Lo 8"
   ra: "13 25 37.5"
   size: 2.2
+  haflux: -11.81
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-61 03 08.0"
@@ -6375,6 +6653,7 @@
   name: "PHR J1327-6032"
   ra: "13 27 14.0"
   size: 3.5
+  haflux: -11.49
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-63 19 28.1"
@@ -6407,6 +6686,7 @@
   name: "MeWe 1-3"
   ra: "13 28 04.9"
   size: 0.32
+  haflux: -12.20
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-65 29 06.8"
@@ -6495,6 +6775,7 @@
   name: "NGC 5189"
   ra: "13 33 33.0"
   size: 2.72
+  haflux: -9.93
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-64 46 26.2"
@@ -6511,6 +6792,7 @@
   name: "ESO 40-11"
   ra: "13 34 14.1"
   size: 1.17
+  haflux: -11.77
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-60 15 46.0"
@@ -6519,6 +6801,7 @@
   name: "PHR J1335-6015"
   ra: "13 35 03.0"
   size: 0.55
+  haflux: -12.15
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-63 48 56.9"
@@ -6567,6 +6850,7 @@
   name: "PHR J1337-6535"
   ra: "13 37 51.1"
   size: 3.03
+  haflux: -11.56
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-62 58 54.3"
@@ -6599,6 +6883,7 @@
   name: "MyCn 18"
   ra: "13 39 35.0"
   size: 0.29
+  haflux: -10.43
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-62 30 32.4"
@@ -6623,6 +6908,7 @@
   name: "Abell 36"
   ra: "13 40 41.3"
   size: 7.5
+  haflux: -10.41
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-64 27 54.1"
@@ -6639,6 +6925,7 @@
   name: "Hen 2-96"
   ra: "13 42 36.1"
   size: 0.05
+  haflux: -11.24
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-60 49 46.8"
@@ -6647,6 +6934,7 @@
   name: "VBRC 5"
   ra: "13 44 00.0"
   size: 1.55
+  haflux: -11.72
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-62 47 01.7"
@@ -6663,6 +6951,7 @@
   name: "Hen 2-97"
   ra: "13 45 22.4"
   size: 0.04
+  haflux: -10.80
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-61 16 27.0"
@@ -6695,6 +6984,7 @@
   name: "NGC 5307"
   ra: "13 51 03.3"
   size: 0.31
+  haflux: -10.62
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-54 29 42.0"
@@ -6711,6 +7001,7 @@
   name: "Hen 2-99"
   ra: "13 52 30.7"
   size: 0.46
+  haflux: -11.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-60 33 47.4"
@@ -6727,6 +7018,7 @@
   name: "NGC 5315"
   ra: "13 53 57.0"
   size: 0.18
+  haflux: -9.74
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-63 37 17.8"
@@ -6743,6 +7035,7 @@
   name: "WKG 3"
   ra: "13 54 24.6"
   size: 0.94
+  haflux: -12.26
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-64 59 32.2"
@@ -6751,6 +7044,7 @@
   name: "MaC 1-2"
   ra: "13 54 27.4"
   size: 0.19
+  haflux: -11.89
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-52 04 48.0"
@@ -6767,6 +7061,7 @@
   name: "SuWt 2"
   ra: "13 55 43.2"
   size: 1.44
+  haflux: -11.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-61 39 44.1"
@@ -6783,6 +7078,7 @@
   name: "Hen 2-102"
   ra: "13 58 13.9"
   size: 0.19
+  haflux: -11.33
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-58 58 57.2"
@@ -6831,6 +7127,7 @@
   name: "Fr 2-8"
   ra: "14 00 41.8"
   size: 1.92
+  haflux: -11.40
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-50 40 09.9"
@@ -6839,6 +7136,7 @@
   name: "MeWe 2-4"
   ra: "14 01 15.5"
   size: 7.03
+  haflux: -11.49
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-65 35 34.0"
@@ -6871,6 +7169,7 @@
   name: "IC 972"
   ra: "14 04 25.9"
   size: 0.78
+  haflux: -11.56
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-55 07 44.5"
@@ -6887,6 +7186,7 @@
   name: "Hen 2-103"
   ra: "14 05 36.7"
   size: 0.37
+  haflux: -11.36
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-61 11 33.7"
@@ -6927,6 +7227,7 @@
   name: "Wray 17-64"
   ra: "14 08 47.3"
   size: 1.02
+  haflux: -11.79
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-58 04 24.3"
@@ -6943,6 +7244,7 @@
   name: "PHR J1408-6106"
   ra: "14 08 53.2"
   size: 5.12
+  haflux: -11.34
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-64 21 56.0"
@@ -7007,6 +7309,7 @@
   name: "LoTr 7"
   ra: "14 15 24.1"
   size: 0.27
+  haflux: -11.75
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-74 12 46.6"
@@ -7015,6 +7318,7 @@
   name: "Hen 2-105"
   ra: "14 15 24.8"
   size: 0.69
+  haflux: -11.05
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-60 01 37.8"
@@ -7039,6 +7343,7 @@
   name: "SkAc 1"
   ra: "14 16 22.0"
   size: 0.83
+  haflux: -12.68
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-58 09 32.2"
@@ -7071,6 +7376,7 @@
   name: "Hen 2-108"
   ra: "14 18 08.9"
   size: 0.23
+  haflux: -10.80
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-51 44 39.2"
@@ -7079,6 +7385,7 @@
   name: "PHR J1418-5144"
   ra: "14 18 25.8"
   size: 6.73
+  haflux: -11.39
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-60 47 10.7"
@@ -7095,6 +7402,7 @@
   name: "Hen 2-107"
   ra: "14 18 43.3"
   size: 0.18
+  haflux: -11.28
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-67 32 12.5"
@@ -7119,6 +7427,7 @@
   name: "Hen 2-109"
   ra: "14 20 48.9"
   size: 0.18
+  haflux: -12.02
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-58 38 22.1"
@@ -7135,6 +7444,7 @@
   name: "LoTr 8"
   ra: "14 21 59.9"
   size: 0.47
+  haflux: -12.37
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-44 09 02.4"
@@ -7143,6 +7453,7 @@
   name: "IC 4406"
   ra: "14 22 26.2"
   size: 0.77
+  haflux: -10.16
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-09 17 21.8"
@@ -7151,6 +7462,7 @@
   name: "Fr 2-9"
   ra: "14 22 40.3"
   size: 80.0
+  haflux: -10.18
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-65 31 06.1"
@@ -7191,6 +7503,7 @@
   name: "PHR J1424-5138"
   ra: "14 24 32.6"
   size: 1.98
+  haflux: -11.87
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-60 16 35.0"
@@ -7295,6 +7608,7 @@
   name: "PHR J1432-6138"
   ra: "14 32 09.2"
   size: 4.42
+  haflux: -11.20
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-12 22 48.1"
@@ -7319,6 +7633,7 @@
   name: "Hen 2-111"
   ra: "14 33 18.5"
   size: 11.0
+  haflux: -10.90
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-55 57 18.8"
@@ -7367,6 +7682,7 @@
   name: "PHR J1437-5949"
   ra: "14 37 53.2"
   size: 1.72
+  haflux: -13.20
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-61 40 02.0"
@@ -7415,6 +7731,7 @@
   name: "Hen 2-112"
   ra: "14 40 30.9"
   size: 0.12
+  haflux: -11.16
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-53 50 12.0"
@@ -7463,6 +7780,7 @@
   name: "WRAY 17-68"
   ra: "14 41 35.8"
   size: 1.12
+  haflux: -11.83
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-62 19 04.0"
@@ -7495,6 +7813,7 @@
   name: "LoTr 10"
   ra: "14 46 19.9"
   size: 0.7
+  haflux: -12.40
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-50 23 24.7"
@@ -7503,6 +7822,7 @@
   name: "MeWe 1-5"
   ra: "14 46 35.1"
   size: 0.57
+  haflux: -12.30
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-57 03 45.0"
@@ -7527,6 +7847,7 @@
   name: "PHR J1447-5838"
   ra: "14 47 41.8"
   size: 1.08
+  haflux: -11.19
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-54 32 26.2"
@@ -7535,6 +7856,7 @@
   name: "PHR J1451-5432"
   ra: "14 51 37.6"
   size: 0.73
+  haflux: -12.71
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-58 44 02.0"
@@ -7639,6 +7961,7 @@
   name: "Hen 2-113"
   ra: "14 59 53.5"
   size: 0.55
+  haflux: -10.89
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-81 24 45.5"
@@ -7695,6 +8018,7 @@
   name: "Hen 2-114"
   ra: "15 04 08.6"
   size: 0.43
+  haflux: -11.53
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-61 13 11.1"
@@ -7711,6 +8035,7 @@
   name: "Hen 2-115"
   ra: "15 05 16.8"
   size: 0.15
+  haflux: -11.24
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-60 48 51.5"
@@ -7727,6 +8052,7 @@
   name: "Hen 2-117"
   ra: "15 05 59.2"
   size: 0.09
+  haflux: -11.13
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-61 21 20.6"
@@ -7735,6 +8061,7 @@
   name: "Hen 2-116"
   ra: "15 06 01.9"
   size: 0.8
+  haflux: -11.49
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-42 59 56.5"
@@ -7743,6 +8070,7 @@
   name: "Hen 2-118"
   ra: "15 06 13.7"
   size: 0.02
+  haflux: -11.20
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-41 45 18.5"
@@ -7751,6 +8079,7 @@
   name: "Mu 1"
   ra: "15 06 17.1"
   size: 1.83
+  haflux: -12.24
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-61 04 22.0"
@@ -7791,6 +8120,7 @@
   name: "MPA J1508-6455"
   ra: "15 08 06.5"
   size: 0.23
+  haflux: -12.08
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-56 33 01.0"
@@ -7807,6 +8137,7 @@
   name: "ESO 135-04"
   ra: "15 08 43.6"
   size: 0.73
+  haflux: -11.85
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-59 33 16.0"
@@ -7823,6 +8154,7 @@
   name: "CVMP 1"
   ra: "15 09 25.2"
   size: 4.3
+  haflux: -11.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-47 07 07.3"
@@ -7839,6 +8171,7 @@
   name: "PHR J1510-6754"
   ra: "15 10 22.0"
   size: 3.58
+  haflux: -11.30
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-64 40 25.9"
@@ -7847,6 +8180,7 @@
   name: "NGC 5844"
   ra: "15 10 40.8"
   size: 1.97
+  haflux: -10.86
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-42 10 23.4"
@@ -7871,6 +8205,7 @@
   name: "Hen 2-120"
   ra: "15 11 56.2"
   size: 0.6
+  haflux: -11.25
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-55 44 57.0"
@@ -7887,6 +8222,7 @@
   name: "NGC 5873"
   ra: "15 12 50.9"
   size: 0.12
+  haflux: -10.59
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-57 43 26.6"
@@ -7943,6 +8279,7 @@
   name: "NGC 5882"
   ra: "15 16 49.9"
   size: 0.68
+  haflux: -9.78
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-55 38 22.5"
@@ -7991,6 +8328,7 @@
   name: "NeVe 3-2"
   ra: "15 19 43.9"
   size: 0.6
+  haflux: -11.34
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-52 43 24.8"
@@ -8015,6 +8353,7 @@
   name: "LoTr 11"
   ra: "15 21 10.5"
   size: 1.95
+  haflux: -11.85
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-62 03 32.7"
@@ -8055,6 +8394,7 @@
   name: "Hen 2-123"
   ra: "15 22 19.4"
   size: 0.61
+  haflux: -11.02
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-59 17 44.5"
@@ -8087,6 +8427,7 @@
   name: "Hen 2-125"
   ra: "15 23 36.3"
   size: 0.06
+  haflux: -11.53
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-57 09 25.0"
@@ -8095,6 +8436,7 @@
   name: "Pe 2-8"
   ra: "15 23 42.9"
   size: 0.04
+  haflux: -12.11
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-57 46 20.9"
@@ -8127,6 +8469,7 @@
   name: "Hen 2-128"
   ra: "15 25 07.8"
   size: 0.03
+  haflux: -11.18
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-49 57 40.6"
@@ -8143,6 +8486,7 @@
   name: "Hen 2-129"
   ra: "15 25 32.7"
   size: 0.05
+  haflux: -11.55
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-60 02 28.1"
@@ -8239,6 +8583,7 @@
   name: "PHR J1533-4824"
   ra: "15 33 06.9"
   size: 3.33
+  haflux: -12.00
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-53 19 00.8"
@@ -8271,6 +8616,7 @@
   name: "Mz 1"
   ra: "15 34 16.6"
   size: 0.82
+  haflux: -10.64
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-58 29 50.0"
@@ -8279,6 +8625,7 @@
   name: "PHR J1534-5829"
   ra: "15 34 45.2"
   size: 2.0
+  haflux: -11.75
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-57 40 34.6"
@@ -8295,6 +8642,7 @@
   name: "PHR J1536-4711"
   ra: "15 36 03.7"
   size: 0.46
+  haflux: -12.23
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-71 54 52.9"
@@ -8303,6 +8651,7 @@
   name: "Hen 2-131"
   ra: "15 37 11.2"
   size: 0.17
+  haflux: -9.56
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-61 59 48.0"
@@ -8311,6 +8660,7 @@
   name: "PHR J1537-6159"
   ra: "15 37 45.9"
   size: 2.77
+  haflux: -11.68
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-58 44 42.5"
@@ -8319,6 +8669,7 @@
   name: "Hen 2-132"
   ra: "15 38 01.2"
   size: 0.35
+  haflux: -11.90
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-59 35 25.4"
@@ -8399,6 +8750,7 @@
   name: "Hen 2-133"
   ra: "15 41 58.8"
   size: 0.03
+  haflux: -11.96
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-47 40 44.3"
@@ -8407,6 +8759,7 @@
   name: "Lo 9"
   ra: "15 42 13.0"
   size: 1.78
+  haflux: -11.74
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-56 28 04.2"
@@ -8423,6 +8776,7 @@
   name: "DS 2"
   ra: "15 43 05.0"
   size: 3.1
+  haflux: -11.55
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-60 25 21.2"
@@ -8463,6 +8817,7 @@
   name: "NGC 5979"
   ra: "15 47 41.2"
   size: 0.34
+  haflux: -10.66
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-45 32 50.8"
@@ -8471,6 +8826,7 @@
   name: "PHR J1547-4533"
   ra: "15 47 44.9"
   size: 2.05
+  haflux: -11.84
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-56 29 55.9"
@@ -8511,6 +8867,7 @@
   name: "Lo 10"
   ra: "15 49 29.1"
   size: 0.47
+  haflux: -11.83
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-56 39 13.1"
@@ -8543,6 +8900,7 @@
   name: "vBe 2"
   ra: "15 51 18.9"
   size: 1.1
+  haflux: -12.27
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-48 26 07.6"
@@ -8551,6 +8909,7 @@
   name: "Wray 16-189"
   ra: "15 51 19.9"
   size: 0.33
+  haflux: -11.77
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-56 53 51.1"
@@ -8567,6 +8926,7 @@
   name: "Sp 1"
   ra: "15 51 40.9"
   size: 1.2
+  haflux: -10.72
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-62 30 46.6"
@@ -8575,6 +8935,7 @@
   name: "My 91"
   ra: "15 52 10.7"
   size: 0.12
+  haflux: -11.09
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-60 09 17.2"
@@ -8615,6 +8976,7 @@
   name: "PHR J1553-5738"
   ra: "15 53 11.2"
   size: 2.22
+  haflux: -11.45
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-41 50 26.3"
@@ -8623,6 +8985,7 @@
   name: "K 1-31"
   ra: "15 53 12.4"
   size: 0.51
+  haflux: -12.22
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-48 43 22.7"
@@ -8655,6 +9018,7 @@
   name: "VBRC 7"
   ra: "15 54 50.9"
   size: 1.98
+  haflux: -11.48
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-56 51 57.9"
@@ -8687,6 +9051,7 @@
   name: "Hen 2-138"
   ra: "15 56 01.7"
   size: 0.11
+  haflux: -10.13
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-49 55 14.9"
@@ -8735,6 +9100,7 @@
   name: "He 2-140"
   ra: "15 58 08.1"
   size: 0.07
+  haflux: -11.26
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-46 37 42.0"
@@ -8751,6 +9117,7 @@
   name: "Hen 2-141"
   ra: "15 59 08.8"
   size: 0.63
+  haflux: -10.99
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-55 52 18.0"
@@ -8783,6 +9150,7 @@
   name: "Hen 2-142"
   ra: "15 59 57.6"
   size: 0.07
+  haflux: -10.88
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-48 15 35.3"
@@ -8791,6 +9159,7 @@
   name: "Wra 16-199"
   ra: "16 00 22.0"
   size: 0.22
+  haflux: -11.83
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-55 05 39.7"
@@ -8799,6 +9168,7 @@
   name: "He 2-143"
   ra: "16 00 59.1"
   size: 0.06
+  haflux: -11.72
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-42 09 00.0"
@@ -8831,6 +9201,7 @@
   name: "NGC 6026"
   ra: "16 01 21.1"
   size: 0.88
+  haflux: -11.02
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+38 03 00.0"
@@ -8903,6 +9274,7 @@
   name: "WRAY 15-1407"
   ra: "16 02 13.0"
   size: -9999
+  haflux: -12.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-41 26 49.5"
@@ -8911,6 +9283,7 @@
   name: "PHR J1602-4127"
   ra: "16 02 18.1"
   size: 3.33
+  haflux: -11.39
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-57 14 08.2"
@@ -8935,6 +9308,7 @@
   name: "Lo 11"
   ra: "16 03 22.2"
   size: 1.09
+  haflux: -11.95
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-45 36 03.5"
@@ -9071,6 +9445,7 @@
   name: "Lo 12"
   ra: "16 08 26.3"
   size: 1.41
+  haflux: -11.91
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-51 01 56.6"
@@ -9079,6 +9454,7 @@
   name: "Pe 1-4"
   ra: "16 08 58.7"
   size: 0.28
+  haflux: -11.79
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-55 36 09.8"
@@ -9087,6 +9463,7 @@
   name: "PM 1-106"
   ra: "16 09 20.1"
   size: -9999
+  haflux: -12.15
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-30 55 07.6"
@@ -9095,6 +9472,7 @@
   name: "Lo 13"
   ra: "16 09 45.9"
   size: 1.25
+  haflux: -12.08
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-51 30 54.1"
@@ -9135,6 +9513,7 @@
   name: "IC 4593"
   ra: "16 11 44.5"
   size: 0.26
+  haflux: -10.07
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-54 23 39.7"
@@ -9167,6 +9546,7 @@
   name: "NGC 6072"
   ra: "16 12 58.4"
   size: 1.24
+  haflux: -10.44
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-54 06 32.3"
@@ -9175,6 +9555,7 @@
   name: "BMP J1613-5406"
   ra: "16 13 02.0"
   size: 5.58
+  haflux: -11.60
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-67 04 59.0"
@@ -9199,6 +9580,7 @@
   name: "SB 25"
   ra: "16 13 38.3"
   size: 0.27
+  haflux: -12.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-53 04 51.2"
@@ -9223,6 +9605,7 @@
   name: "Hen 2-149"
   ra: "16 14 24.1"
   size: 0.05
+  haflux: -11.87
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-54 57 04.7"
@@ -9231,6 +9614,7 @@
   name: "Mz 2"
   ra: "16 14 32.4"
   size: 0.77
+  haflux: -10.92
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-47 42 11.1"
@@ -9247,6 +9631,7 @@
   name: "PM 2-17"
   ra: "16 15 02.8"
   size: 0.11
+  haflux: -11.92
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-49 13 20.7"
@@ -9255,6 +9640,7 @@
   name: "Pe 1-5"
   ra: "16 15 20.0"
   size: 0.15
+  haflux: -10.99
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-54 37 24.0"
@@ -9295,6 +9681,7 @@
   name: "Hen 2-151"
   ra: "16 15 42.3"
   size: 0.03
+  haflux: -11.18
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-49 26 49.0"
@@ -9335,6 +9722,7 @@
   name: "Mz 3"
   ra: "16 17 13.4"
   size: 0.8
+  haflux: -10.02
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-53 32 05.2"
@@ -9343,6 +9731,7 @@
   name: "Hen 2-153"
   ra: "16 17 14.3"
   size: 0.32
+  haflux: -11.32
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-54 45 12.1"
@@ -9415,6 +9804,7 @@
   name: "IC 4599"
   ra: "16 19 23.2"
   size: 0.3
+  haflux: -10.86
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-49 06 51.9"
@@ -9487,6 +9877,7 @@
   name: "Hen 2-157"
   ra: "16 22 14.3"
   size: 0.05
+  haflux: -11.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-47 13 45.0"
@@ -9527,6 +9918,7 @@
   name: "Abell 38"
   ra: "16 23 19.0"
   size: 2.6
+  haflux: -11.67
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-58 19 22.7"
@@ -9535,6 +9927,7 @@
   name: "Hen 2-158"
   ra: "16 23 30.6"
   size: 0.14
+  haflux: -11.48
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-50 56 56.7"
@@ -9551,6 +9944,7 @@
   name: "Pe 1-6"
   ra: "16 23 54.5"
   size: 0.17
+  haflux: -11.99
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-42 52 48.0"
@@ -9575,6 +9969,7 @@
   name: "Hen 2-159"
   ra: "16 24 21.4"
   size: 0.3
+  haflux: -11.44
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-53 22 33.9"
@@ -9583,6 +9978,7 @@
   name: "Hen 2-161"
   ra: "16 24 37.9"
   size: 0.27
+  haflux: -11.30
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-50 34 57.5"
@@ -9599,6 +9995,7 @@
   name: "PHR J1625-4523"
   ra: "16 25 50.9"
   size: 5.5
+  haflux: -10.65
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-43 57 55.0"
@@ -9647,6 +10044,7 @@
   name: "Hen 2-162"
   ra: "16 27 50.9"
   size: 0.08
+  haflux: -11.24
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-45 15 39.2"
@@ -9703,6 +10101,7 @@
   name: "Hen 2-163"
   ra: "16 29 31.1"
   size: 0.37
+  haflux: -11.46
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-52 15 34.1"
@@ -9727,6 +10126,7 @@
   name: "Hen 2-164"
   ra: "16 29 53.3"
   size: 0.28
+  haflux: -11.29
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-54 09 26.7"
@@ -9735,6 +10135,7 @@
   name: "Hen 2-165"
   ra: "16 29 59.7"
   size: 0.94
+  haflux: -11.17
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-46 02 51.1"
@@ -9743,6 +10144,7 @@
   name: "Pe 1-7"
   ra: "16 30 25.9"
   size: 0.04
+  haflux: -11.25
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-50 26 36.5"
@@ -9775,6 +10177,7 @@
   name: "NGC 6153"
   ra: "16 31 30.5"
   size: 0.45
+  haflux: -9.96
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-45 47 57.8"
@@ -9831,6 +10234,7 @@
   name: "Hen 2-169"
   ra: "16 34 13.4"
   size: 0.55
+  haflux: -11.51
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-54 05 03.9"
@@ -9863,6 +10267,7 @@
   name: "PM 1-112"
   ra: "16 34 43.1"
   size: 0.3
+  haflux: -11.70
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-42 03 43.1"
@@ -9903,6 +10308,7 @@
   name: "Hen 2-170"
   ra: "16 35 21.2"
   size: 0.02
+  haflux: -11.30
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-46 54 10.0"
@@ -9911,6 +10317,7 @@
   name: "PHR J1635-4654"
   ra: "16 35 51.9"
   size: 5.4
+  haflux: -11.57
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-45 29 29.1"
@@ -9943,6 +10350,7 @@
   name: "PC 11"
   ra: "16 37 42.7"
   size: 0.75
+  haflux: -10.74
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-49 57 49.9"
@@ -9951,6 +10359,7 @@
   name: "PHR J1637-4957"
   ra: "16 37 44.9"
   size: 0.38
+  haflux: -11.98
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-49 27 19.2"
@@ -9983,6 +10392,7 @@
   name: "PHR J1639-4516"
   ra: "16 39 22.3"
   size: 0.63
+  haflux: -11.69
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-36 34 16.4"
@@ -9991,6 +10401,7 @@
   name: "Hen 2-175"
   ra: "16 39 28.1"
   size: 0.11
+  haflux: -11.76
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-64 48 10.0"
@@ -10007,6 +10418,7 @@
   name: "HaTr 3"
   ra: "16 39 37.5"
   size: 0.7
+  haflux: -11.86
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 57 33.3"
@@ -10087,6 +10499,7 @@
   name: "Vd 1-1"
   ra: "16 42 33.4"
   size: 0.17
+  haflux: -11.39
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-55 01 51.9"
@@ -10119,6 +10532,7 @@
   name: "PC 12"
   ra: "16 43 53.8"
   size: 0.04
+  haflux: -11.21
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-40 02 13.2"
@@ -10135,6 +10549,7 @@
   name: "SuWt 3"
   ra: "16 44 24.1"
   size: 0.53
+  haflux: -11.37
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+23 47 59.6"
@@ -10151,6 +10566,7 @@
   name: "K 2-16"
   ra: "16 44 49.1"
   size: 0.44
+  haflux: -12.00
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-51 12 21.1"
@@ -10159,6 +10575,7 @@
   name: "HaTr 4"
   ra: "16 45 00.2"
   size: 0.43
+  haflux: -11.71
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-37 37 08.5"
@@ -10199,6 +10616,7 @@
   name: "Vd 1-2"
   ra: "16 46 45.1"
   size: 0.17
+  haflux: -11.58
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-40 58 59.4"
@@ -10231,6 +10649,7 @@
   name: "MeWe 1-7"
   ra: "16 47 57.1"
   size: 0.15
+  haflux: -12.21
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-21 00 50.5"
@@ -10239,6 +10658,7 @@
   name: "Abell 40"
   ra: "16 48 34.5"
   size: 0.57
+  haflux: -12.25
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-51 09 19.6"
@@ -10271,6 +10691,7 @@
   name: "H 1-2"
   ra: "16 48 54.1"
   size: 0.03
+  haflux: -11.05
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-38 27 43.0"
@@ -10287,6 +10708,7 @@
   name: "Vd 1-3"
   ra: "16 49 32.9"
   size: 0.2
+  haflux: -11.65
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-47 47 04.9"
@@ -10311,6 +10733,7 @@
   name: "PC 13"
   ra: "16 50 17.1"
   size: 0.17
+  haflux: -11.57
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-40 30 03.2"
@@ -10327,6 +10750,7 @@
   name: "Vd 1-4"
   ra: "16 50 25.3"
   size: 0.08
+  haflux: -11.36
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-47 42 28.8"
@@ -10343,6 +10767,7 @@
   name: "PM 1-115"
   ra: "16 51 06.3"
   size: -9999
+  haflux: -12.31
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-47 46 42.0"
@@ -10383,6 +10808,7 @@
   name: "PHR J1651-3148"
   ra: "16 51 46.7"
   size: 2.68
+  haflux: -11.88
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-38 41 00.5"
@@ -10415,6 +10841,7 @@
   name: "H 1-3"
   ra: "16 53 31.3"
   size: 0.32
+  haflux: -11.88
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 40 33.0"
@@ -10423,6 +10850,7 @@
   name: "H 1-4"
   ra: "16 53 37.1"
   size: 0.17
+  haflux: -11.65
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-41 43 59.8"
@@ -10455,6 +10883,7 @@
   name: "Vd 1-6"
   ra: "16 54 27.3"
   size: 0.27
+  haflux: -11.53
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-38 45 03.3"
@@ -10471,6 +10900,7 @@
   name: "Hen 2-182"
   ra: "16 54 35.2"
   size: 0.05
+  haflux: -10.47
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-40 41 46.6"
@@ -10535,6 +10965,7 @@
   name: "MyCn 26"
   ra: "16 55 47.3"
   size: 0.08
+  haflux: -11.32
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-39 00 21.0"
@@ -10607,6 +11038,7 @@
   name: "MeWe 1-9"
   ra: "16 57 29.1"
   size: 0.28
+  haflux: -11.87
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-46 32 55.3"
@@ -10679,6 +11111,7 @@
   name: "Hen 2-186"
   ra: "16 59 36.1"
   size: 0.15
+  haflux: -11.47
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-35 30 21.1"
@@ -10735,6 +11168,7 @@
   name: "M 2-4"
   ra: "17 01 06.2"
   size: 0.05
+  haflux: -11.08
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-70 06 03.3"
@@ -10743,6 +11177,7 @@
   name: "He 2-185"
   ra: "17 01 17.3"
   size: 0.05
+  haflux: -11.05
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-36 52 22.3"
@@ -10767,6 +11202,7 @@
   name: "IC 4634"
   ra: "17 01 33.6"
   size: 0.34
+  haflux: -10.26
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-50 22 57.5"
@@ -10775,6 +11211,7 @@
   name: "Hen 2-187"
   ra: "17 01 37.0"
   size: 0.2
+  haflux: -11.59
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-48 03 50.2"
@@ -10791,6 +11228,7 @@
   name: "PHR J1702-4443"
   ra: "17 02 04.3"
   size: 1.5
+  haflux: -12.14
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-33 10 05.0"
@@ -10799,6 +11237,7 @@
   name: "M 2-5"
   ra: "17 02 19.1"
   size: 0.11
+  haflux: -11.21
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-30 19 14.9"
@@ -10823,6 +11262,7 @@
   name: "PHR J1702-4943"
   ra: "17 02 42.0"
   size: 0.78
+  haflux: -12.22
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-32 19 09.2"
@@ -10831,6 +11271,7 @@
   name: "PHR J1702-3219"
   ra: "17 02 43.1"
   size: 0.85
+  haflux: -12.12
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-35 09 02.1"
@@ -10847,6 +11288,7 @@
   name: "Hen 3-1312"
   ra: "17 03 02.9"
   size: 0.27
+  haflux: -10.83
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-33 30 50.0"
@@ -10871,6 +11313,7 @@
   name: "M 1-19"
   ra: "17 03 46.8"
   size: 0.13
+  haflux: -11.19
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-44 50 12.0"
@@ -10895,6 +11338,7 @@
   name: "M 2-6"
   ra: "17 04 18.3"
   size: 0.13
+  haflux: -11.41
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-37 53 14.9"
@@ -10911,6 +11355,7 @@
   name: "H 2-1"
   ra: "17 04 36.3"
   size: 0.07
+  haflux: -10.67
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-33 37 48.0"
@@ -10935,6 +11380,7 @@
   name: "IC 4637"
   ra: "17 05 10.5"
   size: 0.32
+  haflux: -10.41
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-30 32 19.7"
@@ -10943,6 +11389,7 @@
   name: "M 2-7"
   ra: "17 05 13.9"
   size: 0.13
+  haflux: -11.57
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 13 19.1"
@@ -10967,6 +11414,7 @@
   name: "M 2-8"
   ra: "17 05 30.7"
   size: 0.08
+  haflux: -11.31
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-54 15 19.2"
@@ -10991,6 +11439,7 @@
   name: "Th 3-1"
   ra: "17 05 44.5"
   size: 0.17
+  haflux: -11.85
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-43 53 30.0"
@@ -11031,6 +11480,7 @@
   name: "PHR J1706-3544"
   ra: "17 06 01.9"
   size: 0.9
+  haflux: -12.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 18 02.5"
@@ -11047,6 +11497,7 @@
   name: "PC 14"
   ra: "17 06 14.8"
   size: 0.12
+  haflux: -10.92
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-43 15 33.0"
@@ -11063,6 +11514,7 @@
   name: "Pe 1-8"
   ra: "17 06 22.6"
   size: 0.38
+  haflux: -11.26
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-35 28 38.0"
@@ -11095,6 +11547,7 @@
   name: "DeHt 10"
   ra: "17 06 55.2"
   size: 0.53
+  haflux: -12.30
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-42 41 09.1"
@@ -11103,6 +11556,7 @@
   name: "H 1-6"
   ra: "17 06 59.1"
   size: 0.23
+  haflux: -11.48
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-42 47 23.9"
@@ -11183,6 +11637,7 @@
   name: "Hen 3-1333"
   ra: "17 09 00.9"
   size: 0.05
+  haflux: -11.58
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-35 05 16.4"
@@ -11223,6 +11678,7 @@
   name: "PHR J1709-3629"
   ra: "17 09 33.9"
   size: 1.95
+  haflux: -12.30
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-52 13 02.0"
@@ -11231,6 +11687,7 @@
   name: "K 2-17"
   ra: "17 09 35.9"
   size: 0.65
+  haflux: -11.94
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-09 00 41.5"
@@ -11287,6 +11744,7 @@
   name: "H 1-7"
   ra: "17 10 27.4"
   size: 0.18
+  haflux: -10.77
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 08 43.8"
@@ -11295,6 +11753,7 @@
   name: "M 4-3"
   ra: "17 10 41.7"
   size: 0.03
+  haflux: -11.62
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-30 32 28.0"
@@ -11343,6 +11802,7 @@
   name: "WRAY 15-1633"
   ra: "17 11 27.4"
   size: -9999
+  haflux: -12.02
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 12 21.2"
@@ -11367,6 +11827,7 @@
   name: "IC 4642"
   ra: "17 11 45.2"
   size: 0.4
+  haflux: -10.78
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-32 10 29.2"
@@ -11375,6 +11836,7 @@
   name: "PHR J1711-3210"
   ra: "17 11 54.8"
   size: 0.25
+  haflux: -12.30
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 51 34.2"
@@ -11383,6 +11845,7 @@
   name: "Terz N 7"
   ra: "17 11 59.5"
   size: 0.27
+  haflux: -12.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 14 39.9"
@@ -11391,6 +11854,7 @@
   name: "PHR J1712-3114"
   ra: "17 12 10.1"
   size: 0.78
+  haflux: -11.77
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-34 52 07.0"
@@ -11415,6 +11879,7 @@
   name: "Terz N 8"
   ra: "17 12 33.6"
   size: 0.52
+  haflux: -12.40
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-35 43 20.1"
@@ -11447,6 +11912,7 @@
   name: "PHR J1712-3021"
   ra: "17 12 39.1"
   size: 0.27
+  haflux: -12.23
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-25 43 37.4"
@@ -11455,6 +11921,7 @@
   name: "M 3-36"
   ra: "17 12 39.2"
   size: 0.07
+  haflux: -11.89
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+01 55 33.1"
@@ -11471,6 +11938,7 @@
   name: "Na 1"
   ra: "17 12 51.9"
   size: 0.17
+  haflux: -11.32
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-39 46 22.0"
@@ -11543,6 +12011,7 @@
   name: "NGC 6302"
   ra: "17 13 44.5"
   size: 6.5
+  haflux: -9.53
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+49 16 11.2"
@@ -11559,6 +12028,7 @@
   name: "NGC 6309"
   ra: "17 14 04.3"
   size: 0.38
+  haflux: -10.55
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 19 42.6"
@@ -11567,6 +12037,7 @@
   name: "M 2-10"
   ra: "17 14 07.0"
   size: 0.11
+  haflux: -11.44
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 27 27.0"
@@ -11591,6 +12062,7 @@
   name: "H 1-8"
   ra: "17 14 42.9"
   size: 0.06
+  haflux: -12.12
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 46 47.0"
@@ -11631,6 +12103,7 @@
   name: "Terz N 140"
   ra: "17 15 02.6"
   size: 0.77
+  haflux: -12.34
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-33 13 48.0"
@@ -11759,6 +12232,7 @@
   name: "Hen 3-1357"
   ra: "17 16 21.1"
   size: 0.07
+  haflux: -10.36
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-33 33 23.4"
@@ -11815,6 +12289,7 @@
   name: "Th 3-3"
   ra: "17 17 20.5"
   size: 0.28
+  haflux: -12.30
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-33 23 53.7"
@@ -11951,6 +12426,7 @@
   name: "Terz N 137"
   ra: "17 19 03.4"
   size: 0.22
+  haflux: -12.30
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-32 47 23.2"
@@ -11967,6 +12443,7 @@
   name: "M 3-37"
   ra: "17 19 13.4"
   size: 0.17
+  haflux: -12.12
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-43 36 34.3"
@@ -11991,6 +12468,7 @@
   name: "Th 3-6"
   ra: "17 19 20.2"
   size: -9999
+  haflux: -12.40
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-45 21 08.3"
@@ -12015,6 +12493,7 @@
   name: "PM 1-139"
   ra: "17 19 26.2"
   size: 0.18
+  haflux: -12.22
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-41 53 09.1"
@@ -12031,6 +12510,7 @@
   name: "Hen 2-207"
   ra: "17 19 32.6"
   size: 0.63
+  haflux: -11.27
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 34 45.0"
@@ -12119,6 +12599,7 @@
   name: "PHR J1720-3927"
   ra: "17 20 14.4"
   size: 2.17
+  haflux: -11.44
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-41 56 33.0"
@@ -12159,6 +12640,7 @@
   name: "M 2-11"
   ra: "17 20 33.3"
   size: 0.1
+  haflux: -11.56
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-46 33 18.0"
@@ -12191,6 +12673,7 @@
   name: "NGC 6326"
   ra: "17 20 46.4"
   size: 0.34
+  haflux: -10.56
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-33 22 34.0"
@@ -12215,6 +12698,7 @@
   name: "M 3-38"
   ra: "17 21 04.5"
   size: 0.03
+  haflux: -11.88
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 11 37.0"
@@ -12223,6 +12707,7 @@
   name: "M 3-39"
   ra: "17 21 11.5"
   size: 0.43
+  haflux: -11.74
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 49 28.0"
@@ -12247,6 +12732,7 @@
   name: "Fr 2-12"
   ra: "17 21 17.0"
   size: 7.0
+  haflux: -11.04
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-22 18 35.3"
@@ -12255,6 +12741,7 @@
   name: "H 1-11"
   ra: "17 21 17.7"
   size: 0.1
+  haflux: -11.57
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 49 52.0"
@@ -12279,6 +12766,7 @@
   name: "H 1-9"
   ra: "17 21 31.9"
   size: 0.08
+  haflux: -11.39
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 05 20.0"
@@ -12295,6 +12783,7 @@
   name: "Terz N 18"
   ra: "17 21 38.0"
   size: 0.18
+  haflux: -12.11
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 10 34.3"
@@ -12351,6 +12840,7 @@
   name: "NGC 6337"
   ra: "17 22 15.7"
   size: 0.79
+  haflux: -10.46
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 08 42.4"
@@ -12359,6 +12849,7 @@
   name: "M 3-40"
   ra: "17 22 28.3"
   size: 0.04
+  haflux: -12.29
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 22 11.0"
@@ -12383,6 +12874,7 @@
   name: "Wray 16-266"
   ra: "17 22 37.0"
   size: 0.3
+  haflux: -11.86
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 39 54.9"
@@ -12407,6 +12899,7 @@
   name: "Terz N 67"
   ra: "17 22 53.4"
   size: 0.27
+  haflux: -12.80
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 03 38.0"
@@ -12455,6 +12948,7 @@
   name: "H 2-7"
   ra: "17 23 24.9"
   size: 0.1
+  haflux: -11.98
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-25 59 23.2"
@@ -12463,6 +12957,7 @@
   name: "M 2-12"
   ra: "17 24 01.4"
   size: 0.07
+  haflux: -11.45
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-25 43 13.9"
@@ -12471,6 +12966,7 @@
   name: "PHR J1724-2543"
   ra: "17 24 04.3"
   size: 0.18
+  haflux: -12.42
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 43 19.9"
@@ -12487,6 +12983,7 @@
   name: "PHR J1724-3859"
   ra: "17 24 30.7"
   size: 2.53
+  haflux: -12.17
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 24 19.5"
@@ -12495,6 +12992,7 @@
   name: "M 3-7"
   ra: "17 24 34.4"
   size: 0.11
+  haflux: -11.41
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-49 30 52.9"
@@ -12535,6 +13033,7 @@
   name: "M 3-8"
   ra: "17 24 52.1"
   size: 0.08
+  haflux: -11.95
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-23 02 34.0"
@@ -12551,6 +13050,7 @@
   name: "Bica 1"
   ra: "17 24 53.8"
   size: 0.92
+  haflux: -12.38
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 16 22.6"
@@ -12607,6 +13107,7 @@
   name: "Th 3-13"
   ra: "17 25 19.3"
   size: 0.03
+  haflux: -12.23
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-26 29 25.8"
@@ -12623,6 +13124,7 @@
   name: "Terz N 19"
   ra: "17 25 23.6"
   size: 0.32
+  haflux: -12.40
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-30 33 57.0"
@@ -12647,6 +13149,7 @@
   name: "PHR J1725-2338"
   ra: "17 25 41.8"
   size: 0.23
+  haflux: -12.57
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-26 11 55.5"
@@ -12655,6 +13158,7 @@
   name: "M 3-9"
   ra: "17 25 43.4"
   size: 0.29
+  haflux: -11.80
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-26 57 47.7"
@@ -12679,6 +13183,7 @@
   name: "M 3-41"
   ra: "17 25 59.8"
   size: 0.07
+  haflux: -11.56
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-21 17 55.0"
@@ -12695,6 +13200,7 @@
   name: "Cn 1-3"
   ra: "17 26 12.3"
   size: 0.03
+  haflux: -10.55
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-30 45 38.8"
@@ -12711,6 +13217,7 @@
   name: "H 1-12"
   ra: "17 26 24.3"
   size: 0.14
+  haflux: -11.70
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-32 21 50.1"
@@ -12767,6 +13274,7 @@
   name: "M 3-42"
   ra: "17 26 59.8"
   size: 0.12
+  haflux: -12.16
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 40 34.1"
@@ -12775,6 +13283,7 @@
   name: "SaWe 2"
   ra: "17 27 00.4"
   size: 0.75
+  haflux: -11.90
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-45 32 38.5"
@@ -12791,6 +13300,7 @@
   name: "Th 3-15"
   ra: "17 27 10.7"
   size: 0.12
+  haflux: -12.40
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 27 51.2"
@@ -12799,6 +13309,7 @@
   name: "M 3-10"
   ra: "17 27 20.1"
   size: 0.07
+  haflux: -11.43
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-37 27 15.0"
@@ -12839,6 +13350,7 @@
   name: "H 2-10"
   ra: "17 27 32.8"
   size: 0.06
+  haflux: -12.11
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-38 51 08.6"
@@ -12879,6 +13391,7 @@
   name: "PM 1-149"
   ra: "17 27 53.7"
   size: 0.08
+  haflux: -11.88
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-26 53 44.9"
@@ -12903,6 +13416,7 @@
   name: "H 1-14"
   ra: "17 28 01.8"
   size: 0.11
+  haflux: -11.98
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 39 17.0"
@@ -12935,6 +13449,7 @@
   name: "PHR J1728-1844"
   ra: "17 28 14.0"
   size: 0.85
+  haflux: -12.11
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-30 32 14.0"
@@ -12975,6 +13490,7 @@
   name: "H 1-13"
   ra: "17 28 27.6"
   size: 0.23
+  haflux: -11.38
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 32 08.8"
@@ -12991,6 +13507,7 @@
   name: "M 2-13"
   ra: "17 28 34.2"
   size: 0.05
+  haflux: -11.51
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-24 51 06.6"
@@ -12999,6 +13516,7 @@
   name: "H 1-15"
   ra: "17 28 37.6"
   size: 0.08
+  haflux: -11.80
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 27 19.3"
@@ -13031,6 +13549,7 @@
   name: "M 1-20"
   ra: "17 28 57.6"
   size: 0.04
+  haflux: -11.15
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-15 13 05.2"
@@ -13039,6 +13558,7 @@
   name: "Abell 41"
   ra: "17 29 02.0"
   size: 0.34
+  haflux: -11.57
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-26 14 45.0"
@@ -13103,6 +13623,7 @@
   name: "NGC 6369"
   ra: "17 29 20.4"
   size: 1.2
+  haflux: -10.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 05 00.9"
@@ -13127,6 +13648,7 @@
   name: "H 1-16"
   ra: "17 29 23.4"
   size: 0.08
+  haflux: -11.81
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-25 49 06.6"
@@ -13135,6 +13657,7 @@
   name: "H 2-11"
   ra: "17 29 25.9"
   size: 0.03
+  haflux: -12.34
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 04 35.8"
@@ -13159,6 +13682,7 @@
   name: "H 1-17"
   ra: "17 29 40.6"
   size: 0.05
+  haflux: -11.75
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 32 50.2"
@@ -13167,6 +13691,7 @@
   name: "H 1-18"
   ra: "17 29 42.8"
   size: 0.06
+  haflux: -11.78
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 06 57.0"
@@ -13191,6 +13716,7 @@
   name: "K 5-1"
   ra: "17 29 52.4"
   size: 0.15
+  haflux: -12.35
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 57 10.3"
@@ -13223,6 +13749,7 @@
   name: "H 1-19"
   ra: "17 30 02.5"
   size: 0.04
+  haflux: -11.94
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-41 18 51.0"
@@ -13255,6 +13782,7 @@
   name: "Al 2-E"
   ra: "17 30 14.4"
   size: 0.15
+  haflux: -12.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-41 21 37.0"
@@ -13295,6 +13823,7 @@
   name: "K 5-3"
   ra: "17 30 41.2"
   size: 0.27
+  haflux: -12.11
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 04 06.7"
@@ -13303,6 +13832,7 @@
   name: "H 1-20"
   ra: "17 30 43.8"
   size: 0.07
+  haflux: -11.84
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 05 59.1"
@@ -13311,6 +13841,7 @@
   name: "Th 3-25"
   ra: "17 30 46.7"
   size: 0.05
+  haflux: -12.01
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 26 30.1"
@@ -13359,6 +13890,7 @@
   name: "Th 3-26"
   ra: "17 31 09.3"
   size: 0.15
+  haflux: -12.13
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 50 36.9"
@@ -13391,6 +13923,7 @@
   name: "Abell 42"
   ra: "17 31 29.1"
   size: 1.0
+  haflux: -11.67
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 55 36.8"
@@ -13431,6 +13964,7 @@
   name: "M 3-57"
   ra: "17 31 47.4"
   size: 0.67
+  haflux: -11.21
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 09 18.9"
@@ -13447,6 +13981,7 @@
   name: "G 4.4+6.4"
   ra: "17 31 51.8"
   size: 4.17
+  haflux: -11.25
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-21 43 33.7"
@@ -13519,6 +14054,7 @@
   name: "H 2-14"
   ra: "17 32 20.1"
   size: 0.23
+  haflux: -11.86
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-37 57 23.8"
@@ -13527,6 +14063,7 @@
   name: "H 1-22"
   ra: "17 32 22.1"
   size: 0.06
+  haflux: -11.77
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-33 16 07.3"
@@ -13607,6 +14144,7 @@
   name: "H 1-23"
   ra: "17 32 46.9"
   size: 0.06
+  haflux: -11.71
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-40 58 28.6"
@@ -13615,6 +14153,7 @@
   name: "H 1-21"
   ra: "17 32 47.8"
   size: 0.17
+  haflux: -11.73
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-24 08 45.2"
@@ -13631,6 +14170,7 @@
   name: "Wray 16-286"
   ra: "17 33 00.7"
   size: 0.17
+  haflux: -11.87
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-23 28 00.3"
@@ -13639,6 +14179,7 @@
   name: "PHR1733-2327"
   ra: "17 33 07.0"
   size: 0.23
+  haflux: -12.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-25 40 22.0"
@@ -13727,6 +14268,7 @@
   name: "H 1-24"
   ra: "17 33 37.6"
   size: 0.15
+  haflux: -11.72
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-24 07 46.2"
@@ -13775,6 +14317,7 @@
   name: "PHR J1733-2655"
   ra: "17 33 52.6"
   size: 0.15
+  haflux: -12.17
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-30 29 45.1"
@@ -13823,6 +14366,7 @@
   name: "Wray 16-287"
   ra: "17 34 20.0"
   size: 1.38
+  haflux: -12.05
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-36 00 47.8"
@@ -13847,6 +14391,7 @@
   name: "H 2-15"
   ra: "17 34 26.8"
   size: 0.07
+  haflux: -12.27
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-54 28 57.4"
@@ -13855,6 +14400,7 @@
   name: "MeWe 1-10"
   ra: "17 34 28.2"
   size: 1.03
+  haflux: -12.00
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 44 29.0"
@@ -13871,6 +14417,7 @@
   name: "JaSt 2-1"
   ra: "17 34 29.2"
   size: 2.33
+  haflux: -12.07
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-34 49 03.0"
@@ -13975,6 +14522,7 @@
   name: "M 4-5"
   ra: "17 34 54.7"
   size: 0.11
+  haflux: -12.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-26 44 16.4"
@@ -14023,6 +14571,7 @@
   name: "M 1-22"
   ra: "17 35 10.2"
   size: 0.15
+  haflux: -11.48
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 09 31.0"
@@ -14039,6 +14588,7 @@
   name: "M 4-6"
   ra: "17 35 14.0"
   size: 0.04
+  haflux: -12.24
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 07 01.7"
@@ -14071,6 +14621,7 @@
   name: "M 3-11"
   ra: "17 35 21.4"
   size: 0.12
+  haflux: -11.56
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-25 42 47.1"
@@ -14119,6 +14670,7 @@
   name: "K 5-6"
   ra: "17 35 31.2"
   size: 0.38
+  haflux: -12.40
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 24 05.0"
@@ -14151,6 +14703,7 @@
   name: "PC 17"
   ra: "17 35 41.7"
   size: 0.08
+  haflux: -11.14
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-40 11 26.2"
@@ -14159,6 +14712,7 @@
   name: "Lo 16"
   ra: "17 35 41.8"
   size: 1.47
+  haflux: -10.76
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-30 21 26.4"
@@ -14191,6 +14745,7 @@
   name: "Th 3-33"
   ra: "17 35 48.1"
   size: 0.1
+  haflux: -12.60
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 58 27.5"
@@ -14239,6 +14794,7 @@
   name: "Th 3-27"
   ra: "17 35 58.5"
   size: 0.04
+  haflux: -12.22
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-34 44 07.0"
@@ -14255,6 +14811,7 @@
   name: "Hen 2-248"
   ra: "17 36 06.9"
   size: 0.17
+  haflux: -11.72
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-37 17 07.8"
@@ -14311,6 +14868,7 @@
   name: "M 3-12"
   ra: "17 36 22.6"
   size: 0.1
+  haflux: -11.44
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-25 05 28.7"
@@ -14335,6 +14893,7 @@
   name: "H 1-26"
   ra: "17 36 29.9"
   size: 0.39
+  haflux: -11.24
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 02 42.0"
@@ -14375,6 +14934,7 @@
   name: "Bl B"
   ra: "17 36 59.8"
   size: 0.04
+  haflux: -12.30
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-38 37 17.2"
@@ -14447,6 +15007,7 @@
   name: "M 1-23"
   ra: "17 37 22.0"
   size: 0.12
+  haflux: -11.45
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-25 01 32.2"
@@ -14607,6 +15168,7 @@
   name: "M 1-24"
   ra: "17 38 11.6"
   size: 0.11
+  haflux: -11.17
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 00 07.2"
@@ -14679,6 +15241,7 @@
   name: "M 1-25"
   ra: "17 38 30.3"
   size: 0.08
+  haflux: -11.05
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 42 45.3"
@@ -14735,6 +15298,7 @@
   name: "Hen 2-260"
   ra: "17 38 57.4"
   size: 0.03
+  haflux: -11.26
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 46 41.4"
@@ -14815,6 +15379,7 @@
   name: "PHR J1739-3829"
   ra: "17 39 17.2"
   size: 0.9
+  haflux: -12.01
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-44 09 37.5"
@@ -14823,6 +15388,7 @@
   name: "Fg 2"
   ra: "17 39 19.9"
   size: 0.11
+  haflux: -11.14
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 50 44.0"
@@ -14903,6 +15469,7 @@
   name: "H 2-16"
   ra: "17 39 55.4"
   size: 0.39
+  haflux: -11.99
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-33 35 32.3"
@@ -14919,6 +15486,7 @@
   name: "SB 31"
   ra: "17 40 03.3"
   size: 0.28
+  haflux: -12.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-30 19 06.7"
@@ -14943,6 +15511,7 @@
   name: "H 2-17"
   ra: "17 40 07.4"
   size: 0.08
+  haflux: -11.84
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-34 38 15.1"
@@ -14959,6 +15528,7 @@
   name: "Hen 2-262"
   ra: "17 40 12.8"
   size: 0.08
+  haflux: -12.07
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-22 19 17.7"
@@ -14967,6 +15537,7 @@
   name: "H 1-27"
   ra: "17 40 17.9"
   size: 0.09
+  haflux: -11.75
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-35 51 30.8"
@@ -14999,6 +15570,7 @@
   name: "K 1-4"
   ra: "17 40 27.4"
   size: 0.8
+  haflux: -11.65
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-30 13 51.3"
@@ -15015,6 +15587,7 @@
   name: "RPZM 30"
   ra: "17 40 30.5"
   size: 0.12
+  haflux: -12.12
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-34 37 17.2"
@@ -15103,6 +15676,7 @@
   name: "Sab 21"
   ra: "17 41 04.7"
   size: 0.17
+  haflux: -12.03
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 27 53.5"
@@ -15167,6 +15741,7 @@
   name: "M 3-13"
   ra: "17 41 36.6"
   size: 0.16
+  haflux: -11.95
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-21 44 33.7"
@@ -15175,6 +15750,7 @@
   name: "PTB 5"
   ra: "17 41 38.9"
   size: 0.09
+  haflux: -12.09
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+03 06 54.9"
@@ -15207,6 +15783,7 @@
   name: "Hb 4"
   ra: "17 41 52.8"
   size: 0.18
+  haflux: -10.91
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 03 19.2"
@@ -15223,6 +15800,7 @@
   name: "M 2-14"
   ra: "17 41 57.3"
   size: 0.04
+  haflux: -11.40
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-34 05 34.1"
@@ -15239,6 +15817,7 @@
   name: "Sa 2-230"
   ra: "17 42 02.0"
   size: 0.17
+  haflux: -11.91
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-26 02 12.0"
@@ -15271,6 +15850,7 @@
   name: "GLMP 621"
   ra: "17 42 14.4"
   size: 0.22
+  haflux: -11.55
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-32 35 35.0"
@@ -15415,6 +15995,7 @@
   name: "H 1-28"
   ra: "17 42 54.1"
   size: 0.13
+  haflux: -11.91
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-22 14 16.0"
@@ -15527,6 +16108,7 @@
   name: "H 2-18"
   ra: "17 43 28.7"
   size: 0.06
+  haflux: -12.08
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 56 53.2"
@@ -15567,6 +16149,7 @@
   name: "PHR J1743-2431"
   ra: "17 43 39.2"
   size: 0.53
+  haflux: -12.19
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-25 36 42.5"
@@ -15575,6 +16158,7 @@
   name: "Terz N 1580"
   ra: "17 43 39.4"
   size: 0.19
+  haflux: -12.15
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-25 38 16.7"
@@ -15679,6 +16263,7 @@
   name: "H 1-29"
   ra: "17 44 13.8"
   size: 0.05
+  haflux: -12.00
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+22 36 26.8"
@@ -15703,6 +16288,7 @@
   name: "M 3-14"
   ra: "17 44 20.6"
   size: 0.13
+  haflux: -11.48
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-33 55 20.0"
@@ -15847,6 +16433,7 @@
   name: "H 1-30"
   ra: "17 45 06.8"
   size: 0.09
+  haflux: -11.96
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-14 53 22.9"
@@ -15903,6 +16490,7 @@
   name: "Terz N 1567"
   ra: "17 45 28.3"
   size: 0.2
+  haflux: -12.12
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-44 54 18.0"
@@ -15911,6 +16499,7 @@
   name: "IC 4663"
   ra: "17 45 28.6"
   size: 0.33
+  haflux: -10.85
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-36 09 57.2"
@@ -15927,6 +16516,7 @@
   name: "M 3-15"
   ra: "17 45 31.7"
   size: 0.19
+  haflux: -11.44
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-34 33 55.8"
@@ -15943,6 +16533,7 @@
   name: "Tc 1"
   ra: "17 45 35.3"
   size: 0.9
+  haflux: -10.06
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-23 02 25.4"
@@ -15951,6 +16542,7 @@
   name: "Pe 1-9"
   ra: "17 45 36.7"
   size: 0.23
+  haflux: -11.92
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 01 17.6"
@@ -15967,6 +16559,7 @@
   name: "H 2-20"
   ra: "17 45 39.8"
   size: 0.05
+  haflux: -12.17
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-25 14 05.6"
@@ -16023,6 +16616,7 @@
   name: "M 1-26"
   ra: "17 45 57.7"
   size: 0.13
+  haflux: -10.12
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 01 49.1"
@@ -16047,6 +16641,7 @@
   name: "Bl D"
   ra: "17 46 02.8"
   size: 0.39
+  haflux: -12.11
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 52 45.0"
@@ -16071,6 +16666,7 @@
   name: "H 1-32"
   ra: "17 46 06.3"
   size: 0.04
+  haflux: -11.37
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-25 11 17.0"
@@ -16087,6 +16683,7 @@
   name: "Th 4-2"
   ra: "17 46 09.7"
   size: 0.32
+  haflux: -11.85
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-21 50 49.2"
@@ -16167,6 +16764,7 @@
   name: "M 1-27"
   ra: "17 46 45.4"
   size: 0.11
+  haflux: -11.08
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-34 13 42.3"
@@ -16215,6 +16813,7 @@
   name: "M 2-15"
   ra: "17 46 54.4"
   size: 0.12
+  haflux: -11.44
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-18 56 01.3"
@@ -16287,6 +16886,7 @@
   name: "PHR J1747-1957"
   ra: "17 47 15.5"
   size: 0.3
+  haflux: -12.25
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-33 15 39.2"
@@ -16327,6 +16927,7 @@
   name: "PHR J1747-2311"
   ra: "17 47 30.7"
   size: 0.38
+  haflux: -12.20
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-24 13 07.0"
@@ -16335,6 +16936,7 @@
   name: "K 5-17"
   ra: "17 47 31.9"
   size: 0.22
+  haflux: -11.97
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-21 47 23.1"
@@ -16343,6 +16945,7 @@
   name: "H 2-22"
   ra: "17 47 33.9"
   size: 0.13
+  haflux: -12.01
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 50 56.0"
@@ -16367,6 +16970,7 @@
   name: "M 1-28"
   ra: "17 47 38.3"
   size: 1.45
+  haflux: -11.52
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-38 11 42.8"
@@ -16399,6 +17003,7 @@
   name: "H 1-33"
   ra: "17 47 49.4"
   size: 0.07
+  haflux: -11.48
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-37 48 03.1"
@@ -16407,6 +17012,7 @@
   name: "SB 37"
   ra: "17 47 52.7"
   size: 0.22
+  haflux: -12.30
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 36 49.7"
@@ -16423,6 +17029,7 @@
   name: "Hb 5"
   ra: "17 47 56.2"
   size: 1.03
+  haflux: -10.45
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-33 14 44.4"
@@ -16463,6 +17070,7 @@
   name: "H 1-34"
   ra: "17 48 07.7"
   size: 0.03
+  haflux: -12.30
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-25 56 13.0"
@@ -16511,6 +17119,7 @@
   name: "Sab 41"
   ra: "17 48 16.3"
   size: 1.28
+  haflux: -11.41
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-25 24 29.0"
@@ -16527,6 +17136,7 @@
   name: "NGC 6439"
   ra: "17 48 19.8"
   size: 0.12
+  haflux: -10.99
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-30 14 10.0"
@@ -16607,6 +17217,7 @@
   name: "H 2-24"
   ra: "17 48 36.5"
   size: 0.14
+  haflux: -11.81
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-22 16 48.8"
@@ -16615,6 +17226,7 @@
   name: "Th 4-3"
   ra: "17 48 37.4"
   size: -9999
+  haflux: -11.91
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-25 11 34.2"
@@ -16631,6 +17243,7 @@
   name: "PHR J1748-3844"
   ra: "17 48 45.1"
   size: 3.0
+  haflux: -12.08
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-26 43 24.6"
@@ -16639,6 +17252,7 @@
   name: "Terz N 2337"
   ra: "17 48 45.1"
   size: 0.59
+  haflux: -13.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-23 26 27.0"
@@ -16687,6 +17301,7 @@
   name: "H 2-23"
   ra: "17 48 58.0"
   size: 0.06
+  haflux: -11.65
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-20 09 30.0"
@@ -16703,6 +17318,7 @@
   name: "H 2-25"
   ra: "17 49 00.5"
   size: 0.05
+  haflux: -12.16
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-21 28 06.5"
@@ -16735,6 +17351,7 @@
   name: "H 1-35"
   ra: "17 49 13.9"
   size: 0.05
+  haflux: -10.69
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-23 56 41.9"
@@ -16751,6 +17368,7 @@
   name: "NGC 6445"
   ra: "17 49 15.3"
   size: 3.73
+  haflux: -10.24
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-30 36 05.6"
@@ -16983,6 +17601,7 @@
   name: "M 1-29"
   ra: "17 50 18.0"
   size: 0.13
+  haflux: -11.14
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 39 02.4"
@@ -17031,6 +17650,7 @@
   name: "Th 4-5"
   ra: "17 50 28.3"
   size: 0.11
+  haflux: -11.98
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-30 03 34.6"
@@ -17063,6 +17683,7 @@
   name: "H 1-37"
   ra: "17 50 44.6"
   size: 0.14
+  haflux: -11.39
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-37 23 53.1"
@@ -17071,6 +17692,7 @@
   name: "H 1-38"
   ra: "17 50 45.2"
   size: 0.23
+  haflux: -12.00
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-44 38 22.0"
@@ -17095,6 +17717,7 @@
   name: "PHR J1750-1803"
   ra: "17 50 47.3"
   size: 0.6
+  haflux: -12.70
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 53 13.5"
@@ -17135,6 +17758,7 @@
   name: "PPA J1750-3548"
   ra: "17 50 56.1"
   size: 0.42
+  haflux: -11.82
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 31 24.2"
@@ -17159,6 +17783,7 @@
   name: "Th 4-6"
   ra: "17 50 57.2"
   size: 0.07
+  haflux: -11.92
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 33 51.0"
@@ -17207,6 +17832,7 @@
   name: "Hf 2-1"
   ra: "17 51 12.2"
   size: 0.42
+  haflux: -11.47
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 28 04.0"
@@ -17223,6 +17849,7 @@
   name: "M 3-44"
   ra: "17 51 18.9"
   size: 0.07
+  haflux: -11.83
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-33 39 13.2"
@@ -17303,6 +17930,7 @@
   name: "PN M 4-7"
   ra: "17 51 44.7"
   size: 0.12
+  haflux: -12.25
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-19 23 43.8"
@@ -17343,6 +17971,7 @@
   name: "H 2-27"
   ra: "17 51 50.6"
   size: 0.09
+  haflux: -12.22
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-60 23 21.7"
@@ -17423,6 +18052,7 @@
   name: "M 2-17"
   ra: "17 52 04.8"
   size: 0.11
+  haflux: -11.47
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 05 48.5"
@@ -17439,6 +18069,7 @@
   name: "M 3-45"
   ra: "17 52 05.9"
   size: 0.12
+  haflux: -11.61
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-20 52 40.8"
@@ -17511,6 +18142,7 @@
   name: "PTB 20"
   ra: "17 52 15.0"
   size: -9999
+  haflux: -12.11
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-32 30 06.8"
@@ -17527,6 +18159,7 @@
   name: "PTB 14"
   ra: "17 52 17.8"
   size: 0.05
+  haflux: -12.30
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-21 51 13.7"
@@ -17535,6 +18168,7 @@
   name: "Th 4-7"
   ra: "17 52 22.6"
   size: 0.07
+  haflux: -11.84
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-35 04 17.8"
@@ -17599,6 +18233,7 @@
   name: "M 2-16"
   ra: "17 52 34.4"
   size: 0.08
+  haflux: -11.44
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 06 39.6"
@@ -17639,6 +18274,7 @@
   name: "M 1-31"
   ra: "17 52 41.4"
   size: 0.06
+  haflux: -11.31
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-21 15 36.0"
@@ -17671,6 +18307,7 @@
   name: "M 3-16"
   ra: "17 52 46.0"
   size: 0.17
+  haflux: -11.51
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-46 41 59.4"
@@ -17679,6 +18316,7 @@
   name: "MeWe 1-11"
   ra: "17 52 47.1"
   size: 1.15
+  haflux: -12.07
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 17 22.9"
@@ -17735,6 +18373,7 @@
   name: "M 1-30"
   ra: "17 52 58.9"
   size: 0.06
+  haflux: -11.01
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-25 27 27.4"
@@ -17815,6 +18454,7 @@
   name: "H 2-29"
   ra: "17 53 16.8"
   size: 0.18
+  haflux: -12.07
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 36 07.2"
@@ -17847,6 +18487,7 @@
   name: "H 1-39"
   ra: "17 53 21.0"
   size: 0.09
+  haflux: -11.39
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-34 06 53.7"
@@ -17895,6 +18536,7 @@
   name: "PHR J1753-2234"
   ra: "17 53 28.3"
   size: 1.2
+  haflux: -12.37
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+10 37 23.7"
@@ -17903,6 +18545,7 @@
   name: "Abell 43"
   ra: "17 53 32.3"
   size: 1.33
+  haflux: -11.56
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 28 50.9"
@@ -17943,6 +18586,7 @@
   name: "M 2-18"
   ra: "17 53 37.8"
   size: 0.04
+  haflux: -11.57
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-30 51 24.4"
@@ -17983,6 +18627,7 @@
   name: "M 2-19"
   ra: "17 53 45.6"
   size: 0.33
+  haflux: -11.43
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 27 18.0"
@@ -18071,6 +18716,7 @@
   name: "HaTr 7"
   ra: "17 54 09.5"
   size: 3.13
+  haflux: -11.30
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 05 16.2"
@@ -18119,6 +18765,7 @@
   name: "PM 1-188"
   ra: "17 54 21.1"
   size: 0.27
+  haflux: -12.18
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+27 59 58.0"
@@ -18127,6 +18774,7 @@
   name: "Vy 1-2"
   ra: "17 54 23.0"
   size: 0.1
+  haflux: -11.07
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 34 50.2"
@@ -18143,6 +18791,7 @@
   name: "M 2-20"
   ra: "17 54 25.4"
   size: 0.1
+  haflux: -11.33
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-12 48 34.0"
@@ -18151,6 +18800,7 @@
   name: "K 2-5"
   ra: "17 54 26.3"
   size: 0.87
+  haflux: -12.04
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 27 15.0"
@@ -18175,6 +18825,7 @@
   name: "Cn 2-1"
   ra: "17 54 33.0"
   size: 0.04
+  haflux: -10.91
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 12 43.1"
@@ -18183,6 +18834,7 @@
   name: "Bl Q"
   ra: "17 54 34.9"
   size: 0.06
+  haflux: -11.79
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 31 44.2"
@@ -18255,6 +18907,7 @@
   name: "M 3-46"
   ra: "17 55 05.7"
   size: 0.26
+  haflux: -12.20
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-21 44 40.2"
@@ -18263,6 +18916,7 @@
   name: "IC 4670"
   ra: "17 55 07.0"
   size: 0.13
+  haflux: -10.92
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 41 39.7"
@@ -18303,6 +18957,7 @@
   name: "Bl 3-10"
   ra: "17 55 20.5"
   size: 0.12
+  haflux: -12.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 20 09.1"
@@ -18375,6 +19030,7 @@
   name: "K 6-35"
   ra: "17 55 43.2"
   size: 0.24
+  haflux: -11.76
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 08 20.1"
@@ -18407,6 +19063,7 @@
   name: "Sa 3-96"
   ra: "17 55 46.4"
   size: 0.35
+  haflux: -12.15
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 06 41.0"
@@ -18455,6 +19112,7 @@
   name: "Th 4-9"
   ra: "17 56 00.6"
   size: 0.15
+  haflux: -11.91
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 14 12.2"
@@ -18463,6 +19121,7 @@
   name: "H 2-31"
   ra: "17 56 02.4"
   size: 0.17
+  haflux: -12.30
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 11 16.2"
@@ -18471,6 +19130,7 @@
   name: "Bl 3-13"
   ra: "17 56 02.8"
   size: 0.07
+  haflux: -11.79
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 07 34.0"
@@ -18519,6 +19179,7 @@
   name: "M 1-32"
   ra: "17 56 20.0"
   size: 0.15
+  haflux: -11.01
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-10 57 35.8"
@@ -18527,6 +19188,7 @@
   name: "PHR J1756-1057"
   ra: "17 56 21.4"
   size: 0.59
+  haflux: -12.40
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 38 06.4"
@@ -18543,6 +19205,7 @@
   name: "M 3-17"
   ra: "17 56 25.6"
   size: 0.05
+  haflux: -11.73
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-24 00 27.1"
@@ -18575,6 +19238,7 @@
   name: "Hen 2-306"
   ra: "17 56 33.7"
   size: 0.05
+  haflux: -11.19
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 30 29.9"
@@ -18679,6 +19343,7 @@
   name: "PHR J1757-1711"
   ra: "17 57 05.6"
   size: 0.55
+  haflux: -12.30
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-18 06 41.4"
@@ -18687,6 +19352,7 @@
   name: "Th 4-10"
   ra: "17 57 06.5"
   size: 0.23
+  haflux: -11.94
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 03 24.5"
@@ -18719,6 +19385,7 @@
   name: "PHR J1757-1556"
   ra: "17 57 10.5"
   size: 0.48
+  haflux: -12.16
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-30 21 53.3"
@@ -18743,6 +19410,7 @@
   name: "H 1-41"
   ra: "17 57 19.1"
   size: 0.2
+  haflux: -11.20
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-33 35 42.9"
@@ -18751,6 +19419,7 @@
   name: "H 1-42"
   ra: "17 57 25.2"
   size: 0.07
+  haflux: -10.96
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-32 55 53.3"
@@ -18775,6 +19444,7 @@
   name: "PHR J1757-1649"
   ra: "17 57 39.6"
   size: 0.7
+  haflux: -11.18
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 24 07.1"
@@ -18871,6 +19541,7 @@
   name: "M 2-21"
   ra: "17 58 09.6"
   size: 0.05
+  haflux: -11.36
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 42 56.1"
@@ -18879,6 +19550,7 @@
   name: "H 1-44"
   ra: "17 58 10.6"
   size: 0.06
+  haflux: -12.03
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-33 07 01.0"
@@ -18911,6 +19583,7 @@
   name: "H 2-33"
   ra: "17 58 12.5"
   size: 0.13
+  haflux: -12.00
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-18 41 25.6"
@@ -18927,6 +19600,7 @@
   name: "H 1-43"
   ra: "17 58 14.4"
   size: 0.03
+  haflux: -11.57
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 41 30.1"
@@ -18959,6 +19633,7 @@
   name: "M 3-19"
   ra: "17 58 19.3"
   size: 0.12
+  haflux: -11.71
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-16 12 21.8"
@@ -18975,6 +19650,7 @@
   name: "PHR J1758-2139"
   ra: "17 58 24.5"
   size: 2.67
+  haflux: -11.68
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-33 05 01.6"
@@ -18983,6 +19659,7 @@
   name: "WRAY 17-104"
   ra: "17 58 25.9"
   size: 0.35
+  haflux: -12.06
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-14 25 23.2"
@@ -18991,6 +19668,7 @@
   name: "PTB 19"
   ra: "17 58 26.0"
   size: 0.33
+  haflux: -12.24
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 29 40.1"
@@ -19007,6 +19685,7 @@
   name: "Pe 2-11"
   ra: "17 58 31.2"
   size: 0.13
+  haflux: -12.60
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-33 28 36.5"
@@ -19015,6 +19694,7 @@
   name: "M 2-22"
   ra: "17 58 32.6"
   size: 0.1
+  haflux: -11.65
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+66 37 58.8"
@@ -19023,6 +19703,7 @@
   name: "NGC 6543"
   ra: "17 58 33.4"
   size: 0.51
+  haflux: -9.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-21 35 14.9"
@@ -19111,6 +19792,7 @@
   name: "M 1-33"
   ra: "17 58 58.8"
   size: 0.08
+  haflux: -11.06
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 08 53.8"
@@ -19127,6 +19809,7 @@
   name: "H 1-46"
   ra: "17 59 02.5"
   size: 0.05
+  haflux: -11.21
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 15 01.0"
@@ -19191,6 +19874,7 @@
   name: "KFL 1"
   ra: "17 59 15.6"
   size: 0.13
+  haflux: -11.90
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-19 32 50.2"
@@ -19207,6 +19891,7 @@
   name: "M 3-20"
   ra: "17 59 19.3"
   size: 0.11
+  haflux: -11.40
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-17 47 14.9"
@@ -19255,6 +19940,7 @@
   name: "PHR J1759-2712"
   ra: "17 59 33.2"
   size: 1.27
+  haflux: -11.51
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-23 51 43.7"
@@ -19351,6 +20037,7 @@
   name: "M 3-48"
   ra: "17 59 56.8"
   size: 0.09
+  haflux: -12.26
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 53 56.8"
@@ -19415,6 +20102,7 @@
   name: "Th 4-11"
   ra: "18 00 08.8"
   size: 0.08
+  haflux: -11.17
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 25 25.1"
@@ -19439,6 +20127,7 @@
   name: "Fg 3"
   ra: "18 00 11.8"
   size: 0.07
+  haflux: -10.28
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-22 10 49.0"
@@ -19455,6 +20144,7 @@
   name: "H 2-35"
   ra: "18 00 18.2"
   size: 0.12
+  haflux: -12.20
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 26 07.8"
@@ -19471,6 +20161,7 @@
   name: "PPA J1800-2818"
   ra: "18 00 18.8"
   size: 0.27
+  haflux: -11.94
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 04 38.9"
@@ -19527,6 +20218,7 @@
   name: "H 1-47"
   ra: "18 00 37.6"
   size: 0.04
+  haflux: -11.63
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-26 53 36.9"
@@ -19575,6 +20267,7 @@
   name: "Sa 1-6"
   ra: "18 00 59.4"
   size: 0.18
+  haflux: -11.75
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 16 18.8"
@@ -19607,6 +20300,7 @@
   name: "Sa 3-111"
   ra: "18 01 06.6"
   size: 0.1
+  haflux: -12.09
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-21 56 04.9"
@@ -19623,6 +20317,7 @@
   name: "Pe 2-12"
   ra: "18 01 10.1"
   size: 0.17
+  haflux: -11.79
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 47 00.1"
@@ -19663,6 +20358,7 @@
   name: "M 1-34"
   ra: "18 01 22.2"
   size: 0.48
+  haflux: -11.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 18 11.0"
@@ -19703,6 +20399,7 @@
   name: "PPA J1801-2746"
   ra: "18 01 32.4"
   size: 0.19
+  haflux: -11.93
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-16 02 18.9"
@@ -19719,6 +20416,7 @@
   name: "M 2-23"
   ra: "18 01 42.6"
   size: 0.07
+  haflux: -10.77
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-33 15 24.7"
@@ -19727,6 +20425,7 @@
   name: "Pe 1-11"
   ra: "18 01 42.8"
   size: 0.15
+  haflux: -11.67
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 09 37.0"
@@ -19815,6 +20514,7 @@
   name: "M 3-22"
   ra: "18 02 19.2"
   size: 0.1
+  haflux: -11.72
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-33 50 48.0"
@@ -19847,6 +20547,7 @@
   name: "M 3-49"
   ra: "18 02 32.0"
   size: 0.16
+  haflux: -12.04
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-36 39 10.9"
@@ -19855,6 +20556,7 @@
   name: "M 3-21"
   ra: "18 02 32.3"
   size: 0.05
+  haflux: -10.76
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-14 42 02.9"
@@ -19863,6 +20565,7 @@
   name: "PM 1-205"
   ra: "18 02 38.3"
   size: 0.32
+  haflux: -12.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-30 26 24.6"
@@ -19879,6 +20582,7 @@
   name: "M 2-25"
   ra: "18 02 46.6"
   size: 0.29
+  haflux: -11.48
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-24 40 54.0"
@@ -19943,6 +20647,7 @@
   name: "SB 40"
   ra: "18 02 55.7"
   size: 0.34
+  haflux: -11.78
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-48 29 40.0"
@@ -19999,6 +20704,7 @@
   name: "M 2-26"
   ra: "18 03 11.8"
   size: 0.17
+  haflux: -11.62
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 05 17.4"
@@ -20031,6 +20737,7 @@
   name: "IC 4673"
   ra: "18 03 18.4"
   size: 0.37
+  haflux: -11.08
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-30 43 35.7"
@@ -20135,6 +20842,7 @@
   name: "M 1-35"
   ra: "18 03 39.3"
   size: 0.12
+  haflux: -11.31
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-25 17 00.6"
@@ -20151,6 +20859,7 @@
   name: "M 2-27"
   ra: "18 03 52.6"
   size: 0.06
+  haflux: -11.24
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-32 41 42.1"
@@ -20159,6 +20868,7 @@
   name: "H 1-50"
   ra: "18 03 53.5"
   size: 0.17
+  haflux: -11.08
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-16 57 22.4"
@@ -20183,6 +20893,7 @@
   name: "M 3-50"
   ra: "18 04 05.2"
   size: 0.14
+  haflux: -12.25
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 27 50.9"
@@ -20191,6 +20902,7 @@
   name: "Wray 17-107"
   ra: "18 04 05.4"
   size: 0.31
+  haflux: -11.87
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-20 06 16.6"
@@ -20287,6 +20999,7 @@
   name: "H 2-37"
   ra: "18 04 28.8"
   size: 0.1
+  haflux: -11.95
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-18 42 40.9"
@@ -20303,6 +21016,7 @@
   name: "H 1-51"
   ra: "18 04 29.3"
   size: 0.29
+  haflux: -11.98
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-38 47 39.7"
@@ -20311,6 +21025,7 @@
   name: "SB 39"
   ra: "18 04 31.6"
   size: 1.72
+  haflux: -12.00
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-15 42 10.0"
@@ -20415,6 +21130,7 @@
   name: "M 3-51"
   ra: "18 04 56.2"
   size: 0.35
+  haflux: -11.92
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-16 58 52.7"
@@ -20431,6 +21147,7 @@
   name: "H 1-52"
   ra: "18 04 57.6"
   size: 0.25
+  haflux: -11.89
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+00 09 04.0"
@@ -20463,6 +21180,7 @@
   name: "M 2-28"
   ra: "18 05 02.7"
   size: 0.09
+  haflux: -11.69
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 12 33.0"
@@ -20479,6 +21197,7 @@
   name: "ShWi 2-7"
   ra: "18 05 05.5"
   size: 0.47
+  haflux: -11.69
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-20 45 43.6"
@@ -20527,6 +21246,7 @@
   name: "NGC 6537"
   ra: "18 05 13.1"
   size: 4.08
+  haflux: -10.47
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 21 07.9"
@@ -20543,6 +21263,7 @@
   name: "SB 48"
   ra: "18 05 14.4"
   size: 0.25
+  haflux: -11.70
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-23 47 09.3"
@@ -20583,6 +21304,7 @@
   name: "M 1-37"
   ra: "18 05 25.8"
   size: 0.01
+  haflux: -11.20
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-26 49 02.9"
@@ -20671,6 +21393,7 @@
   name: "SB 42"
   ra: "18 05 52.5"
   size: 0.35
+  haflux: -11.92
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 02 46.0"
@@ -20687,6 +21410,7 @@
   name: "H 1-53"
   ra: "18 05 57.4"
   size: 0.04
+  haflux: -11.80
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 23 09.0"
@@ -20703,6 +21427,7 @@
   name: "WeSb 3"
   ra: "18 06 00.8"
   size: 0.85
+  haflux: -12.20
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 40 30.0"
@@ -20711,6 +21436,7 @@
   name: "M 1-38"
   ra: "18 06 05.7"
   size: 0.06
+  haflux: -11.16
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-34 33 30.7"
@@ -20775,6 +21501,7 @@
   name: "M 2-29"
   ra: "18 06 40.9"
   size: 0.08
+  haflux: -11.46
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-34 16 04.1"
@@ -20783,6 +21510,7 @@
   name: "PHR J1806-3416"
   ra: "18 06 47.3"
   size: 0.33
+  haflux: -12.03
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-18 29 37.9"
@@ -20823,6 +21551,7 @@
   name: "SB 45"
   ra: "18 06 52.5"
   size: 0.37
+  haflux: -11.72
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 07 05.2"
@@ -20839,6 +21568,7 @@
   name: "PHR J1806-1956"
   ra: "18 06 55.3"
   size: 1.02
+  haflux: -12.40
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-26 52 54.0"
@@ -20855,6 +21585,7 @@
   name: "CTS 1"
   ra: "18 06 59.8"
   size: 0.05
+  haflux: -11.88
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-26 45 50.4"
@@ -20879,6 +21610,7 @@
   name: "M 3-23"
   ra: "18 07 06.1"
   size: 0.23
+  haflux: -11.41
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-32 15 22.0"
@@ -20895,6 +21627,7 @@
   name: "H 1-54"
   ra: "18 07 07.2"
   size: 0.03
+  haflux: -11.05
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-36 02 45.8"
@@ -20919,6 +21652,7 @@
   name: "H 1-55"
   ra: "18 07 14.6"
   size: 0.05
+  haflux: -11.67
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 15 51.2"
@@ -20927,6 +21661,7 @@
   name: "PHR J1807-2715"
   ra: "18 07 15.0"
   size: 0.28
+  haflux: -12.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-51 01 10.2"
@@ -20935,6 +21670,7 @@
   name: "Sp 3"
   ra: "18 07 15.8"
   size: 0.6
+  haflux: -10.38
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 42 56.1"
@@ -20943,6 +21679,7 @@
   name: "KFL 9"
   ra: "18 07 19.3"
   size: 0.2
+  haflux: -12.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-35 45 44.0"
@@ -20967,6 +21704,7 @@
   name: "M 1-39"
   ra: "18 07 30.7"
   size: 0.08
+  haflux: -11.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-24 20 17.9"
@@ -21031,6 +21769,7 @@
   name: "M 3-24"
   ra: "18 07 53.9"
   size: 0.17
+  haflux: -11.38
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-26 41 14.1"
@@ -21087,6 +21826,7 @@
   name: "PHR J1808-3201"
   ra: "18 08 10.8"
   size: 3.8
+  haflux: -12.20
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-17 42 04.9"
@@ -21111,6 +21851,7 @@
   name: "M 1-40"
   ra: "18 08 26.0"
   size: 0.26
+  haflux: -11.32
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 35 37.0"
@@ -21127,6 +21868,7 @@
   name: "H 2-40"
   ra: "18 08 30.7"
   size: 0.3
+  haflux: -11.96
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-32 29 59.6"
@@ -21151,6 +21893,7 @@
   name: "SB 2"
   ra: "18 08 35.0"
   size: 0.38
+  haflux: -11.90
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-14 06 43.0"
@@ -21159,6 +21902,7 @@
   name: "BMP J1808-1406"
   ra: "18 08 35.1"
   size: 9.0
+  haflux: -11.66
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-41 48 37.7"
@@ -21167,6 +21911,7 @@
   name: "HaTr 9"
   ra: "18 08 58.9"
   size: 2.67
+  haflux: -11.20
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-25 32 53.0"
@@ -21191,6 +21936,7 @@
   name: "H 1-58"
   ra: "18 09 13.8"
   size: 0.1
+  haflux: -11.62
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-34 47 49.6"
@@ -21215,6 +21961,7 @@
   name: "M 1-41"
   ra: "18 09 30.6"
   size: 1.8
+  haflux: -11.60
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-12 59 58.0"
@@ -21271,6 +22018,7 @@
   name: "H 1-57"
   ra: "18 09 49.2"
   size: 0.21
+  haflux: -11.85
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-32 33 43.8"
@@ -21327,6 +22075,7 @@
   name: "M 3-52"
   ra: "18 10 26.4"
   size: 0.19
+  haflux: -13.00
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 19 22.9"
@@ -21391,6 +22140,7 @@
   name: "M 1-42"
   ra: "18 11 05.0"
   size: 0.22
+  haflux: -10.88
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-21 23 13.8"
@@ -21439,6 +22189,7 @@
   name: "H 1-59"
   ra: "18 11 29.3"
   size: 0.11
+  haflux: -11.86
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 22 37.0"
@@ -21447,6 +22198,7 @@
   name: "Ap 1-12"
   ra: "18 11 35.1"
   size: 0.2
+  haflux: -11.31
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-21 00 44.3"
@@ -21455,6 +22207,7 @@
   name: "PHR J1811-2100"
   ra: "18 11 39.0"
   size: 0.53
+  haflux: -11.79
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-34 00 22.0"
@@ -21463,6 +22216,7 @@
   name: "SB 52"
   ra: "18 11 39.9"
   size: 0.26
+  haflux: -11.79
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-00 49 02.2"
@@ -21495,6 +22249,7 @@
   name: "M 1-43"
   ra: "18 11 48.9"
   size: 0.12
+  haflux: -11.23
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-18 24 05.3"
@@ -21519,6 +22274,7 @@
   name: "NGC 6565"
   ra: "18 11 52.5"
   size: 0.3
+  haflux: -10.65
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-33 52 07.1"
@@ -21527,6 +22283,7 @@
   name: "NGC 6563"
   ra: "18 12 02.8"
   size: 1.53
+  haflux: -10.48
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+06 51 12.9"
@@ -21535,6 +22292,7 @@
   name: "NGC 6572"
   ra: "18 12 06.3"
   size: 0.25
+  haflux: -9.23
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-10 42 58.3"
@@ -21543,6 +22301,7 @@
   name: "M 4-8"
   ra: "18 12 09.6"
   size: 0.08
+  haflux: -11.98
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 20 00.5"
@@ -21551,6 +22310,7 @@
   name: "SB 3"
   ra: "18 12 14.6"
   size: 1.29
+  haflux: -11.63
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-20 11 24.7"
@@ -21591,6 +22351,7 @@
   name: "H 2-41"
   ra: "18 12 23.8"
   size: 0.15
+  haflux: -11.68
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 29 12.9"
@@ -21599,6 +22360,7 @@
   name: "H 1-60"
   ra: "18 12 25.2"
   size: 0.1
+  haflux: -11.74
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-24 50 00.3"
@@ -21607,6 +22369,7 @@
   name: "H 1-61"
   ra: "18 12 34.0"
   size: 0.03
+  haflux: -11.76
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 58 10.6"
@@ -21615,6 +22378,7 @@
   name: "M 2-30"
   ra: "18 12 34.4"
   size: 0.08
+  haflux: -11.36
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-13 34 50.0"
@@ -21639,6 +22403,7 @@
   name: "KFL 13"
   ra: "18 12 44.6"
   size: 0.24
+  haflux: -11.63
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-23 55 11.7"
@@ -21703,6 +22468,7 @@
   name: "SB 6"
   ra: "18 13 15.8"
   size: 0.44
+  haflux: -12.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-25 30 05.0"
@@ -21711,6 +22477,7 @@
   name: "M 2-31"
   ra: "18 13 16.0"
   size: 0.07
+  haflux: -11.22
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-32 19 42.7"
@@ -21719,6 +22486,7 @@
   name: "H 1-62"
   ra: "18 13 18.0"
   size: 0.08
+  haflux: -11.16
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-16 32 45.9"
@@ -21743,6 +22511,7 @@
   name: "PHR J1813-2505"
   ra: "18 13 27.0"
   size: 0.53
+  haflux: -12.03
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-15 43 18.8"
@@ -21783,6 +22552,7 @@
   name: "H 2-44"
   ra: "18 13 40.6"
   size: 0.11
+  haflux: -12.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-19 04 34.1"
@@ -21791,6 +22561,7 @@
   name: "NGC 6567"
   ra: "18 13 45.2"
   size: 0.13
+  haflux: -10.33
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-14 17 06.9"
@@ -21807,6 +22578,7 @@
   name: "PHR J1814-3340"
   ra: "18 14 02.9"
   size: 0.69
+  haflux: -12.60
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-39 55 23.0"
@@ -21839,6 +22611,7 @@
   name: "SB 4"
   ra: "18 14 14.2"
   size: 0.55
+  haflux: -12.12
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-04 59 21.3"
@@ -21847,6 +22620,7 @@
   name: "M 4-9"
   ra: "18 14 18.4"
   size: 0.8
+  haflux: -11.31
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-25 20 49.6"
@@ -21855,6 +22629,7 @@
   name: "KFL 15"
   ra: "18 14 19.4"
   size: 0.14
+  haflux: -11.92
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-14 37 37.0"
@@ -21895,6 +22670,7 @@
   name: "H 2-45"
   ra: "18 14 28.7"
   size: 0.08
+  haflux: -12.00
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-05 10 16.0"
@@ -21919,6 +22695,7 @@
   name: "M 2-32"
   ra: "18 14 50.6"
   size: 0.13
+  haflux: -11.41
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-22 43 55.4"
@@ -21951,6 +22728,7 @@
   name: "M 2-33"
   ra: "18 15 06.5"
   size: 0.09
+  haflux: -11.28
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-19 59 30.5"
@@ -21975,6 +22753,7 @@
   name: "MA 2"
   ra: "18 15 13.4"
   size: 0.17
+  haflux: -12.27
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-10 10 09.5"
@@ -21983,6 +22762,7 @@
   name: "M 3-25"
   ra: "18 15 17.0"
   size: 0.07
+  haflux: -11.60
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-16 02 56.0"
@@ -22063,6 +22843,7 @@
   name: "SB 8"
   ra: "18 15 50.4"
   size: 1.14
+  haflux: -12.17
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-20 23 26.6"
@@ -22103,6 +22884,7 @@
   name: "M 3-26"
   ra: "18 16 11.4"
   size: 0.18
+  haflux: -11.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-30 52 07.8"
@@ -22111,6 +22893,7 @@
   name: "SwSt 1"
   ra: "18 16 12.3"
   size: 0.09
+  haflux: -9.93
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-20 27 02.7"
@@ -22119,6 +22902,7 @@
   name: "NGC 6578"
   ra: "18 16 16.5"
   size: 0.2
+  haflux: -10.65
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 04 34.6"
@@ -22127,6 +22911,7 @@
   name: "M 1-44"
   ra: "18 16 17.3"
   size: 0.1
+  haflux: -11.30
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-30 07 36.0"
@@ -22135,6 +22920,7 @@
   name: "H 1-63"
   ra: "18 16 19.3"
   size: 0.06
+  haflux: -11.02
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-22 22 49.3"
@@ -22199,6 +22985,7 @@
   name: "M 2-34"
   ra: "18 17 15.9"
   size: 0.13
+  haflux: -11.72
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-18 34 33.0"
@@ -22247,6 +23034,7 @@
   name: "Cn 3-1"
   ra: "18 17 34.1"
   size: 0.1
+  haflux: -10.34
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 56 46.9"
@@ -22255,6 +23043,7 @@
   name: "M 2-35"
   ra: "18 17 37.2"
   size: 0.08
+  haflux: -11.75
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 08 19.6"
@@ -22263,6 +23052,7 @@
   name: "M 2-36"
   ra: "18 17 41.4"
   size: 0.13
+  haflux: -10.86
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-15 16 03.7"
@@ -22311,6 +23101,7 @@
   name: "MA 3"
   ra: "18 17 49.4"
   size: 0.08
+  haflux: -12.05
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-25 41 03.1"
@@ -22319,6 +23110,7 @@
   name: "PPA J1818-2541"
   ra: "18 18 01.5"
   size: 0.27
+  haflux: -12.20
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-20 44 14.0"
@@ -22367,6 +23159,7 @@
   name: "H 1-64"
   ra: "18 18 23.9"
   size: 0.13
+  haflux: -11.64
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-09 02 23.9"
@@ -22391,6 +23184,7 @@
   name: "IC 4699"
   ra: "18 18 32.0"
   size: 0.21
+  haflux: -11.19
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-15 46 05.5"
@@ -22407,6 +23201,7 @@
   name: "H 2-46"
   ra: "18 18 37.4"
   size: 0.07
+  haflux: -12.15
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 07 58.5"
@@ -22415,6 +23210,7 @@
   name: "M 2-37"
   ra: "18 18 38.3"
   size: 0.12
+  haflux: -11.72
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-16 15 22.3"
@@ -22439,6 +23235,7 @@
   name: "PHR J1818-2531"
   ra: "18 18 50.7"
   size: 0.27
+  haflux: -11.85
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-14 45 10.0"
@@ -22455,6 +23252,7 @@
   name: "PHR J1818-2239"
   ra: "18 18 58.8"
   size: 1.63
+  haflux: -11.01
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-15 26 21.1"
@@ -22463,6 +23261,7 @@
   name: "PHR J1818-1526"
   ra: "18 18 59.2"
   size: 0.92
+  haflux: -12.80
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-13 07 03.5"
@@ -22519,6 +23318,7 @@
   name: "M 2-38"
   ra: "18 19 25.2"
   size: 0.15
+  haflux: -11.65
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-33 37 07.1"
@@ -22527,6 +23327,7 @@
   name: "SB 55"
   ra: "18 19 26.6"
   size: 0.27
+  haflux: -11.94
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-15 12 08.3"
@@ -22567,6 +23368,7 @@
   name: "H 1-65"
   ra: "18 20 08.8"
   size: 0.13
+  haflux: -11.37
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-36 07 21.1"
@@ -22687,6 +23489,7 @@
   name: "PTB 31"
   ra: "18 20 53.8"
   size: 0.23
+  haflux: -12.06
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-25 24 22.4"
@@ -22719,6 +23522,7 @@
   name: "PHR J1821-2324"
   ra: "18 21 08.9"
   size: 0.57
+  haflux: -11.95
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-13 35 48.7"
@@ -22743,6 +23547,7 @@
   name: "MaC 1-12"
   ra: "18 21 21.1"
   size: 0.08
+  haflux: -11.70
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-06 01 55.8"
@@ -22751,6 +23556,7 @@
   name: "M 2-40"
   ra: "18 21 23.8"
   size: 0.09
+  haflux: -11.47
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-39 08 17.7"
@@ -22775,6 +23581,7 @@
   name: "PHR J1821-1001"
   ra: "18 21 41.1"
   size: 2.44
+  haflux: -11.43
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-06 38 59.9"
@@ -22815,6 +23622,7 @@
   name: "K 1-16"
   ra: "18 21 52.1"
   size: 2.05
+  haflux: -11.68
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-27 09 46.4"
@@ -22831,6 +23639,7 @@
   name: "M 2-39"
   ra: "18 22 01.1"
   size: 0.05
+  haflux: -11.36
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-09 14 09.0"
@@ -22895,6 +23704,7 @@
   name: "M 2-42"
   ra: "18 22 32.1"
   size: 0.06
+  haflux: -11.39
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-30 43 29.6"
@@ -22903,6 +23713,7 @@
   name: "M 2-41"
   ra: "18 22 34.6"
   size: 0.23
+  haflux: -11.53
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-09 40 20.5"
@@ -22935,6 +23746,7 @@
   name: "NGC 6620"
   ra: "18 22 54.2"
   size: 0.12
+  haflux: -11.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-26 05 15.7"
@@ -22967,6 +23779,7 @@
   name: "M 1-45"
   ra: "18 23 08.0"
   size: 0.15
+  haflux: -11.64
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 43 25.2"
@@ -22983,6 +23796,7 @@
   name: "K 3-1"
   ra: "18 23 21.7"
   size: 0.13
+  haflux: -11.86
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-24 47 28.3"
@@ -23071,6 +23885,7 @@
   name: "FP J1824-0319"
   ra: "18 24 16.1"
   size: 31.67
+  haflux: -10.42
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-05 59 50.0"
@@ -23119,6 +23934,7 @@
   name: "PC 19"
   ra: "18 24 44.5"
   size: 0.05
+  haflux: -11.36
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-25 41 55.0"
@@ -23127,6 +23943,7 @@
   name: "H 1-66"
   ra: "18 24 57.4"
   size: 0.14
+  haflux: -11.46
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-01 30 52.6"
@@ -23135,6 +23952,7 @@
   name: "K 3-2"
   ra: "18 25 00.6"
   size: 0.05
+  haflux: -11.99
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-12 37 45.1"
@@ -23151,6 +23969,7 @@
   name: "H 1-67"
   ra: "18 25 05.0"
   size: 0.12
+  haflux: -11.46
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+00 02 04.7"
@@ -23191,6 +24010,7 @@
   name: "NGC 6629"
   ra: "18 25 42.5"
   size: 0.28
+  haflux: -10.17
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-10 45 28.5"
@@ -23215,6 +24035,7 @@
   name: "SaWe 3"
   ra: "18 26 03.7"
   size: 1.83
+  haflux: -11.33
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-23 46 40.0"
@@ -23287,6 +24108,7 @@
   name: "M 2-43"
   ra: "18 26 40.0"
   size: 0.03
+  haflux: -11.31
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-40 29 52.5"
@@ -23295,6 +24117,7 @@
   name: "Wray 16-411"
   ra: "18 26 41.8"
   size: 0.5
+  haflux: -11.91
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-10 48 29.2"
@@ -23327,6 +24150,7 @@
   name: "K 3-3"
   ra: "18 27 09.3"
   size: 0.16
+  haflux: -12.04
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-14 08 34.6"
@@ -23335,6 +24159,7 @@
   name: "VSP 2-18"
   ra: "18 27 13.4"
   size: 0.21
+  haflux: -11.84
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-06 11 50.9"
@@ -23383,6 +24208,7 @@
   name: "M 3-27"
   ra: "18 27 48.3"
   size: 0.05
+  haflux: -10.82
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-37 15 57.2"
@@ -23391,6 +24217,7 @@
   name: "Lo 17"
   ra: "18 27 50.7"
   size: 1.93
+  haflux: -11.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-15 04 24.0"
@@ -23407,6 +24234,7 @@
   name: "M 1-46"
   ra: "18 27 56.3"
   size: 0.2
+  haflux: -10.69
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-05 10 22.8"
@@ -23423,6 +24251,7 @@
   name: "Vy 2-1"
   ra: "18 27 59.6"
   size: 0.07
+  haflux: -10.92
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-10 14 09.0"
@@ -23479,6 +24308,7 @@
   name: "MaC 1-13"
   ra: "18 28 35.2"
   size: 0.3
+  haflux: -12.09
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-04 57 35.7"
@@ -23543,6 +24373,7 @@
   name: "M 1-47"
   ra: "18 29 11.2"
   size: 0.1
+  haflux: -11.24
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-17 27 12.9"
@@ -23551,6 +24382,7 @@
   name: "SaSt 3-166"
   ra: "18 29 11.3"
   size: 0.22
+  haflux: -11.59
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 29 59.2"
@@ -23559,6 +24391,7 @@
   name: "Cn 1-5"
   ra: "18 29 11.6"
   size: 0.12
+  haflux: -10.68
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-15 07 40.0"
@@ -23575,6 +24408,7 @@
   name: "M 1-48"
   ra: "18 29 30.0"
   size: 0.08
+  haflux: -11.64
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-04 31 38.1"
@@ -23615,6 +24449,7 @@
   name: "Pe 2-14"
   ra: "18 29 59.4"
   size: 0.09
+  haflux: -11.52
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-39 10 11.0"
@@ -23631,6 +24466,7 @@
   name: "PTB 34"
   ra: "18 30 07.9"
   size: 0.21
+  haflux: -11.86
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-16 45 20.5"
@@ -23639,6 +24475,7 @@
   name: "Abell 44"
   ra: "18 30 10.8"
   size: 1.12
+  haflux: -11.49
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-11 36 57.4"
@@ -23647,6 +24484,7 @@
   name: "Abell 45"
   ra: "18 30 15.4"
   size: 5.03
+  haflux: -11.26
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-26 37 18.0"
@@ -23703,6 +24541,7 @@
   name: "K 3-4"
   ra: "18 31 00.2"
   size: 0.33
+  haflux: -11.86
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 49 13.1"
@@ -23775,6 +24614,7 @@
   name: "K 3-5"
   ra: "18 31 45.8"
   size: 0.17
+  haflux: -12.06
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-14 15 20.7"
@@ -23783,6 +24623,7 @@
   name: "PHR J1831-1415"
   ra: "18 31 50.4"
   size: 0.9
+  haflux: -11.80
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-24 46 16.5"
@@ -23791,6 +24632,7 @@
   name: "Hen 2-406"
   ra: "18 31 52.8"
   size: 0.13
+  haflux: -12.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-12 56 13.8"
@@ -23823,6 +24665,7 @@
   name: "PHR J1832-1326"
   ra: "18 32 04.6"
   size: 0.7
+  haflux: -11.76
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-15 43 19.5"
@@ -23855,6 +24698,7 @@
   name: "Hf 2-2"
   ra: "18 32 30.8"
   size: 0.36
+  haflux: -11.30
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-03 17 44.7"
@@ -23863,6 +24707,7 @@
   name: "PHR J1832-0317"
   ra: "18 32 31.2"
   size: 0.57
+  haflux: -12.60
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-04 46 11.3"
@@ -23887,6 +24732,7 @@
   name: "NGC 6644"
   ra: "18 32 34.6"
   size: 0.07
+  haflux: -10.45
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-12 46 02.1"
@@ -23911,6 +24757,7 @@
   name: "M 3-28"
   ra: "18 32 41.3"
   size: 0.4
+  haflux: -11.92
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-09 16 48.7"
@@ -23967,6 +24814,7 @@
   name: "M 3-55"
   ra: "18 33 14.8"
   size: 0.2
+  haflux: -12.61
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+00 11 47.2"
@@ -23975,6 +24823,7 @@
   name: "K 3-6"
   ra: "18 33 17.5"
   size: 0.01
+  haflux: -12.31
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-18 16 36.9"
@@ -23983,6 +24832,7 @@
   name: "M 1-50"
   ra: "18 33 20.9"
   size: 0.09
+  haflux: -11.24
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-26 32 28.0"
@@ -24007,6 +24857,7 @@
   name: "M 1-51"
   ra: "18 33 29.0"
   size: 0.33
+  haflux: -11.58
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-03 25 55.8"
@@ -24023,6 +24874,7 @@
   name: "PHR J1833-3115"
   ra: "18 33 42.8"
   size: 0.42
+  haflux: -12.07
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-24 02 50.2"
@@ -24039,6 +24891,7 @@
   name: "IC 4732"
   ra: "18 33 54.6"
   size: 0.02
+  haflux: -10.95
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-14 52 25.0"
@@ -24047,6 +24900,7 @@
   name: "M 1-52"
   ra: "18 33 58.5"
   size: 0.11
+  haflux: -11.70
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-05 56 07.0"
@@ -24055,6 +24909,7 @@
   name: "PHR J1833-0556"
   ra: "18 33 59.7"
   size: 0.68
+  haflux: -12.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+14 49 19.4"
@@ -24063,6 +24918,7 @@
   name: "We 3-1"
   ra: "18 34 02.6"
   size: 2.92
+  haflux: -11.39
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-02 27 37.0"
@@ -24071,6 +24927,7 @@
   name: "K 3-7"
   ra: "18 34 13.6"
   size: 0.13
+  haflux: -12.06
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-13 12 24.7"
@@ -24143,6 +25000,7 @@
   name: "Pe 1-13"
   ra: "18 34 51.7"
   size: 0.13
+  haflux: -11.94
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-12 11 23.9"
@@ -24159,6 +25017,7 @@
   name: "Al 1"
   ra: "18 34 55.3"
   size: 0.24
+  haflux: -12.07
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-04 29 06.0"
@@ -24167,6 +25026,7 @@
   name: "PHR J1835-0429"
   ra: "18 35 11.6"
   size: 0.68
+  haflux: -11.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-28 11 52.1"
@@ -24223,6 +25083,7 @@
   name: "CGMW 4-1723"
   ra: "18 35 44.6"
   size: 0.38
+  haflux: -12.09
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-17 36 08.3"
@@ -24231,6 +25092,7 @@
   name: "M 1-53"
   ra: "18 35 48.3"
   size: 0.1
+  haflux: -11.23
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+10 57 19.4"
@@ -24279,6 +25141,7 @@
   name: "M 1-54"
   ra: "18 36 08.4"
   size: 0.28
+  haflux: -10.93
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-02 27 13.7"
@@ -24303,6 +25166,7 @@
   name: "V-V 3-5"
   ra: "18 36 32.3"
   size: 0.17
+  haflux: -11.38
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-21 49 02.6"
@@ -24311,6 +25175,7 @@
   name: "M 1-55"
   ra: "18 36 33.8"
   size: 0.1
+  haflux: -11.20
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-05 45 00.9"
@@ -24335,6 +25200,7 @@
   name: "V-V 3-6"
   ra: "18 37 11.1"
   size: 0.2
+  haflux: -11.61
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-08 22 46.9"
@@ -24359,6 +25225,7 @@
   name: "M 2-44"
   ra: "18 37 36.9"
   size: 0.19
+  haflux: -11.52
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-17 05 46.5"
@@ -24367,6 +25234,7 @@
   name: "M 1-56"
   ra: "18 37 46.3"
   size: 0.17
+  haflux: -11.42
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-12 49 39.9"
@@ -24383,6 +25251,7 @@
   name: "CGMW 4-2031"
   ra: "18 37 54.6"
   size: 0.82
+  haflux: -12.25
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-12 41 05.7"
@@ -24455,6 +25324,7 @@
   name: "M 2-45"
   ra: "18 39 21.8"
   size: 0.16
+  haflux: -11.97
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-30 40 36.7"
@@ -24463,6 +25333,7 @@
   name: "M 3-29"
   ra: "18 39 25.8"
   size: 0.16
+  haflux: -11.22
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-08 37 09.2"
@@ -24487,6 +25358,7 @@
   name: "SB 19"
   ra: "18 39 40.1"
   size: 0.18
+  haflux: -12.30
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-09 53 15.4"
@@ -24519,6 +25391,7 @@
   name: "SB 17"
   ra: "18 40 19.9"
   size: 0.33
+  haflux: -12.43
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-10 39 47.2"
@@ -24527,6 +25400,7 @@
   name: "M 1-57"
   ra: "18 40 20.3"
   size: 0.2
+  haflux: -11.38
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-04 15 33.7"
@@ -24567,6 +25441,7 @@
   name: "PPA J1840-2931"
   ra: "18 40 50.6"
   size: 0.28
+  haflux: -11.75
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-01 40 49.6"
@@ -24583,6 +25458,7 @@
   name: "K 3-11"
   ra: "18 41 07.3"
   size: 0.18
+  haflux: -12.40
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-15 33 41.4"
@@ -24591,6 +25467,7 @@
   name: "M 3-30"
   ra: "18 41 14.9"
   size: 0.32
+  haflux: -11.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-03 24 11.0"
@@ -24711,6 +25588,7 @@
   name: "PM 1-251"
   ra: "18 42 24.8"
   size: 0.31
+  haflux: -12.07
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-03 56 34.1"
@@ -24743,6 +25621,7 @@
   name: "Abell 48"
   ra: "18 42 46.9"
   size: 0.72
+  haflux: -11.52
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-11 06 53.1"
@@ -24751,6 +25630,7 @@
   name: "M 1-58"
   ra: "18 42 57.0"
   size: 0.11
+  haflux: -11.26
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-02 45 59.9"
@@ -24815,6 +25695,7 @@
   name: "M 1-59"
   ra: "18 43 20.2"
   size: 0.11
+  haflux: -10.93
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-13 44 48.6"
@@ -24823,6 +25704,7 @@
   name: "M 1-60"
   ra: "18 43 38.1"
   size: 0.04
+  haflux: -11.21
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-19 48 32.7"
@@ -24847,6 +25729,7 @@
   name: "PHR J1843-0232"
   ra: "18 43 56.9"
   size: 1.02
+  haflux: -12.18
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-05 56 20.3"
@@ -24863,6 +25746,7 @@
   name: "M 3-31"
   ra: "18 44 01.8"
   size: 0.12
+  haflux: -11.48
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-12 12 55.4"
@@ -24887,6 +25771,7 @@
   name: "Hen 2-418"
   ra: "18 44 14.6"
   size: 0.23
+  haflux: -11.80
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-04 52 53.5"
@@ -24935,6 +25820,7 @@
   name: "M 3-32"
   ra: "18 44 43.1"
   size: 0.13
+  haflux: -11.64
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-14 10 52.1"
@@ -24951,6 +25837,7 @@
   name: "PHR J1844-0503"
   ra: "18 44 45.6"
   size: 0.58
+  haflux: -11.99
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-04 53 59.7"
@@ -24975,6 +25862,7 @@
   name: "PHR J1844-0517"
   ra: "18 44 54.5"
   size: 2.13
+  haflux: -12.41
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+00 21 23.0"
@@ -25007,6 +25895,7 @@
   name: "PTB 32"
   ra: "18 45 10.1"
   size: 2.17
+  haflux: -11.82
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-12 31 39.7"
@@ -25047,6 +25936,7 @@
   name: "PC 21"
   ra: "18 45 35.3"
   size: 0.22
+  haflux: -11.44
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-06 18 34.3"
@@ -25055,6 +25945,7 @@
   name: "K 4-5"
   ra: "18 45 36.6"
   size: 1.07
+  haflux: -11.76
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+33 56 04.5"
@@ -25087,6 +25978,7 @@
   name: "IC 4776"
   ra: "18 45 50.7"
   size: 0.14
+  haflux: -10.26
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-14 27 37.9"
@@ -25095,6 +25987,7 @@
   name: "M 1-61"
   ra: "18 45 55.1"
   size: 0.03
+  haflux: -10.64
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-02 33 08.0"
@@ -25127,6 +26020,7 @@
   name: "M 2-46"
   ra: "18 46 34.6"
   size: 0.07
+  haflux: -11.72
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-23 26 48.3"
@@ -25135,6 +26029,7 @@
   name: "My 121"
   ra: "18 46 35.1"
   size: 0.05
+  haflux: -10.56
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-08 01 30.1"
@@ -25151,6 +26046,7 @@
   name: "AS 321"
   ra: "18 47 04.0"
   size: 0.07
+  haflux: -11.51
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-02 43 31.2"
@@ -25183,6 +26079,7 @@
   name: "Pe 1-16"
   ra: "18 47 32.2"
   size: 0.13
+  haflux: -11.49
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+01 32 47.0"
@@ -25199,6 +26096,7 @@
   name: "PHR J1847-0215"
   ra: "18 47 47.4"
   size: 0.33
+  haflux: -13.00
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-09 09 06.9"
@@ -25207,6 +26105,7 @@
   name: "Pe 1-17"
   ra: "18 47 48.8"
   size: 0.24
+  haflux: -12.07
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+00 04 48.6"
@@ -25239,6 +26138,7 @@
   name: "SB 21"
   ra: "18 48 11.1"
   size: 0.41
+  haflux: -12.30
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-25 28 52.4"
@@ -25247,6 +26147,7 @@
   name: "M 3-33"
   ra: "18 48 12.1"
   size: 0.12
+  haflux: -11.41
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-02 10 00.6"
@@ -25271,6 +26172,7 @@
   name: "PHR J1848-0912"
   ra: "18 48 32.7"
   size: 0.32
+  haflux: -12.48
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+10 35 50.7"
@@ -25279,6 +26181,7 @@
   name: "K 3-14"
   ra: "18 48 32.8"
   size: -9999
+  haflux: -11.42
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+06 33 02.7"
@@ -25311,6 +26214,7 @@
   name: "PHR J1848-0435"
   ra: "18 48 40.6"
   size: 0.73
+  haflux: -12.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-05 56 07.1"
@@ -25319,6 +26223,7 @@
   name: "Pe 1-18"
   ra: "18 48 46.5"
   size: 0.11
+  haflux: -12.00
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-03 05 41.6"
@@ -25359,6 +26264,7 @@
   name: "PHR J1849-1952"
   ra: "18 49 24.2"
   size: 0.32
+  haflux: -12.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-05 37 36.1"
@@ -25375,6 +26281,7 @@
   name: "Pe 1-19"
   ra: "18 49 44.6"
   size: 0.07
+  haflux: -11.56
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-00 29 08.0"
@@ -25391,6 +26298,7 @@
   name: "Hu 2-1"
   ra: "18 49 47.6"
   size: 0.13
+  haflux: -10.15
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-00 18 57.1"
@@ -25455,6 +26363,7 @@
   name: "HaTr 10"
   ra: "18 50 24.6"
   size: 0.53
+  haflux: -12.39
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-22 34 22.5"
@@ -25463,6 +26372,7 @@
   name: "M 1-62"
   ra: "18 50 26.0"
   size: 0.08
+  haflux: -11.36
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+04 16 42.0"
@@ -25487,6 +26397,7 @@
   name: "WeSb 4"
   ra: "18 50 40.3"
   size: 0.7
+  haflux: -12.31
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-13 31 02.2"
@@ -25495,6 +26406,7 @@
   name: "Sa 1-8"
   ra: "18 50 44.3"
   size: 0.13
+  haflux: -11.42
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+00 33 31.6"
@@ -25511,6 +26423,7 @@
   name: "CTSS 2"
   ra: "18 50 46.8"
   size: -9999
+  haflux: -12.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-00 21 30.2"
@@ -25551,6 +26464,7 @@
   name: "M 1-63"
   ra: "18 51 30.9"
   size: 0.07
+  haflux: -11.53
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-07 32 29.1"
@@ -25559,6 +26473,7 @@
   name: "PHR J1851-0732"
   ra: "18 51 31.3"
   size: 0.75
+  haflux: -11.44
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+09 54 52.4"
@@ -25567,6 +26482,7 @@
   name: "K 3-15"
   ra: "18 51 41.5"
   size: 0.03
+  haflux: -11.57
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-00 28 29.2"
@@ -25647,6 +26563,7 @@
   name: "K 3-16"
   ra: "18 53 01.6"
   size: 0.13
+  haflux: -12.60
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+06 44 15.3"
@@ -25703,6 +26620,7 @@
   name: "Abell 49"
   ra: "18 53 28.3"
   size: 0.93
+  haflux: -11.72
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-04 14 08.7"
@@ -25719,6 +26637,7 @@
   name: "NGC 6720"
   ra: "18 53 35.1"
   size: 1.48
+  haflux: -9.56
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-00 36 28.8"
@@ -25743,6 +26662,7 @@
   name: "Vy 1-4"
   ra: "18 54 01.9"
   size: 0.25
+  haflux: -11.23
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-09 01 47.8"
@@ -25775,6 +26695,7 @@
   name: "M 4-11"
   ra: "18 54 17.8"
   size: 0.48
+  haflux: -11.23
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-08 47 33.2"
@@ -25783,6 +26704,7 @@
   name: "K 4-8"
   ra: "18 54 20.0"
   size: 0.16
+  haflux: -11.70
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+01 01 44.4"
@@ -25815,6 +26737,7 @@
   name: "IC 1295"
   ra: "18 54 37.0"
   size: 1.83
+  haflux: -10.65
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-01 51 15.4"
@@ -25823,6 +26746,7 @@
   name: "PHR J1854-0151"
   ra: "18 54 41.3"
   size: 0.35
+  haflux: -12.17
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+36 30 12.4"
@@ -25855,6 +26779,7 @@
   name: "YM 16"
   ra: "18 54 57.3"
   size: 6.25
+  haflux: -11.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-23 28 12.7"
@@ -25863,6 +26788,7 @@
   name: "CGMW 4-3783"
   ra: "18 55 04.9"
   size: 0.34
+  haflux: -11.84
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+01 41 21.5"
@@ -25927,6 +26853,7 @@
   name: "Y-C 2-32"
   ra: "18 55 30.7"
   size: 0.18
+  haflux: -11.51
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-02 40 26.5"
@@ -25943,6 +26870,7 @@
   name: "Hb 7"
   ra: "18 55 37.8"
   size: 0.06
+  haflux: -10.77
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-01 34 00.3"
@@ -25951,6 +26879,7 @@
   name: "CBSS 2"
   ra: "18 56 15.7"
   size: 0.08
+  haflux: -11.92
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+07 07 26.2"
@@ -25959,6 +26888,7 @@
   name: "K 3-17"
   ra: "18 56 18.2"
   size: 0.31
+  haflux: -12.19
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 30 48.0"
@@ -25991,6 +26921,7 @@
   name: "M 1-65"
   ra: "18 56 33.6"
   size: 0.07
+  haflux: -11.34
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-00 38 04.5"
@@ -26087,6 +27018,7 @@
   name: "Pe 1-21"
   ra: "18 57 49.7"
   size: 0.18
+  haflux: -12.12
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+02 37 25.2"
@@ -26135,6 +27067,7 @@
   name: "M 1-66"
   ra: "18 58 26.3"
   size: 0.05
+  haflux: -11.22
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-10 54 29.3"
@@ -26223,6 +27156,7 @@
   name: "Sp 4-1"
   ra: "19 00 26.5"
   size: -9999
+  haflux: -11.37
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-19 14 14.0"
@@ -26239,6 +27173,7 @@
   name: "K 3-18"
   ra: "19 00 34.8"
   size: 0.07
+  haflux: -12.05
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-18 12 15.5"
@@ -26247,6 +27182,7 @@
   name: "Abell 51"
   ra: "19 01 01.4"
   size: 0.99
+  haflux: -11.56
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+01 57 28.1"
@@ -26287,6 +27223,7 @@
   name: "MaC 1-16"
   ra: "19 01 21.8"
   size: 0.17
+  haflux: -12.00
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+04 17 49.9"
@@ -26319,6 +27256,7 @@
   name: "K 3-19"
   ra: "19 01 36.6"
   size: 0.17
+  haflux: -11.91
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-01 29 36.8"
@@ -26343,6 +27281,7 @@
   name: "Sh 2-71"
   ra: "19 02 00.0"
   size: 2.21
+  haflux: -10.89
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-01 48 45.3"
@@ -26351,6 +27290,7 @@
   name: "K 3-20"
   ra: "19 02 10.2"
   size: -9999
+  haflux: -11.77
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-21 26 51.3"
@@ -26367,6 +27307,7 @@
   name: "PM 1-276"
   ra: "19 02 17.8"
   size: 0.25
+  haflux: -11.93
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+02 08 04.7"
@@ -26407,6 +27348,7 @@
   name: "HaTr 11"
   ra: "19 02 59.3"
   size: 0.35
+  haflux: -12.19
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+10 26 37.2"
@@ -26423,6 +27365,7 @@
   name: "Sh 2-78"
   ra: "19 03 10.1"
   size: 10.92
+  haflux: -10.72
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+14 25 24.5"
@@ -26447,6 +27390,7 @@
   name: "K 1-17"
   ra: "19 03 37.4"
   size: 0.93
+  haflux: -11.82
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+04 53 11.5"
@@ -26511,6 +27455,7 @@
   name: "Abell 52"
   ra: "19 04 32.3"
   size: 0.62
+  haflux: -11.93
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+09 16 56.7"
@@ -26535,6 +27480,7 @@
   name: "K 4-16"
   ra: "19 04 51.4"
   size: 0.05
+  haflux: -12.00
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+10 18 01.0"
@@ -26575,6 +27521,7 @@
   name: "IPHASX J190512.4+161347"
   ra: "19 05 12.5"
   size: 1.05
+  haflux: -12.20
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-29 34 54.0"
@@ -26607,6 +27554,7 @@
   name: "Hb 8"
   ra: "19 05 35.9"
   size: 0.05
+  haflux: -11.39
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+06 44 13.3"
@@ -26639,6 +27587,7 @@
   name: "NGC 6751"
   ra: "19 05 55.6"
   size: 0.4
+  haflux: -10.64
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+27 12 58.5"
@@ -26655,6 +27604,7 @@
   name: "PHR J1906-0133"
   ra: "19 06 15.3"
   size: 2.63
+  haflux: -11.93
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+08 37 24.0"
@@ -26687,6 +27637,7 @@
   name: "PM 1-281"
   ra: "19 06 32.1"
   size: -9999
+  haflux: -11.96
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-16 34 00.4"
@@ -26711,6 +27662,7 @@
   name: "Abell 53"
   ra: "19 06 45.9"
   size: 0.53
+  haflux: -11.61
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+04 13 48.9"
@@ -26807,6 +27759,7 @@
   name: "Abell 54"
   ra: "19 08 39.6"
   size: 1.12
+  haflux: -12.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+15 33 32.9"
@@ -26887,6 +27840,7 @@
   name: "Lo 18"
   ra: "19 09 47.8"
   size: 0.92
+  haflux: -12.12
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+12 04 55.2"
@@ -26959,6 +27913,7 @@
   name: "Abell 55"
   ra: "19 10 25.8"
   size: 0.95
+  haflux: -11.35
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+03 40 46.8"
@@ -27031,6 +27986,7 @@
   name: "PHR J1911-1546"
   ra: "19 11 04.4"
   size: 2.62
+  haflux: -11.37
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+06 08 45.1"
@@ -27047,6 +28003,7 @@
   name: "NGC 6765"
   ra: "19 11 06.5"
   size: 0.67
+  haflux: -11.30
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-10 49 17.3"
@@ -27055,6 +28012,7 @@
   name: "PHR J1911-1049"
   ra: "19 11 06.7"
   size: 0.5
+  haflux: -12.33
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+03 32 57.5"
@@ -27095,6 +28053,7 @@
   name: "MPA J1911+0027"
   ra: "19 11 24.8"
   size: 1.1
+  haflux: -11.79
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+05 31 13.7"
@@ -27111,6 +28070,7 @@
   name: "PM 1-286"
   ra: "19 11 35.8"
   size: -9999
+  haflux: -12.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+15 25 25.2"
@@ -27143,6 +28103,7 @@
   name: "AGP 1"
   ra: "19 12 16.2"
   size: 0.29
+  haflux: -12.56
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+08 15 07.5"
@@ -27191,6 +28152,7 @@
   name: "Hen 2-428"
   ra: "19 13 05.5"
   size: 0.67
+  haflux: -11.45
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-10 21 10.1"
@@ -27207,6 +28169,7 @@
   name: "Abell 56"
   ra: "19 13 06.1"
   size: 3.43
+  haflux: -11.56
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+15 39 39.7"
@@ -27223,6 +28186,7 @@
   name: "K 4-19"
   ra: "19 13 22.6"
   size: -9999
+  haflux: -12.36
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+04 38 04.5"
@@ -27231,6 +28195,7 @@
   name: "M 2-47"
   ra: "19 13 34.6"
   size: 0.12
+  haflux: -11.46
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+10 39 32.9"
@@ -27239,6 +28204,7 @@
   name: "AGP 2"
   ra: "19 13 37.2"
   size: 0.7
+  haflux: -12.68
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+14 59 19.2"
@@ -27247,6 +28213,7 @@
   name: "M 4-13"
   ra: "19 13 38.4"
   size: 0.12
+  haflux: -11.39
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+13 22 10.0"
@@ -27271,6 +28238,7 @@
   name: "M 1-69"
   ra: "19 13 53.9"
   size: 0.16
+  haflux: -11.34
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-06 18 52.2"
@@ -27279,6 +28247,7 @@
   name: "LSA 1"
   ra: "19 13 55.7"
   size: 0.23
+  haflux: -12.19
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+17 31 32.5"
@@ -27287,6 +28256,7 @@
   name: "Hen 2-430"
   ra: "19 14 04.1"
   size: 0.08
+  haflux: -11.41
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-23 41 24.0"
@@ -27295,6 +28265,7 @@
   name: "We 4-5"
   ra: "19 14 11.2"
   size: 0.75
+  haflux: -11.99
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+14 09 36.3"
@@ -27311,6 +28282,7 @@
   name: "StWr 2-21"
   ra: "19 14 23.3"
   size: 0.05
+  haflux: -12.07
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+28 40 45.5"
@@ -27327,6 +28299,7 @@
   name: "NGC 6772"
   ra: "19 14 36.4"
   size: 1.34
+  haflux: -10.64
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+00 13 36.3"
@@ -27335,6 +28308,7 @@
   name: "K 3-26"
   ra: "19 14 39.2"
   size: 0.3
+  haflux: -11.81
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+13 32 19.9"
@@ -27367,6 +28341,7 @@
   name: "K 3-29"
   ra: "19 15 30.6"
   size: 0.04
+  haflux: -12.28
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+15 56 09.0"
@@ -27407,6 +28382,7 @@
   name: "K 3-30"
   ra: "19 16 27.7"
   size: 0.05
+  haflux: -11.78
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-09 02 36.6"
@@ -27415,6 +28391,7 @@
   name: "IC 4846"
   ra: "19 16 28.2"
   size: 0.05
+  haflux: -10.75
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+12 35 51.0"
@@ -27463,6 +28440,7 @@
   name: "DeHt 3"
   ra: "19 17 04.1"
   size: 0.55
+  haflux: -11.68
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+25 37 33.4"
@@ -27471,6 +28449,7 @@
   name: "Abell 57"
   ra: "19 17 05.7"
   size: 0.67
+  haflux: -11.86
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+02 00 10.2"
@@ -27527,6 +28506,7 @@
   name: "IC 1297"
   ra: "19 17 23.5"
   size: 0.18
+  haflux: -10.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+20 52 31.2"
@@ -27567,6 +28547,7 @@
   name: "Na 2"
   ra: "19 18 19.5"
   size: 0.1
+  haflux: -11.79
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+01 46 59.6"
@@ -27575,6 +28556,7 @@
   name: "Abell 58"
   ra: "19 18 20.5"
   size: 0.73
+  haflux: -12.37
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+59 59 52.0"
@@ -27591,6 +28573,7 @@
   name: "NGC 6778"
   ra: "19 18 25.0"
   size: 0.36
+  haflux: -10.57
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+06 32 19.3"
@@ -27599,6 +28582,7 @@
   name: "NGC 6781"
   ra: "19 18 28.1"
   size: 2.35
+  haflux: -10.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+19 34 33.0"
@@ -27639,6 +28623,7 @@
   name: "K 3-31"
   ra: "19 19 02.6"
   size: 0.03
+  haflux: -12.04
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+09 48 49.8"
@@ -27655,6 +28640,7 @@
   name: "Abell 61"
   ra: "19 19 10.2"
   size: 3.38
+  haflux: -11.38
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-12 14 36.0"
@@ -27663,6 +28649,7 @@
   name: "Abell 60"
   ra: "19 19 17.8"
   size: 1.57
+  haflux: -11.94
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+17 11 48.1"
@@ -27671,6 +28658,7 @@
   name: "PM 1-295"
   ra: "19 19 18.8"
   size: 0.33
+  haflux: -12.01
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+15 41 37.2"
@@ -27695,6 +28683,7 @@
   name: "Pa 5"
   ra: "19 19 30.5"
   size: 2.62
+  haflux: -11.56
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+06 13 06.0"
@@ -27759,6 +28748,7 @@
   name: "M 4-14"
   ra: "19 21 00.7"
   size: 0.47
+  haflux: -11.82
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+10 37 34.6"
@@ -27847,6 +28837,7 @@
   name: "Wray 16-423"
   ra: "19 22 10.6"
   size: 0.02
+  haflux: -11.58
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+10 41 21.4"
@@ -27887,6 +28878,7 @@
   name: "NGC 6790"
   ra: "19 22 57.0"
   size: 0.07
+  haflux: -10.25
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+16 59 22.9"
@@ -27935,6 +28927,7 @@
   name: "Hen 1-1"
   ra: "19 23 46.9"
   size: 0.13
+  haflux: -12.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+05 27 59.9"
@@ -27975,6 +28968,7 @@
   name: "Vy 2-2"
   ra: "19 24 22.2"
   size: 0.05
+  haflux: -10.61
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+15 44 02.0"
@@ -28063,6 +29057,7 @@
   name: "DeHt 4"
   ra: "19 26 28.1"
   size: 1.57
+  haflux: -12.43
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+21 09 27.0"
@@ -28095,6 +29090,7 @@
   name: "M 3-34"
   ra: "19 27 01.9"
   size: 0.12
+  haflux: -11.05
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+15 48 35.0"
@@ -28127,6 +29123,7 @@
   name: "K 3-35"
   ra: "19 27 44.0"
   size: 0.1
+  haflux: -12.40
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+10 24 20.8"
@@ -28135,6 +29132,7 @@
   name: "PB 9"
   ra: "19 27 44.8"
   size: 0.22
+  haflux: -11.81
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+14 01 27.8"
@@ -28151,6 +29149,7 @@
   name: "PB 10"
   ra: "19 28 14.4"
   size: 0.18
+  haflux: -11.48
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+24 50 24.8"
@@ -28271,6 +29270,7 @@
   name: "NGC 6803"
   ra: "19 31 16.5"
   size: 0.14
+  haflux: -10.54
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+11 56 22.9"
@@ -28287,6 +29287,7 @@
   name: "NGC 6804"
   ra: "19 31 35.1"
   size: 0.97
+  haflux: -10.61
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-10 40 42.0"
@@ -28319,6 +29320,7 @@
   name: "Hen 2-436"
   ra: "19 32 06.7"
   size: 0.01
+  haflux: -11.79
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+07 27 51.6"
@@ -28327,6 +29329,7 @@
   name: "K 3-36"
   ra: "19 32 39.6"
   size: 0.2
+  haflux: -11.71
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+15 43 12.6"
@@ -28367,6 +29370,7 @@
   name: "Abell 62"
   ra: "19 33 17.9"
   size: 2.77
+  haflux: -11.09
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-23 47 16.0"
@@ -28391,6 +29395,7 @@
   name: "K 3-37"
   ra: "19 33 46.7"
   size: 0.04
+  haflux: -12.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-74 32 58.7"
@@ -28399,6 +29404,7 @@
   name: "Hen 2-434"
   ra: "19 33 49.4"
   size: 0.12
+  haflux: -10.92
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+22 15 05.5"
@@ -28415,6 +29421,7 @@
   name: "NGC 6807"
   ra: "19 34 33.5"
   size: 0.03
+  haflux: -10.85
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+30 30 58.9"
@@ -28423,6 +29430,7 @@
   name: "BD+30 3639"
   ra: "19 34 45.2"
   size: 0.1
+  haflux: -9.41
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+22 31 20.5"
@@ -28463,6 +29471,7 @@
   name: "K 3-39"
   ra: "19 35 54.4"
   size: 0.12
+  haflux: -12.30
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+26 57 34.0"
@@ -28479,6 +29488,7 @@
   name: "PM 1-308"
   ra: "19 36 17.5"
   size: 0.03
+  haflux: -11.39
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+27 20 51.9"
@@ -28503,6 +29513,7 @@
   name: "M 1-71"
   ra: "19 36 26.9"
   size: 0.1
+  haflux: -10.96
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+31 28 10.6"
@@ -28631,6 +29642,7 @@
   name: "Hen 2-440"
   ra: "19 38 08.4"
   size: 0.05
+  haflux: -11.73
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+20 54 12.1"
@@ -28687,6 +29699,7 @@
   name: "Me 2-2"
   ra: "19 39 09.8"
   size: 0.15
+  haflux: -10.88
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+16 20 48.5"
@@ -28783,6 +29796,7 @@
   name: "M 1-73"
   ra: "19 41 09.3"
   size: 0.15
+  haflux: -10.83
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+24 13 26.9"
@@ -28815,6 +29829,7 @@
   name: "M 1-72"
   ra: "19 41 34.0"
   size: 0.07
+  haflux: -11.20
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+27 52 02.0"
@@ -28831,6 +29846,7 @@
   name: "PC 22"
   ra: "19 42 03.5"
   size: 0.33
+  haflux: -11.55
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+17 05 14.4"
@@ -28839,6 +29855,7 @@
   name: "Abell 63"
   ra: "19 42 10.3"
   size: 0.8
+  haflux: -11.47
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+15 09 08.2"
@@ -28847,6 +29864,7 @@
   name: "M 1-74"
   ra: "19 42 18.8"
   size: 0.08
+  haflux: -11.03
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+21 45 21.1"
@@ -28911,6 +29929,7 @@
   name: "NGC 6818"
   ra: "19 43 57.7"
   size: 0.41
+  haflux: -9.95
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+17 09 01.1"
@@ -28919,6 +29938,7 @@
   name: "IPHASX J194359.5+170901"
   ra: "19 43 59.5"
   size: 0.35
+  haflux: -11.88
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+23 10 06.0"
@@ -28951,6 +29971,7 @@
   name: "Kn 9"
   ra: "19 44 59.0"
   size: 4.17
+  haflux: -11.10
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-13 07 45.0"
@@ -28983,6 +30004,7 @@
   name: "Hen 2-447"
   ra: "19 45 22.2"
   size: 0.05
+  haflux: -11.61
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+23 28 10.5"
@@ -29063,6 +30085,7 @@
   name: "Abell 65"
   ra: "19 46 34.2"
   size: 2.53
+  haflux: -10.95
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+26 22 11.5"
@@ -29575,6 +30598,7 @@
   name: "Abell 66"
   ra: "19 57 31.5"
   size: 5.2
+  haflux: -10.80
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+30 45 56.0"
@@ -29591,6 +30615,7 @@
   name: "WHTZ 3"
   ra: "19 57 59.3"
   size: 1.53
+  haflux: -12.16
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-26 28 15.9"
@@ -29615,6 +30640,7 @@
   name: "Abell 67"
   ra: "19 58 27.1"
   size: 1.23
+  haflux: -11.89
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+29 23 14.7"
@@ -29687,6 +30713,7 @@
   name: "Abell 68"
   ra: "20 00 10.6"
   size: 0.63
+  haflux: -11.61
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+36 59 34.2"
@@ -29703,6 +30730,7 @@
   name: "NGC 6852"
   ra: "20 00 39.2"
   size: 0.47
+  haflux: -11.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+28 30 23.3"
@@ -29767,6 +30795,7 @@
   name: "WeSb 5"
   ra: "20 01 42.0"
   size: 2.93
+  haflux: -11.32
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+30 48 45.6"
@@ -30071,6 +31100,7 @@
   name: "NGC 6884"
   ra: "20 10 23.7"
   size: 0.12
+  haflux: -10.57
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+16 55 21.3"
@@ -30079,6 +31109,7 @@
   name: "NGC 6879"
   ra: "20 10 26.7"
   size: 0.08
+  haflux: -11.03
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+44 11 48.5"
@@ -30127,6 +31158,7 @@
   name: "Hen 1-5"
   ra: "20 11 56.1"
   size: 0.53
+  haflux: -11.42
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+25 22 13.8"
@@ -30151,6 +31183,7 @@
   name: "NGC 6886"
   ra: "20 12 42.8"
   size: 0.15
+  haflux: -10.63
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+34 20 32.5"
@@ -30191,6 +31224,7 @@
   name: "NGC 6891"
   ra: "20 15 08.8"
   size: 0.23
+  haflux: -10.15
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+17 03 01.0"
@@ -30263,6 +31297,7 @@
   name: "Hen 3-1863"
   ra: "20 19 28.7"
   size: 0.28
+  haflux: -11.20
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+27 00 11.2"
@@ -30271,6 +31306,7 @@
   name: "Hen 1-7"
   ra: "20 19 38.1"
   size: 0.08
+  haflux: -11.37
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+15 14 07.2"
@@ -30303,6 +31339,7 @@
   name: "IC 4997"
   ra: "20 20 08.8"
   size: 0.04
+  haflux: -9.92
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+24 04 37.9"
@@ -30375,6 +31412,7 @@
   name: "NGC 6905"
   ra: "20 22 22.9"
   size: 0.72
+  haflux: -10.48
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+68 07 13.8"
@@ -30415,6 +31453,7 @@
   name: "Fr 2-15"
   ra: "20 27 12.5"
   size: 23.33
+  haflux: -10.67
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+00 42 42.3"
@@ -30471,6 +31510,7 @@
   name: "Abell 70"
   ra: "20 31 33.2"
   size: 0.75
+  haflux: -12.07
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+48 52 49.7"
@@ -30711,6 +31751,7 @@
   name: "Abell 72"
   ra: "20 50 02.1"
   size: 2.57
+  haflux: -11.70
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+37 53 15.7"
@@ -30855,6 +31896,7 @@
   name: "NGC 7009"
   ra: "21 04 10.9"
   size: 0.47
+  haflux: -9.29
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-32 49 51.8"
@@ -30879,6 +31921,7 @@
   name: "NGC 7026"
   ra: "21 06 18.6"
   size: 0.65
+  haflux: -10.16
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+42 14 09.7"
@@ -30887,6 +31930,7 @@
   name: "NGC 7027"
   ra: "21 07 01.8"
   size: 0.26
+  haflux: -9.29
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+40 57 52.3"
@@ -30895,6 +31939,7 @@
   name: "K 3-80"
   ra: "21 07 39.7"
   size: 0.1
+  haflux: -11.80
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+46 28 49.7"
@@ -30935,6 +31980,7 @@
   name: "Kn 24"
   ra: "21 13 37.7"
   size: 3.17
+  haflux: -11.29
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+47 46 21.2"
@@ -30943,6 +31989,7 @@
   name: "Sh 1-89"
   ra: "21 14 07.6"
   size: 1.13
+  haflux: -11.38
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+46 17 17.5"
@@ -30951,6 +31998,7 @@
   name: "NGC 7048"
   ra: "21 14 15.2"
   size: 1.05
+  haflux: -10.85
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+43 41 36.0"
@@ -30975,6 +32023,7 @@
   name: "Abell 74"
   ra: "21 16 52.3"
   size: 13.8
+  haflux: -10.76
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+34 12 27.2"
@@ -30983,6 +32032,7 @@
   name: "MWP 1"
   ra: "21 17 08.3"
   size: 14.0
+  haflux: -10.74
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+47 41 38.1"
@@ -31007,6 +32057,7 @@
   name: "M 1-77"
   ra: "21 19 07.4"
   size: 0.13
+  haflux: -11.21
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+46 46 34.0"
@@ -31135,6 +32186,7 @@
   name: "IRAS 21282+5050"
   ra: "21 29 58.4"
   size: 0.1
+  haflux: -11.71
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+54 27 27.5"
@@ -31143,6 +32195,7 @@
   name: "K 3-61"
   ra: "21 30 00.7"
   size: 0.13
+  haflux: -11.87
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+52 41 47.0"
@@ -31159,6 +32212,7 @@
   name: "K 3-82"
   ra: "21 30 51.5"
   size: 0.4
+  haflux: -11.70
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+52 33 51.6"
@@ -31175,6 +32229,7 @@
   name: "IC 5117"
   ra: "21 32 31.0"
   size: 0.06
+  haflux: -10.55
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+39 38 09.6"
@@ -31183,6 +32238,7 @@
   name: "Hu 1-2"
   ra: "21 33 08.3"
   size: 0.13
+  haflux: -10.57
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+52 37 27.6"
@@ -31223,6 +32279,7 @@
   name: "LDu 1"
   ra: "21 36 05.8"
   size: 2.2
+  haflux: -12.20
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+12 47 19.3"
@@ -31231,6 +32288,7 @@
   name: "NGC 7094"
   ra: "21 36 53.0"
   size: 1.71
+  haflux: -11.23
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+48 56 04.0"
@@ -31239,6 +32297,7 @@
   name: "M 1-79"
   ra: "21 37 01.3"
   size: 0.77
+  haflux: -10.95
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+46 00 27.8"
@@ -31407,6 +32466,7 @@
   name: "IC 5148/50"
   ra: "21 59 35.2"
   size: 2.21
+  haflux: -10.52
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+57 51 24.3"
@@ -31495,6 +32555,7 @@
   name: "M 2-51"
   ra: "22 16 03.9"
   size: 1.07
+  haflux: -11.14
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+54 18 42.1"
@@ -31511,6 +32572,7 @@
   name: "Bl 2-1"
   ra: "22 20 16.6"
   size: 0.17
+  haflux: -11.55
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+57 36 21.6"
@@ -31519,6 +32581,7 @@
   name: "M 2-52"
   ra: "22 20 30.7"
   size: 0.4
+  haflux: -11.69
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-84 54 38.2"
@@ -31535,6 +32598,7 @@
   name: "IC 5217"
   ra: "22 23 55.7"
   size: 0.12
+  haflux: -10.64
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+60 11 48.1"
@@ -31551,6 +32615,7 @@
   name: "Abell 79"
   ra: "22 26 17.3"
   size: 0.98
+  haflux: -11.20
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+68 39 16.3"
@@ -31575,6 +32640,7 @@
   name: "NGC 7293"
   ra: "22 29 38.5"
   size: 16.17
+  haflux: -8.86
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+56 11 53.8"
@@ -31599,6 +32665,7 @@
   name: "HaWe 15"
   ra: "22 30 33.4"
   size: 4.92
+  haflux: -11.29
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+47 48 04.0"
@@ -31607,6 +32674,7 @@
   name: "Me 1-1"
   ra: "22 31 43.7"
   size: 0.05
+  haflux: -10.68
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+56 10 26.1"
@@ -31615,6 +32683,7 @@
   name: "M 2-53"
   ra: "22 32 17.7"
   size: 0.33
+  haflux: -11.45
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+52 26 06.2"
@@ -31623,6 +32692,7 @@
   name: "Abell 80"
   ra: "22 34 45.6"
   size: 2.82
+  haflux: -11.45
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+68 05 56.3"
@@ -31647,6 +32717,7 @@
   name: "NGC 7354"
   ra: "22 40 19.9"
   size: 0.55
+  haflux: -10.49
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+80 26 31.3"
@@ -31703,6 +32774,7 @@
   name: "M 1-80"
   ra: "22 56 19.8"
   size: 0.13
+  haflux: -11.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+61 57 43.9"
@@ -31847,6 +32919,7 @@
   name: "M 2-55"
   ra: "23 31 51.4"
   size: 0.97
+  haflux: -11.21
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+30 28 06.4"
@@ -31855,6 +32928,7 @@
   name: "Jn 1"
   ra: "23 35 53.3"
   size: 5.9
+  haflux: -10.82
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+61 41 46.1"
@@ -31871,6 +32945,7 @@
   name: "K 1-20"
   ra: "23 39 10.8"
   size: 0.55
+  haflux: -12.20
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+65 21 47.6"
@@ -31903,6 +32978,7 @@
   name: "Abell 82"
   ra: "23 45 47.8"
   size: 2.22
+  haflux: -11.37
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+54 44 37.7"
@@ -31919,6 +32995,7 @@
   name: "Abell 84"
   ra: "23 47 44.3"
   size: 2.43
+  haflux: -11.13
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+64 03 11.8"

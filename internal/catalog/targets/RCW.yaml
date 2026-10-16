@@ -145,6 +145,7 @@
   name: "RCW 17"
   ra: "07 47 27.0"
   size: 2.0
+  haflux: -10.80
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-33 50 13.9"
@@ -1043,6 +1044,7 @@
   name: "RCW 124"
   ra: "17 13 44.0"
   size: 2.5
+  haflux: -9.53
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-37 12 08.3"
@@ -1519,6 +1521,7 @@
   name: "RCW 181"
   ra: "18 54 57.0"
   size: 6.0
+  haflux: -11.50
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+05 33 00.0"

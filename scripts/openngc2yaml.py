@@ -41,6 +41,11 @@ TYPES = {"G": "Galaxy", "OCl": "Open Cluster", "GCl": "Globular Cluster", "GPair
 # OpenNGC types the Compendium's nebula type overrides, and its types that do.
 RETYPE = {"Neb", "HII", "Cl+N", "RfN", "SNR"}
 NEBULAE = {"Emission Nebula", "Reflection Nebula", "Wolf-Rayet Nebula", "Supernova Remnant", "Planetary Nebula"}
+# Major axes OpenNGC gives wrongly, by scripts/crosscheck.py against SIMBAD
+# and the other lists: NGC 6960's 210 x 160' is the whole Veil (the western
+# filament is 70'), IC 1396's 14 x 4' its central cluster (the H II region
+# is 146'). The minor axis is dropped with it.
+SIZES = {"NGC 6960": "70.00", "IC 1396": "146.00"}
 
 
 def typ(r, n, imm):
@@ -116,11 +121,11 @@ def main():
         print(f"  description: {q(desc)}")
         n = name(cat, r["Name"])
         print(f"  mag: {r['V-Mag'] or vmag.get(n, -9999)}")
-        if r["MinAx"] and r["MajAx"] and float(r["MinAx"]) < float(r["MajAx"]):
+        if r["MinAx"] and r["MajAx"] and float(r["MinAx"]) < float(r["MajAx"]) and n not in SIZES:
             print(f"  minor: {r['MinAx']}")
         print(f"  name: {q(n)}")
         print(f"  ra: {q(sexagesimal(r['RA']))}")
-        print(f"  size: {r['MajAx'] or -9999}")
+        print(f"  size: {SIZES.get(n, r['MajAx'] or -9999)}")
         if n in vsurfbr:
             print(f"  surfbr: {vsurfbr[n]}")
         print(f"  type: {q(typ(r, n, imm))}")

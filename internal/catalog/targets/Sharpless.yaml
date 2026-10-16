@@ -47,6 +47,7 @@
   name: "Sh2-6"
   ra: "17 13 44.0"
   size: 4.0
+  haflux: -9.53
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-22 03 00.0"
@@ -415,6 +416,7 @@
   name: "Sh2-52"
   ra: "19 46 34.0"
   size: 4.0
+  haflux: -10.95
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-13 11 27.0"
@@ -543,6 +545,7 @@
   name: "Sh2-68"
   ra: "18 24 58.0"
   size: 8.0
+  haflux: -10.36
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-00 18 53.0"
@@ -567,6 +570,7 @@
   name: "Sh2-71"
   ra: "19 02 00.0"
   size: 3.0
+  haflux: -10.89
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+02 19 00.0"
@@ -1431,6 +1435,7 @@
   name: "Sh2-179"
   ra: "00 40 24.0"
   size: 0.7
+  haflux: -11.60
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+62 55 00.0"
@@ -2191,6 +2196,7 @@
   name: "Sh2-274"
   ra: "07 29 03.0"
   size: 8.0
+  haflux: -9.91
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+05 03 00.0"
@@ -2319,6 +2325,7 @@
   name: "Sh2-290"
   ra: "08 54 13.0"
   size: 15.0
+  haflux: -10.20
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-08 00 12.0"

@@ -20,6 +20,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/dkorunic/astro-recommender/internal/astro"
+	"github.com/dkorunic/astro-recommender/internal/atmos"
 	"github.com/dkorunic/astro-recommender/internal/constellation"
 	"github.com/dkorunic/astro-recommender/internal/num"
 	"github.com/dkorunic/astro-recommender/internal/sanitize"
@@ -73,6 +74,7 @@ type Target struct {
 	BMag    float64 `yaml:"bmag"`    // integrated B magnitude (OpenNGC/OpenIC); 0 or negative means unknown
 	SurfBr  float64 `yaml:"surfbr"`  // V surface brightness in mag/arcsec² (GaryImmFull galaxies); 0 or negative means unknown
 	BSurfBr float64 `yaml:"bsurfbr"` // mean B surface brightness within the 25 mag isophote (OpenNGC/OpenIC), ~0.8 fainter than V; 0 or negative means unknown
+	HaFlux  float64 `yaml:"haflux"`  // log10 of the integrated Hα flux, erg cm⁻² s⁻¹, observed (planetaries: Frew et al. 2013, scripts/haflux.py); 0 means unknown
 }
 
 // HasSize reports whether the size is known: comets and entries with a zero
@@ -109,6 +111,11 @@ const minBV, maxBV = -0.3, 1.5
 // minSB mag/arcsec², so a `surfbr: 2.3` typo for 22.3, which would make an
 // object immune to sky glow, is rejected rather than ranked first.
 const maxNumber, minSB = 35, 10
+
+// minHaFlux and maxHaFlux bound a known log Hα flux (erg cm⁻² s⁻¹): the
+// faintest planetaries Frew et al. measured are near -14, the brightest
+// (NGC 7293) -8.6.
+const minHaFlux, maxHaFlux = -17.0, -7.0
 
 // Classes are the object classes -type selects, in help order.
 var Classes = []string{classGalaxy, classCluster, classNebula, classEmission, classComet, classOther}
@@ -167,6 +174,9 @@ func (t Target) SurfaceBrightness() (float64, bool) {
 	if k == kindCluster {
 		return 0, false
 	}
+	if sb, ok := t.FluxSB(); ok {
+		return sb, false
+	}
 	switch {
 	case t.SurfBr > 0:
 		return t.SurfBr, false
@@ -199,7 +209,7 @@ var starMagWords = []string{sbReflection, "wolf", "variable"}
 
 // starMagNames are the other nebulae whose catalogued magnitude is not their
 // glow's, in any list's spelling (matched as NameKey): a cluster's or star's
-// inside them, or the Compendium's 18.0 for unknown. Spread over the
+// inside them, a larger complex's, or the Compendium's 18.0 for unknown. Spread over the
 // nebula's area it would derive a surface brightness magnitudes off (IC 1805
 // 25.5, which made the Heart unreachable), so they derive none and are scored
 // as a nebula without data.
@@ -222,6 +232,7 @@ var starMagNames = map[string]bool{
 	"NGC 2579": true, "RCW 20": true, "Gum 11": true, // its cluster's 7.5
 	"NGC 3247": true, "RCW 49": true, "Gum 29": true, // Westerlund 2's 7.6
 	"RCW 120": true, "Sh2-3": true, "Gum 58": true, "RCW 86": true, "RCW 104": true, // 18.0, unknown
+	"NGC 6960":         true,                                                    // the western Veil carrying OpenNGC's B 7.0 for the whole Veil
 	"Jones-Emberson 1": true, "Sh2-174": true, "Sh2-188": true, "NGC 651": true, // planetaries: the central star's
 	"Sh2-216": true, "Abell 35": true, "Sh2-313": true, // the central star's, 12.6 and 10
 }
@@ -235,6 +246,36 @@ var starMagKeys = func() map[string]bool {
 
 	return keys
 }()
+
+// hcErgNM is Planck's constant times the speed of light, erg nm: a photon
+// of λ nm carries hcErgNM/λ erg.
+const hcErgNM = 1.98644586e-9
+
+// FluxSB returns the V surface brightness of an emission-line target's
+// lines from its integrated Hα flux (HaFlux), its type's line ratios
+// (Lines) and its axes, and whether it has one: the photons of every line
+// through V (LineV) over the ellipse, against a V = 0 source's. A measured
+// flux, so it beats any catalogued magnitude, which for a faint planetary
+// is often its central star's.
+func (t Target) FluxSB() (float64, bool) {
+	if t.HaFlux == 0 || !t.HasSize() || !EmissionLine(t) {
+		return 0, false
+	}
+	shares := t.Lines()
+	total := math.Pow(10, t.HaFlux) / shares[Ha] // erg cm⁻² s⁻¹ in every line
+	var v float64                                // photons s⁻¹ cm⁻² through V
+	for l, s := range shares {
+		v += s * total * LineNM[l] / hcErgNM * LineV[l]
+	}
+	major, minor := t.Axes()
+
+	return -2.5 * math.Log10(v/(math.Pi/4*(60*major)*(60*minor))/atmos.PhotonsV0), true
+}
+
+// LineV is the V band's transmission at each line, how much of it a V
+// surface brightness measures: Bessell (1990)'s curve, linear between its
+// 10 nm points, [S II] the doublet's mean. V straddles [O III] and misses Hα.
+var LineV = [NumLines]float64{Ha: 0.0324, OIII: 0.4805, SII: 0.0161, Hb: 0.1111, NII6548: 0.0354, NII6583: 0.0284, OIII4959: 0.3370}
 
 // sbPlanetary and sbReflection are sbClass's planetary and reflection
 // nebula classes, the words that pick them in the type.
@@ -251,7 +292,7 @@ const (
 // (starMagWords), so theirs has no median: typicalSBGuess.
 var typicalSB = map[string]float64{
 	"galaxy":     22.52,
-	sbPlanetary:  21.73,
+	sbPlanetary:  21.10,
 	"emission":   21.90,
 	sbReflection: 22.0,
 	"nebula":     20.73,
@@ -259,8 +300,13 @@ var typicalSB = map[string]float64{
 
 // typicalSBGuess are typicalSB's classes without data, which TestTypicalSB
 // skips.
-// ponytail: reflection 22.0 is a guess at about the galaxies'; measure
-// reflection nebulae's own (e.g. off DSS) if SUBS for them matters.
+// ponytail: reflection 22.0 is a guess at about the galaxies'. No
+// photometric survey a cutout service resamples covers them (October 2026):
+// Pan-STARRS through CDS's HiPS is not calibrated (2.1 mag zero point
+// scatter over 25 galaxies), SkyView's SDSS has few of them, and Legacy
+// Survey DR10 is calibrated but sky-subtracted (galaxies 1.0 mag faint,
+// 1.3 mag scatter) and reaches 10 of them; full-resolution Pan-STARRS stacks
+// (zero point 25 + 2.5 log t) would do, at some 100 MB a nebula.
 var typicalSBGuess = map[string]bool{sbReflection: true}
 
 // ExposureSB returns the surface brightness the sub-exposure estimate uses:
@@ -514,20 +560,30 @@ func (t Target) colour(k kind) (float64, bool) {
 
 // typicalBV is the B−V assumed for the object's type when its own is not
 // usable: 0.8 for galaxies and their groups (the median of the Compendium's
-// V surface brightness against OpenNGC's B one over 723 shared galaxies), 0
-// for emission-line objects (Hα/OIII dominated, often bluer than that), 0.5
-// for the rest (reflection nebulae, clusters with nebulosity). Rough values;
-// they move a B figure to V to within a few tenths.
+// V surface brightness against OpenNGC's B one over 723 shared galaxies),
+// bvPlanetary for planetary nebulae, 0 for the other emission-line objects
+// (Hα dominated: the lists' own pairs give 0.07), 0.5 for the rest
+// (reflection nebulae, clusters with nebulosity). TestTypicalBV recomputes
+// them from the lists' objects with both magnitudes; they move a B figure to
+// V to within a few tenths.
 func (t Target) typicalBV(k kind) float64 {
 	switch {
 	case k == kindGalaxy, k == kindGroup:
 		return 0.8
+	case strings.Contains(strings.ToLower(t.Type), sbPlanetary):
+		return bvPlanetary
 	case EmissionLine(t):
 		return 0
 	}
 
 	return 0.5
 }
+
+// bvPlanetary is planetary nebulae's typical B−V: the median over the lists'
+// planetaries with both magnitudes, within minBV-maxBV (their [O III] sits
+// in V, out of B: M 57 0.9, NGC 6543 0.7, M 27 0.2). It was 0, which made a
+// B-only planetary up to 0.9 mag too bright.
+const bvPlanetary = 0.7
 
 // Lists are the embedded uptonight target lists selectable with -list.
 var Lists = []string{"GaryImm", "GaryImmFull", "Messier", "Herschel400", "Pensack500", "OpenNGC", "OpenIC", "LBN", "LDN", "MWSC", "Melotte", "Collinder", "PNnet", "HASH", "Sharpless", "Caldwell", "RCW", "SNR", "Barnard", "vdB", "vdBH", "Arp", "HCG", "Ced", "Gum", "CG", "ACO", "MCRN", "Henize", "DEM", "Harris", "Dias", "DCld", "AM"}
@@ -622,6 +678,10 @@ func Load(listName, file string) ([]Target, string, error) {
 			if !num.Finite(f.v) || (f.v > 0 && (f.v < f.lo || f.v > f.hi)) {
 				return nil, "", fmt.Errorf("%w for %s: %s %v", errNumber, tg.Name, f.name, f.v)
 			}
+		}
+		// A log flux is negative: 0 is unknown, anything else must be plausible.
+		if !num.Finite(tg.HaFlux) || (tg.HaFlux != 0 && (tg.HaFlux < minHaFlux || tg.HaFlux > maxHaFlux)) {
+			return nil, "", fmt.Errorf("%w for %s: haflux %v", errNumber, tg.Name, tg.HaFlux)
 		}
 		// A minor axis is a size too, so it needs a known major axis to sit under.
 		if tg.Minor > 0 && tg.Minor > tg.Size {
@@ -720,7 +780,7 @@ func decodePacked(name string, f io.Reader) ([]Target, error) {
 			Name: next(pt.Name), Description: next(pt.Description), Type: next(pt.Type),
 			Constellation: next(pt.Constellation), RA: next(pt.RA), Dec: next(pt.Dec),
 			RADeg: pt.RADeg, DecDeg: pt.DecDeg, Size: pt.Size, Minor: pt.Minor,
-			Mag: pt.Mag, BMag: pt.BMag, SurfBr: pt.SurfBr, BSurfBr: pt.BSurfBr,
+			Mag: pt.Mag, BMag: pt.BMag, SurfBr: pt.SurfBr, BSurfBr: pt.BSurfBr, HaFlux: pt.HaFlux,
 		}
 	}
 
@@ -740,8 +800,8 @@ type packed struct {
 type packedTarget struct {
 	// The strings' lengths; separate fields, as gob decodes an array
 	// through a slice header allocated per target.
-	Name, Description, Type, Constellation, RA, Dec        uint32
-	RADeg, DecDeg, Size, Minor, Mag, BMag, SurfBr, BSurfBr float64
+	Name, Description, Type, Constellation, RA, Dec                uint32
+	RADeg, DecDeg, Size, Minor, Mag, BMag, SurfBr, BSurfBr, HaFlux float64
 }
 
 // emissionTypes are the lists' spellings (lower case) of emission-line types:

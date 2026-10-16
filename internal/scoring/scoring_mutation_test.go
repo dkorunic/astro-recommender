@@ -439,9 +439,9 @@ func TestMutBuildSky(t *testing.T) {
 	f := Forecast{
 		Elevation: math.NaN(),
 		Weather: map[int64]weather.HourWeather{
-			h0:        {Cloud: 50, Temp: 10, DewPoint: 0, Gust: 10, Precip: math.NaN()},
-			h0 + 3600: {Cloud: 0, Temp: 10, DewPoint: 7.5, Gust: 30, Precip: 0.05},
-			h0 + 7200: {Cloud: 0, Temp: 10, DewPoint: 0, Gust: 0, Precip: 0.2},
+			h0:        {Cloud: 50, Temp: 10, DewPoint: 0, Wind: 15, Gust: 10, Precip: math.NaN()},
+			h0 + 3600: {Cloud: 0, Temp: 10, DewPoint: 7.5, Wind: 15, Gust: 30, Precip: 0.05},
+			h0 + 7200: {Cloud: 0, Temp: 10, DewPoint: 0, Wind: 15, Gust: 0, Precip: 0.2},
 		},
 		Astro: map[int64]weather.AstroBlock{
 			time.Date(2026, 10, 12, 18, 0, 0, 0, time.UTC).Unix(): {Seeing: 2, Transparency: 8},
@@ -474,16 +474,19 @@ func TestMutBuildSky(t *testing.T) {
 			t.Errorf("ext/moonlight at %d", i)
 		}
 	}
-	// Weather: 18:30-18:59 cloud 50 % (0.5); 19:00-19:59 spread 2.5 °C
-	// (0.85), gust 30 (0.75), 0.05 mm rain (0.5); 20:00-20:59 0.2 mm rain
-	// (0); 21:00-21:30 none: the covered minutes' mean
-	// (30·0.5 + 60·0.31875)/150 = 0.2275. Transparency: 7Timer's 18:00
-	// point (8: 0.5) up to 19:29, its 21:00 point (1: 1) from 19:30.
+	// Weather: cloud, spread and wind from the nearest hour, gusts and rain
+	// over the minute's own. 18:30-18:59: 19:00's clear sky and 2.5 °C
+	// spread (0.85), 18:00's gust 10 and unknown rain; 19:00-19:29: 0.85,
+	// gust 30 (0.75), 0.05 mm (0.5): 0.31875; 19:30-19:59: 20:00's 10 °C
+	// spread (1), 19:00's gust and rain: 0.375; 20:00-20:59 0.2 mm (0);
+	// 21:00-21:30 none: the covered minutes' mean
+	// (30·0.85 + 30·0.31875 + 30·0.375)/150 = 0.30875. Transparency:
+	// 7Timer's 18:00 point (8: 0.5) up to 19:29, its 21:00 point (1: 1) from 19:30.
 	q := func(i int) float64 { return s.Quality[i] }
 	for _, c := range []struct {
 		i    int
 		want float64
-	}{{0, 0.25}, {29, 0.25}, {30, 0.31875 * 0.5}, {59, 0.31875 * 0.5}, {60, 0.31875}, {89, 0.31875}, {90, 0}, {149, 0}, {150, 0.2275}, {180, 0.2275}} {
+	}{{0, 0.85 * 0.5}, {29, 0.85 * 0.5}, {30, 0.31875 * 0.5}, {59, 0.31875 * 0.5}, {60, 0.375}, {89, 0.375}, {90, 0}, {149, 0}, {150, 0.30875}, {180, 0.30875}} {
 		if math.Abs(q(c.i)-c.want) > 1e-9 {
 			t.Errorf("quality[%d] = %v, want %v", c.i, q(c.i), c.want)
 		}

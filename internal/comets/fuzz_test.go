@@ -20,7 +20,7 @@ func FuzzParseComets(f *testing.F) {
 			return
 		}
 		grid := []time.Time{time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), time.Date(2026, 1, 1, 0, 1, 0, 0, time.UTC)}
-		for _, tg := range els.Targets(grid, 99) {
+		for _, tg := range els.Targets(grid, 99, nil) {
 			if len(tg.Track) != len(grid) {
 				t.Fatalf("%s: track of %d for %d minutes", tg.Name, len(tg.Track), len(grid))
 			}

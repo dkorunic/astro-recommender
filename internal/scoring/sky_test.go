@@ -61,8 +61,10 @@ func TestBuildSkyPartialForecast(t *testing.T) {
 		start.Unix():                {Cloud: 100, Temp: 10, DewPoint: 0},
 		start.Add(time.Hour).Unix(): clear,
 	}
+	// Cloud is the nearest hour's: 20:30-20:59 is 21:00's clear sky, 21:30-21:59
+	// too (22:00 missing), so the covered minutes' mean is 90/120.
 	s := BuildSky(cfg, f, start, end)
-	for i, want := range map[int]float64{0: 0, 60: 1, 120: 0.5, 179: 0.5} {
+	for i, want := range map[int]float64{0: 0, 29: 0, 30: 1, 60: 1, 120: 0.75, 179: 0.75} {
 		if got := s.Quality[i]; math.Abs(got-want) > 1e-9 {
 			t.Errorf("minute %d: quality %v, want %v", i, got, want)
 		}
@@ -233,6 +235,16 @@ func TestSkySeeingOrder(t *testing.T) {
 	} {
 		if s := BuildSky(mutCfg(), c.f, start, start.Add(time.Hour)); s.Seeing[0] != c.want {
 			t.Errorf("%s: seeing %v, want %v", name, s.Seeing[0], c.want)
+		}
+	}
+}
+
+// A forecast gust counts up to maxGustFactor times the mean wind: a
+// mountain grid point's 40 km/h gusts in a 5 km/h breeze are the model's.
+func TestGustCap(t *testing.T) {
+	for _, c := range [][3]float64{{40, 5, 15}, {30, 15, 30}, {0, 10, 0}, {25, 0, 0}} {
+		if got := gust(c[0], c[1]); got != c[2] {
+			t.Errorf("gust(%v, %v) = %v, want %v", c[0], c[1], got, c[2])
 		}
 	}
 }

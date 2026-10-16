@@ -223,6 +223,7 @@
   name: "Gum 27"
   ra: "09 27 03.0"
   size: 2.0
+  haflux: -10.55
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-57 56 00.0"
@@ -399,6 +400,7 @@
   name: "Gum 47"
   ra: "13 33 33.0"
   size: 3.0
+  haflux: -9.93
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-62 35 00.0"

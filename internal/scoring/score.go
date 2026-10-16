@@ -592,28 +592,35 @@ func (b beam) through(nm float64, band [2]float64) float64 {
 	return max(0, to-from) / (1 - e2)
 }
 
-// lineV is the V band's transmission at each line, how much of it a V
-// surface brightness measures: Bessell (1990)'s curve, linear between its
-// 10 nm points, [S II] the doublet's mean. V straddles [O III] and misses Hα.
-var lineV = [catalog.NumLines]float64{catalog.Ha: 0.0324, catalog.OIII: 0.4805, catalog.SII: 0.0161, catalog.Hb: 0.1111, catalog.NII6548: 0.0354, catalog.NII6583: 0.0284, catalog.OIII4959: 0.3370}
-
 // vContinuum (mag) is the share of an emission nebula's catalogued V light
 // that is not its lines (the stars inside it, scattered continuum), fitted by
-// scripts/calibrate_lines.py: the median over 16 nebulae of 30' and more of
-// Finkbeiner (2003)'s Hα map against their lines derived from V by lineV
-// (interquartile range 0.23-1.90 mag).
-const vContinuum = 0.96
+// scripts/calibrate_lines.py: the median over 15 nebulae of 30' and more of
+// Finkbeiner (2003)'s Hα map against their lines derived from V by catalog.LineV
+// (interquartile range 0.22-1.92 mag).
+const vContinuum = 0.99
 
 // lightNL returns the light in nanoLamberts of tg at V surface brightness
 // sb: a continuum's is its V; an emission-line target's is its lines, which
-// V measures only as far as its passband reaches them (lineV) less what of
-// it is continuum (vContinuum): 1.66 mag brighter than V for an H II region,
-// 0.39 for a planetary, whose [O III] V holds.
+// V measures only as far as its passband reaches them (catalog.LineV) less what of
+// it is continuum (vContinuum): 1.63 mag brighter than V for an H II region,
+// 0.36 for a planetary, whose [O III] V holds. A surface brightness from a
+// measured line flux (catalog.Target.FluxSB) holds no stars and was summed
+// in photons, so it is undone exactly: V's photon-weighted share of the
+// lines, no vContinuum.
 func lightNL(tg catalog.Target, sb float64) float64 {
 	nl := atmos.NanoLamberts(sb)
+	if _, ok := tg.FluxSB(); ok {
+		var through, all float64
+		for l, w := range tg.Lines() {
+			through += w * catalog.LineNM[l] * catalog.LineV[l]
+			all += w * catalog.LineNM[l]
+		}
+
+		return nl * all / through
+	}
 	var fv float64
 	for l, w := range tg.Lines() {
-		fv += w * lineV[l]
+		fv += w * catalog.LineV[l]
 	}
 	if fv == 0 {
 		return nl

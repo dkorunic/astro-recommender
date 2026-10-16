@@ -2726,6 +2726,7 @@
   name: "NGC 246"
   ra: "00 47 03.36"
   size: 4.08
+  haflux: -10.07
   type: "Planetary Nebula"
 - bmag: 9.67
   bsurfbr: 23.79
@@ -7289,6 +7290,7 @@
   name: "NGC 650"
   ra: "01 42 19.69"
   size: 1.12
+  haflux: -10.19
   type: "Planetary Nebula"
 - constellation: "Perseus"
   dec: "+51 34 31.7"
@@ -15356,6 +15358,7 @@
   name: "NGC 1360"
   ra: "03 33 14.65"
   size: 6.42
+  haflux: -9.78
   type: "Planetary Nebula"
 - bmag: 14.68
   bsurfbr: 23.77
@@ -17327,6 +17330,7 @@
   name: "NGC 1535"
   ra: "04 14 15.77"
   size: 0.85
+  haflux: -9.95
   type: "Planetary Nebula"
 - bmag: 13.53
   bsurfbr: 23.11
@@ -22209,6 +22213,7 @@
   name: "NGC 2022"
   ra: "05 42 06.21"
   size: 0.32
+  haflux: -10.61
   type: "Planetary Nebula"
 - constellation: "Orion"
   dec: "-02 15 32.5"
@@ -24348,6 +24353,7 @@
   name: "NGC 2242"
   ra: "06 34 07.24"
   size: 0.45
+  haflux: -11.58
   type: "Planetary Nebula"
 - bmag: 10.12
   constellation: "Canis Major"
@@ -26357,6 +26363,7 @@
   name: "NGC 2438"
   ra: "07 41 50.39"
   size: 1.07
+  haflux: -10.39
   type: "Planetary Nebula"
 - bmag: 7.31
   constellation: "Puppis"
@@ -26375,6 +26382,7 @@
   name: "NGC 2440"
   ra: "07 41 55.36"
   size: 0.27
+  haflux: -9.86
   type: "Planetary Nebula"
 - bmag: 13.00
   bsurfbr: 23.16
@@ -26496,6 +26504,7 @@
   name: "NGC 2452"
   ra: "07 47 26.37"
   size: 0.32
+  haflux: -10.80
   type: "Planetary Nebula"
 - bmag: 8.39
   constellation: "Puppis"
@@ -28208,6 +28217,7 @@
   name: "NGC 2610"
   ra: "08 33 23.40"
   size: 0.63
+  haflux: -10.84
   type: "Planetary Nebula"
 - bmag: 15.28
   bsurfbr: 23.27
@@ -30284,6 +30294,7 @@
   name: "NGC 2792"
   ra: "09 12 26.57"
   size: 0.22
+  haflux: -10.66
   type: "Planetary Nebula"
 - bmag: 13.39
   bsurfbr: 22.21
@@ -30580,6 +30591,7 @@
   name: "NGC 2818"
   ra: "09 16 01.50"
   size: 0.83
+  haflux: -10.73
   type: "Planetary Nebula"
 - bmag: 12.50
   constellation: "Pyxis"
@@ -31143,6 +31155,7 @@
   name: "NGC 2867"
   ra: "09 21 24.97"
   size: 0.23
+  haflux: -9.97
   type: "Planetary Nebula"
 - bmag: 15.24
   bsurfbr: 24.23
@@ -31496,6 +31509,7 @@
   name: "NGC 2899"
   ra: "09 27 02.96"
   size: 1.50
+  haflux: -10.55
   type: "Planetary Nebula"
 - bmag: 14.55
   bsurfbr: 23.22
@@ -34140,6 +34154,7 @@
   name: "NGC 3132"
   ra: "10 07 01.73"
   size: 0.50
+  haflux: -9.84
   type: "Planetary Nebula"
 - bmag: 15.73
   constellation: "Hydra"
@@ -34840,6 +34855,7 @@
   name: "NGC 3195"
   ra: "10 09 20.98"
   size: 0.70
+  haflux: -10.45
   type: "Planetary Nebula"
 - bmag: 16.08
   bsurfbr: 23.30
@@ -35008,6 +35024,7 @@
   name: "NGC 3211"
   ra: "10 17 50.51"
   size: 0.27
+  haflux: -10.54
   type: "Planetary Nebula"
 - bmag: 14.32
   bsurfbr: 22.72
@@ -35335,6 +35352,7 @@
   name: "NGC 3242"
   ra: "10 24 46.08"
   size: 0.42
+  haflux: -9.31
   type: "Planetary Nebula"
 - bmag: 14.47
   bsurfbr: 24.30
@@ -40844,6 +40862,7 @@
   name: "NGC 3699"
   ra: "11 27 57.15"
   size: 0.75
+  haflux: -10.74
   type: "Planetary Nebula"
 - bmag: 14.87
   bsurfbr: 23.36
@@ -43357,6 +43376,7 @@
   name: "NGC 3918"
   ra: "11 50 17.95"
   size: 0.32
+  haflux: -9.52
   type: "Planetary Nebula"
 - bmag: 14.39
   bsurfbr: 23.16
@@ -45130,6 +45150,7 @@
   name: "NGC 4071"
   ra: "12 04 15.77"
   size: 1.05
+  haflux: -10.95
   type: "Planetary Nebula"
 - bmag: 15.54
   bsurfbr: 22.62
@@ -48381,6 +48402,7 @@
   name: "NGC 4361"
   ra: "12 24 30.76"
   size: 1.05
+  haflux: -10.09
   type: "Planetary Nebula"
 - bmag: 14.96
   bsurfbr: 23.98
@@ -58206,6 +58228,7 @@
   name: "NGC 5189"
   ra: "13 33 32.91"
   size: 2.33
+  haflux: -9.93
   type: "Planetary Nebula"
 - bmag: 13.90
   bsurfbr: 22.59
@@ -59582,6 +59605,7 @@
   name: "NGC 5307"
   ra: "13 51 03.30"
   size: 0.21
+  haflux: -10.62
   type: "Planetary Nebula"
 - bmag: 12.24
   bsurfbr: 24.00
@@ -59668,6 +59692,7 @@
   name: "NGC 5315"
   ra: "13 53 56.89"
   size: 0.10
+  haflux: -9.74
   type: "Planetary Nebula"
 - bmag: 6.08
   constellation: "Centaurus"
@@ -65593,6 +65618,7 @@
   name: "NGC 5844"
   ra: "15 10 40.95"
   size: 0.88
+  haflux: -10.86
   type: "Planetary Nebula"
 - bmag: 13.45
   bsurfbr: 22.30
@@ -65940,6 +65966,7 @@
   name: "NGC 5873"
   ra: "15 12 50.80"
   size: 0.12
+  haflux: -10.59
   type: "Planetary Nebula"
 - bmag: 13.16
   bsurfbr: 23.45
@@ -66036,6 +66063,7 @@
   name: "NGC 5882"
   ra: "15 16 50.00"
   size: 0.23
+  haflux: -9.78
   type: "Planetary Nebula"
 - bmag: 14.54
   bsurfbr: 23.78
@@ -67149,6 +67177,7 @@
   name: "NGC 5979"
   ra: "15 47 41.06"
   size: 0.13
+  haflux: -10.66
   type: "Planetary Nebula"
 - bmag: 13.21
   bsurfbr: 22.32
@@ -67655,6 +67684,7 @@
   name: "NGC 6026"
   ra: "16 01 20.91"
   size: 0.67
+  haflux: -11.02
   type: "Planetary Nebula"
 - bmag: 15.28
   bsurfbr: 25.05
@@ -68244,6 +68274,7 @@
   name: "NGC 6072"
   ra: "16 12 58.20"
   size: 1.17
+  haflux: -10.44
   type: "Planetary Nebula"
 - bmag: 14.30
   bsurfbr: 23.05
@@ -69205,6 +69236,7 @@
   name: "NGC 6153"
   ra: "16 31 30.64"
   size: 0.40
+  haflux: -9.96
   type: "Planetary Nebula"
 - bmag: 13.87
   bsurfbr: 23.28
@@ -70861,6 +70893,7 @@
   name: "NGC 6302"
   ra: "17 13 44.63"
   size: 0.74
+  haflux: -9.53
   type: "Planetary Nebula"
 - bmag: 15.02
   bsurfbr: 24.57
@@ -70934,6 +70967,7 @@
   name: "NGC 6309"
   ra: "17 14 04.30"
   size: 0.26
+  haflux: -10.55
   type: "Planetary Nebula"
 - bmag: 13.79
   bsurfbr: 22.73
@@ -71110,6 +71144,7 @@
   name: "NGC 6326"
   ra: "17 20 46.36"
   size: 0.21
+  haflux: -10.56
   type: "Planetary Nebula"
 - bmag: 15.72
   bsurfbr: 23.42
@@ -71220,6 +71255,7 @@
   name: "NGC 6337"
   ra: "17 22 15.61"
   size: 0.85
+  haflux: -10.46
   type: "Planetary Nebula"
 - bmag: 13.47
   bsurfbr: 23.38
@@ -71580,6 +71616,7 @@
   name: "NGC 6369"
   ra: "17 29 20.50"
   size: 0.63
+  haflux: -10.10
   type: "Planetary Nebula"
 - bmag: 14.13
   bsurfbr: 23.62
@@ -72298,6 +72335,7 @@
   name: "NGC 6439"
   ra: "17 48 19.80"
   size: 0.08
+  haflux: -10.99
   type: "Planetary Nebula"
 - bmag: 12.01
   constellation: "Sagittarius"
@@ -72355,6 +72393,7 @@
   name: "NGC 6445"
   ra: "17 49 15.06"
   size: 0.55
+  haflux: -10.24
   type: "Planetary Nebula"
 - bmag: 15.48
   bsurfbr: 22.91
@@ -73296,6 +73335,7 @@
   name: "NGC 6537"
   ra: "18 05 13.10"
   size: 0.17
+  haflux: -10.47
   type: "Planetary Nebula"
 - bmag: 14.05
   bsurfbr: 22.20
@@ -73352,6 +73392,7 @@
   name: "NGC 6543"
   ra: "17 58 33.39"
   size: 0.90
+  haflux: -9.10
   type: "Planetary Nebula"
 - bmag: 11.36
   constellation: "Sagittarius"
@@ -73546,6 +73587,7 @@
   name: "NGC 6563"
   ra: "18 12 02.50"
   size: 0.79
+  haflux: -10.48
   type: "Planetary Nebula"
 - constellation: "Hercules"
   dec: "+17 23 40.7"
@@ -73563,6 +73605,7 @@
   name: "NGC 6565"
   ra: "18 11 52.60"
   size: 0.23
+  haflux: -10.65
   type: "Planetary Nebula"
 - bmag: 15.47
   bsurfbr: 23.50
@@ -73583,6 +73626,7 @@
   name: "NGC 6567"
   ra: "18 13 45.20"
   size: 0.13
+  haflux: -10.33
   type: "Planetary Nebula"
 - constellation: "Sagittarius"
   dec: "-21 37 40.9"
@@ -73631,6 +73675,7 @@
   name: "NGC 6572"
   ra: "18 12 06.21"
   size: 0.18
+  haflux: -9.23
   type: "Planetary Nebula"
 - constellation: "Sagittarius"
   dec: "-22 10 27.7"
@@ -73692,6 +73737,7 @@
   name: "NGC 6578"
   ra: "18 16 16.50"
   size: 0.14
+  haflux: -10.65
   type: "Planetary Nebula"
 - bmag: 14.28
   bsurfbr: 23.43
@@ -74134,6 +74180,7 @@
   name: "NGC 6620"
   ra: "18 22 54.15"
   size: 0.13
+  haflux: -11.10
   type: "Planetary Nebula"
 - bmag: 13.41
   bsurfbr: 23.18
@@ -74239,6 +74286,7 @@
   name: "NGC 6629"
   ra: "18 25 42.46"
   size: 0.26
+  haflux: -10.17
   type: "Planetary Nebula"
 - bmag: 14.60
   bsurfbr: 22.88
@@ -74407,6 +74455,7 @@
   name: "NGC 6644"
   ra: "18 32 34.73"
   size: 0.04
+  haflux: -10.45
   type: "Planetary Nebula"
 - constellation: "Sagittarius"
   dec: "-16 53 02.0"
@@ -75218,6 +75267,7 @@
   name: "NGC 6720"
   ra: "18 53 35.01"
   size: 1.27
+  haflux: -9.56
   type: "Planetary Nebula"
 - bmag: 13.08
   bsurfbr: 23.33
@@ -75558,6 +75608,7 @@
   name: "NGC 6751"
   ra: "19 05 55.55"
   size: 0.34
+  haflux: -10.64
   type: "Planetary Nebula"
 - bmag: 6.96
   constellation: "Pavo"
@@ -75699,6 +75750,7 @@
   name: "NGC 6765"
   ra: "19 11 06.50"
   size: 0.67
+  haflux: -11.30
   type: "Planetary Nebula"
 - constellation: "Cygnus"
   dec: "+46 27 39.0"
@@ -75768,6 +75820,7 @@
   name: "NGC 6772"
   ra: "19 14 36.30"
   size: 1.07
+  haflux: -10.64
   type: "Planetary Nebula"
 - constellation: "Aquila"
   dec: "+04 51 23.6"
@@ -75831,6 +75884,7 @@
   name: "NGC 6778"
   ra: "19 18 24.85"
   size: 0.26
+  haflux: -10.57
   type: "Planetary Nebula"
 - bmag: 8.90
   constellation: "Lyra"
@@ -75860,6 +75914,7 @@
   name: "NGC 6781"
   ra: "19 18 28.26"
   size: 1.80
+  haflux: -10.10
   type: "Planetary Nebula"
 - bmag: 12.69
   bsurfbr: 23.13
@@ -75965,6 +76020,7 @@
   name: "NGC 6790"
   ra: "19 22 56.90"
   size: 0.12
+  haflux: -10.25
   type: "Planetary Nebula"
 - bmag: 10.52
   constellation: "Lyra"
@@ -76092,6 +76148,7 @@
   name: "NGC 6803"
   ra: "19 31 16.45"
   size: 0.09
+  haflux: -10.54
   type: "Planetary Nebula"
 - bmag: 12.20
   constellation: "Aquila"
@@ -76101,6 +76158,7 @@
   name: "NGC 6804"
   ra: "19 31 35.39"
   size: 0.58
+  haflux: -10.61
   type: "Planetary Nebula"
 - bmag: 14.31
   bsurfbr: 23.49
@@ -76132,6 +76190,7 @@
   name: "NGC 6807"
   ra: "19 34 33.50"
   size: 0.03
+  haflux: -10.85
   type: "Planetary Nebula"
 - bmag: 13.61
   bsurfbr: 21.33
@@ -76259,6 +76318,7 @@
   name: "NGC 6818"
   ra: "19 43 57.73"
   size: 0.77
+  haflux: -9.95
   type: "Planetary Nebula"
 - bmag: 8.21
   constellation: "Cygnus"
@@ -76652,6 +76712,7 @@
   name: "NGC 6852"
   ra: "20 00 39.16"
   size: 0.47
+  haflux: -11.50
   type: "Planetary Nebula"
 - bmag: 7.60
   constellation: "Vulpecula"
@@ -77006,6 +77067,7 @@
   name: "NGC 6879"
   ra: "20 10 26.60"
   size: 0.08
+  haflux: -11.03
   type: "Planetary Nebula"
 - bmag: 13.25
   bsurfbr: 23.90
@@ -77051,6 +77113,7 @@
   name: "NGC 6884"
   ra: "20 10 23.70"
   size: 0.10
+  haflux: -10.57
   type: "Planetary Nebula"
 - constellation: "Vulpecula"
   dec: "+26 29 19.7"
@@ -77068,6 +77131,7 @@
   name: "NGC 6886"
   ra: "20 12 42.90"
   size: 0.09
+  haflux: -10.63
   type: "Planetary Nebula"
 - bmag: 12.82
   bsurfbr: 23.44
@@ -77120,6 +77184,7 @@
   name: "NGC 6891"
   ra: "20 15 08.84"
   size: 0.25
+  haflux: -10.15
   type: "Planetary Nebula"
 - constellation: "Sagitta"
   dec: "+18 01 10.8"
@@ -77280,6 +77345,7 @@
   name: "NGC 6905"
   ra: "20 22 22.99"
   size: 0.67
+  haflux: -10.48
   type: "Planetary Nebula"
 - bmag: 13.39
   bsurfbr: 21.74
@@ -77884,10 +77950,9 @@
   dec: "+30 35 42.5"
   description: "Veil Nebula, Filamentary Nebula, Western Veil"
   mag: -9999
-  minor: 160.00
   name: "NGC 6960"
   ra: "20 45 58.18"
-  size: 210.00
+  size: 70.00
   type: "Supernova Remnant"
 - bmag: 15.12
   bsurfbr: 23.44
@@ -78390,6 +78455,7 @@
   name: "NGC 7009"
   ra: "21 04 10.79"
   size: 0.70
+  haflux: -9.29
   type: "Planetary Nebula"
 - bmag: 14.77
   bsurfbr: 24.96
@@ -78566,6 +78632,7 @@
   name: "NGC 7026"
   ra: "21 06 18.48"
   size: 0.33
+  haflux: -10.16
   type: "Planetary Nebula"
 - bmag: 10.40
   constellation: "Cygnus"
@@ -78575,6 +78642,7 @@
   name: "NGC 7027"
   ra: "21 07 01.53"
   size: 0.23
+  haflux: -9.29
   type: "Planetary Nebula"
 - bmag: 14.78
   bsurfbr: 21.82
@@ -78809,6 +78877,7 @@
   name: "NGC 7048"
   ra: "21 14 15.20"
   size: 1.02
+  haflux: -10.85
   type: "Planetary Nebula"
 - bmag: 11.67
   bsurfbr: 23.38
@@ -79306,6 +79375,7 @@
   name: "NGC 7094"
   ra: "21 36 52.97"
   size: 1.65
+  haflux: -11.23
   type: "Planetary Nebula"
 - bmag: 12.27
   bsurfbr: 23.11
@@ -81595,6 +81665,7 @@
   name: "NGC 7293"
   ra: "22 29 38.57"
   size: 16.33
+  haflux: -8.86
   type: "Planetary Nebula"
 - bmag: 13.57
   bsurfbr: 23.89
@@ -82269,6 +82340,7 @@
   name: "NGC 7354"
   ra: "22 40 19.61"
   size: 0.38
+  haflux: -10.49
   type: "Planetary Nebula"
 - bmag: 15.09
   bsurfbr: 23.29

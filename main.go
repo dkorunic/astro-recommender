@@ -83,6 +83,7 @@ func main() {
 		place      string
 		cometEls   comets.Elements
 		cometErr   error
+		cometSeen  comets.Observed
 		sqmVal     float64
 		sqmSource  string
 		solarSFU   float64
@@ -112,6 +113,12 @@ func main() {
 				fmt.Fprintln(os.Stderr, "warning: no comets:", cometErr)
 			}
 		})
+		wg.Go(func() {
+			var err error
+			if cometSeen, err = comets.FetchObserved(ctx, start); err != nil {
+				fmt.Fprintln(os.Stderr, "warning: comet magnitudes from MPC's elements, not observations:", err)
+			}
+		})
 	}
 	// A measured -sqm already holds its night's airglow; any other zenith
 	// has 22.0's natural sky, solar minimum's, which the flux scales.
@@ -131,7 +138,7 @@ func main() {
 
 	s := scoring.BuildSky(&cfg, forecast, start, end)
 	s.Night = [2]time.Time{duskT, dawnT}
-	cometList := cometEls.Targets(s.Grid, cfg.CometMag)
+	cometList := cometEls.Targets(s.Grid, cfg.CometMag, cometSeen)
 	s.Comets, s.CometsLost = len(cometList), cometErr != nil
 	targets = append(targets, cometList...)
 	results := scoring.Score(&cfg, &s, targets, cfg.Plan > 0)

@@ -97,6 +97,7 @@
   name: NGC 6781
   ra: 19 18.5
   size: 1.9
+  haflux: -10.10
   type: Planetary Nebula
 - constellation: Aquila
   dec: +09 14
@@ -105,6 +106,7 @@
   name: NGC 6804
   ra: 19 31.6
   size: 1.05
+  haflux: -10.61
   type: Planetary Nebula
 - constellation: Aquarius
   dec: -12 32
@@ -122,6 +124,7 @@
   ra: 21 04.2
   size: 0.47
   minor: 0.35
+  haflux: -9.29
   type: Planetary Nebula
 - constellation: Aquarius
   dec: -00 49
@@ -138,6 +141,7 @@
   name: NGC 7293
   ra: 22 29.6
   size: 16.0
+  haflux: -8.86
   type: Planetary Nebula
 - constellation: Aquarius
   dec: -08 29
@@ -737,6 +741,7 @@
   name: NGC 246
   ra: 00 47.1
   size: 4.0
+  haflux: -10.07
   type: Planetary Nebula
 - constellation: Cetus
   dec: -20 46
@@ -1231,6 +1236,7 @@
   name: NGC 4361
   ra: 12 24.5
   size: 1.33
+  haflux: -10.09
   type: Planetary Nebula
 - constellation: Corvus
   dec: -12 34
@@ -1496,11 +1502,11 @@
   minor: 0.8
   type: Open Cluster
 - constellation: Cygnus
-  dec: +38 19
+  dec: +38 21 18
   description: The Crescent Nebula/The Ear Nebula
   mag: -9999
   name: NGC 6888
-  ra: 20 12.8
+  ra: 20 12 06.6
   size: 20.0
   minor: 10.0
   type: Wolf-Rayet Nebula
@@ -1543,6 +1549,7 @@
   name: NGC 7026
   ra: 21 06.3
   size: 0.42
+  haflux: -10.16
   type: Planetary Nebula
 - constellation: Cygnus
   dec: +42 14
@@ -1551,6 +1558,7 @@
   name: NGC 7027
   ra: 21 07.0
   size: 0.3
+  haflux: -9.29
   type: Planetary Nebula
 - constellation: Cygnus
   dec: +42 29
@@ -1591,6 +1599,7 @@
   name: NGC 6891
   ra: 20 15.1
   size: 0.26
+  haflux: -10.15
   type: Planetary Nebula
 - constellation: Delphinus
   dec: +20 06
@@ -1599,6 +1608,7 @@
   name: NGC 6905
   ra: 20 22.4
   size: 0.73
+  haflux: -10.48
   type: Planetary Nebula
 - constellation: Delphinus
   dec: +07 24
@@ -1677,6 +1687,7 @@
   name: NGC 6543
   ra: 17 58.6
   size: 0.37
+  haflux: -9.10
   type: Planetary Nebula
 - constellation: Draco
   dec: +74 34
@@ -1834,6 +1845,7 @@
   name: NGC 1535
   ra: 04 14.3
   size: 0.33
+  haflux: -9.95
   type: Planetary Nebula
 - constellation: Fornax
   dec: -37 12
@@ -1853,6 +1865,7 @@
   name: NGC 1360
   ra: 03 33.2
   size: 6.0
+  haflux: -9.78
   type: Planetary Nebula
 - constellation: Fornax
   dec: -36 08
@@ -1979,6 +1992,7 @@
   name: IC4593
   ra: 16 11.7
   size: 0.21
+  haflux: -10.07
   type: Planetary Nebula
 - constellation: Hercules
   dec: +36 28
@@ -2030,6 +2044,7 @@
   name: NGC 2610
   ra: 08 33.4
   size: 0.83
+  haflux: -10.84
   type: Planetary Nebula
 - constellation: Hydra
   dec: -23 38
@@ -2069,6 +2084,7 @@
   name: NGC 3242
   ra: 10 24.8
   size: 0.67
+  haflux: -9.31
   type: Planetary Nebula
 - constellation: Hydra
   dec: -32 49
@@ -2279,6 +2295,7 @@
   name: IC418
   ra: 05 27.5
   size: 0.23
+  haflux: -9.02
   type: Planetary Nebula
 - constellation: Lepus
   dec: -21 57
@@ -2374,6 +2391,7 @@
   name: NGC 6720
   ra: 18 53.6
   size: 1.43
+  haflux: -9.56
   type: Planetary Nebula
 - constellation: Lyra
   dec: +30 11
@@ -2584,6 +2602,7 @@
   name: NGC 6309
   ra: 17 14.1
   size: 0.33
+  haflux: -10.55
   type: Planetary Nebula
 - constellation: Ophiucus
   dec: -28 08
@@ -2616,6 +2635,7 @@
   name: NGC 6369
   ra: 17 29.3
   size: 0.5
+  haflux: -10.10
   type: Planetary Nebula
 - constellation: Ophiucus
   dec: -03 15
@@ -2640,6 +2660,7 @@
   name: NGC 6572
   ra: 18 12.1
   size: 0.25
+  haflux: -9.23
   type: Planetary Nebula
 - constellation: Ophiucus
   dec: +06 30
@@ -2722,6 +2743,7 @@
   name: NGC 2022
   ra: 05 42.1
   size: 0.45
+  haflux: -10.61
   type: Planetary Nebula
 - constellation: Orion
   dec: +00 05
@@ -2803,6 +2825,7 @@
   name: NGC 650/651
   ra: 01 42.3
   size: 2.7
+  haflux: -10.19
   type: Planetary Nebula
 - constellation: Perseus
   dec: +57 08
@@ -3076,6 +3099,7 @@
   name: NGC 2438
   ra: 07 41.8
   size: 1.08
+  haflux: -10.39
   type: Planetary Nebula
 - constellation: Puppis
   dec: -18 13
@@ -3084,6 +3108,7 @@
   name: NGC 2440
   ra: 07 41.9
   size: 0.9
+  haflux: -9.86
   type: Planetary Nebula
 - constellation: Puppis
   dec: -23 51
@@ -3108,6 +3133,7 @@
   name: NGC 2452
   ra: 07 47.4
   size: 0.5
+  haflux: -10.80
   type: Planetary Nebula
 - constellation: Puppis
   dec: -27 12
@@ -3307,6 +3333,7 @@
   name: NGC 6302
   ra: 17 13.7
   size: 1.2
+  haflux: -9.53
   type: Planetary Nebula
 - constellation: Scorpius
   dec: -32 35
@@ -3495,6 +3522,7 @@
   name: NGC 6445
   ra: 17 49.3
   size: 0.58
+  haflux: -10.24
   type: Planetary Nebula
 - constellation: Sagittarius
   dec: -19 01
@@ -3616,6 +3644,7 @@
   name: NGC 6563
   ra: 18 12.0
   size: 0.9
+  haflux: -10.48
   type: Planetary Nebula
 - constellation: Sagittarius
   dec: -18 14
@@ -3680,6 +3709,7 @@
   name: NGC 6629
   ra: 18 25.7
   size: 0.27
+  haflux: -10.17
   type: Planetary Nebula
 - constellation: Sagittarius
   dec: -25 30
@@ -3744,6 +3774,7 @@
   name: IC4776
   ra: 18 45.8
   size: 0.13
+  haflux: -10.26
   type: Planetary Nebula
 - constellation: Sagittarius
   dec: -30 29
@@ -3784,6 +3815,7 @@
   name: NGC 6818
   ra: 19 44.0
   size: 0.37
+  haflux: -9.95
   type: Planetary Nebula
 - constellation: Sagittarius
   dec: -14 48
@@ -4513,11 +4545,11 @@
   size: 5.0
   type: Open Cluster
 - constellation: Vulpecula
-  dec: +23 17
+  dec: +23 05 15
   description: LBN135w/6823 Cluster
   mag: 15.0
   name: NGC 6820
-  ra: 19 43.1
+  ra: 19 42 27.9
   size: 40.0
   type: CL+N
 - constellation: Vulpecula

@@ -39,6 +39,7 @@ var errComets = errors.New("mpc comets")
 type comet struct {
 	perihelion time.Time // T, TT treated as UT
 	name       string
+	key        string  // the MPC designation COBS spells: "10P", else the packed provisional "K22E020"
 	q, e       float64 // perihelion distance (AU), eccentricity
 	peri, node float64 // argument of perihelion, longitude of ascending node (rad)
 	incl       float64 // inclination (rad)
@@ -57,7 +58,9 @@ func Fetch(ctx context.Context) (Elements, error) {
 
 // Targets returns the comets brighter than maxMag at mid-window as
 // targets with a position track: Track[i] is the position at grid[i].
-func (e Elements) Targets(grid []time.Time, maxMag float64) []catalog.Target {
+// Observations from FetchObserved (nil for none) move a comet's magnitude
+// by their median offset from the elements' (comet.offset).
+func (e Elements) Targets(grid []time.Time, maxMag float64, seen Observed) []catalog.Target {
 	mid := grid[len(grid)/2]
 	var out []catalog.Target
 	for _, c := range e {
@@ -66,19 +69,35 @@ func (e Elements) Targets(grid []time.Time, maxMag float64) []catalog.Target {
 			continue
 		}
 		mag := c.h + 5*math.Log10(delta) + 2.5*c.k*math.Log10(r)
+		basis := ""
+		if off, ok := c.offset(seen); ok {
+			mag += off
+			basis = " (COBS)"
+		}
 		if mag > maxMag {
 			continue
 		}
 		tg := catalog.Target{Mag: mag, Type: "Comet", Constellation: constellation.Of(ra, dec), Track: make([][2]float64, len(grid))}
 		tg.Name, tg.Description, _ = strings.Cut(c.name, " (")
 		tg.Description = strings.TrimSuffix(tg.Description, ")")
-		tg.Description = strings.TrimSpace(fmt.Sprintf("%s mag %.1f, r %.2f AU, Δ %.2f AU", tg.Description, mag, r, delta))
+		tg.Description = strings.TrimSpace(fmt.Sprintf("%s mag %.1f%s, r %.2f AU, Δ %.2f AU", tg.Description, mag, basis, r, delta))
 		if c.track(grid, tg.Track) {
 			out = append(out, tg)
 		}
 	}
 
 	return out
+}
+
+// mag returns the elements' total magnitude at t, false where the orbit
+// cannot be solved.
+func (c *comet) mag(t time.Time) (float64, bool) {
+	ra, _, r, delta := c.position(t)
+	if math.IsNaN(ra) {
+		return 0, false
+	}
+
+	return c.h + 5*math.Log10(delta) + 2.5*c.k*math.Log10(r), true
 }
 
 // track fills track[i] with the position of date at grid[i]. It reports false
@@ -134,8 +153,14 @@ func parseComets(data []byte) (Elements, error) {
 		t := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC).
 			Add(time.Duration((day - 1) * 24 * float64(time.Hour)))
 		name := sanitize.Text(strings.TrimSpace(l[102:min(len(l), 158)]))
+		// Columns 1-4 the periodic number, 5 the orbit type, 6-12 the packed
+		// provisional designation.
+		key := strings.TrimSpace(l[5:12])
+		if n, err := strconv.Atoi(strings.TrimSpace(l[0:4])); err == nil && n > 0 {
+			key = strconv.Itoa(n) + l[4:5]
+		}
 		out = append(out, comet{
-			name: name, perihelion: t, q: q, e: e,
+			name: name, key: key, perihelion: t, q: q, e: e,
 			peri: peri * deg, node: node * deg, incl: incl * deg, h: h, k: k,
 		})
 	}

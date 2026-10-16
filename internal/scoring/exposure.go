@@ -40,12 +40,6 @@ func levelScale(tg catalog.Target, sb, refNL float64) float64 {
 	return min(1, nl/refNL)
 }
 
-// photonsV0 is a V = 0 source's photon flux over the V band, photons s⁻¹
-// cm⁻²: 1005 per Å at 550 nm (Bessell 1998) over atmos.VWidth. The sky
-// model's nanoLamberts are V-band, so x nL is photonsV0·x/NanoLamberts(0)
-// per arcsec².
-const photonsV0 = 1005 * 10 * atmos.VWidth
-
 // lineQE is a mono sensor's response at each line relative to its peak,
 // read off Sony's curve (a colour one's is config.Response, the -camera
 // preset's or the IMX678's); channelShare is each colour channel's share of
@@ -177,7 +171,7 @@ type channel struct {
 // none of its lines.
 // The channels overwrite dst's, so Score reuses each tally's across targets.
 func (c camera) channels(dst []channel, name string, width float64, lines [catalog.NumLines]float64, fp filterPass) []channel {
-	g := c.area * c.qe * c.omega * photonsV0 / atmos.NanoLamberts(0)
+	g := c.area * c.qe * c.omega * atmos.PhotonsV0 / atmos.NanoLamberts(0)
 	chans := dst[:0]
 	if c.mono {
 		chans = append(chans, channel{share: 1})

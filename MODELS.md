@@ -238,6 +238,8 @@ R = 1.00014 - 0.01671\cos g - 0.00014\cos 2g ,\qquad (X_\oplus, Y_\oplus) = -R\,
 m = H + 5\log_{10}\Delta + 2.5\,K\log_{10} r
 ```
 
+MPC fits H and K once over an apparition, and weeks later they run 1–4 magnitudes off what observers see (October 2026: 10P/Tempel 14.7 against an observed 10.2–11.8, 161P 9.7 against 10.6–11.3, 220P 14.9 against 12.4–13.5). So the [COBS][cobs] observations of the 30 days before the night move the law by their median offset from it at each observation (`comets.FetchObserved`, `comet.offset`), when a comet has at least three; the description then says `(COBS)`, and the three read 10.5, 11.4 and 12.9. COBS keys them by the MPC designation, `10P` or the packed provisional `K22E020`, which the elements' first twelve columns carry. COBS sends no CORS headers, so the browser keeps the elements' magnitudes.
+
 A comet has a separate position for every grid minute (`Target.Track`). It has no catalogue size or surface brightness, so the size limits and framing do not apply to it, and it is scored as sky-limited.
 
 ## Atmosphere and sky
@@ -378,14 +380,18 @@ The table's SKY column is this B (with the zodiacal and galactic light) converte
 
 What sky glow does to an extended object depends on how bright the object is **per square arcsecond**, not on its total magnitude ([SkEye's explanation][skeye]). Each target's V surface brightness S is taken from the first rule that applies:
 
+0. **Measured line flux.** A planetary nebula with an integrated Hα flux (`haflux`: Frew, Bojičić & Parker 2013, J/MNRAS/431/2, 1258 planetaries measured on SHASSA and VTSS plus 49 from the literature; observed, [N II] removed, not dereddened; `scripts/haflux.py` matches them by position, within max(1′, a quarter of the size), to 1499 entries over 14 lists) gets the V surface brightness of its lines (`catalog.Target.FluxSB`): the Hα flux over its Hα share gives every line's flux by the type's ratios, each line's photons through V (Bessell's curve at the line, `LineV`) over the ellipse of the axes, against a V = 0 source's photons. Exact but for the ratios. A faint planetary's catalogued magnitude is often its central star's: Abell 7 derived 30.2 from its 16.0, the flux gives 26.0; EGB 6 30.0 against 27.3. For the well-measured ones the two agree within about 0.6 mag (NGC 7293 21.9 against 21.3, M 57 19.2 against 18.3). Frew's tables miss many northern ones (M 27, M 97, NGC 7662, Jones-Emberson 1), which keep the rules below.
 1. **Measured V.** The Compendium's V mean surface brightness (`surfbr`). Exact.
 2. **Measured B, moved to V.** [OpenNGC][openngc]'s B mean surface brightness within the 25 mag/arcsec² isophote (`bsurfbr`), minus a colour. The colour is the object's own `B − V` when it lies in −0.3…1.5 (OpenNGC pairs inconsistent magnitudes for about 100 objects). Otherwise it is a typical colour for the kind of object, and the value is marked `~`:
 
    | Kind | typical B − V |
    |---|---|
    | galaxies, galaxy groups | 0.8 (median offset of Compendium V vs OpenNGC B over 723 shared galaxies) |
-   | emission-line objects | 0 |
+   | planetary nebulae | 0.7 |
+   | other emission-line objects | 0 |
    | everything else | 0.5 |
+
+   `TestTypicalBV` recomputes them as the median B − V of the lists' objects with both magnitudes (galaxies 0.77, planetaries 0.80 within the bounds above, the other emission-line objects 0.07, the rest 0.43); a planetary's [O III] sits in V, out of B, so the 0 it once had made a B-only planetary up to 0.9 mag too bright.
 
 3. **Derived from magnitude and size.** For single galaxies and nebulae only. Marked `~`. The integrated V magnitude m (or B minus the typical colour) is spread over a uniform ellipse of the major and minor axes (in arcminutes; a disc of the major axis when the minor is unknown):
 
@@ -433,8 +439,8 @@ Q = (1 - C)\cdot
 ```
 
 - **Dew risk**: the spread between temperature and dew point falling from 4 °C to 1 °C costs up to 30%.
-- **Gusts**: from 20 to 40 km/h cost up to half.
-- **Rain**: the hour's precipitation ramps Q down to 0 at 0.1 mm, whatever the cloud layers say; an unknown amount does nothing. Open-Meteo reports gusts and precipitation over the *preceding* hour, so each hour reads the next entry.
+- **Gusts**: from 20 to 40 km/h cost up to half, counted at most 3× the mean wind: Open-Meteo's hourly gust runs a median 2.5× the 10 m wind at lowland and Paranal points but 4.8× at La Palma's and 10.6× at Mauna Kea's, where the grid's gust parameterisation, not the summit's air, makes 30–50 km/h gusts in a 5–10 km/h breeze.
+- **Rain**: the hour's precipitation ramps Q down to 0 at 0.1 mm, whatever the cloud layers say; an unknown amount does nothing. Open-Meteo reports gusts and precipitation over the *preceding* hour, so each hour reads the next entry. Cloud, temperature, dew point, wind and the seeing estimate are the values at the hour, so a minute takes the nearest hour's (a front arriving at 21:00 counts from 20:30, not 21:00), gusts and rain its own hour's.
 - **Transparency**: [7Timer!][7timer]'s ASTRO product (1 best, 8 worst; 3-hourly, about 3 days ahead) scales Q from 1 down to 0.5, only for hours without a CAMS aerosol forecast (a fixed `-extinction`, a failed fetch): its class is mostly the same haze, which the extinction already charges, and counting both cost a clear La Palma night some 40% more subs.
 
 When a forecast covers only part of the window, the uncovered minutes get the **mean of the covered ones**. A perfect sky would favour targets that are up only then. With no forecast at all, Q = 1. Weather only weighs the score. UP and the observable runs stay purely geometric.
@@ -608,7 +614,7 @@ each choice (no filter, `W_sky`, and each passing filter, `W_filter`) summed ove
 S_{\text{lines}} = \frac{S_V}{f_V}\,10^{-0.4\,c},\qquad f_V = \sum_\ell s_\ell\,T_V(\lambda_\ell)
 ```
 
-with s_ℓ the line shares above and T_V Bessell's V curve at each line (`lineV`: Hα 0.032, [O III] 0.481 and 0.337 at 495.9 nm, [S II] 0.016, Hβ 0.111, [N II] 0.035 and 0.028): V straddles [O III] and misses Hα. c = 0.96 mag (`vContinuum`) is fitted by `scripts/calibrate_lines.py`: the median, over the 16 emission nebulae of at least 30′ in GaryImm, Messier, OpenNGC, OpenIC, Sharpless and Caldwell (exact duplicates once; the Hα map's beam is 6′), of S_lines' Hα share against [Finkbeiner (2003)][finkbeiner]'s full-sky Hα map (NASA SkyView's "H-Alpha Comp", in Rayleighs), averaged over each disc less the median of a ring from 1.25 to 2 radii (the Milky Way's diffuse Hα). Nebulae whose catalogued magnitude is a star's or cluster's ([above](#object-surface-brightness)) derive none, so they are not in it. Its interquartile range is 0.23–1.90 mag: one nebula's lines are good to a factor of about three to five. The map measures Hα alone, so the fit holds each nebula's Hα where it was before [N II] was counted (c was 0.93 then) and the [N II] comes on top. The lines are then 1.66 mag brighter than V for an H II region (taking V as all of the light, as before, ran 1.1–1.5 mag faint on every subset of the sample), 1.37 for a remnant, 0.81 for a Wolf-Rayet nebula and 0.39 for a planetary, whose [O III] V holds. The SB column still shows the V surface brightness.
+with s_ℓ the line shares above and T_V Bessell's V curve at each line (`catalog.LineV`: Hα 0.032, [O III] 0.481 and 0.337 at 495.9 nm, [S II] 0.016, Hβ 0.111, [N II] 0.035 and 0.028): V straddles [O III] and misses Hα. c = 0.99 mag (`vContinuum`) is fitted by `scripts/calibrate_lines.py`: the median, over the 15 emission nebulae of at least 30′ (not a planetary with a flux, which needs none) in GaryImm, Messier, OpenNGC, OpenIC, Sharpless and Caldwell (exact duplicates once; the Hα map's beam is 6′), of S_lines' Hα share against [Finkbeiner (2003)][finkbeiner]'s full-sky Hα map (NASA SkyView's "H-Alpha Comp", in Rayleighs), averaged over each disc less the median of a ring from 1.25 to 2 radii (the Milky Way's diffuse Hα). Nebulae whose catalogued magnitude is a star's or cluster's ([above](#object-surface-brightness)) derive none, so they are not in it. Its interquartile range is 0.22–1.92 mag: one nebula's lines are good to a factor of about three to five. The map measures Hα alone, so the fit holds each nebula's Hα where it was before [N II] was counted (c was 0.93 then) and the [N II] comes on top. The lines are then 1.63 mag brighter than V for an H II region (taking V as all of the light, as before, ran 1.1–1.5 mag faint on every subset of the sample), 1.34 for a remnant, 0.78 for a Wolf-Rayet nebula and 0.36 for a planetary, whose [O III] V holds. A surface brightness from a measured flux holds no stars, so `lightNL` undoes it exactly (in photons) without c. The SB column still shows the V surface brightness.
 
 ## Framing and mosaics
 
@@ -723,7 +729,7 @@ A level at or past the ceiling is never reached: SUBS shows `never`, JSON the ce
 
 **Seeing and the optics' blur.** A small object's light is spread over the star image, which dims its surface brightness. Each minute the FWHM is the seeing (the [upper-air estimate](#seeing-estimate), which matches DIMMs better, else 7Timer's class, else 2.5″), grown with the airmass as X^0.6, the optics' diffraction 1.03 λ/D at 550 nm (2.3″ at 50 mm, 0.8″ at 152 mm) and a pixel's width, in quadrature; a uniform ellipse of axes a × b keeps about ab/√((a² + F²)(b² + F²)) of its surface brightness, half for a disc as wide as F. Only objects under about an arcminute move: a 12″ planetary nebula needs more subs under 4″ seeing than under 1″ (`TestSubsResidualSeeing`), and nothing at the default `-min-px` does. For a mosaic the counts are per panel, and the subs that fit tonight are shared among the panels: the observable time, or the planned blocks with `-plan`, divided by the sub length plus a second between subs (the download and the live stack), less the share `-reject` discards (0.15 by default: tracking, satellites and wind cost the Origin 10–20%). The counts are the subs the stack keeps, so rejection only lowers what tonight allows.
 
-**Surface brightness.** The object's own (`SurfaceBrightness`), else the median of its class over the embedded lists (`TestTypicalSB` recomputes them): galaxies 22.52, planetary nebulae 21.73, emission nebulae 21.90, other nebulae 20.73 mag/arcsec², marked `~`; reflection nebulae 22.0, a guess, since no list gives a reflection nebula's own magnitude. Clusters (point sources), galaxy groups, comets, and dark nebulae and molecular clouds (unless imaged for the emission behind them, like the Horsehead) get none: the median of the bright nebulae that have a measurement would make the faintest objects quick.
+**Surface brightness.** The object's own (`SurfaceBrightness`), else the median of its class over the embedded lists (`TestTypicalSB` recomputes them): galaxies 22.52, planetary nebulae 21.10 (most from their Hα flux), emission nebulae 21.90, other nebulae 20.73 mag/arcsec², marked `~`; reflection nebulae 22.0, a guess, since no list gives a reflection nebula's own magnitude and no photometric survey that a cutout service resamples measures them: Pan-STARRS through CDS's HiPS is not calibrated (its zero point scatters 2.1 mag over 25 galaxies), SkyView's SDSS reaches few of them, and Legacy Survey DR10 is calibrated but sky-subtracted, putting galaxies 1.0 mag faint with 1.3 mag scatter, and covers 10 of them (median 23.3 after the galaxies' offset, too few and too noisy to replace the guess). Clusters (point sources), galaxy groups, comets, and dark nebulae and molecular clouds (unless imaged for the emission behind them, like the Horsehead) get none: the median of the bright nebulae that have a measurement would make the faintest objects quick.
 
 **Limits.**
 
@@ -874,7 +880,7 @@ The models above come from the literature. The following are this project's own 
 | Altitude window | 30°–80° | uptonight's limits; ≥ 30° keeps the airmass ≤ 2 |
 | Emission line ratios | one set per type ([Nebula filters](#nebula-filters)) | single objects scatter by factors of a few; no list has line fluxes |
 | Hβ | Hα/2.86 for every type | case-B recombination; dust raises the ratio, so dusty H II regions' Hβ is overstated |
-| Emission-line light from V | V/f_V less c = 0.96 mag of stars and continuum | fitted to Finkbeiner's Hα map over 16 nebulae of 30′ and more (interquartile 0.23–1.90 mag), almost all H II regions; for other types f_V carries the difference |
+| Emission-line light from V | V/f_V less c = 0.99 mag of stars and continuum | fitted to Finkbeiner's Hα map over 15 nebulae of 30′ and more (interquartile 0.22–1.92 mag), almost all H II regions; for other types f_V carries the difference |
 | Airglow with the solar cycle | one slope (0.006/sfu) and a 0.6 share of the natural 22.0 for every site, the monthly flux | measured swings run 0.3–1.0 mag by site and cycle; the airglow also changes through the night and the seasons by up to a few tenths, and DarkSkySites' handling of the natural sky is undocumented |
 | Colour sensor response | each preset's red, green and blue curves digitized from its maker's chart (`scripts/qe_digitize.py`, about ±1 point), each line at its dye's response, each channel's continuum its mean over 400–700 nm; a camera given by `-sensor`/`-pixel` takes the IMX678's | vendor curves, possibly above the delivered sensor's, some reused across chips; the moonlight's colour is weighted as over the whole band for every channel, not by each dye |
 | Optics throughput | refractor 0.88, prime-focus mirror 0.81, another telescope 0.85 | coated surfaces, aluminium and the sensor window by design; no maker publishes its scope's; `-throughput` sets it |
@@ -899,7 +905,7 @@ The models above come from the literature. The following are this project's own 
 | Ozone in a filter band | the 550 nm value | within 0.02 mag/airmass at every nebula line |
 | High cloud weight | ½ | thin cirrus dims rather than blocks |
 | Dew ramp | spread 4 → 1 °C, × 1 → 0.7 | dew on optics ends sessions |
-| Gust ramp | 20 → 40 km/h, × 1 → 0.5 | shaken frames get discarded |
+| Gust ramp | 20 → 40 km/h, × 1 → 0.5, gusts at most 3× the mean wind | shaken frames get discarded; mountain grid points' gusts run 5–10× the wind |
 | Rain gate | 0 → 0.1 mm/h, × 1 → 0 | nobody images in rain |
 | Transparency ramp | 7Timer 1 → 8, × 1 → 0.5, only without CAMS aerosols | haze dims but does not stop imaging; CAMS's is in the extinction |
 | Aerosol scale height | 1.5 km, from the IFS cell's ground up | Hayes & Latham (1975); CALIOP 1.5–2 km over land |
@@ -963,6 +969,7 @@ Treat SCORE as a way to order tonight's options, not as an absolute measure of q
 [patat]: https://arxiv.org/abs/0801.2270
 [noll]: https://arxiv.org/abs/1205.2003
 [thorsky]: https://github.com/jrthorstensen/thorsky
+[cobs]: https://cobs.si/
 [bortle]: https://skyandtelescope.org/astronomy-resources/light-pollution-and-astronomy-the-bortle-dark-sky-scale/
 [openngc]: https://github.com/mattiaverga/OpenNGC
 [skeye]: https://skeye.rocks/apps/skeye/book/explanations/visibilitymeasures

@@ -5,6 +5,7 @@ package comets
 
 import (
 	"math"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -186,10 +187,10 @@ func TestMutTargets(t *testing.T) {
 	fast := Elements{{name: "C/2026 F1", perihelion: long[120].Add(-20 * 24 * time.Hour), q: 0.3, e: 1, peri: 30 * deg, node: 40 * deg, incl: 50 * deg, h: 8, k: 4}}
 	_, _, fr, fd := fast[0].position(long[120])
 	fm := 8 + 5*math.Log10(fd) + 10*math.Log10(fr)
-	if n := len(fast.Targets(long, fm+0.005)); n != 1 {
+	if n := len(fast.Targets(long, fm+0.005, nil)); n != 1 {
 		t.Errorf("fast comet at m+0.005: %d", n)
 	}
-	if n := len(fast.Targets(long, fm-0.005)); n != 0 {
+	if n := len(fast.Targets(long, fm-0.005, nil)); n != 0 {
 		t.Errorf("fast comet at m-0.005: %d", n)
 	}
 	mid := grid[120]
@@ -202,7 +203,7 @@ func TestMutTargets(t *testing.T) {
 		{name: "C/2026 Z9 (Mutant)", perihelion: mid, q: 3, e: 1, peri: 90 * deg, incl: 90 * deg, h: 5, k: 4},
 		{name: "12P/Pons-Brooks", perihelion: mid, q: 3, e: 1, peri: 90 * deg, incl: 90 * deg, h: 5.5, k: 4},
 	}
-	out := el.Targets(grid, m+0.01)
+	out := el.Targets(grid, m+0.01, nil)
 	if len(out) != 1 {
 		t.Fatalf("Targets(m+0.01) = %d", len(out))
 	}
@@ -223,11 +224,58 @@ func TestMutTargets(t *testing.T) {
 			t.Errorf("track[%d] = %v, want %v %v", i, tg.Track[i], wr, wd)
 		}
 	}
-	if out := el.Targets(grid, m-0.01); len(out) != 0 {
+	if out := el.Targets(grid, m-0.01, nil); len(out) != 0 {
 		t.Errorf("Targets(m-0.01) = %d", len(out))
 	}
-	out = el.Targets(grid, m+1)
+	out = el.Targets(grid, m+1, nil)
 	if len(out) != 2 || out[1].Name != "12P/Pons-Brooks" || !strings.HasPrefix(out[1].Description, "mag ") {
 		t.Errorf("periodic: %+v", out)
+	}
+}
+
+// The designation COBS keys observations by: the periodic number and type,
+// else the packed provisional one in columns 6-12.
+func TestMutCometKey(t *testing.T) {
+	line := mutLine("2026", "04", "15.5000", "0.781234", "0.995000", "152.5000", "255.3000", "139.1000", "6.5", "4.0", "10P/Tempel")
+	for want, l := range map[string]string{
+		"10P":     "0010P" + line[5:],
+		"K22E020": "    CK22E020" + line[12:],
+	} {
+		el, err := parseComets([]byte(l + "\n"))
+		if err != nil || len(el) != 1 || el[0].key != want {
+			t.Errorf("key %v %v, want %s", el, err, want)
+		}
+	}
+}
+
+// COBS magnitudes move a comet's by their median offset from the elements'
+// magnitude at each observation, from cobsMin of them; bad records are skipped.
+func TestMutObserved(t *testing.T) {
+	seen, err := parseObserved([]byte(`{"objects":[
+		{"comet":{"mpc_name":"9Z"},"obs_date":"2026-10-01 20:00:00","magnitude":"10.0"},
+		{"comet":{"mpc_name":"9Z"},"obs_date":"2026-10-02 20:00:00","magnitude":"11.0"},
+		{"comet":{"mpc_name":"9Z"},"obs_date":"2026-10-03 20:00:00","magnitude":"12.5"},
+		{"comet":{"mpc_name":"9Z"},"obs_date":"2026-10-04 20:00:00","magnitude":"[13"},
+		{"comet":{"mpc_name":"9Z"},"obs_date":"bad","magnitude":"9"},
+		{"comet":{"mpc_name":""},"obs_date":"2026-10-04 20:00:00","magnitude":"9"}]}`))
+	if err != nil || len(seen["9Z"]) != 3 || len(seen) != 1 {
+		t.Fatalf("parse %v %v", seen, err)
+	}
+	c := comet{key: "9Z", perihelion: time.Date(2026, 10, 2, 0, 0, 0, 0, time.UTC), q: 3, e: 1, peri: 90 * deg, incl: 90 * deg, h: 5, k: 4}
+	var want []float64
+	for _, o := range seen["9Z"] {
+		m, _ := c.mag(o.t)
+		want = append(want, o.mag-m)
+	}
+	slices.Sort(want)
+	if off, ok := c.offset(seen); !ok || math.Abs(off-want[1]) > 1e-12 {
+		t.Errorf("offset %v %v, want %v", off, ok, want[1])
+	}
+	seen["9Z"] = seen["9Z"][:2]
+	if _, ok := c.offset(seen); ok {
+		t.Error("two observations moved the magnitude")
+	}
+	if _, ok := c.offset(nil); ok {
+		t.Error("no observations moved the magnitude")
 	}
 }

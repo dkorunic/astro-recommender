@@ -131,11 +131,11 @@
   minor: 4.36
   type: Galaxy
 - constellation: Cassiopeia
-  dec: +58 49
+  dec: +58 49 12
   description: OCL 320
   mag: 8.8
   name: NGC 436
-  ra: 1 15.6
+  ra: 01 16 00.2
   size: 6.0
   type: Open Cluster
 - constellation: Cassiopeia
@@ -231,11 +231,11 @@
   minor: 1.46
   type: Galaxy
 - constellation: Cassiopeia
-  dec: +64 0
+  dec: +64 02 17
   description: OCL 329
   mag: 8.2
   name: NGC 637
-  ra: 1 42.9
+  ra: 01 43 06.0
   size: 4.0
   type: Open Cluster
 - constellation: Perseus
@@ -245,6 +245,7 @@
   name: NGC 651
   ra: 1 42.3
   size: 2.7
+  haflux: -10.19
   type: Planetary Nebula
 - constellation: Cassiopeia
   dec: +61 53
@@ -496,6 +497,7 @@
   name: NGC 1535
   ra: 4 14.2
   size: 0.7
+  haflux: -9.95
   type: Planetary Nebula
 - constellation: Perseus
   dec: +50 15
@@ -530,11 +532,11 @@
   size: 8.0
   type: Nebula
 - constellation: Taurus
-  dec: +16 42
+  dec: +16 41 46
   description: OCL 463
   mag: 7.7
   name: NGC 1817
-  ra: 5 12.1
+  ra: 05 12 33.4
   size: 16.0
   type: Open Cluster
 - constellation: Auriga
@@ -605,6 +607,7 @@
   name: NGC 2022
   ra: 5 42.1
   size: 0.3
+  haflux: -10.61
   type: Planetary Nebula
 - constellation: Orion
   dec: -1 51
@@ -615,19 +618,19 @@
   size: 30.0
   type: Nebula
 - constellation: Auriga
-  dec: +49 54
+  dec: +49 52 59
   description: OCL 418
   mag: 10.2
   name: NGC 2126
-  ra: 6 3
+  ra: 06 02 38
   size: 6.0
   type: Open Cluster
 - constellation: Gemini
-  dec: +23 18
+  dec: +23 19 41
   description: OCL 467
   mag: 6.7
   name: NGC 2129
-  ra: 6 1
+  ra: 06 01 06
   size: 7.0
   type: Open Cluster
 - constellation: Gemini
@@ -751,11 +754,11 @@
   size: 12.0
   type: Open Cluster
 - constellation: Gemini
-  dec: +18 1
+  dec: +17 59 02
   description: OCL 484
   mag: 10.0
   name: NGC 2304
-  ra: 6 55
+  ra: 06 55 13
   size: 5.0
   type: Open Cluster
 - constellation: Monoceros
@@ -921,6 +924,7 @@
   name: NGC 2438
   ra: 7 41.8
   size: 1.1
+  haflux: -10.39
   type: Planetary Nebula
 - constellation: Puppis
   dec: -18 13
@@ -929,6 +933,7 @@
   name: NGC 2440
   ra: 7 41.9
   size: 0.5
+  haflux: -9.86
   type: Planetary Nebula
 - constellation: Puppis
   dec: -17 43
@@ -1355,6 +1360,7 @@
   name: NGC 3242
   ra: 10 24.8
   size: 20.8
+  haflux: -9.31
   type: Planetary Nebula
 - constellation: Leo Minor
   dec: +28 30
@@ -2240,6 +2246,7 @@
   name: NGC 4361
   ra: 12 24.5
   size: 1.8
+  haflux: -10.09
   type: Planetary Nebula
 - constellation: Virgo
   dec: +7 19
@@ -3247,6 +3254,7 @@
   name: NGC 6369
   ra: 17 29.3
   size: 1.1
+  haflux: -10.10
   type: Planetary Nebula
 - constellation: Ophiuchus
   dec: -23 55
@@ -3279,6 +3287,7 @@
   name: NGC 6445
   ra: 17 49.2
   size: 0.6
+  haflux: -10.24
   type: Planetary Nebula
 - constellation: Scorpius
   dec: -30 13
@@ -3329,11 +3338,11 @@
   size: 3.7
   type: Globular Cluster
 - constellation: Sagittarius
-  dec: -27 49
+  dec: -27 45 55
   description: NGC 6540
   mag: 9.3
   name: NGC 6540
-  ra: 18 6.3
+  ra: 18 06 08.6
   size: 1.0
   type: Open Cluster
 - constellation: Draco
@@ -3343,6 +3352,7 @@
   name: NGC 6543
   ra: 17 58.6
   size: 5.8
+  haflux: -9.10
   type: Planetary Nebula
 - constellation: Sagittarius
   dec: -25 0
@@ -3399,6 +3409,7 @@
   name: NGC 6629
   ra: 18 25.7
   size: 0.3
+  haflux: -10.17
   type: Planetary Nebula
 - constellation: Ophiuchus
   dec: +6 34
@@ -3487,6 +3498,7 @@
   name: NGC 6818
   ra: 19 44
   size: 0.3
+  haflux: -9.95
   type: Planetary Nebula
 - constellation: Vulpecula
   dec: +23 18
@@ -3521,11 +3533,11 @@
   size: 5.0
   type: Open Cluster
 - constellation: Cygnus
-  dec: +44 0
+  dec: +44 09 29
   description: OCL 183
   mag: 7.6
   name: NGC 6866
-  ra: 20 3.7
+  ra: 20 03 55.9
   size: 7.0
   type: Open Cluster
 - constellation: Vulpecula
@@ -3551,6 +3563,7 @@
   name: NGC 6905
   ra: 20 22.4
   size: 1.7
+  haflux: -10.48
   type: Planetary Nebula
 - constellation: Cygnus
   dec: +40 47
@@ -3628,6 +3641,7 @@
   ra: 21 4.2
   size: 1.7
   minor: 1.26
+  haflux: -9.29
   type: Planetary Nebula
 - constellation: Cygnus
   dec: +42 29
@@ -3638,11 +3652,11 @@
   size: 7.0
   type: Open Cluster
 - constellation: Cygnus
-  dec: +46 23
+  dec: +46 23 06
   description: OCL 205
   mag: 8.3
   name: NGC 7062
-  ra: 21 23.2
+  ra: 21 23 26.9
   size: 7.0
   type: Open Cluster
 - constellation: Cygnus
@@ -3705,11 +3719,11 @@
   size: 21.0
   type: Open Cluster
 - constellation: Lacerta
-  dec: +52 17
+  dec: +52 19 16
   description: OCL 228
   mag: 9.7
   name: NGC 7296
-  ra: 22 28.2
+  ra: 22 28 00.0
   size: 4.0
   type: Open Cluster
 - constellation: Pegasus
@@ -3754,11 +3768,11 @@
   minor: 3.06
   type: Galaxy
 - constellation: Cepheus
-  dec: +60 34
+  dec: +60 34 44
   description: OCL 256
   mag: 7.9
   name: NGC 7510
-  ra: 23 11.5
+  ra: 23 11 04.1
   size: 4.0
   type: Open Cluster
 - constellation: Aquarius

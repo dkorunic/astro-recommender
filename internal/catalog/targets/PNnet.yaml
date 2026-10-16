@@ -364,6 +364,7 @@
   name: "LDû 1"
   ra: "21 36 06.35"
   size: 2.2
+  haflux: -12.20
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+61 41 40.88"
@@ -1245,6 +1246,7 @@
   name: "Ra 2"
   ra: "19 05 12.00"
   size: 1.0
+  haflux: -12.20
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+16 46 32.99"

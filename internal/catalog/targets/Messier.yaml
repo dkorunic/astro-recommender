@@ -138,11 +138,11 @@
   size: 11.0
   type: Diffuse Nebula
 - constellation: Sagittarius
-  dec: -17 8 0
+  dec: -17 05 17
   description: NGC 6613
   mag: 6.9
   name: M 18
-  ra: 18 19 54
+  ra: 18 19 57
   size: 9.0
   type: Open Cluster
 - constellation: Ophiucus
@@ -332,11 +332,11 @@
   size: 0.82
   type: Double Star
 - constellation: Canis Major
-  dec: -20 44 0
+  dec: -20 42 58
   description: NGC 2287
   mag: 4.5
   name: M 41
-  ra: 6 47 0
+  ra: 06 46 00
   size: 38.0
   type: Open Cluster
 - constellation: Orion
@@ -428,11 +428,11 @@
   minor: 9.36
   type: Spiral Galaxy
 - constellation: Cassiopeia
-  dec: +61 35 0
+  dec: +61 35 24
   description: NGC 7654
   mag: 6.9
   name: M 52
-  ra: 23 24 12
+  ra: 23 24 47
   size: 13.0
   type: Open Cluster
 - constellation: Coma Berenices
@@ -474,6 +474,7 @@
   name: M 57
   ra: 18 53 36
   size: 1.4
+  haflux: -9.56
   type: Planetary Nebula
 - constellation: Virgo
   dec: +11 49 0
@@ -572,11 +573,11 @@
   minor: 3.59
   type: Spiral Galaxy
 - constellation: Cancer
-  dec: +11 49 0
+  dec: +11 48 50
   description: NGC 2682
   mag: 6.9
   name: M 67
-  ra: 8 50 24
+  ra: 08 51 23
   size: 30.0
   type: Open Cluster
 - constellation: Hydra
@@ -653,6 +654,7 @@
   name: M 76
   ra: 1 42 18
   size: 2.7
+  haflux: -10.19
   type: Planetary Nebula
 - constellation: Cetus
   dec: +0 1 0
@@ -674,11 +676,11 @@
   size: 8.0
   type: Diffuse Nebula
 - constellation: Lepus
-  dec: -24 33 0
+  dec: -24 31 27
   description: NGC 1904
   mag: 8.2
   name: M 79
-  ra: 5 24 30
+  ra: 05 24 11
   size: 8.7
   type: Globular Cluster
 - constellation: Scorpius
@@ -923,11 +925,11 @@
   minor: 2.24
   type: Lenticular (S0) Galaxy
 - constellation: Cassiopeia
-  dec: +60 42 0
+  dec: +60 39 32
   description: NGC 581
   mag: 7.4
   name: M 103
-  ra: 1 33 12
+  ra: 01 33 21
   size: 6.0
   type: Open Cluster
 - constellation: Virgo
