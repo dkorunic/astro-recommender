@@ -599,9 +599,9 @@ func shortDesc(s string, width int) string {
 	return prefix + "…"
 }
 
-// filterText is the FILTER cell: the -filter choice that scored best, "-"
-// when none beat no filter.
-func filterText(r scoring.Result) string { return cmp.Or(r.Filter, "-") }
+// filterText is the FILTER cell: the -filter choice that scored best, "none"
+// when no filter beat going without, a recommendation like any other.
+func filterText(r scoring.Result) string { return cmp.Or(r.Filter, "none") }
 
 // subsText is the SUBS cell and its colour: the subs for a good image,
 // ~ when the surface brightness is its class's typical one, >N (yellow) when
@@ -862,7 +862,7 @@ var resultColumns = []column{
 	{"SKY", "sky brightness at the object, mag/arcsec² (higher is darker)"},
 	{"MAG", "integrated magnitude, V (B where only blue is known)"},
 	{"SB", "object surface brightness, mag/arcsec² (higher is fainter)"},
-	{filterColumn, "the filter of yours that helps most, worn all night"},
+	{filterColumn, "the filter of yours that helps most, worn all night, or none"},
 	{pxColumn, "size in pixels (NxM: mosaic panels needed)"},
 	{subsColumn, "-sub second subs for a good image, per panel; N nights: more than tonight fits; never: past what flats leave of the sky"},
 }

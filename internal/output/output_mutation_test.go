@@ -352,7 +352,7 @@ func TestMutResultsAlignment(t *testing.T) {
 	if !strings.Contains(lines[2], " -  ") || !strings.HasSuffix(strings.TrimRight(lines[3], " "), "-") {
 		t.Errorf("unknown size / comet rows:\n%s", plain)
 	}
-	// With -filter, FILTER sits before PX: the choice, or "-", aligned and
+	// With -filter, FILTER sits before PX: the choice, or "none", aligned and
 	// as many escapes per cell when colored.
 	cfg.Filter, res[0].Filter = "dual,ha", "dual"
 	mutColor(t, false)
@@ -364,10 +364,10 @@ func TestMutResultsAlignment(t *testing.T) {
 	lines = mutTable(t, plain, "Targets, ranked by SCORE")
 	h, f0, f1 := strings.Fields(lines[0]), strings.Fields(lines[1]), strings.Fields(lines[2])
 	// Row 1's SUBS, "N nights", is two fields.
-	if h[len(h)-3] != "FILTER" || f0[len(f0)-4] != "dual" || f1[len(f1)-3] != "-" {
+	if h[len(h)-3] != "FILTER" || f0[len(f0)-4] != "dual" || f1[len(f1)-3] != "none" {
 		t.Errorf("FILTER cells:\n%s", plain)
 	}
-	if col := mutCol(lines[0], strings.Index(lines[0], "FILTER")); mutCol(lines[1], strings.Index(lines[1], "dual")) != col || []rune(lines[2])[col] != '-' {
+	if col := mutCol(lines[0], strings.Index(lines[0], "FILTER")); mutCol(lines[1], strings.Index(lines[1], "dual")) != col || !strings.HasPrefix(string([]rune(lines[2])[col:]), "none") {
 		t.Errorf("FILTER column not aligned:\n%s", plain)
 	}
 	cfg.Filter = ""
