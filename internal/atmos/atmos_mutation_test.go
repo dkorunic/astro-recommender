@@ -15,12 +15,18 @@ func mutNear(t *testing.T, name string, got, want, tol float64) {
 	}
 }
 
-// Band edges are inclusive: an SQM of exactly 21.75 is Bortle 1.
+// Band edges are inclusive: an SQM of exactly 21.96 is Bortle 1, as on
+// DarkSkySites' map; every class's typical value lies in its own band.
 func TestMutBortleClassEdges(t *testing.T) {
+	for c := 1; c < len(BortleMag); c++ {
+		if got := BortleClass(BortleMag[c]); got != c {
+			t.Errorf("BortleClass(BortleMag[%d] = %v) = %d", c, BortleMag[c], got)
+		}
+	}
 	for _, c := range []struct {
 		mag  float64
 		want int
-	}{{22.0, 1}, {21.75, 1}, {21.74, 2}, {21.5, 2}, {17.5, 8}, {17.49, 9}, {15, 9}} {
+	}{{22.0, 1}, {21.96, 1}, {21.95, 2}, {21.7, 2}, {19.6, 6}, {19.59, 7}, {18.0, 8}, {17.99, 9}, {15, 9}} {
 		if got := BortleClass(c.mag); got != c.want {
 			t.Errorf("BortleClass(%v) = %d, want %d", c.mag, got, c.want)
 		}

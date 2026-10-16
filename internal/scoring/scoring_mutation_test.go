@@ -456,7 +456,7 @@ func TestMutBuildSky(t *testing.T) {
 	if s.Illum != astro.MoonIllumination(mid) || s.MoonSep != 100*s.Illum || s.MoonDist != astro.MoonDistance(mid) {
 		t.Error("Moon at mid-window")
 	}
-	if math.Abs(s.ZenithNL-atmos.NanoLamberts(19.75)) > 1e-9 || math.Abs(s.RefNL-atmos.NanoLamberts(22)) > 1e-9 {
+	if math.Abs(s.ZenithNL-atmos.NanoLamberts(20.55)) > 1e-9 || math.Abs(s.RefNL-atmos.NanoLamberts(22)) > 1e-9 {
 		t.Errorf("sky %v %v", s.ZenithNL, s.RefNL)
 	}
 	for _, i := range []int{0, 77, 180} {

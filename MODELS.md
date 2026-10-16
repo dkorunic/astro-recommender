@@ -291,9 +291,10 @@ B_{\text{nL}} = 34.08\, e^{\,20.7233 - 0.92104\,V} \qquad (V \text{ in mag/arcse
 
 | Bortle | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
 |---|---|---|---|---|---|---|---|---|---|
-| mag/arcsec² | 21.9 | 21.6 | 21.4 | 20.85 | 19.75 | 18.8 | 18.25 | 17.75 | 17.3 |
+| band (mag/arcsec²) | ≥ 21.96 | 21.7–21.96 | 21.3–21.7 | 20.8–21.3 | 20.3–20.8 | 19.6–20.3 | 18.9–19.6 | 18.0–18.9 | < 18.0 |
+| `-bortle` value | 21.98 | 21.83 | 21.5 | 21.05 | 20.55 | 19.95 | 19.25 | 18.45 | 17.5 |
 
-These are the midpoints of the SQM ranges usually quoted for [Bortle's (2001)][bortle] classes.
+The bands are DarkSkySites' map's (its classifier, October 2026), the service the lookup asks, so `-bortle N` and the header's `≈ Bortle N` mean the sky its map shows as class N; the values are the bands' middles (class 9 half a class under 18.0). [Bortle (2001)][bortle] defined his classes by eye, and SQM bands are later conventions that disagree by up to a class: Wikipedia's and lightpollutionmap.info's put class 6 at 18.94–19.50, DarkSkySites' own imaging calculator at 18.9 (a class brighter than its map's band throughout), and this table at 18.8 until October 2026. A measured `-sqm` beats any of them.
 
 <a id="airglow"></a>**The solar cycle** (`atmos.AirglowExcess`, `internal/solar`). Airglow, the upper atmosphere's own light driven by the Sun's ultraviolet, is about two-thirds of a dark V zenith at solar minimum (145 of 220 S10 at the ecliptic and galactic poles, [Benn & Ellison 1998][benn]), and follows the 11-year cycle: V brightened 0.3 mag from solar minimum to maximum at Paranal ([Patat 2008][patat]), 0.4–0.5 at La Palma, 0.6 at Mauna Kea and 0.5 at CTIO. The ESO sky model ([Noll et al. 2012][noll]) scales each airglow component as 1 + m(S − 129), S the monthly mean 10.7 cm solar flux in sfu, m 0.0061 for the continuum and 0.0087 for [O I] 557.7 (about a fifth of V); with m = 0.006 the zenith gains
 
@@ -500,7 +501,7 @@ with ε the obstruction over the aperture. n = 2.05 (`filterN`) fits [Chroma's m
 
 (behind the original Origin's 63 mm: 0.25, 0.73, 0, 0.40 and 0.88, 1, 0.25, 1)
 
-so a standard 7 nm Hα filter costs the Origin about 1.6 times the subs on an H II region (IC 1795 at Bortle 6: 2147 against 1303), and a 3 nm one loses to no filter. Broadband filters' edges shift too, but by a few nm against passbands tens of nm wide, and are left alone.
+so a standard 7 nm Hα filter costs the Origin enough to lose to no filter on an H II region (IC 1795 at Bortle 6 on 14 October 2026: 351 subs unfiltered, where a filter made for the beam needs 237), and a 3 nm one loses further. Broadband filters' edges shift too, but by a few nm against passbands tens of nm wide, and are left alone.
 
 **The sky in a band.** The sky splits into three parts with different spectra:
 
@@ -710,7 +711,7 @@ The master dark's own noise is left out. Subs lost to the weather (each minute's
 m = \frac{1}{n\,\Omega}\sum_i q_i \sum_c f_c \frac{S_{c,i}^2}{\sigma_{c,i}^2}\quad(\text{weighted}),\qquad m = \frac{1}{n\,\Omega}\sum_c f_c \frac{\left(\sum_i q_i S_{c,i}\right)^2}{\sum_i q_i\,\sigma_{c,i}^2}\quad(\text{mean})
 ```
 
-over the n observable minutes. Equal weights cost little where the Moon limit has already dropped the worst minutes: M 51 from Bortle 4 on 6 May 2026, the Moon rising in the night, needs 429 subs averaged against 394 weighted.
+over the n observable minutes. Equal weights cost little where the Moon limit has already dropped the worst minutes: M 51 from Bortle 4 on 6 May 2026, the Moon rising in the night, needs 401 subs averaged against 365 weighted.
 
 **The stack's ceiling** (`-residual`). Flats never match the sky exactly, and gradient removal leaves some of it: a residual ε of the sky (0.2% by default) that averaging does not remove and that spans many pixels, so it caps the stacked SNR per arcsec² at S/(εB) however many subs, the channels adding by share:
 
@@ -718,7 +719,7 @@ over the n observable minutes. Equal weights cost little where the Moon limit ha
 \mathrm{SNR}^2_\mathrm{max} = \sum_c f_c \left(\frac{\sum_i q_i S_{c,i}}{\varepsilon \sum_i q_i B_{c,i}}\right)^2 ,\qquad \frac{1}{L^2} = \frac{1}{N_L\,m} + \frac{1}{\mathrm{SNR}^2_\mathrm{max}} \;\Rightarrow\; N_L = \left\lceil \frac{L^2/m}{1 - L^2/\mathrm{SNR}^2_\mathrm{max}} \right\rceil ,\qquad L = 5,\ 10,\ 20
 ```
 
-A level at or past the ceiling is never reached: SUBS shows `never`, JSON the ceiling as `snrLimit`. It is what keeps a faint galaxy from a city out of reach rather than a matter of patience, and it favours filters, which cut B: IC 1795 at Bortle 8 reaches SNR 4.4 at most unfiltered, where Hα needs 1772 subs. The counts are capped at 10⁹, which a night the forecast loses entirely reaches too (past tonight's limit, rather than no estimate). FILTER is chosen by the same N for the good level, so it stays the fewest-subs choice (`TestScoreFilterCameraModes`).
+A level at or past the ceiling is never reached: SUBS shows `never`, JSON the ceiling as `snrLimit`. It is what keeps a faint galaxy from a city out of reach rather than a matter of patience, and it favours filters, which cut B: IC 1795 at Bortle 9 reaches SNR 8.8 at most unfiltered, where Hα needs 378 subs. The counts are capped at 10⁹, which a night the forecast loses entirely reaches too (past tonight's limit, rather than no estimate). FILTER is chosen by the same N for the good level, so it stays the fewest-subs choice (`TestScoreFilterCameraModes`).
 
 **Seeing and the optics' blur.** A small object's light is spread over the star image, which dims its surface brightness. Each minute the FWHM is the seeing (the [upper-air estimate](#seeing-estimate), which matches DIMMs better, else 7Timer's class, else 2.5″), grown with the airmass as X^0.6, the optics' diffraction 1.03 λ/D at 550 nm (2.3″ at 50 mm, 0.8″ at 152 mm) and a pixel's width, in quadrature; a uniform ellipse of axes a × b keeps about ab/√((a² + F²)(b² + F²)) of its surface brightness, half for a disc as wide as F. Only objects under about an arcminute move: a 12″ planetary nebula needs more subs under 4″ seeing than under 1″ (`TestSubsResidualSeeing`), and nothing at the default `-min-px` does. For a mosaic the counts are per panel, and the subs that fit tonight are shared among the panels: the observable time, or the planned blocks with `-plan`, divided by the sub length plus a second between subs (the download and the live stack), less the share `-reject` discards (0.15 by default: tracking, satellites and wind cost the Origin 10–20%). The counts are the subs the stack keeps, so rejection only lowers what tonight allows.
 
@@ -742,7 +743,7 @@ A level at or past the ceiling is never reached: SUBS shows `never`, JSON the ce
   | Bubble, NGC 7635 | 3.2 h | 0.6 h | 2–4 h |
 
   The Origin lands at 1–2× what its users report, the S50 at 1–4×, more for the faint galaxies: the good level is a clean image, where many stop at a noisier one, and reports come from every kind of sky. Treat SUBS as a clean image's count, not a minimum.
-- At the Origin's 10 s a colour sensor's pixels through a 7 nm Hα band are read-noise limited under a dark sky (about a third of an e⁻ of sky per sub on the red ones under 21.3 mag/arcsec², with 0.8 e⁻ of dark current, against RN² ≈ 4.6), where a broadband filter, collecting every line over 120 nm, is not. With framing, FILTER is chosen by this model, so it is the choice needing fewest subs: IC 1795 from 45.8° N on 14 October 2026 (`-scope origin -no-weather`, one `-filter` at a time, the sensor at 20 °C) under the default 22.0 zenith takes 146 subs unfiltered, as many through Hα and dual-band (neither better) and 116 through `cls`, so `cls`; at Bortle 4 214 unfiltered and through Hα (no better), 187 through dual-band and 143 through `cls`, so `cls`; at Bortle 8 10046 unfiltered (SNR 11 at most, near the residual's ceiling), 346 through Hα, 353 through dual-band and 935 through `cls`, so Hα. The dark current falls on every pixel whatever the filter, so it weighs most where a filter has cut the sky: before it was modelled the same night chose dual-band under the default zenith.
+- At the Origin's 10 s a colour sensor's pixels through a 7 nm Hα band are read-noise limited under a dark sky (about a third of an e⁻ of sky per sub on the red ones under 21.3 mag/arcsec², with 0.8 e⁻ of dark current, against RN² ≈ 4.6), where a broadband filter, collecting every line over 120 nm, is not. With framing, FILTER is chosen by this model, so it is the choice needing fewest subs: IC 1795 from 45.8° N on 14 October 2026 (`-scope origin -no-weather`, one `-filter` at a time, the sensor at 20 °C) under the default 22.0 zenith takes 146 subs unfiltered, as many through Hα and dual-band (neither better) and 116 through `cls`, so `cls`; at Bortle 4 196 unfiltered and through Hα (no better), 185 through dual-band and 136 through `cls`, so `cls`; at Bortle 8 1348 unfiltered (SNR 21 at most, the residual's ceiling), 286 through Hα, 270 through dual-band and 494 through `cls`, so dual-band. The dark current falls on every pixel whatever the filter, so it weighs most where a filter has cut the sky: before it was modelled the same night chose dual-band under the default zenith.
 - No master dark noise, no hot pixels or amplifier glow, one sensor temperature offset for every smart telescope, one residual for every flat and sky, no saturation (the IMX678's 11.27 ke⁻ full well is far off at 10 s for these objects), flat spectra across each band, and one SNR target for every type.
 
 ## Seeing estimate

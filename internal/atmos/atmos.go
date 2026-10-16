@@ -25,13 +25,24 @@ const (
 	MaxSQM = 23.0
 )
 
-// BortleMag maps Bortle class to typical zenith sky brightness (V mag/arcsec²,
-// mid-range of the usual SQM bands); index 0 (-bortle unset) assumes a dark sky.
-var BortleMag = [...]float64{RefZenithMag, 21.9, 21.6, 21.4, 20.85, 19.75, 18.8, 18.25, 17.75, 17.3}
+// bortleFloor is each Bortle class's least dark zenith (V
+// mag/arcsec²), classes 1-8: DarkSkySites' map bands (its site's classifier,
+// October 2026), the service sqm.Lookup asks, so -bortle and the header's
+// class mean what its map shows. Bortle (2001) defined the classes by eye;
+// SQM bands are later conventions and disagree by up to a class (Wikipedia's
+// and lightpollutionmap.info's put class 6 at 18.94-19.50, DarkSkySites' own
+// calculator at 18.9).
+var bortleFloor = [...]float64{21.96, 21.7, 21.3, 20.8, 20.3, 19.6, 18.9, 18.0}
 
-// BortleClass returns the Bortle class whose usual SQM band contains mag.
+// BortleMag maps Bortle class to its zenith sky brightness (V mag/arcsec²):
+// the middle of its band (bortleFloor), class 1 between 21.96 and the
+// pristine 22.0, class 9 half a class under 18.0; index 0 (-bortle unset)
+// assumes a dark sky.
+var BortleMag = [...]float64{RefZenithMag, 21.98, 21.83, 21.5, 21.05, 20.55, 19.95, 19.25, 18.45, 17.5}
+
+// BortleClass returns the Bortle class whose band (bortleFloor) contains mag.
 func BortleClass(mag float64) int {
-	for i, lower := range [...]float64{21.75, 21.5, 21.3, 20.4, 19.1, 18.5, 18.0, 17.5} {
+	for i, lower := range bortleFloor {
 		if mag >= lower {
 			return i + 1
 		}

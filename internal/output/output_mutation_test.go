@@ -488,7 +488,7 @@ func TestMutHeader(t *testing.T) {
 	for _, want := range []string{
 		"Location: 45.8100, 15.9800, Europe/Zagreb",
 		"(2h 00m, nautical night)",
-		"SQM 21.60 mag/arcsec² (DSS, ≈ Bortle 2)",
+		"SQM 21.60 mag/arcsec² (DSS, ≈ Bortle 3)",
 		"extinction 0.20 (set) mag/airmass\n",
 		"Filter:   dual (7 nm line bands)",
 		"GaryImm, comets off",
@@ -505,7 +505,7 @@ func TestMutHeader(t *testing.T) {
 	s.Elevation, s.AOD = 120, map[int64]float64{1: 0.1}
 	cfg.ExtinctionSet = false
 	out = mutCapture(t, func() { Header(cfg, s, "") })
-	for _, want := range []string{"nautical night 20:00-22:00", "Bortle 6 (zenith 18.80 mag/arcsec²)", "(elevation 120 m, aerosols)"} {
+	for _, want := range []string{"nautical night 20:00-22:00", "Bortle 6 (zenith 19.95 mag/arcsec²)", "(elevation 120 m, aerosols)"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("header lacks %q:\n%s", want, out)
 		}
@@ -644,7 +644,7 @@ func TestMutJSON(t *testing.T) {
 	doc = nil
 	_ = json.Unmarshal([]byte(out), &doc)
 	skyJ = doc["sky"].(map[string]any)
-	if skyJ["bortle"] != 5.0 || !reflect.DeepEqual(skyJ["filter"], map[string]any{"mode": "oiii", "bandwidth": 3.0}) || skyJ["zenithMag"] != 19.75 {
+	if skyJ["bortle"] != 5.0 || !reflect.DeepEqual(skyJ["filter"], map[string]any{"mode": "oiii", "bandwidth": 3.0}) || skyJ["zenithMag"] != 20.55 {
 		t.Errorf("sky %v", skyJ)
 	}
 	if _, ok := doc["frame"]; ok {

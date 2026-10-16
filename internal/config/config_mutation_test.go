@@ -281,7 +281,7 @@ func TestMutFlagsState(t *testing.T) {
 	if cfg.SkySet || cfg.ZenithMag() != 22 {
 		t.Errorf("unset sky: %v %v", cfg.SkySet, cfg.ZenithMag())
 	}
-	if (&Config{Bortle: 4}).ZenithMag() != 20.85 || (&Config{Bortle: 4, SQM: 19}).ZenithMag() != 19 {
+	if (&Config{Bortle: 4}).ZenithMag() != 21.05 || (&Config{Bortle: 4, SQM: 19}).ZenithMag() != 19 {
 		t.Error("ZenithMag precedence")
 	}
 	if (&Config{}).SunAlt() != -18 {
