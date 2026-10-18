@@ -20,6 +20,7 @@ import (
 	"github.com/dkorunic/astro-recommender/internal/atmos"
 	"github.com/dkorunic/astro-recommender/internal/catalog"
 	"github.com/dkorunic/astro-recommender/internal/config"
+	"github.com/dkorunic/astro-recommender/internal/horizon"
 	"github.com/dkorunic/astro-recommender/internal/plan"
 	"github.com/dkorunic/astro-recommender/internal/scoring"
 	"github.com/dkorunic/astro-recommender/internal/weather"
@@ -564,7 +565,7 @@ func TestMutJSON(t *testing.T) {
 	res := mutResults(s)
 	res[0].Exposure = &scoring.Estimate{Modest: 3, Good: 10, Best: 40, Max: 200, Sub: 15, SNRPerSub: 3.2, Panels: 1}
 	res[0].Minor, res[0].BMag, res[0].Mosaic = 120, 4.4, config.Mosaic{Cols: 2, Rows: 1}
-	// A peak of exactly 0° (-alt-min below the horizon) is a value, not absent.
+	// A peak of exactly 0° (-alt-min 0) is a value, not absent.
 	slots := []plan.Slot{{Start: s.Grid[0], End: s.Grid[60], Result: &res[0], Score: 0.7, PeakAlt: 0, PeakAt: s.Grid[59]}, {Start: s.Grid[60], End: s.End}}
 	out := mutCapture(t, func() {
 		if err := JSON(cfg, s, "Zagreb", slots, res); err != nil {
@@ -659,8 +660,10 @@ func TestMutJSON(t *testing.T) {
 		t.Errorf("broadband filter %v, want no bandwidth", f)
 	}
 	cfg.Filter = "oiii"
-	if c := doc["targets"].([]any)[2].(map[string]any); c["comet"] != true || c["ra"] != 3.0 || c["dec"] != 4.0 || c["surfaceBrightness"] != nil || c["size"] != nil {
-		t.Errorf("comet %v", c)
+	// A comet's of-date track point is moved back to J2000, as the CSV's.
+	cra, cdec := J2000(s, res[2].Target)
+	if c := doc["targets"].([]any)[2].(map[string]any); c["comet"] != true || c["ra"] != cra || c["dec"] != cdec || cra == 3 || c["surfaceBrightness"] != nil || c["size"] != nil {
+		t.Errorf("comet %v, want J2000 %v %v", c, cra, cdec)
 	}
 	if _, ok := doc["plan"]; ok {
 		t.Error("empty plan emitted")
@@ -918,9 +921,31 @@ func TestMutEmptyState(t *testing.T) {
 			t.Errorf("empty state lacks %q: %q", want, out)
 		}
 	}
-	if strings.Contains(out, "-min-run") || strings.Contains(out, "-tol") {
+	if strings.Contains(out, "-min-run") || strings.Contains(out, "-tol") || strings.Contains(out, "-horizon") || strings.Contains(out, "-skip") {
 		t.Errorf("empty state names unset limits: %q", out)
 	}
+	// The Moon's distance while it is up, which no flag loosens, is named;
+	// with the Moon down all night it is not.
+	if !strings.Contains(out, "at least 42° from the Moon while it is up") {
+		t.Errorf("empty state lacks the Moon limit: %q", out)
+	}
+	cfg.Horizon, cfg.Skip = horizon.Horizon{{0, 10}}, map[string]bool{"m31": true}
+	out = mutCapture(t, func() { Results(cfg, s, nil) })
+	for _, want := range []string{"the local horizon", "1 skipped", "-horizon", "-skip"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("empty state lacks %q: %q", want, out)
+		}
+	}
+	cfg.Horizon, cfg.Skip = nil, nil
+	moonAlt := s.MoonAlt
+	s.MoonAlt = make([]float64, len(moonAlt))
+	for i := range s.MoonAlt {
+		s.MoonAlt[i] = -5
+	}
+	if out := mutCapture(t, func() { Results(cfg, s, nil) }); strings.Contains(out, "Moon") {
+		t.Errorf("empty state names a Moon that is down: %q", out)
+	}
+	s.MoonAlt = moonAlt
 	if l := mutCapture(t, func() { Legend(cfg, s, 0) }); l != "" {
 		t.Errorf("legend with no table printed:\n%s", l)
 	}

@@ -104,8 +104,8 @@ type target struct { // betteralign:ignore
 	Type          string            `json:"type"`
 	Constellation string            `json:"constellation"`
 	Comet         bool              `json:"comet,omitempty"`
-	RA            float64           `json:"ra"`
-	Dec           float64           `json:"dec"`
+	RA            float64           `json:"ra"`  // J2000 degrees, a comet's too (J2000)
+	Dec           float64           `json:"dec"` // J2000 degrees
 	Size          *float64          `json:"size,omitempty"`
 	Minor         *float64          `json:"minor,omitempty"`
 	Mag           *float64          `json:"mag,omitempty"`
@@ -194,7 +194,7 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 		r.Plan = append(r.Plan, sl)
 	}
 	for i, res := range results[:min(cfg.Top, len(results))] {
-		ra, dec := res.Position()
+		ra, dec := J2000(s, res.Target) // a comet's listed position is of date
 		tg := target{
 			Rank: i + 1, Name: res.Name, Description: res.Description, Type: res.Type, Constellation: res.Constellation,
 			RA: ra, Dec: dec, Foto: res.Foto, Score: res.Score, Frame: res.Frame, MaxAlt: res.MaxAlt, MaxAt: res.MaxAt,

@@ -378,7 +378,7 @@ func fit(order [][]string, render func(drop map[string]bool, desc int) (string, 
 func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) int {
 	noTargets = len(results) == 0
 	if noTargets {
-		for _, l := range wrapped(emptyText(cfg)) {
+		for _, l := range wrapped(emptyText(cfg, s)) {
 			fmt.Println(l)
 		}
 
@@ -404,8 +404,10 @@ func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) int {
 }
 
 // emptyText says that no target passed and which limits to loosen: the
-// size and altitude always apply, the others only when set.
-func emptyText(cfg *config.Config) string {
+// size and altitude always apply, the others only when set; the Moon's
+// distance while it is up (scoring's geometric rule) cannot be loosened but
+// is named, since under a bright Moon it is often what emptied the list.
+func emptyText(cfg *config.Config, s *scoring.Sky) string {
 	limits := []string{fmt.Sprintf("size %.1f'-%.1f'", cfg.SizeMin, cfg.SizeMax), fmt.Sprintf("altitude %.0f-%.0f°", cfg.AltMin, cfg.AltMax)}
 	flags := []string{"-size-min/-size-max", "-alt-min/-alt-max"}
 	if cfg.Types != nil {
@@ -416,6 +418,15 @@ func emptyText(cfg *config.Config) string {
 	}
 	if cfg.RASet || cfg.DecSet {
 		limits, flags = append(limits, fmt.Sprintf("within %g° of the region", cfg.Tol)), append(flags, "-tol")
+	}
+	if len(cfg.Horizon) > 0 {
+		limits, flags = append(limits, "the local horizon"), append(flags, "-horizon")
+	}
+	if len(cfg.Skip) > 0 {
+		limits, flags = append(limits, fmt.Sprintf("%d skipped", len(cfg.Skip))), append(flags, "-skip")
+	}
+	if s.MoonSep >= 1 && slices.ContainsFunc(s.MoonAlt, func(a float64) bool { return a > 0 }) {
+		limits = append(limits, fmt.Sprintf("at least %.0f° from the Moon while it is up", s.MoonSep))
 	}
 
 	return fmt.Sprintf("No objects within the limits (%s). Loosen %s, or try another -list.", strings.Join(limits, ", "), strings.Join(flags, ", "))

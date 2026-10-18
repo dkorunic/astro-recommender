@@ -135,7 +135,7 @@ func Parse() (Config, error) {
 	flag.StringVar(&cfg.From, "from", "", "start of the imaging window, local HH:MM (default astronomical dusk)")
 	flag.StringVar(&cfg.To, "to", "", "end of the imaging window, local HH:MM; before noon means next morning (default astronomical dawn)")
 	flag.StringVar(&cfg.Twilight, "twilight", "astronomical", "dusk and dawn definition: astronomical (Sun below -18°) or nautical (-12°, for bright targets)")
-	flag.Float64Var(&cfg.AltMin, "alt-min", 30, "minimum altitude in degrees")
+	flag.Float64Var(&cfg.AltMin, "alt-min", 30, "minimum altitude in degrees, 0 or more")
 	flag.Float64Var(&cfg.AltMax, "alt-max", 80, "maximum altitude in degrees")
 	flag.Float64Var(&cfg.SizeMin, "size-min", 10, "minimum object size in arc minutes (0 = no minimum)")
 	flag.Float64Var(&cfg.SizeMax, "size-max", 300, "maximum object size in arc minutes")
@@ -622,13 +622,15 @@ func (cfg *Config) camera(set map[string]bool, preset *Variant, base Scope) erro
 	// Framing without -scope describes another telescope: the base scope's
 	// aperture, obstruction and throughput, or its sensor's QE, read noise
 	// and colour response, would give its SUBS another instrument's counts,
-	// so without -aperture and -camera there are none (QE 0).
+	// so without -aperture and -camera there are none (QE 0). A mono camera
+	// with -qe and -read-noise needs no -camera: it has no colour response
+	// to borrow.
 	if cfg.Scope == "" {
 		var need []string
 		if !set["aperture"] {
 			need = append(need, "-aperture")
 		}
-		if !set["camera"] {
+		if !set["camera"] && (!cfg.Mono || !set["qe"] || !set["read-noise"]) {
 			need = append(need, "-camera")
 		}
 		if len(need) > 0 {
@@ -641,8 +643,9 @@ func (cfg *Config) camera(set map[string]bool, preset *Variant, base Scope) erro
 
 // losses fills and checks what the sub-exposure estimate loses on the way:
 // the optics' throughput (the base scope's by design, another telescope's
-// with -aperture), the dark current (the chip's, -camera's or the base
-// scope's, else typicalDark), -sensor-temp, -reject and -residual.
+// with -aperture), the dark current (-camera's or -scope's chip's, else
+// typicalDark: without either the sensor is not the Origin's), -sensor-temp,
+// -reject and -residual.
 func (cfg *Config) losses(set map[string]bool, base Scope) error {
 	if !set["throughput"] {
 		cfg.Throughput = base.throughput()
@@ -651,7 +654,7 @@ func (cfg *Config) losses(set map[string]bool, base Scope) error {
 		}
 	}
 	if !set["dark"] {
-		cfg.Dark = cmp.Or(Cameras[cmp.Or(cfg.Camera, base.Camera)].Dark, typicalDark)
+		cfg.Dark = cmp.Or(Cameras[cfg.Camera].Dark, typicalDark)
 	}
 	cfg.SensorTempSet = set["sensor-temp"]
 	switch {
@@ -935,9 +938,11 @@ func (cfg *Config) validate() error {
 		return fmt.Errorf("%w: -n must be at least 1", errInvalidFlag)
 	case cfg.JSON && cfg.CSV:
 		return fmt.Errorf("%w: -json and -csv cannot be combined", errInvalidFlag)
-	// Scoring compares the limits as sines, which only orders altitudes within ±90°.
-	case math.Abs(cfg.AltMin) > 90 || math.Abs(cfg.AltMax) > 90:
-		return fmt.Errorf("%w: -alt-min and -alt-max must be between -90 and 90", errInvalidFlag)
+	// Scoring compares the limits as sines, which only orders altitudes up
+	// to 90°; below the horizon nothing is observable (atmos.Airmass clamps
+	// there, so a negative -alt-min would score it at airmass 38).
+	case cfg.AltMin < 0 || cfg.AltMax > 90:
+		return fmt.Errorf("%w: -alt-min and -alt-max must be between 0 and 90", errInvalidFlag)
 	case cfg.AltMin >= cfg.AltMax:
 		return fmt.Errorf("%w: -alt-min (%g) must be below -alt-max (%g)", errInvalidFlag, cfg.AltMin, cfg.AltMax)
 	case cfg.Framing && (cfg.Scale <= 0 || cfg.FOVShort <= 0 || cfg.FOVLong < cfg.FOVShort):

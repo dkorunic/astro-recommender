@@ -131,6 +131,7 @@ func TestCameraDefaults(t *testing.T) {
 		{[]string{"-scope", "seestar-s30-pro"}, throughputLens, 0.25},
 		{[]string{"-scope", "origin", "-aperture", "200"}, throughputOther, typicalDark},
 		{[]string{"-camera", "imx571", "-focal", "400", "-aperture", "80"}, throughputOther, 0.065},
+		{[]string{"-focal", "400", "-pixel", "3.76", "-sensor", "23.5x15.6", "-aperture", "80", "-qe", "0.8", "-read-noise", "1.5", "-mono"}, throughputOther, typicalDark},
 		{[]string{"-scope", "origin", "-throughput", "0.7", "-dark", "0"}, 0.7, 0},
 	} {
 		cfg, err := mutParse(t, mutBase(tc.args...)...)

@@ -45,7 +45,7 @@ func TestValidate(t *testing.T) {
 		"alt-min > max":     func(c *Config) { c.AltMin, c.AltMax = 60, 40 },
 		"alt-min = max":     func(c *Config) { c.AltMin, c.AltMax = 40, 40 },
 		"alt-max > 90":      func(c *Config) { c.AltMax = 95 },
-		"alt-min < -90":     func(c *Config) { c.AltMin = -95 },
+		"alt-min < 0":       func(c *Config) { c.AltMin = -5 },
 		"size-min > max":    func(c *Config) { c.SizeMin, c.SizeMax = 300, 10 },
 		"-plan 10m45s":      func(c *Config) { c.Plan = 10*time.Minute + 45*time.Second },
 		"size-min < 0":      func(c *Config) { c.SizeMin = -5 },
@@ -342,8 +342,14 @@ func TestCamera(t *testing.T) {
 		// -read-noise without it would keep the Origin's colour response.
 		"no -camera": {[]string{
 			"-focal", "400", "-pixel", "3.76", "-sensor", "23.5x15.6", "-aperture", "200", "-obstruction", "70",
-			"-sub", "60", "-qe", "0.6", "-read-noise", "1", "-mono",
+			"-sub", "60", "-qe", "0.6", "-read-noise", "1",
 		}, "", cam{200, 70, 60, 0, 1}},
+		// A mono camera has no colour response to borrow: -qe and
+		// -read-noise describe it whole.
+		"no -camera, mono": {[]string{
+			"-focal", "400", "-pixel", "3.76", "-sensor", "23.5x15.6", "-aperture", "200", "-obstruction", "70",
+			"-sub", "60", "-qe", "0.6", "-read-noise", "1", "-mono",
+		}, "", cam{200, 70, 60, 0.6, 1}},
 		"sub alone":      {[]string{"-sub", "30"}, "need framing", cam{}},
 		"mono alone":     {[]string{"-mono"}, "need framing", cam{}},
 		"obstruction=ap": {[]string{"-scope", "origin", "-obstruction", "152"}, "-aperture must be above -obstruction", cam{}},
