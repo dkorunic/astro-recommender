@@ -34,6 +34,7 @@ func TestScopes(t *testing.T) {
 		// Vaonis states 245 mm but the Vespera II's 250 mm field and 2.39"/px.
 		"vespera-3":     {long: 2.5, short: 1.4, tol: 0.05},
 		"vespera-pro-2": {long: 1.6, short: 1.6, tol: 0.05},
+		"atlas":         {long: 1.78, short: 1.00},
 		"evscope":       {long: 37.0 / 60, short: 27.0 / 60, tol: 0.04}, // rounded to the minute
 		"evscope-2":     {long: 45.6 / 60, short: 34.2 / 60},
 		"odyssey":       {long: 45.0 / 60, short: 33.6 / 60},
