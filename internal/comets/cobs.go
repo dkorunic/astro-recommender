@@ -45,9 +45,8 @@ type Observed map[string][]obs
 // FetchObserved returns the COBS observations of the cobsDays up to day
 // (UTC), cached for cobsCacheAge; none in the browser, since COBS sends no
 // CORS headers (checked at run time, like fetch's identify). COBS answers
-// 2500 records a page, newest first, so every page is read (each cached on
-// its own): page 1 alone would drop a busy month's oldest observations.
-// One failed page is an error for them all, rather than leave a part of the month.
+// 2500 records a page, newest first, so every page is read (allPages):
+// page 1 alone would drop a busy month's oldest observations.
 func FetchObserved(ctx context.Context, day time.Time) (Observed, error) {
 	if runtime.GOOS == "js" {
 		return Observed{}, nil
@@ -55,34 +54,49 @@ func FetchObserved(ctx context.Context, day time.Time) (Observed, error) {
 	to := day.UTC()
 	from := to.AddDate(0, 0, -cobsDays)
 	url := fmt.Sprintf(cobsURL, from.Format(time.DateOnly), to.Format(time.DateOnly))
-	file := "cobs-" + to.Format(time.DateOnly)
-	first, err := fetch.Cached(ctx, url, file+".json", cobsCacheAge, parseObserved)
-	if err != nil {
-		return nil, err
-	}
-	out := first.seen
-	for p := 2; p <= min(first.pages, cobsMaxPages); p++ {
-		next, err := fetch.Cached(ctx, fmt.Sprintf("%s&page=%d", url, p), fmt.Sprintf("%s-p%d.json", file, p), cobsCacheAge, parseObserved)
-		if err != nil {
-			return nil, fmt.Errorf("page %d of %d: %w", p, first.pages, err)
-		}
-		for k, v := range next.seen {
-			out[k] = append(out[k], v...)
-		}
-	}
+	get := func(ctx context.Context) ([]byte, error) { return allPages(ctx, url) }
 
-	return out, nil
+	return fetch.CachedGet(ctx, get, "cobs-"+to.Format(time.DateOnly)+"-all.json", cobsCacheAge, parseObserved)
 }
 
-// cobsPage is one page of COBS's answer and how many pages it has.
-type cobsPage struct {
-	seen  Observed
-	pages int
+// allPages downloads every page of COBS's answer at url, up to cobsMaxPages,
+// as one document of its shape, which is cached as one: the pages run
+// newest first, so as reports arrive records move onto the next page, and
+// pages fetched hours apart would repeat or skip those at their boundaries.
+// One failed page fails them all, rather than leave a part of the month.
+func allPages(ctx context.Context, url string) ([]byte, error) {
+	var objects []json.RawMessage
+	pages := 1
+	for p := 1; p <= min(pages, cobsMaxPages); p++ {
+		u := url
+		if p > 1 {
+			u = fmt.Sprintf("%s&page=%d", url, p)
+		}
+		data, err := fetch.GetText(ctx, u)
+		if err != nil {
+			return nil, fmt.Errorf("page %d of %d: %w", p, pages, err)
+		}
+		var body struct {
+			Objects []json.RawMessage `json:"objects"`
+			Info    struct {
+				Pages int `json:"pages"`
+			} `json:"info"`
+		}
+		if err := json.Unmarshal(data, &body); err != nil {
+			return nil, fmt.Errorf("%w: cobs page %d: %w", errComets, p, err)
+		}
+		if p == 1 {
+			pages = body.Info.Pages
+		}
+		objects = append(objects, body.Objects...)
+	}
+
+	return json.Marshal(map[string][]json.RawMessage{"objects": objects})
 }
 
 // parseObserved reads COBS's obs_list JSON; a record without a designation,
 // date or numeric magnitude in range is skipped.
-func parseObserved(data []byte) (cobsPage, error) {
+func parseObserved(data []byte) (Observed, error) {
 	//nolint:tagliatelle // COBS's field names
 	var body struct {
 		Objects []struct {
@@ -93,12 +107,9 @@ func parseObserved(data []byte) (cobsPage, error) {
 			Date      string `json:"obs_date"`
 			Magnitude string `json:"magnitude"`
 		} `json:"objects"`
-		Info struct {
-			Pages int `json:"pages"`
-		} `json:"info"`
 	}
 	if err := json.Unmarshal(data, &body); err != nil {
-		return cobsPage{}, fmt.Errorf("%w: cobs: %w", errComets, err)
+		return nil, fmt.Errorf("%w: cobs: %w", errComets, err)
 	}
 	out := Observed{}
 	for _, o := range body.Objects {
@@ -113,7 +124,7 @@ func parseObserved(data []byte) (cobsPage, error) {
 		out[key] = append(out[key], obs{t, mag})
 	}
 
-	return cobsPage{out, body.Info.Pages}, nil
+	return out, nil
 }
 
 // offset returns the median of the observed magnitudes less c's

@@ -243,7 +243,7 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 			// cost up to 30% and 50% of usable frames; rain (0 -> RainGate mm
 			// in the hour) all of them, whatever the cloud layers say. Like cloud it
 			// weighs the score only: FOTO and the observable runs are geometric.
-			sky[i] = (1 - at.Cloud/100) * ramp(at.Temp-at.DewPoint, 4, 1, 0.7) * ramp(gust(h.Gust, at.Wind), 20, 40, 0.5)
+			sky[i] = (1 - at.Cloud/100) * ramp(at.Temp-at.DewPoint, 4, 1, 0.7) * ramp(Gust(h.Gust, at.Wind), 20, 40, 0.5)
 			s.Temp[i] = at.Temp
 			if h.Precip > 0 { // NaN (unknown) does not gate
 				sky[i] *= ramp(h.Precip, 0, weather.RainGate, 0)
@@ -326,9 +326,9 @@ func fillGaps(what string, v []float64, ok []bool, fetched bool, window time.Dur
 // ponytail: one factor for every site; measured gusts would calibrate it.
 const maxGustFactor = 3
 
-// gust is the gust the sky factor counts: the forecast's, at most
-// maxGustFactor times the mean wind.
-func gust(g, wind float64) float64 { return min(g, maxGustFactor*wind) }
+// Gust is the gust the sky factor counts: the forecast's, at most
+// maxGustFactor times the mean wind. The forecast table and JSON show it.
+func Gust(g, wind float64) float64 { return min(g, maxGustFactor*wind) }
 
 // typicalSeeing is the zenith seeing (FWHM arcsec) assumed for the minutes
 // neither 7Timer nor the upper-air estimate covers.

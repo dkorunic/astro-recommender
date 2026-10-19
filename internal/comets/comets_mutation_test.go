@@ -259,7 +259,7 @@ func TestMutCometKey(t *testing.T) {
 // COBS magnitudes move a comet's by their median offset from the elements'
 // magnitude at each observation, from cobsMin of them; bad records are skipped.
 func TestMutObserved(t *testing.T) {
-	page, err := parseObserved([]byte(`{"objects":[
+	seen, err := parseObserved([]byte(`{"objects":[
 		{"comet":{"mpc_name":"9Z"},"obs_date":"2026-10-01 20:00:00","magnitude":"10.0"},
 		{"comet":{"mpc_name":"9Z"},"obs_date":"2026-10-02 20:00:00","magnitude":"11.0"},
 		{"comet":{"mpc_name":"9Z"},"obs_date":"2026-10-03 20:00:00","magnitude":"12.5"},
@@ -267,7 +267,6 @@ func TestMutObserved(t *testing.T) {
 		{"comet":{"mpc_name":"9Z"},"obs_date":"bad","magnitude":"9"},
 		{"comet":{"mpc_name":""},"obs_date":"2026-10-04 20:00:00","magnitude":"9"},
 		{"comet":{"mpc_name":"9Z","component":"B"},"obs_date":"2026-10-04 20:00:00","magnitude":"9"}]}`))
-	seen := page.seen
 	if err != nil || len(seen["9Z"]) != 3 || len(seen["9Zb"]) != 1 || len(seen) != 2 {
 		t.Fatalf("parse %v %v", seen, err)
 	}
@@ -311,8 +310,9 @@ func (c *cobsTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	return &http.Response{StatusCode: code, Body: io.NopCloser(strings.NewReader(body)), Header: http.Header{}, Request: r}, nil
 }
 
-// Every page of COBS's answer is read, not only the first, and a failed
-// page fails the whole month rather than leave a part of it.
+// Every page of COBS's answer is read, not only the first, and cached
+// together; a failed page fails the whole month rather than leave a part of
+// it.
 func TestMutObservedPages(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
@@ -327,6 +327,12 @@ func TestMutObservedPages(t *testing.T) {
 	seen, err := FetchObserved(context.Background(), day)
 	if err != nil || len(seen["9Z"]) != 3 || len(ct.reqs) != 3 || !strings.HasSuffix(ct.reqs[2], "&page=3") {
 		t.Fatalf("three pages: %v %v, requests %v", seen, err, ct.reqs)
+	}
+	// The pages are one cache: a second run the same day asks for none.
+	ct = &cobsTransport{pages: 3}
+	http.DefaultTransport = ct
+	if seen, err := FetchObserved(context.Background(), day); err != nil || len(seen["9Z"]) != 3 || len(ct.reqs) != 0 {
+		t.Errorf("cached pages: %v %v, requests %v", seen, err, ct.reqs)
 	}
 	ct = &cobsTransport{pages: 3, fail: 2}
 	http.DefaultTransport = ct

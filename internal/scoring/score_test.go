@@ -611,3 +611,22 @@ func TestScoreFilterCameraModes(t *testing.T) {
 		}
 	}
 }
+
+// TestLoosestMoonK pins the least Moon limit factor of the -filter choices:
+// the narrowband floor only for a line filter, cls's and lpro's own above it,
+// and every moonKTypes entry an emission-line type whose ratios it stands for.
+func TestLoosestMoonK(t *testing.T) {
+	for _, typ := range moonKTypes {
+		if !catalog.EmissionLine(catalog.Target{Type: typ}) {
+			t.Errorf("%s is not an emission-line type", typ)
+		}
+	}
+	for filter, want := range map[string][2]float64{
+		"": {1, 1}, "ha": {minMoonK, minMoonK}, "oiii": {minMoonK, minMoonK}, "cls": {0.35, 0.37},
+		"lpro": {0.79, 0.81}, "lpro,cls": {0.35, 0.37}, "lpro,dual": {minMoonK, minMoonK},
+	} {
+		if k := LoosestMoonK(&config.Config{Filter: filter, FilterNM: 7}); k < want[0] || k > want[1] {
+			t.Errorf("LoosestMoonK(%q) = %.3f, want %.2f-%.2f", filter, k, want[0], want[1])
+		}
+	}
+}

@@ -413,8 +413,17 @@ func TestMutWeatherTable(t *testing.T) {
 	if !strings.HasPrefix(lines[1], "20:00") || !strings.Contains(lines[1], "20% 0.1mm") || !regexp.MustCompile(`~\d\.\d"`).MatchString(lines[1]) || !strings.Contains(lines[1], " 4.0°C") || strings.Contains(lines[1], "-4.0") || !strings.Contains(lines[1], "8/15 km/h") {
 		t.Errorf("row 1 %q", lines[1])
 	}
-	if !strings.HasPrefix(lines[2], "21:00") || strings.Contains(lines[2], "mm") || !strings.Contains(lines[2], "2/8") || !strings.Contains(lines[2], `0.75-1"`) {
+	// A gust past 3x the wind shows as scored, capped and marked.
+	if !strings.HasPrefix(lines[2], "21:00") || strings.Contains(lines[2], "mm") || !strings.Contains(lines[2], "2/8") || !strings.Contains(lines[2], `0.75-1"`) || !strings.Contains(lines[2], "8/~24 km/h") {
 		t.Errorf("row 2 %q", lines[2])
+	}
+	js := mutCapture(t, func() {
+		if err := JSON(cfg, s, "", nil, nil); err != nil {
+			t.Error(err)
+		}
+	})
+	if !strings.Contains(js, `"gust": 15,`) || !strings.Contains(js, `"gust": 24,`) || strings.Count(js, `"gustForecast": 40`) != 1 || strings.Count(js, "gustForecast") != 1 {
+		t.Errorf("JSON gusts:\n%s", js)
 	}
 	mutColor(t, true)
 	if colored := mutCapture(t, func() { Weather(cfg, s) }); mutStrip(colored) != out {
@@ -924,11 +933,21 @@ func TestMutEmptyState(t *testing.T) {
 	if strings.Contains(out, "-min-run") || strings.Contains(out, "-tol") || strings.Contains(out, "-horizon") || strings.Contains(out, "-skip") {
 		t.Errorf("empty state names unset limits: %q", out)
 	}
-	// The Moon's distance while it is up, which no flag loosens, is named;
-	// with the Moon down all night it is not.
-	if !strings.Contains(out, "at least 42° from the Moon while it is up") {
+	// The Moon's distance while it is up, which only -filter loosens, is
+	// named; with the Moon down all night it is not.
+	if !strings.Contains(out, "at least 42° from the Moon while it is up)") {
 		t.Errorf("empty state lacks the Moon limit: %q", out)
 	}
+	cfg.Filter, cfg.FilterNM = "ha", 7
+	if out := mutCapture(t, func() { Results(cfg, s, nil) }); !strings.Contains(out, "while it is up (down to 13° through a filter)") {
+		t.Errorf("empty state lacks the filter's Moon limit: %q", out)
+	}
+	// lpro dims the moonlight less: 0.8 of the limit, not the narrowband floor.
+	cfg.Filter = "lpro"
+	if out := mutCapture(t, func() { Results(cfg, s, nil) }); !strings.Contains(out, "while it is up (down to 34° through a filter)") {
+		t.Errorf("empty state misstates lpro's Moon limit: %q", out)
+	}
+	cfg.Filter = ""
 	cfg.Horizon, cfg.Skip = horizon.Horizon{{0, 10}}, map[string]bool{"m31": true}
 	out = mutCapture(t, func() { Results(cfg, s, nil) })
 	for _, want := range []string{"the local horizon", "1 skipped", "-horizon", "-skip"} {

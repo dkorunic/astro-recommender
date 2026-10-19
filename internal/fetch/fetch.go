@@ -69,6 +69,12 @@ func checkRedirect(req *http.Request, via []*http.Request) error {
 // falls back to a stale cached copy. Only data that parses is cached, so a
 // 200 OK error page never replaces a good copy.
 func Cached[T any](ctx context.Context, url, file string, maxAge time.Duration, parse func([]byte) (T, error)) (T, error) {
+	return CachedGet(ctx, func(ctx context.Context) ([]byte, error) { return GetText(ctx, url) }, file, maxAge, parse)
+}
+
+// CachedGet is Cached for data get downloads, such as several pages that
+// must be cached as one (comets' COBS answer).
+func CachedGet[T any](ctx context.Context, get func(context.Context) ([]byte, error), file string, maxAge time.Duration, parse func([]byte) (T, error)) (T, error) {
 	var cache string
 	if dir, err := os.UserCacheDir(); err == nil {
 		cache = filepath.Join(dir, "astro-recommender", file)
@@ -80,7 +86,7 @@ func Cached[T any](ctx context.Context, url, file string, maxAge time.Duration, 
 		return cached, nil
 	}
 
-	data, err := GetText(ctx, url)
+	data, err := get(ctx)
 	if err == nil {
 		var v T
 		if v, err = parse(data); err == nil {

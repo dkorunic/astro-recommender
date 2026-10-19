@@ -119,8 +119,8 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 	}
 	headerLine("Window:  ", fmt.Sprintf("%s - %s (%s%s)", s.Start.Format("2006-01-02 "+layout), s.End.Format("2006-01-02 "+layout),
 		durText(s.End.Sub(s.Start)), night))
-	headerLine("Moon:    ", fmt.Sprintf("%s illuminated, targets kept at least %.0f° away, %s", paint(scale(s.Illum, 0.3, 0.7), fmt.Sprintf("%.0f%%", s.Illum*100)),
-		s.MoonSep, moonText(s)))
+	headerLine("Moon:    ", fmt.Sprintf("%s illuminated, targets kept at least %.0f° away%s, %s", paint(scale(s.Illum, 0.3, 0.7), fmt.Sprintf("%.0f%%", s.Illum*100)),
+		s.MoonSep, filterMoon(cfg, s), moonText(s)))
 	headerLine("Size:    ", fmt.Sprintf("%.1f' - %.1f'", cfg.SizeMin, cfg.SizeMax))
 	if cfg.MinRun > 0 {
 		headerLine("Min run: ", fmt.Sprintf("at least %s observable without a break", durText(cfg.MinRun)))
@@ -248,7 +248,12 @@ func Weather(cfg *config.Config, s *scoring.Sky) {
 			layers = paint("39", fmt.Sprintf("%.0f/%.0f/%.0f%%", h.Low, h.Mid, h.High))
 			spread := h.Temp - h.DewPoint // < 2-3 °C: dew on the optics
 			dew = paint(scale(spread, 4, 2), fmt.Sprintf("%.1f°C", spread))
-			wind = paint(scale(h.Gust, 20, 35), fmt.Sprintf("%.0f/%.0f km/h", h.Wind, h.Gust))
+			// The gust scored: past the cap the forecast's is the model's, marked ~.
+			g, mark := scoring.Gust(h.Gust, h.Wind), ""
+			if g < h.Gust {
+				mark = "~"
+			}
+			wind = paint(scale(g, 20, 35), fmt.Sprintf("%.0f/%s%.0f km/h", h.Wind, mark, g))
 			// The upper-air estimate, as scoring's blur; 7Timer's class stands in for hours without one.
 			if h.Seeing > 0 {
 				seeing = paint(scale(h.Seeing, 2, 2.5), fmt.Sprintf("~%.1f\"", h.Seeing)) // 7Timer's classes 6 and 8
@@ -405,8 +410,9 @@ func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) int {
 
 // emptyText says that no target passed and which limits to loosen: the
 // size and altitude always apply, the others only when set; the Moon's
-// distance while it is up (scoring's geometric rule) cannot be loosened but
-// is named, since under a bright Moon it is often what emptied the list.
+// distance while it is up (scoring's geometric rule, which only a -filter
+// loosens) is named, since under a bright Moon it is often what emptied
+// the list.
 func emptyText(cfg *config.Config, s *scoring.Sky) string {
 	limits := []string{fmt.Sprintf("size %.1f'-%.1f'", cfg.SizeMin, cfg.SizeMax), fmt.Sprintf("altitude %.0f-%.0f°", cfg.AltMin, cfg.AltMax)}
 	flags := []string{"-size-min/-size-max", "-alt-min/-alt-max"}
@@ -426,10 +432,23 @@ func emptyText(cfg *config.Config, s *scoring.Sky) string {
 		limits, flags = append(limits, fmt.Sprintf("%d skipped", len(cfg.Skip))), append(flags, "-skip")
 	}
 	if s.MoonSep >= 1 && slices.ContainsFunc(s.MoonAlt, func(a float64) bool { return a > 0 }) {
-		limits = append(limits, fmt.Sprintf("at least %.0f° from the Moon while it is up", s.MoonSep))
+		limits = append(limits, fmt.Sprintf("at least %.0f° from the Moon while it is up%s", s.MoonSep, filterMoon(cfg, s)))
 	}
 
 	return fmt.Sprintf("No objects within the limits (%s). Loosen %s, or try another -list.", strings.Join(limits, ", "), strings.Join(flags, ", "))
+}
+
+// filterMoon qualifies the Moon distance s.MoonSep with -filter, whose
+// choices scale it (scoring's moonK) as far down as scoring.LoosestMoonK of
+// it; "" without one, when that loosens it by no whole degree, or to none
+// (a new Moon's 1°, which says nothing).
+func filterMoon(cfg *config.Config, s *scoring.Sky) string {
+	lo := math.Round(s.MoonSep * scoring.LoosestMoonK(cfg))
+	if lo == math.Round(s.MoonSep) || lo == 0 {
+		return ""
+	}
+
+	return fmt.Sprintf(" (down to %.0f° through a filter)", lo)
 }
 
 // wrapped splits text at TermWidth when that is set, else returns it whole.
@@ -829,7 +848,7 @@ var weatherColumns = []column{
 	{"EXT", "atmospheric extinction, mag per airmass"},
 	{"SEEING", "7Timer seeing (star FWHM); ~n\" estimated from the upper air"},
 	{"DEW SPREAD", "temperature minus dew point; dew forms below ~2-3 °C"},
-	{"WIND/GUST", "mean wind / gusts, km/h"},
+	{"WIND/GUST", "mean wind / gusts, km/h; ~ capped at 3x the wind, as scored"},
 }
 
 // sameAsTargets marks a plan column the target legend already explains, so

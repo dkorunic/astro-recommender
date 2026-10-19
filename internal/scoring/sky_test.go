@@ -243,8 +243,8 @@ func TestSkySeeingOrder(t *testing.T) {
 // mountain grid point's 40 km/h gusts in a 5 km/h breeze are the model's.
 func TestGustCap(t *testing.T) {
 	for _, c := range [][3]float64{{40, 5, 15}, {30, 15, 30}, {0, 10, 0}, {25, 0, 0}} {
-		if got := gust(c[0], c[1]); got != c[2] {
-			t.Errorf("gust(%v, %v) = %v, want %v", c[0], c[1], got, c[2])
+		if got := Gust(c[0], c[1]); got != c[2] {
+			t.Errorf("Gust(%v, %v) = %v, want %v", c[0], c[1], got, c[2])
 		}
 	}
 }

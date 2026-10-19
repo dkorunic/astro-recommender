@@ -688,6 +688,26 @@ func (fp filterPass) gain(objNL, objRef, glow, rayleigh, mie float64) float64 {
 // some 30° from a full Moon however narrow the band.
 const minMoonK = 0.3
 
+// moonKTypes are one type per line ratio catalog.Target.Lines knows (H II
+// regions, the default, then its lineRatios), for LoosestMoonK.
+var moonKTypes = []string{"HII Region", "Planetary Nebula", "Supernova Remnant", "Wolf-Rayet Nebula"}
+
+// LoosestMoonK returns the least moonK any -filter choice gives an
+// emission-line target, of any type's line ratios: how far down the filters
+// can scale the Moon separation limit (the header's Moon line). Anything else
+// a filter dims as much as the moonlight, so its moonK is 1. 1 without
+// -filter.
+func LoosestMoonK(cfg *config.Config) float64 {
+	k := 1.0
+	for _, name := range cfg.FilterNames() {
+		for _, typ := range moonKTypes {
+			k = min(k, passes(cfg, catalog.Target{Type: typ}, name).moonK())
+		}
+	}
+
+	return k
+}
+
 // moonK is the fraction of the moonlight, against the target's own share of
 // light passed, that the filter lets count: rayleigh/w², the sky-limited
 // weight's ratio to broadband under a Moon well away (where Rayleigh

@@ -173,7 +173,12 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 		hour := map[string]any{"hour": t.In(cfg.Loc), "extinction": s.ExtinctionAt(t, cfg.Extinction)}
 		if h, ok := s.Weather[t.Unix()]; ok {
 			hour["cloud"], hour["low"], hour["mid"], hour["high"] = h.Cloud, h.Low, h.Mid, h.High
-			hour["dewSpread"], hour["wind"], hour["gust"] = h.Temp-h.DewPoint, h.Wind, h.Gust
+			// The gust scored, and past its cap the forecast's too.
+			g := scoring.Gust(h.Gust, h.Wind)
+			hour["dewSpread"], hour["wind"], hour["gust"] = h.Temp-h.DewPoint, h.Wind, g
+			if g < h.Gust {
+				hour["gustForecast"] = h.Gust
+			}
 			if h.Precip >= 0 { // not NaN
 				hour["precipitation"] = h.Precip
 			}
