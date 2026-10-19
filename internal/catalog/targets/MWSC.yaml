@@ -14508,7 +14508,7 @@
 - constellation: ""
   dec: "-54 29 06.0"
   description: ""
-  mag: 8.80
+  mag: 8.8
   name: "NGC 5749"
   ra: "14 48 46.8"
   size: 14.4
@@ -14612,7 +14612,7 @@
 - constellation: ""
   dec: "-54 23 24.0"
   description: ""
-  mag: 6.5
+  mag: 6.50
   name: "NGC 5822"
   ra: "15 04 28.2"
   size: 36.0

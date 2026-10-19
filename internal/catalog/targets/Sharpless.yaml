@@ -162,12 +162,12 @@
   size: 10.0
   type: "Emission Nebula"
 - constellation: ""
-  dec: "-28 53 40.8"
+  dec: "-28 54 00.0"
   description: ""
   mag: -9999
   name: "Sh2-21"
-  ra: "17 51 39.0"
-  size: 5.0
+  ra: "17 51 40.0"
+  size: 4.0
   type: "Emission Nebula"
 - constellation: ""
   dec: "-25 06 00.0"
@@ -773,11 +773,11 @@
   size: 100.0
   type: "Supernova Remnant"
 - constellation: ""
-  dec: "+30 15 57.0"
+  dec: "+30 12 48.0"
   description: ""
   mag: -9999
   name: "Sh2-97"
-  ra: "19 56 05.3"
+  ra: "19 56 37.0"
   size: 10.0
   type: "Emission Nebula"
 - constellation: ""
@@ -1678,11 +1678,11 @@
   size: 9.0
   type: "Emission Nebula"
 - constellation: ""
-  dec: "+52 33 10.3"
+  dec: "+52 29 24.0"
   description: ""
   mag: -9999
   name: "Sh2-210"
-  ra: "04 30 59.1"
+  ra: "04 31 08.0"
   size: 20.0
   type: "Emission Nebula"
 - constellation: ""
@@ -1862,11 +1862,11 @@
   size: 45.0
   type: "Emission Nebula"
 - constellation: ""
-  dec: "+35 47 35.1"
+  dec: "+35 51 19.0"
   description: ""
   mag: -9999
   name: "Sh2-233"
-  ra: "05 38 43.1"
+  ra: "05 38 32.0"
   size: 2.0
   type: "Emission Nebula"
 - constellation: ""

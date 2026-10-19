@@ -16,8 +16,7 @@ alternative ID or the RCW column (BA), within max(20', half the major axis)
 are its cross-identifications; one named or alternative-ID'd RCW N is the
 region itself and gives the position, size (unless more than 4x off the
 major axis: a part), type, magnitude, surface brightness and common name.
-Without one, a type all the rows agree on is kept (RCW 16 holds the
-planetary NGC 2452 and the H II region NGC 2467), else "Emission Nebula".
+Without one, a type all the rows agree on is kept, else "Emission Nebula".
 The minor axis is the RCW axis ratio times the size, when that size is
 within 2x of the RCW major axis. The brightness class (v/b/m/f) is not a
 magnitude and is left out.

@@ -16,8 +16,8 @@ and the position, since Sharpless's B1900 positions, read off the BD, are off
 by up to ~15' (NGC 6302); its size only for a row that is the Sharpless
 object itself, since a cross-identified M 16 is a part of Sh2-49 (an
 alternative-ID row more than 4x off the diameter is one too: IC 63 of Sh2-185). A row
-farther than max(20', half the diameter) is a Compendium typo (Sh2-210 is
-4.6 degrees off) or another object, and is ignored with a warning, unless
+farther than max(20', half the diameter) is a Compendium typo or another object
+(LBN 437 for Sh2-126), and is ignored with a warning, unless
 SIMBAD confirms it (TRUSTED: there Sharpless is the one off). Wikipedia
 adds the common names of the notable ones.
 """

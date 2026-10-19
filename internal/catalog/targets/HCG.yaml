@@ -155,12 +155,12 @@
   type: "Galaxy Group"
 - bmag: 12.7
   constellation: ""
-  dec: "+18 22 58.9"
+  dec: "+18 23 05.0"
   description: "Arp 258"
   mag: -9999
   name: "HCG 18"
-  ra: "02 39 06.8"
-  size: 2.0
+  ra: "02 39 06.0"
+  size: 1.7
   type: "Galaxy Group"
 - bmag: 12.1
   constellation: ""

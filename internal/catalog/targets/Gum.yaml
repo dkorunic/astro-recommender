@@ -242,12 +242,12 @@
   size: 25.0
   type: "Emission Nebula"
 - constellation: ""
-  dec: "-58 13 52.0"
+  dec: "-58 14 00.0"
   description: "Eye of Horus Nebula, NGC 3293"
   mag: -9999
   name: "Gum 30"
-  ra: "10 35 52.8"
-  size: 13.0
+  ra: "10 35 53.0"
+  size: 30.0
   type: "Emission Nebula"
 - constellation: ""
   dec: "-58 39 01.0"

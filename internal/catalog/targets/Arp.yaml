@@ -62,14 +62,14 @@
   size: 1.1
   type: "Galaxy"
 - constellation: ""
-  dec: "-00 52 30.0"
+  dec: "-00 52 31.0"
   description: "NGC 497"
   mag: 13.0
   name: "Arp 8"
-  ra: "01 22 23.4"
-  size: 2.1
+  ra: "01 22 24.0"
+  size: 2.0
   surfbr: 22.39
-  minor: 0.88
+  minor: 0.83
   type: "Galaxy"
 - constellation: ""
   dec: "+73 34 00.0"
@@ -583,11 +583,11 @@
   size: 1.0
   type: "Galaxy"
 - constellation: ""
-  dec: "-00 32 42.0"
+  dec: "-00 32 40.0"
   description: "UGC 892"
   mag: 14.0
   name: "Arp 67"
-  ra: "01 21 16.8"
+  ra: "01 21 17.0"
   size: 1.6
   type: "Galaxy"
 - constellation: ""
@@ -1772,11 +1772,11 @@
   minor: 0.86
   type: "Galaxy"
 - constellation: ""
-  dec: "-00 29 24.0"
+  dec: "-00 30 11.0"
   description: "UGC 224"
   mag: 16.0
   name: "Arp 201"
-  ra: "00 23 33.6"
+  ra: "00 23 33.0"
   size: 0.5
   type: "Galaxy"
 - constellation: ""
@@ -2281,12 +2281,12 @@
   size: 1.1
   type: "Galaxy"
 - constellation: ""
-  dec: "+18 23 36.0"
+  dec: "+18 23 05.0"
   description: "Hickson 18D, Hickson 18C, UGC 2140, UGC 2140A"
   mag: 12.7
   name: "Arp 258"
-  ra: "02 39 04.8"
-  size: 2.5
+  ra: "02 39 06.0"
+  size: 1.7
   surfbr: 22.8
   type: "Galaxy Group"
 - constellation: ""

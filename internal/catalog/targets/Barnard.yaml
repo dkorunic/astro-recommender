@@ -1105,11 +1105,11 @@
   size: 10.0
   type: "Dark Nebula"
 - constellation: ""
-  dec: "-06 14 34.4"
+  dec: "-06 10 00.0"
   description: ""
   mag: -9999
   name: "Barnard 134"
-  ra: "19 06 53.1"
+  ra: "19 06 42.0"
   size: 6.0
   type: "Dark Nebula"
 - constellation: ""
@@ -1185,12 +1185,12 @@
   size: 40.0
   type: "Dark Nebula"
 - constellation: ""
-  dec: "+35 20 17.9"
+  dec: "+35 20 00.0"
   description: ""
   mag: -9999
   name: "Barnard 144"
-  ra: "19 58 41.4"
-  size: 270.0
+  ra: "19 58 42.0"
+  size: 360.0
   type: "Dark Nebula"
 - constellation: ""
   dec: "+37 41 00.0"
@@ -2577,11 +2577,11 @@
   size: 13.0
   type: "Dark Nebula"
 - constellation: ""
-  dec: "+40 13 02.6"
+  dec: "+40 13 00.0"
   description: ""
   mag: -9999
   name: "Barnard 344"
-  ra: "20 16 12.3"
+  ra: "20 16 16.0"
   size: 7.0
   type: "Dark Nebula"
 - constellation: ""

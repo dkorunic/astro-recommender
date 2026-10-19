@@ -113,13 +113,13 @@
   size: -9999
   type: "Reflection Nebula"
 - constellation: ""
-  dec: "+60 43 02.0"
-  description: "IC 63, vdB 5, Ced 4a, Ced 4b, IC 59, gamma Cas"
+  dec: "+60 43 00.0"
+  description: "vdB 5, Ced 4a, Ced 4b, IC 59, IC 63, gamma Cas"
   mag: -9999
   name: "MCRN 15"
   ra: "00 56 42.0"
-  size: -9999
-  type: "Emission Nebula"
+  size: 60.0
+  type: "Reflection Nebula"
 - constellation: ""
   dec: "+56 30 21.0"
   description: "DG 6, [RK68] 5, GN 0.55.3, Kr3-2?, 4 nebulae"
@@ -705,12 +705,12 @@
   size: -9999
   type: "Reflection Nebula"
 - constellation: ""
-  dec: "+44 16 07.0"
+  dec: "+44 16 10.0"
   description: "vdB 32, Bernes 68, GN 4.58.8"
   mag: -9999
   name: "MCRN 89"
   ra: "05 02 22.0"
-  size: -9999
+  size: 1.0
   type: "Reflection Nebula"
 - constellation: ""
   dec: "-03 21 17.0"
@@ -777,12 +777,12 @@
   size: 110.0
   type: "Emission Nebula"
 - constellation: ""
-  dec: "+32 49 08.0"
+  dec: "+32 49 09.0"
   description: "vdB 39, GN 5.21.0"
   mag: -9999
   name: "MCRN 98"
-  ra: "05 24 29.0"
-  size: -9999
+  ra: "05 24 30.0"
+  size: 1.0
   type: "Reflection Nebula"
 - constellation: ""
   dec: "+06 35 02.0"

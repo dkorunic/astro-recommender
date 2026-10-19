@@ -887,11 +887,11 @@
   size: 65.0
   type: "Open Cluster"
 - constellation: ""
-  dec: "-63 51 26.9"
+  dec: "-63 51 27.0"
   description: "NGC 6744"
   mag: 8.2
   name: "C 101"
-  ra: "19 09 46.1"
+  ra: "19 09 46.0"
   size: 20.0
   surfbr: 23.29
   minor: 12.44

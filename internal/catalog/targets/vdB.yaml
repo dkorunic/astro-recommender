@@ -33,12 +33,12 @@
   size: 12.0
   type: "Reflection Nebula"
 - constellation: ""
-  dec: "+60 43 00.3"
+  dec: "+60 43 00.0"
   description: "illuminated by HD 5394"
   mag: -9999
   name: "vdB 5"
-  ra: "00 56 42.5"
-  size: 120.0
+  ra: "00 56 42.0"
+  size: 60.0
   type: "Reflection Nebula"
 - constellation: ""
   dec: "+61 50 03.0"
@@ -249,12 +249,12 @@
   size: 35.0
   type: "Reflection Nebula"
 - constellation: ""
-  dec: "+44 16 10.5"
+  dec: "+44 16 10.0"
   description: "illuminated by BD+44 1080"
   mag: -9999
   name: "vdB 32"
-  ra: "05 02 21.7"
-  size: 1.8
+  ra: "05 02 22.0"
+  size: 1.0
   type: "Reflection Nebula"
 - constellation: ""
   dec: "-03 19 59.9"
@@ -305,12 +305,12 @@
   size: 28.0
   type: "Reflection Nebula"
 - constellation: ""
-  dec: "+32 49 08.7"
+  dec: "+32 49 09.0"
   description: "illuminated by HD 243202"
   mag: -9999
   name: "vdB 39"
-  ra: "05 24 29.5"
-  size: 0.6
+  ra: "05 24 30.0"
+  size: 1.0
   type: "Reflection Nebula"
 - constellation: ""
   dec: "+06 35 02.0"
@@ -1245,7 +1245,7 @@
   description: "illuminated by HD 217675"
   mag: -9999
   name: "vdB 156"
-  ra: "22 55 43.0"
+  ra: "23 01 55.0"
   size: 90.0
   type: "Molecular Cloud"
 - constellation: ""

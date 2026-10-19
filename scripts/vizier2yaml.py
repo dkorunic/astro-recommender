@@ -9,7 +9,7 @@ nebulae from SIMBAD, and Harris' globular clusters from his own file,
 cross-identified with Gary Imm's Deep Sky Compendium (vdBH has no Compendium
 rows and is built from VizieR alone).
 
-    V='https://vizier.cds.unistra.fr/viz-bin/asu-tsv?-out.all&-out.max=5000&-out.add=_RAJ,_DEJ&-oc.form=dec&-source='
+    V='https://vizier.cds.unistra.fr/viz-bin/asu-tsv?-out.all&-out.max=10000&-out.add=_RAJ,_DEJ&-oc.form=dec&-source='
     curl -o barnard.tsv "${V}VII/220A/barnard"   # Barnard 1927, 349 dark nebulae
     curl -o vdb.tsv "${V}VII/21/catalog"         # van den Bergh 1966, 158 reflection nebulae
     curl -o arpord.tsv "${V}VII/192/arpord"      # Arp 1966 (Webb 1996 index), 338 objects
@@ -62,7 +62,7 @@ alternative-ID'd, with its designation, nearest first) then gives the
 position, type, magnitude, surface brightness and common name, and its size
 unless more than 4x off VizieR's (Barnard 344's 60' for 7'). An own row
 farther from VizieR than max(20', half the size) is settled by POSITION,
-checked against SIMBAD: the Compendium has typos (Barnard 144 is 12° off),
+checked against SIMBAD: the Compendium has typos (vdB 156's Dec, ~1° off),
 VizieR one (HCG 48, 4° off); an unsettled one exits. The other rows
 carrying the designation (a cross-ID column: IC 434 for Barnard 33) within
 that distance are named in the description, with Arp's member galaxies,
@@ -112,21 +112,15 @@ from sharpless2yaml import sep
 # VizieR's are, "none" where the row is another object (SIMBAD keeps them
 # apart), which is then ignored.
 POSITION = {
-    "Barnard 134": "vizier", "Barnard 144": "vizier", "Barnard 344": "vizier",
-    "vdB 5": "vizier", "vdB 32": "vizier", "vdB 39": "vizier",
-    "Arp 8": "vizier", "Arp 67": "vizier", "Arp 201": "vizier", "Arp 258": "vizier",
-    "HCG 18": "vizier",  # its own row is Arp 258's
+    # rev6b fixed the Compendium's Barnard 134/144/344, vdB 5/32/39, Arp 8/67/201/258
+    # and Gum 30 typos, and dropped Gum 77a's alt-ID from Sh2-34.
     "HCG 48": "compendium",
-    "Gum 30": "vizier",  # the Compendium's declination 10° off NGC 3293's
-    "Gum 77a": "none",   # the Compendium's alt-ID on Sh2-34, 2.1° away
-    "MCRN 15": "vizier",  # gamma Cas itself; IC 63, 24' off, is a part
-    "MCRN 89": "vizier", "MCRN 98": "vizier", "MCRN 902": "vizier",  # vdB 32, 39, 156: the vdB typos
+    "MCRN 902": "vizier",  # vdB 156's row: RA fixed in rev6b, Dec still ~1° off omi And
     "MCRN 767": "none",  # the Serpens nebula; Sh2-68 is 1.3° away
     # Harris and Dias designations are names other lists use too (Arp 2 is
     # also Arp's galaxy): their entries are keyed by (list, designation).
     ("Harris", "Arp 2"): "none",  # the globular; the Compendium's Arp 2 is the galaxy
     ("Dias", "NGC 6664"): "compendium",  # Dias 23' off SIMBAD
-    ("Dias", "NGC 6775"): "none",  # the Compendium's alt-ID on the planetary NGC 6778, 47' away
 }
 
 

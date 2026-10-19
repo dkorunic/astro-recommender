@@ -1188,12 +1188,12 @@
   size: 10.0
   type: "Emission Nebula"
 - constellation: ""
-  dec: "-28 53 00.0"
-  description: "Sh2-21"
+  dec: "-28 50 52.1"
+  description: ""
   mag: -9999
   name: "RCW 142"
-  ra: "17 50 00.0"
-  size: 4.0
+  ra: "17 49 40.5"
+  size: 2.0
   type: "Emission Nebula"
 - constellation: ""
   dec: "-24 55 09.8"
@@ -1247,12 +1247,12 @@
   size: 2.0
   type: "Emission Nebula"
 - constellation: ""
-  dec: "-21 39 00.0"
+  dec: "-21 44 35.9"
   description: "Sh2-34, Gum 77a"
   mag: -9999
   minor: 30.0
   name: "RCW 149"
-  ra: "18 06 24.0"
+  ra: "18 07 00.4"
   size: 120.0
   type: "Emission Nebula"
 - constellation: ""

@@ -1165,7 +1165,7 @@
   description: ""
   mag: 6.7
   name: "NGC 1027"
-  ra: "02 42 42.5"
+  ra: "02 42 42.0"
   size: 6.2
   type: "Open Cluster"
 - constellation: ""
@@ -9625,11 +9625,11 @@
   size: 60.0
   type: "Open Cluster"
 - constellation: ""
-  dec: "-54 29 54.0"
+  dec: "-54 30 07.0"
   description: ""
-  mag: -9999
+  mag: 8.8
   name: "NGC 5749"
-  ra: "14 48 53.0"
+  ra: "14 48 49.0"
   size: 10.0
   type: "Open Cluster"
 - constellation: ""
