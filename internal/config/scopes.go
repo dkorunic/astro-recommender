@@ -39,11 +39,14 @@ const originKey = "origin"
 var Scopes = map[string]Scope{
 	// Celestron's RASA 152 f/2.2: the Mark II (2025) with the IMX678 and a
 	// 77 mm central obstruction (Celestron: 50.7%), 10 s subs; its read
-	// noise a vendor sheet's for the same sensor at 8.5 dB gain, the middle
-	// of its 0.6-3.5 e⁻ (the Origin's ISO 1000 has no published gain).
+	// noise at ISO 1000 measured, an upper bound: the bias master it saves
+	// (9 frames, NSTACK) has a spatial σ of 32 ADU, at 0.2793/25 e⁻/ADU (it
+	// stores each ADC count as 25 ADU, EGAIN being per count), so one
+	// frame's read noise is at most 3·32·0.0112 = 1.1 e⁻ (astro-analyzer,
+	// October 2026; a vendor sheet's 8.5 dB figure, 2.15 e⁻, before).
 	"origin": {
 		Name: "Celestron Origin Mark II", Camera: chipIMX678, Focal: 335, Aperture: 152, Obstruction: 77,
-		Pixel: 2.0, PxLong: 3856, PxShort: 2180, Sub: 10, ReadNoise: 2.15, Mirror: true,
+		Pixel: 2.0, PxLong: 3856, PxShort: 2180, Sub: 10, ReadNoise: 1.1, Mirror: true,
 	},
 	// The original (2023, discontinued): the IMX178 behind a 63 mm
 	// obstruction (41%).
