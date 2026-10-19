@@ -242,7 +242,7 @@ func TestSkySeeingOrder(t *testing.T) {
 // A forecast gust counts up to maxGustFactor times the mean wind: a
 // mountain grid point's 40 km/h gusts in a 5 km/h breeze are the model's.
 func TestGustCap(t *testing.T) {
-	for _, c := range [][3]float64{{40, 5, 15}, {30, 15, 30}, {0, 10, 0}, {25, 0, 0}} {
+	for _, c := range [][3]float64{{40, 5, 20}, {40, 10, 30}, {30, 15, 30}, {0, 10, 0}, {25, 0, 20}, {3, 0, 3}} {
 		if got := Gust(c[0], c[1]); got != c[2] {
 			t.Errorf("Gust(%v, %v) = %v, want %v", c[0], c[1], got, c[2])
 		}

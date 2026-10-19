@@ -439,7 +439,7 @@ Q = (1 - C)\cdot
 ```
 
 - **Dew risk**: the spread between temperature and dew point falling from 4 °C to 1 °C costs up to 30%.
-- **Gusts**: from 20 to 40 km/h cost up to half, counted at most 3× the mean wind: Open-Meteo's hourly gust runs a median 2.5× the 10 m wind at lowland and Paranal points but 4.8× at La Palma's and 10.6× at Mauna Kea's, where the grid's gust parameterisation, not the summit's air, makes 30–50 km/h gusts in a 5–10 km/h breeze.
+- **Gusts**: from 20 to 40 km/h cost up to half, counted at most 3× the hour's mean wind (never capped below 20 km/h, where it would change nothing): Open-Meteo's hourly gust runs a median 2.5× the 10 m wind at lowland and Paranal points but 4.8× at La Palma's and 10.6× at Mauna Kea's, where the grid's gust parameterisation, not the summit's air, makes 30–50 km/h gusts in a 5–10 km/h breeze.
 - **Rain**: the hour's precipitation ramps Q down to 0 at 0.1 mm, whatever the cloud layers say; an unknown amount does nothing. Open-Meteo reports gusts and precipitation over the *preceding* hour, so each hour reads the next entry. Cloud, temperature, dew point, wind and the seeing estimate are the values at the hour, so a minute takes the nearest hour's (a front arriving at 21:00 counts from 20:30, not 21:00), gusts and rain its own hour's.
 - **Transparency**: [7Timer!][7timer]'s ASTRO product (1 best, 8 worst; 3-hourly, about 3 days ahead) scales Q from 1 down to 0.5, only for hours without a CAMS aerosol forecast (a fixed `-extinction`, a failed fetch): its class is mostly the same haze, which the extinction already charges, and counting both cost a clear La Palma night some 40% more subs.
 
@@ -905,7 +905,7 @@ The models above come from the literature. The following are this project's own 
 | Ozone in a filter band | the 550 nm value | within 0.02 mag/airmass at every nebula line |
 | High cloud weight | ½ | thin cirrus dims rather than blocks |
 | Dew ramp | spread 4 → 1 °C, × 1 → 0.7 | dew on optics ends sessions |
-| Gust ramp | 20 → 40 km/h, × 1 → 0.5, gusts at most 3× the mean wind | shaken frames get discarded; mountain grid points' gusts run 5–10× the wind |
+| Gust ramp | 20 → 40 km/h, × 1 → 0.5, gusts at most 3× the mean wind, not capped below 20 km/h | shaken frames get discarded; mountain grid points' gusts run 5–10× the wind |
 | Rain gate | 0 → 0.1 mm/h, × 1 → 0 | nobody images in rain |
 | Transparency ramp | 7Timer 1 → 8, × 1 → 0.5, only without CAMS aerosols | haze dims but does not stop imaging; CAMS's is in the extinction |
 | Aerosol scale height | 1.5 km, from the IFS cell's ground up | Hayes & Latham (1975); CALIOP 1.5–2 km over land |

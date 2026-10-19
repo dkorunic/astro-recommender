@@ -232,7 +232,8 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 		// Open-Meteo's values at the hour, so a minute takes the nearest
 		// hour's (a cloud bank arrives half an hour sooner than read from the
 		// hour before); gusts and rain are over the hour that starts at the
-		// key (hourly.weather shifts them), so the minute's own hour.
+		// key (hourly.weather shifts them), so the minute's own hour, its
+		// gust capped against that hour's wind as the forecast table shows it.
 		hour := t.Truncate(time.Hour).Unix()
 		if h, ok := s.Weather[hour]; ok {
 			at := h
@@ -243,7 +244,7 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 			// cost up to 30% and 50% of usable frames; rain (0 -> RainGate mm
 			// in the hour) all of them, whatever the cloud layers say. Like cloud it
 			// weighs the score only: FOTO and the observable runs are geometric.
-			sky[i] = (1 - at.Cloud/100) * ramp(at.Temp-at.DewPoint, 4, 1, 0.7) * ramp(Gust(h.Gust, at.Wind), 20, 40, 0.5)
+			sky[i] = (1 - at.Cloud/100) * ramp(at.Temp-at.DewPoint, 4, 1, 0.7) * ramp(Gust(h.Gust, h.Wind), gustFree, 40, 0.5)
 			s.Temp[i] = at.Temp
 			if h.Precip > 0 { // NaN (unknown) does not gate
 				sky[i] *= ramp(h.Precip, 0, weather.RainGate, 0)
@@ -326,9 +327,14 @@ func fillGaps(what string, v []float64, ok []bool, fetched bool, window time.Dur
 // ponytail: one factor for every site; measured gusts would calibrate it.
 const maxGustFactor = 3
 
+// gustFree is the gust below which the sky factor loses nothing.
+const gustFree = 20
+
 // Gust is the gust the sky factor counts: the forecast's, at most
-// maxGustFactor times the mean wind. The forecast table and JSON show it.
-func Gust(g, wind float64) float64 { return min(g, maxGustFactor*wind) }
+// maxGustFactor times the mean wind, but never capped below gustFree, where
+// the cap would change no score and only misreport a calm hour's gusts.
+// The forecast table and JSON show it.
+func Gust(g, wind float64) float64 { return min(g, max(maxGustFactor*wind, gustFree)) }
 
 // typicalSeeing is the zenith seeing (FWHM arcsec) assumed for the minutes
 // neither 7Timer nor the upper-air estimate covers.

@@ -848,7 +848,7 @@ var weatherColumns = []column{
 	{"EXT", "atmospheric extinction, mag per airmass"},
 	{"SEEING", "7Timer seeing (star FWHM); ~n\" estimated from the upper air"},
 	{"DEW SPREAD", "temperature minus dew point; dew forms below ~2-3 °C"},
-	{"WIND/GUST", "mean wind / gusts, km/h; ~ capped at 3x the wind, as scored"},
+	{"WIND/GUST", "mean wind / gusts, km/h; ~ capped at 3x the wind (not below 20), as scored"},
 }
 
 // sameAsTargets marks a plan column the target legend already explains, so
