@@ -17,8 +17,8 @@ import (
 // carries a response: each value 0-1, red leading at Hα and [S II], green at
 // [O III], blue at Hβ against red, every dye passing some of every line.
 func TestCameras(t *testing.T) {
-	if len(Cameras) != 35 {
-		t.Errorf("%d presets, want 35", len(Cameras))
+	if len(Cameras) != 45 {
+		t.Errorf("%d presets, want 45", len(Cameras))
 	}
 	for key, s := range Cameras {
 		if key != strings.ToLower(key) || s.Pixel <= 0 || s.Pixel > 20 || s.PxShort <= 0 || s.PxLong < s.PxShort {
@@ -31,7 +31,7 @@ func TestCameras(t *testing.T) {
 			if v == nil {
 				continue
 			}
-			if v.QE <= 0.5 || v.QE > 1 || v.ReadNoise <= 0 || v.ReadNoise > 10 || v.Gain < 0 {
+			if v.QE <= 0.3 || v.QE > 1 || v.ReadNoise <= 0 || v.ReadNoise > 10 || v.Gain < 0 {
 				t.Errorf("%s %s: %+v", key, kind, v)
 			}
 			if (v.Response != nil) != (kind == "colour") || v.MonoResponse != nil && kind != "mono" {
@@ -119,12 +119,12 @@ func TestCameraFlag(t *testing.T) {
 	}
 }
 
-// typicalDark is the median of the charted chips' dark currents, each die
-// once (the IMX492 is the IMX294's).
+// typicalDark is the median of the charted CMOS chips' dark currents, each
+// die once (the IMX492 is the IMX294's), the CCDs' left out.
 func TestTypicalDark(t *testing.T) {
 	var darks []float64
 	for key, s := range Cameras {
-		if s.Dark > 0 && key != "imx492" {
+		if s.Dark > 0 && key != "imx492" && !strings.HasPrefix(key, "kaf") && !strings.HasPrefix(key, "icx") {
 			darks = append(darks, s.Dark)
 		}
 	}

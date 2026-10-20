@@ -82,8 +82,9 @@ type Sensor struct {
 }
 
 // typicalDark is the dark current at 25 °C (e⁻/s per pixel) of a chip whose
-// maker publishes no chart: the median of the charted presets', each chip
-// once (the IMX492 is the IMX294's die), which TestTypicalDark recomputes.
+// maker publishes no chart: the median of the charted CMOS presets', each
+// chip once (the IMX492 is the IMX294's die; a CCD's runs ten times higher),
+// which TestTypicalDark recomputes.
 const typicalDark = 0.16
 
 // The colour responses, each digitized by scripts/qe_digitize.py from the
@@ -329,6 +330,45 @@ var (
 		},
 		Broad: [3]float64{0.354, 0.545, 0.286},
 	}
+	// ZWO ASI1600 manual (rev 1.4, 2020), p7 (Panasonic's chart, relative).
+	mn34230 = Response{
+		Lines: [catalog.NumLines][3]float64{
+			catalog.Ha:      {0.797, 0.115, 0.050},
+			catalog.OIII:    {0.033, 0.634, 0.566},
+			catalog.SII:     {0.737, 0.148, 0.061},
+			catalog.Hb:      {0.031, 0.465, 0.690},
+			catalog.NII6548: {0.803, 0.114, 0.048},
+			catalog.NII6583: {0.788, 0.116, 0.052},
+		},
+		Broad: [3]float64{0.359, 0.410, 0.292},
+	}
+	// onsemi's KAF-16200 datasheet (Rev. 2, 2017), figure 7 (absolute, also
+	// on Moravian's G3-16200C page): its two green curves digitized apart
+	// (the navy one recoloured) and averaged.
+	kaf16200 = Response{
+		Lines: [catalog.NumLines][3]float64{
+			catalog.Ha:      {0.742, 0.174, 0.126},
+			catalog.OIII:    {0.040, 0.689, 0.678},
+			catalog.SII:     {0.684, 0.204, 0.149},
+			catalog.Hb:      {0.033, 0.488, 0.786},
+			catalog.NII6548: {0.739, 0.167, 0.117},
+			catalog.NII6583: {0.743, 0.176, 0.133},
+		},
+		Broad: [3]float64{0.351, 0.410, 0.370},
+	}
+	// The Imaging Source's DFK 33UX252 datasheet, p4 (Sony's IMX252LQR-C,
+	// relative; tick marks only, so read with the curve's own axes).
+	imx252 = Response{
+		Lines: [catalog.NumLines][3]float64{
+			catalog.Ha:      {0.944, 0.170, 0.060},
+			catalog.OIII:    {0.024, 0.807, 0.385},
+			catalog.SII:     {0.870, 0.213, 0.077},
+			catalog.Hb:      {0.018, 0.641, 0.517},
+			catalog.NII6548: {0.951, 0.170, 0.058},
+			catalog.NII6583: {0.936, 0.171, 0.062},
+		},
+		Broad: [3]float64{0.396, 0.440, 0.235},
+	}
 )
 
 // The Seestar S50 Pro's OmniVision OS08B10: no maker's chart for the chip,
@@ -452,6 +492,53 @@ var (
 	imx250Mono = MonoResponse{
 		Lines: [catalog.NumLines]float64{catalog.Ha: 0.839, catalog.OIII: 0.982, catalog.SII: 0.795, catalog.Hb: 0.985, catalog.NII6548: 0.845, catalog.NII6583: 0.834},
 		Broad: 0.911,
+	}
+	// ZWO ASI1600 manual (rev 1.4, 2020), p7.
+	mn34230Mono = MonoResponse{
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.762, catalog.OIII: 0.930, catalog.SII: 0.703, catalog.Hb: 0.925, catalog.NII6548: 0.766, catalog.NII6583: 0.759},
+		Broad: 0.829,
+	}
+	// onsemi's KAF-16200 datasheet (Rev. 2, 2017), figure 6 (absolute, also
+	// on Moravian's G3-16200 page).
+	kaf16200Mono = MonoResponse{
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.799, catalog.OIII: 0.914, catalog.SII: 0.763, catalog.Hb: 0.860, catalog.NII6548: 0.809, catalog.NII6583: 0.794},
+		Broad: 0.841,
+	}
+	// onsemi's KAF-16803 datasheet (Rev. 2, 2015), figure 6, without cover
+	// glass (absolute, also on Moravian's G4-16000 page).
+	kaf16803Mono = MonoResponse{
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.769, catalog.OIII: 0.923, catalog.SII: 0.726, catalog.Hb: 0.886, catalog.NII6548: 0.774, catalog.NII6583: 0.761},
+		Broad: 0.853,
+	}
+	// Atik's ICX825/ICX285 comparison chart (relative, points every 50 nm,
+	// so coarse; its yellow-green curve hue-shifted into --mono green's band,
+	// tick marks: --xpx). Starlight Xpress publishes none.
+	icx825Mono = MonoResponse{
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.963, catalog.OIII: 0.897, catalog.SII: 0.940, catalog.Hb: 0.859, catalog.NII6548: 0.963, catalog.NII6583: 0.960},
+		Broad: 0.885,
+	}
+	// Sony's ICX828/829 overview, figure 1, the ICX829ALA panel (relative;
+	// dark gridlines on a tint: --grid-max 0.5).
+	icx829Mono = MonoResponse{
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.933, catalog.OIII: 0.903, catalog.SII: 0.897, catalog.Hb: 0.865, catalog.NII6548: 0.937, catalog.NII6583: 0.927},
+		Broad: 0.872,
+	}
+	// QHY's QHY4040 Pro FSI page, its absolute chart's GSENSE4040-CMT curve
+	// (the in-plot legend painted out).
+	gsense4040Mono = MonoResponse{
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.941, catalog.OIII: 0.961, catalog.SII: 0.944, catalog.Hb: 0.962, catalog.NII6548: 0.945, catalog.NII6583: 0.936},
+		Broad: 0.944,
+	}
+	// QHY's QHY4040 Pro BSI page, its absolute chart.
+	gsense4040BSIMono = MonoResponse{
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.941, catalog.OIII: 0.957, catalog.SII: 0.913, catalog.Hb: 0.883, catalog.NII6548: 0.939, catalog.NII6583: 0.941},
+		Broad: 0.912,
+	}
+	// The Imaging Source's DMK 37BUX287 manual, §4.1 (Sony's IMX273/287,
+	// relative; tick marks only, so read with the curve's own axes).
+	imx287Mono = MonoResponse{
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.949, catalog.OIII: 0.840, catalog.SII: 0.916, catalog.Hb: 0.819, catalog.NII6548: 0.951, catalog.NII6583: 0.946},
+		Broad: 0.858,
 	}
 )
 
@@ -603,6 +690,84 @@ var Cameras = map[string]Sensor{
 	"imx250": {
 		Pixel: 3.45, PxLong: 2460, PxShort: 2070,
 		Mono: &Variant{MonoResponse: &imx250Mono, Gain: 200, QE: 0.70, ReadNoise: 2.1},
+	},
+	// ZWO's ASI1600MM/MC (also QHY's QHY163M, Meade's DSI IV and Explore
+	// Scientific's Deep Sky 16MP): ZWO's "around 60%" peak for both, an
+	// estimate. No high conversion gain mode: unity gain. No Dark: its
+	// chart's 0.40 e⁻/s at 25 °C would move typicalDark from 0.16 to 0.25.
+	"mn34230": {
+		Pixel: 3.8, PxLong: 4656, PxShort: 3520,
+		Colour: &Variant{Response: &mn34230, Gain: 139, QE: 0.60, ReadNoise: 1.8},
+		Mono:   &Variant{MonoResponse: &mn34230Mono, Gain: 139, QE: 0.60, ReadNoise: 1.8},
+	},
+	// Moravian's G3-16200/G3-16200C and Starlight Xpress's Trius SX-46 (CCD):
+	// SX's peak and typical read noise for the mono, onsemi's colour peak
+	// (its green) and Moravian's read noise for the colour. Dark current:
+	// Moravian's 0.08 e⁻/s at 0 °C doubling every 5.7 °C, extrapolated to
+	// 25 °C (no chart reaches it).
+	"kaf16200": {
+		Pixel: 6.0, Dark: 1.7, PxLong: 4540, PxShort: 3640,
+		Colour: &Variant{Response: &kaf16200, QE: 0.40, ReadNoise: 10},
+		Mono:   &Variant{MonoResponse: &kaf16200Mono, QE: 0.58, ReadNoise: 9},
+	},
+	// Starlight Xpress's Trius SX-56 (CCD; also Moravian's G4-16000, 11 e⁻):
+	// onsemi's peak, SX's read noise. Dark current: onsemi's table at 25 °C.
+	"kaf16803": {
+		Pixel: 9.0, Dark: 3, PxLong: 4096, PxShort: 4096,
+		Mono: &Variant{MonoResponse: &kaf16803Mono, QE: 0.60, ReadNoise: 9},
+	},
+	// Starlight Xpress's Trius PRO-825, Ultrastar PRO and Oculus PRO (Sony
+	// EXview II CCD): their pages' peak QE and typical read noise.
+	"icx825": {
+		Pixel: 6.45, PxLong: 1392, PxShort: 1040,
+		Mono: &Variant{MonoResponse: &icx825Mono, QE: 0.75, ReadNoise: 3.5},
+	},
+	// QHY's QHY695A (Sony EXview II CCD): its manual's peak QE and the middle
+	// of its "typical 4e to 5e". No chart: the ICX694's, its sibling's.
+	"icx695": {
+		Pixel: 4.54, PxLong: 2758, PxShort: 2208,
+		Mono: &Variant{MonoResponse: &icx694Mono, QE: 0.79, ReadNoise: 4.5},
+	},
+	// Starlight Xpress's Lodestar PRO guide camera (Sony EXview II CCD): its
+	// 8.6 x 8.3 µm pixels as their mean; the 77% peak only in SX's autoguider
+	// specification sheet, the read noise its page's.
+	"icx829": {
+		Pixel: 8.45, PxLong: 752, PxShort: 580,
+		Mono: &Variant{MonoResponse: &icx829Mono, QE: 0.77, ReadNoise: 5.5},
+	},
+	// Gpixel's front-illuminated GSENSE4040 in QHY's QHY4040 Pro FSI (also
+	// SBIG's Aluma AC4040, Moravian's C4-16000): its chart's 74% peak and its
+	// table's typical read noise at gain 31, the high-gain channel's, which
+	// the 16-bit HDR mode takes. No Dark: no chart.
+	"gsense4040": {
+		Pixel: 9.0, PxLong: 4096, PxShort: 4096,
+		Mono: &Variant{MonoResponse: &gsense4040Mono, Gain: 31, QE: 0.74, ReadNoise: 4.0},
+	},
+	// Its back-illuminated version in QHY's QHY4040 Pro BSI: QHY's 90% peak
+	// (Gpixel's and Diffraction Limited's 95%) and typical read noise at gain
+	// 50. No Dark: its chart stops at 20 °C (12.9 e⁻/s).
+	"gsense4040bsi": {
+		Pixel: 9.0, PxLong: 4096, PxShort: 4096,
+		Mono: &Variant{MonoResponse: &gsense4040BSIMono, Gain: 50, QE: 0.90, ReadNoise: 2.3},
+	},
+	// Moravian's C1-3000 (Pregius, global shutter): its read noise at 24 dB
+	// (gain in 0.1 dB, no conversion gain switch), where it levels off.
+	// Moravian publishes no QE, so the peak is FLIR's EMVA 1288 report for
+	// its Blackfly S BFS-U3-32S4M/C at 525 nm (the colour's green); Sony
+	// charts the IMX252 and IMX250 as one curve, so the mono takes the
+	// IMX250's.
+	"imx252": {
+		Pixel: 3.45, PxLong: 2064, PxShort: 1544,
+		Colour: &Variant{Response: &imx252, Gain: 240, QE: 0.60, ReadNoise: 2.0},
+		Mono:   &Variant{MonoResponse: &imx250Mono, Gain: 240, QE: 0.64, ReadNoise: 2.0},
+	},
+	// Omegon's veLOX 287 M (a ToupTek rebadge; Omegon and ToupTek publish
+	// no figures): Altair's GPCAM3 287M's "approx. 71%" peak and the higher
+	// of its two read noises, at no stated gain (Gain 0). FLIR's EMVA 1288
+	// report for its BFS-U3-04S2M measures 62% at 525 nm.
+	"imx287": {
+		Pixel: 6.9, PxLong: 728, PxShort: 544,
+		Mono: &Variant{MonoResponse: &imx287Mono, QE: 0.71, ReadNoise: 1.41},
 	},
 	// ZWO's ASI120MM Mini (also Omegon's Guide 1200 and Lacerta's MGEN-3).
 	// No high conversion gain mode: its chart's read noise at gain 33, past
