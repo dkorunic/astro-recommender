@@ -33,12 +33,39 @@ func (r *Response) Line(l catalog.Line) [3]float64 {
 	return r.Lines[l]
 }
 
+// MonoResponse is a mono sensor's spectral response relative to its peak
+// QE: at each catalog.Line and its mean over atmos.CameraLo-CameraHi.
+type MonoResponse struct {
+	Lines [catalog.NumLines]float64
+	Broad float64
+}
+
+// Line is the response to line l, [O III] 495.9 taking the [O III] entry
+// as Response.Line does.
+func (r *MonoResponse) Line(l catalog.Line) float64 {
+	if l == catalog.OIII4959 {
+		l = catalog.OIII
+	}
+
+	return r.Lines[l]
+}
+
+// sonyMono is the mono response of a preset without its own: read off
+// Sony's curve for its back-illuminated chips, which a front-illuminated
+// chip or a CCD falls well below in the red.
+var sonyMono = MonoResponse{
+	Lines: [catalog.NumLines]float64{catalog.Ha: 0.95, catalog.OIII: 0.85, catalog.SII: 0.9, catalog.Hb: 0.8, catalog.NII6548: 0.95, catalog.NII6583: 0.95},
+	Broad: 0.8,
+}
+
 // Variant is a sensor's colour or mono camera: its peak QE and its read
 // noise at Gain, the vendor's deep-sky setting in its own units (ZWO's and
 // Player One's 0.1 dB), where the high conversion gain mode switches on;
-// Response for a colour one.
+// Response for a colour one, MonoResponse for a mono one whose maker charts
+// it (nil is sonyMono). Gain is 0 for a CCD, which has no gain setting.
 type Variant struct {
 	Response      *Response
+	MonoResponse  *MonoResponse
 	QE, ReadNoise float64
 	Gain          int
 }
@@ -308,6 +335,95 @@ var os08b10 = Response{
 	Broad: [3]float64{0.378, 0.482, 0.346},
 }
 
+// The mono responses, each digitized by scripts/qe_digitize.py --mono from
+// the maker's chart, relative to its peak: a CCD's and a front-illuminated
+// chip's red falls well below sonyMono's.
+var (
+	// ZWO ASI294 manual V2.2, p6 (ToupTek's ATR294M chart reads the same).
+	imx492Mono = MonoResponse{
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.862, catalog.OIII: 0.982, catalog.SII: 0.829, catalog.Hb: 0.955, catalog.NII6548: 0.866, catalog.NII6583: 0.857},
+		Broad: 0.913,
+	}
+	// ZWO ASI174 manual, p7 (absolute, its 78% peak).
+	imx174Mono = MonoResponse{
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.632, catalog.OIII: 0.998, catalog.SII: 0.579, catalog.Hb: 0.997, catalog.NII6548: 0.632, catalog.NII6583: 0.626},
+		Broad: 0.823,
+	}
+	// ZWO ASI Mini manual, p6 (the ASI290MM Mini's).
+	imx290Mono = MonoResponse{
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.939, catalog.OIII: 0.907, catalog.SII: 0.914, catalog.Hb: 0.876, catalog.NII6548: 0.940, catalog.NII6583: 0.936},
+		Broad: 0.882,
+	}
+	// ToupTek's GPM174M page.
+	imx249Mono = MonoResponse{
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.803, catalog.OIII: 0.974, catalog.SII: 0.761, catalog.Hb: 0.942, catalog.NII6548: 0.808, catalog.NII6583: 0.799},
+		Broad: 0.865,
+	}
+	// ZWO ASI178 manual V1.3, p7 (ToupTek's G3M178M chart reads the same
+	// to 0.005).
+	imx178Mono = MonoResponse{
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.809, catalog.OIII: 0.976, catalog.SII: 0.788, catalog.Hb: 0.966, catalog.NII6548: 0.813, catalog.NII6583: 0.805},
+		Broad: 0.891,
+	}
+	// ZWO ASI183 manual V1.4, p7.
+	imx183Mono = MonoResponse{
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.799, catalog.OIII: 0.976, catalog.SII: 0.779, catalog.Hb: 0.954, catalog.NII6548: 0.803, catalog.NII6583: 0.797},
+		Broad: 0.892,
+	}
+	// ZWO ASI432 manual V1.0, p6.
+	imx432Mono = MonoResponse{
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.954, catalog.OIII: 0.853, catalog.SII: 0.928, catalog.Hb: 0.827, catalog.NII6548: 0.957, catalog.NII6583: 0.952},
+		Broad: 0.870,
+	}
+	// ZWO's absolute chart for its 3.76 µm chips, one curve in the ASI2600MM
+	// Pro (p8), ASI533MM Pro (p8) and ASI461MM Pro (p8) manuals to 0.003 (the
+	// ASI6200 manual has none, so the IMX455 keeps sonyMono).
+	zwo376Mono = MonoResponse{
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.642, catalog.OIII: 0.976, catalog.SII: 0.595, catalog.Hb: 0.981, catalog.NII6548: 0.646, catalog.NII6583: 0.636},
+		Broad: 0.836,
+	}
+	// ZWO ASI585MC/MM Pro manual, p9 (absolute).
+	imx585Mono = MonoResponse{
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.881, catalog.OIII: 0.994, catalog.SII: 0.859, catalog.Hb: 0.993, catalog.NII6548: 0.883, catalog.NII6583: 0.878},
+		Broad: 0.954,
+	}
+	// ZWO ASI662MC/MM manual, p8, peaking at Hα.
+	imx662Mono = MonoResponse{
+		Lines: [catalog.NumLines]float64{catalog.Ha: 1.000, catalog.OIII: 0.837, catalog.SII: 1.000, catalog.Hb: 0.815, catalog.NII6548: 1.000, catalog.NII6583: 1.000},
+		Broad: 0.884,
+	}
+	// ZWO ASI676MM manual, p8.
+	imx676Mono = MonoResponse{
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.984, catalog.OIII: 0.844, catalog.SII: 1.000, catalog.Hb: 0.812, catalog.NII6548: 0.983, catalog.NII6583: 0.986},
+		Broad: 0.888,
+	}
+	// On Semi's absolute chart in ZWO's ASI Mini manual, p6 (dark grey
+	// gridlines: --black-max 0.3).
+	ar0130Mono = MonoResponse{
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.928, catalog.OIII: 0.898, catalog.SII: 0.893, catalog.Hb: 0.873, catalog.NII6548: 0.933, catalog.NII6583: 0.922},
+		Broad: 0.895,
+	}
+	// ZWO ASI Mini manual (2026), p10, the ASI220MM Mini's absolute chart.
+	sc2210Mono = MonoResponse{
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.871, catalog.OIII: 1.000, catalog.SII: 0.845, catalog.Hb: 0.994, catalog.NII6548: 0.876, catalog.NII6583: 0.871},
+		Broad: 0.942,
+	}
+	// Starlight Xpress's Trius PRO-694 page, its "H674/694" curve (absolute,
+	// tick marks: --xpx); its 0.84 at Hα is the page's "65% at H alpha"
+	// against the 77% peak. Sony's relative chart for the ICX694ALG reads
+	// 0.91 there.
+	icx694Mono = MonoResponse{
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.838, catalog.OIII: 0.988, catalog.SII: 0.796, catalog.Hb: 0.984, catalog.NII6548: 0.847, catalog.NII6583: 0.835},
+		Broad: 0.919,
+	}
+	// Sony's ICX814ALG/AQG overview, figure 2 (white gridlines on a tint:
+	// --light-grid).
+	icx814Mono = MonoResponse{
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.896, catalog.OIII: 0.958, catalog.SII: 0.839, catalog.Hb: 0.944, catalog.NII6548: 0.900, catalog.NII6583: 0.889},
+		Broad: 0.901,
+	}
+)
+
 // The chips the -scope presets share, as Cameras keys.
 const (
 	chipIMX178  = "imx178"
@@ -328,7 +444,7 @@ const (
 // high conversion gain mode switches on (ZWO's gain in 0.1 dB, read off its
 // chart to about ±0.2 e⁻). A version is left out where no astro camera
 // ships it or its peak QE is unpublished (the IMX183's and IMX174's colour
-// ones); a mono version takes the mono response (lineQE in scoring). The
+// ones); a mono version takes its MonoResponse, else sonyMono. The
 // IMX678 preset is ZWO's ASI678MC/MM at gain 182 (one QE for both, as ZWO
 // quotes it); the Origin keeps its own read noise (Scopes' ReadNoise).
 var Cameras = map[string]Sensor{
@@ -336,19 +452,19 @@ var Cameras = map[string]Sensor{
 	"imx571": {
 		Pixel: 3.76, Dark: 0.065, PxLong: 6248, PxShort: 4176,
 		Colour: &Variant{Response: &imx571, Gain: 100, QE: 0.80, ReadNoise: 1.4},
-		Mono:   &Variant{Gain: 100, QE: 0.91, ReadNoise: 1.4},
+		Mono:   &Variant{MonoResponse: &zwo376Mono, Gain: 100, QE: 0.91, ReadNoise: 1.4},
 	},
 	// Dark current: ZWO ASI533MC Pro manual (2026), §3.6.
 	"imx533": {
 		Pixel: 3.76, Dark: 0.063, PxLong: 3008, PxShort: 3008,
 		Colour: &Variant{Response: &imx533, Gain: 100, QE: 0.80, ReadNoise: 1.5},
-		Mono:   &Variant{Gain: 100, QE: 0.91, ReadNoise: 1.5},
+		Mono:   &Variant{MonoResponse: &zwo376Mono, Gain: 100, QE: 0.91, ReadNoise: 1.5},
 	},
 	// Dark current: ZWO ASI585MC/MM Pro manual (2026), §3.6.
 	chipIMX585: {
 		Pixel: 2.9, Dark: 0.25, PxLong: 3840, PxShort: 2160,
 		Colour: &Variant{Response: &imx585, Gain: 200, QE: 0.91, ReadNoise: 1.0},
-		Mono:   &Variant{Gain: 200, QE: 0.91, ReadNoise: 1.0},
+		Mono:   &Variant{MonoResponse: &imx585Mono, Gain: 200, QE: 0.91, ReadNoise: 1.0},
 	},
 	// The read noise ZWO's current ASI6200 chart's (its v1.4 manual's 1.5
 	// predates the 0.86 e⁻ revision).
@@ -366,12 +482,12 @@ var Cameras = map[string]Sensor{
 	// Dark current: the IMX294's die (ZWO's ASI294MC Pro chart).
 	"imx492": {
 		Pixel: 4.63, Dark: 0.37, PxLong: 4144, PxShort: 2822,
-		Mono: &Variant{Gain: 120, QE: 0.90, ReadNoise: 1.8},
+		Mono: &Variant{MonoResponse: &imx492Mono, Gain: 120, QE: 0.90, ReadNoise: 1.8},
 	},
 	// No high conversion gain mode: unity gain.
 	"imx183": {
 		Pixel: 2.4, PxLong: 5496, PxShort: 3672,
-		Mono: &Variant{Gain: 120, QE: 0.84, ReadNoise: 2.1},
+		Mono: &Variant{MonoResponse: &imx183Mono, Gain: 120, QE: 0.84, ReadNoise: 2.1},
 	},
 	// No dark current: the ASI678 CN manual's chart labels its -20 °C point
 	// 0.0078 e⁻/s against an axis reading 0.12, so typicalDark stands in.
@@ -383,7 +499,7 @@ var Cameras = map[string]Sensor{
 	chipIMX662: {
 		Pixel: 2.9, PxLong: 1920, PxShort: 1080,
 		Colour: &Variant{Response: &starvis2, Gain: 200, QE: 0.91, ReadNoise: 1.2},
-		Mono:   &Variant{Gain: 200, QE: 0.91, ReadNoise: 1.2},
+		Mono:   &Variant{MonoResponse: &imx662Mono, Gain: 200, QE: 0.91, ReadNoise: 1.2},
 	},
 	"imx664": {
 		Pixel: 2.9, PxLong: 2704, PxShort: 1536,
@@ -393,7 +509,7 @@ var Cameras = map[string]Sensor{
 	chipIMX676: {
 		Pixel: 2.0, Dark: 0.060, PxLong: 3552, PxShort: 3552,
 		Colour: &Variant{Response: &imx676, Gain: 180, QE: 0.83, ReadNoise: 0.75},
-		Mono:   &Variant{Gain: 180, QE: 0.83, ReadNoise: 0.75},
+		Mono:   &Variant{MonoResponse: &imx676Mono, Gain: 180, QE: 0.83, ReadNoise: 0.75},
 	},
 	// The read noise ZWO's chart's at gain 100, where it drops from 1.7 e⁻
 	// at 50 (the conversion gain switch).
@@ -423,13 +539,43 @@ var Cameras = map[string]Sensor{
 	"imx290": {
 		Pixel: 2.9, PxLong: 1936, PxShort: 1096,
 		Colour: &Variant{Response: &imx290, Gain: 60, QE: 0.81, ReadNoise: 1.65},
-		Mono:   &Variant{Gain: 60, QE: 0.81, ReadNoise: 1.65},
+		Mono:   &Variant{MonoResponse: &imx290Mono, Gain: 60, QE: 0.81, ReadNoise: 1.65},
 	},
 	// ToupTek's GPM174M guide camera. No high conversion gain mode: its
 	// chart's read noise at gain 1778, where it levels off.
 	"imx249": {
 		Pixel: 5.86, PxLong: 1920, PxShort: 1200,
-		Mono: &Variant{Gain: 1778, QE: 0.89, ReadNoise: 4.0},
+		Mono: &Variant{MonoResponse: &imx249Mono, Gain: 1778, QE: 0.89, ReadNoise: 4.0},
+	},
+	// ZWO's ASI120MM Mini (also Omegon's Guide 1200 and Lacerta's MGEN-3).
+	// No high conversion gain mode: its chart's read noise at gain 33, past
+	// the last step down (6.5 e⁻ to 15, 4.7 to 32); "almost 80%" its peak.
+	"ar0130": {
+		Pixel: 3.75, PxLong: 1280, PxShort: 960,
+		Mono: &Variant{MonoResponse: &ar0130Mono, Gain: 33, QE: 0.78, ReadNoise: 3.9},
+	},
+	// SmartSens' SC2210 in ZWO's ASI220MM Mini (its Duo and Air cameras'
+	// guide sensor too): the read noise its chart's at gain 106, where it
+	// drops from 2.0 e⁻.
+	"sc2210": {
+		Pixel: 4.0, PxLong: 1920, PxShort: 1080,
+		Mono: &Variant{MonoResponse: &sc2210Mono, Gain: 106, QE: 0.92, ReadNoise: 1.03},
+	},
+	// Starlight Xpress's Trius PRO-694 and PRO-674 CCDs (Sony EXview II, which
+	// Sony ended): their pages' peak QE and typical read noise. The colour
+	// versions' peak QE is unpublished (SX repeats the mono's).
+	"icx694": {
+		Pixel: 4.54, PxLong: 2750, PxShort: 2200,
+		Mono: &Variant{MonoResponse: &icx694Mono, QE: 0.77, ReadNoise: 3.5},
+	},
+	"icx674": {
+		Pixel: 4.54, PxLong: 1940, PxShort: 1460,
+		Mono: &Variant{MonoResponse: &icx694Mono, QE: 0.77, ReadNoise: 3.5},
+	},
+	// Starlight Xpress's Trius PRO-814 (Sony EXview II).
+	"icx814": {
+		Pixel: 3.69, PxLong: 3388, PxShort: 2712,
+		Mono: &Variant{MonoResponse: &icx814Mono, QE: 0.77, ReadNoise: 3.0},
 	},
 	"imx410": {
 		Pixel: 5.94, PxLong: 6072, PxShort: 4042,
@@ -437,16 +583,16 @@ var Cameras = map[string]Sensor{
 	},
 	"imx461": {
 		Pixel: 3.76, PxLong: 11656, PxShort: 8750,
-		Mono: &Variant{Gain: 100, QE: 0.91, ReadNoise: 1.45},
+		Mono: &Variant{MonoResponse: &zwo376Mono, Gain: 100, QE: 0.91, ReadNoise: 1.45},
 	},
 	"imx432": {
 		Pixel: 9.0, PxLong: 1608, PxShort: 1104,
-		Mono: &Variant{Gain: 140, QE: 0.79, ReadNoise: 4.3},
+		Mono: &Variant{MonoResponse: &imx432Mono, Gain: 140, QE: 0.79, ReadNoise: 4.3},
 	},
 	// No high conversion gain mode: ZWO's figure at gain 300.
 	"imx174": {
 		Pixel: 5.86, PxLong: 1936, PxShort: 1216,
-		Mono: &Variant{Gain: 300, QE: 0.77, ReadNoise: 3.5},
+		Mono: &Variant{MonoResponse: &imx174Mono, Gain: 300, QE: 0.77, ReadNoise: 3.5},
 	},
 	// The colour peak QE from ZWO's ASI462MC/ASI662MC comparison ("about
 	// 81%"); the read noise its chart's at gain 80, for both versions.
@@ -463,7 +609,7 @@ var Cameras = map[string]Sensor{
 	chipIMX178: {
 		Pixel: 2.4, Dark: 0.95, PxLong: 3096, PxShort: 2080,
 		Colour: &Variant{Response: &imx178, Gain: 100, QE: 0.70, ReadNoise: 1.7},
-		Mono:   &Variant{Gain: 100, QE: 0.81, ReadNoise: 1.7},
+		Mono:   &Variant{MonoResponse: &imx178Mono, Gain: 100, QE: 0.81, ReadNoise: 1.7},
 	},
 	"imx485": {
 		Pixel: 2.9, PxLong: 3840, PxShort: 2160,
@@ -518,6 +664,16 @@ func (cfg *Config) ColourResponse() *Response {
 	}
 
 	return &imx678
+}
+
+// MonoResponse returns the mono response the sub-exposure estimate uses:
+// -camera's mono version's, else sonyMono.
+func (cfg *Config) MonoResponse() *MonoResponse {
+	if s, ok := Cameras[cfg.Camera]; ok && s.Mono != nil && s.Mono.MonoResponse != nil {
+		return s.Mono.MonoResponse
+	}
+
+	return &sonyMono
 }
 
 // applyCamera fills -sensor and -pixel from -camera's chip unless given

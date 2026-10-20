@@ -106,6 +106,13 @@ func TestCameraGain(t *testing.T) {
 	if len(mon) != 1 || mon[0].share != 1 || math.Abs(mon[0].obj/(g*0.95)-1) > 1e-9 || col[red].share != 0.25 {
 		t.Errorf("Hα mono %+v", mon)
 	}
+	// A charted mono preset at its own response: the IMX174's front-lit
+	// 0.63 of the peak at Hα, its continuum at 0.82.
+	cfg.Camera = "imx174"
+	fsi, _ := newCamera(cfg, &Sky{})
+	if m, b := fsi.channels(nil, "ha", 7, ha, filterPass{}), fsi.channels(nil, "", 7, [catalog.NumLines]float64{}, filterPass{}); math.Abs(m[0].obj/(g*0.632)-1) > 1e-9 || math.Abs(b[0].obj/(g*0.823*300/88)-1) > 1e-9 {
+		t.Errorf("IMX174 mono: Hα %+v, continuum %+v", m, b)
+	}
 	for i, r := range imx678.Lines[catalog.Ha] {
 		if math.Abs(col[i].obj/(g*r)-1) > 1e-9 {
 			t.Errorf("Hα colour channel %d: %v, want %v", i, col[i].obj, g*r)
@@ -533,7 +540,7 @@ func TestSubsBayerChannels(t *testing.T) {
 		lin += share * r
 		sq += share * r * r
 	}
-	m := lineQE[catalog.Ha]
+	m := (&config.Config{}).MonoResponse().Line(catalog.Ha)
 	for _, c := range []struct {
 		name    string
 		rn, sub float64

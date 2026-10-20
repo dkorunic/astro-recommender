@@ -17,11 +17,11 @@ import (
 // carries a response: each value 0-1, red leading at Hα and [S II], green at
 // [O III], blue at Hβ against red, every dye passing some of every line.
 func TestCameras(t *testing.T) {
-	if len(Cameras) != 27 {
-		t.Errorf("%d presets, want 27", len(Cameras))
+	if len(Cameras) != 32 {
+		t.Errorf("%d presets, want 32", len(Cameras))
 	}
 	for key, s := range Cameras {
-		if key != strings.ToLower(key) || !strings.HasPrefix(key, "imx") && key != chipOS08B10 || s.Pixel <= 0 || s.Pixel > 20 || s.PxShort <= 0 || s.PxLong < s.PxShort {
+		if key != strings.ToLower(key) || s.Pixel <= 0 || s.Pixel > 20 || s.PxShort <= 0 || s.PxLong < s.PxShort {
 			t.Errorf("%s: %+v", key, s)
 		}
 		if s.Colour == nil && s.Mono == nil {
@@ -31,11 +31,21 @@ func TestCameras(t *testing.T) {
 			if v == nil {
 				continue
 			}
-			if v.QE <= 0.5 || v.QE > 1 || v.ReadNoise <= 0 || v.ReadNoise > 10 || v.Gain <= 0 {
+			if v.QE <= 0.5 || v.QE > 1 || v.ReadNoise <= 0 || v.ReadNoise > 10 || v.Gain < 0 {
 				t.Errorf("%s %s: %+v", key, kind, v)
 			}
-			if (v.Response != nil) != (kind == "colour") {
-				t.Errorf("%s %s: response %v", key, kind, v.Response)
+			if (v.Response != nil) != (kind == "colour") || v.MonoResponse != nil && kind != "mono" {
+				t.Errorf("%s %s: response %v, mono response %v", key, kind, v.Response, v.MonoResponse)
+			}
+			if m := v.MonoResponse; m != nil {
+				for l := range m.Lines {
+					if x := m.Line(catalog.Line(l)); !(x > 0 && x <= 1) {
+						t.Errorf("%s: line %d mono response %v", key, l, x)
+					}
+				}
+				if !(m.Broad > 0.5 && m.Broad <= 1) {
+					t.Errorf("%s: mono continuum %v", key, m.Broad)
+				}
 			}
 		}
 		if s.Colour == nil {
@@ -97,6 +107,12 @@ func TestCameraFlag(t *testing.T) {
 	}
 	if cfg, _ := mutParse(t, mutBase("-scope", "origin")...); cfg.ColourResponse() != &imx678 || cfg.CameraLabel() != "IMX678 colour" || cfg.ScopeLabel() != "Celestron Origin Mark II (IMX678)" {
 		t.Errorf("the Origin: camera %q, scope %q", cfg.CameraLabel(), cfg.ScopeLabel())
+	}
+	if cfg, _ := mutParse(t, mutBase("-camera", "icx694", "-mono", "-focal", "400", "-aperture", "80")...); cfg.MonoResponse() != &icx694Mono || cfg.CameraLabel() != "ICX694 mono" {
+		t.Errorf("a charted mono preset: response %v, label %q", cfg.MonoResponse(), cfg.CameraLabel())
+	}
+	if cfg, _ := mutParse(t, mutBase("-camera", "imx455", "-mono", "-focal", "400", "-aperture", "80")...); cfg.MonoResponse() != &sonyMono {
+		t.Error("an uncharted mono preset is not sonyMono")
 	}
 	if cfg, _ := mutParse(t, mutBase("-fov", "2x1")...); cfg.ColourResponse() != &imx678 || cfg.CameraLabel() != "" || cfg.ScopeLabel() != "" {
 		t.Error("a camera given by -fov alone is not the IMX678's")

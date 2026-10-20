@@ -39,14 +39,8 @@ func levelScale(tg catalog.Target, sb, refNL float64) float64 {
 	return min(1, nl/refNL)
 }
 
-// lineQE is a mono sensor's response at each line relative to its peak,
-// read off Sony's curve (a colour one's is config.Response, the -camera
-// preset's or the IMX678's); channelShare is each colour channel's share of
-// the array (RGGB).
-var (
-	lineQE       = [catalog.NumLines]float64{catalog.Ha: 0.95, catalog.OIII: 0.85, catalog.SII: 0.9, catalog.Hb: 0.8, catalog.NII6548: 0.95, catalog.NII6583: 0.95, catalog.OIII4959: 0.85}
-	channelShare = [3]float64{red: 0.25, green: 0.5, blue: 0.25}
-)
+// channelShare is each colour channel's share of the array (RGGB).
+var channelShare = [3]float64{red: 0.25, green: 0.5, blue: 0.25}
 
 // A colour sensor's channels.
 const (
@@ -54,15 +48,6 @@ const (
 	green
 	blue
 )
-
-// broadQEMono is a mono sensor's mean response over
-// atmos.CameraLo-CameraHi relative to its peak (a colour one's is
-// config.Response.Broad, each channel's).
-// ponytail: each channel's continuum is its mean response, the moonlight's
-// colour weighted as over the whole band (atmos.BandMean), not by the
-// channel's own curve; a per-channel weighting would give blue more
-// Rayleigh moonlight.
-const broadQEMono = 0.8
 
 // An uncooled sensor runs sensorWarm (°C) above the air, its dark current
 // doubling every darkDoubling (ZWO's charts: the IMX585's and IMX676's at
@@ -102,13 +87,14 @@ func (e *Estimate) Unreachable(level float64) bool {
 
 // camera is what the estimate needs of the telescope and camera.
 type camera struct {
-	response                        *config.Response // a colour sensor's, cfg.ColourResponse
-	dark                            []float64        // e⁻/s per pixel per grid minute; nil for none
-	seeing                          []float64        // Sky.Seeing
-	beam                            beam             // line filters' cone, beamOf
-	area, qe, readNoise, sub, omega float64          // cm² (times the throughput), peak, e⁻, s, arcsec² per pixel
-	optics2, residual               float64          // the optics' and pixels' blur, FWHM² arcsec²; cfg.Residual
-	mono, mean                      bool             // mean: cfg.MeanStack
+	response                        *config.Response     // a colour sensor's, cfg.ColourResponse
+	monoResponse                    *config.MonoResponse // a mono sensor's, cfg.MonoResponse
+	dark                            []float64            // e⁻/s per pixel per grid minute; nil for none
+	seeing                          []float64            // Sky.Seeing
+	beam                            beam                 // line filters' cone, beamOf
+	area, qe, readNoise, sub, omega float64              // cm² (times the throughput), peak, e⁻, s, arcsec² per pixel
+	optics2, residual               float64              // the optics' and pixels' blur, FWHM² arcsec²; cfg.Residual
+	mono, mean                      bool                 // mean: cfg.MeanStack
 }
 
 // pixelFWHM is a square pixel's blur as a Gaussian FWHM, in pixels: its
@@ -127,7 +113,8 @@ func newCamera(cfg *config.Config, s *Sky) (camera, bool) {
 	c := camera{
 		area: math.Pi / 4 * (d*d - o*o) * cmp.Or(cfg.Throughput, 1), qe: cfg.QE, readNoise: cfg.ReadNoise, sub: cfg.Sub,
 		omega: cfg.Scale * cfg.Scale, mono: cfg.Mono, beam: beamOf(cfg), response: cfg.ColourResponse(),
-		mean: cfg.MeanStack, residual: cfg.Residual, seeing: s.Seeing,
+		monoResponse: cfg.MonoResponse(),
+		mean:         cfg.MeanStack, residual: cfg.Residual, seeing: s.Seeing,
 	}
 	// The diffraction FWHM, 1.03 λ/D at 550 nm, and a pixel's, added in
 	// quadrature to the seeing.
@@ -186,7 +173,7 @@ func (c camera) channels(dst []channel, name string, width float64, lines [catal
 	// resp is channel i's response to line l relative to the peak.
 	resp := func(l catalog.Line, i int) float64 {
 		if c.mono {
-			return lineQE[l]
+			return c.monoResponse.Line(l)
 		}
 
 		return c.response.Line(l)[i]
@@ -224,8 +211,12 @@ func (c camera) channels(dst []channel, name string, width float64, lines [catal
 		shares = [3]float64{fp.glow, fp.rayleigh, fp.mie}
 	}
 	ray, aer := atmos.BandMean(atmos.CameraLo, atmos.CameraHi)
+	// ponytail: each channel's continuum is its mean response, the moonlight's
+	// colour weighted as over the whole band (atmos.BandMean), not by the
+	// channel's own curve; a per-channel weighting would give blue more
+	// Rayleigh moonlight.
 	for i := range chans {
-		qe := broadQEMono
+		qe := c.monoResponse.Broad
 		if !c.mono {
 			qe = c.response.Broad[i]
 		}
