@@ -322,8 +322,8 @@ func TestCamera(t *testing.T) {
 		want string // error substring; "" = accepted
 		cam  cam
 	}{
-		"origin":     {[]string{"-scope", "origin"}, "", cam{152, 77, 10, 0.83, 1.1}},
-		"origin mk1": {[]string{"-scope", "origin-mk1"}, "", cam{152, 63, 10, 0.70, 1.7}},
+		"origin":     {[]string{"-scope", "origin"}, "", cam{152, 77, 10, 0.83, 0.97}},
+		"origin mk1": {[]string{"-scope", "origin-mk1"}, "", cam{152, 63, 10, 0.70, 1.5}},
 		"seestar":    {[]string{"-scope", "Seestar-S50"}, "", cam{50, 0, 10, 0.81, 1.05}},
 		// No chip preset or no published obstruction: no SUBS unless given.
 		"no preset":      {[]string{"-scope", "dwarf-2"}, "", cam{24, 0, 15, 0, 0}},
@@ -333,7 +333,7 @@ func TestCamera(t *testing.T) {
 		"scope camera":   {[]string{"-scope", "vespera", "-camera", "imx571", "-focal", "400"}, "-scope fixes its camera", cam{}},
 		"no framing":     {nil, "", cam{}},
 		// Another telescope's aperture drops the Origin's obstruction.
-		"other scope": {[]string{"-scope", "origin", "-aperture", "200"}, "", cam{200, 0, 10, 0.83, 1.1}},
+		"other scope": {[]string{"-scope", "origin", "-aperture", "200"}, "", cam{200, 0, 10, 0.83, 0.97}},
 		"all given": {[]string{
 			"-camera", "imx571", "-focal", "400", "-pixel", "3.76", "-sensor", "23.5x15.6", "-aperture", "200", "-obstruction", "70",
 			"-sub", "60", "-qe", "0.6", "-read-noise", "1", "-mono",
@@ -357,7 +357,7 @@ func TestCamera(t *testing.T) {
 		"sub 0":          {[]string{"-scope", "origin", "-sub", "0"}, "-sub must be 0.001 to 3600", cam{}},
 		"sub tiny":       {[]string{"-scope", "origin", "-sub", "1e-300"}, "-sub must be", cam{}},
 		"sub huge":       {[]string{"-scope", "origin", "-sub", "3601"}, "-sub must be", cam{}},
-		"sub hour":       {[]string{"-scope", "origin", "-sub", "3600"}, "", cam{152, 77, 3600, 0.83, 1.1}},
+		"sub hour":       {[]string{"-scope", "origin", "-sub", "3600"}, "", cam{152, 77, 3600, 0.83, 0.97}},
 		"qe 0":           {[]string{"-scope", "origin", "-qe", "0"}, "-qe must be above 0", cam{}},
 		"qe 1.1":         {[]string{"-scope", "origin", "-qe", "1.1"}, "-qe must be above 0", cam{}},
 		"read-noise -1":  {[]string{"-scope", "origin", "-read-noise", "-1"}, "-read-noise must be 0 or more", cam{}},

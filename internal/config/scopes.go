@@ -39,20 +39,25 @@ const originKey = "origin"
 var Scopes = map[string]Scope{
 	// Celestron's RASA 152 f/2.2: the Mark II (2025) with the IMX678 and a
 	// 77 mm central obstruction (Celestron: 50.7%), 10 s subs; its read
-	// noise at ISO 1000 measured, an upper bound: the bias master it saves
-	// (9 frames, NSTACK) has a spatial σ of 32 ADU, at 0.2793/25 e⁻/ADU (it
-	// stores each ADC count as 25 ADU, EGAIN being per count), so one
-	// frame's read noise is at most 3·32·0.0112 = 1.1 e⁻ (astro-analyzer,
-	// October 2026; a vendor sheet's 8.5 dB figure, 2.15 e⁻, before).
+	// noise at ISO 1000 measured, an upper bound: the bias masters it saves
+	// (9 frames, NSTACK) have a σ between neighbouring pixels of 27.6-29.0
+	// ADU over two sessions (28.3-29.4 over nine, another estimator), at
+	// 0.2793/25 e⁻/ADU (it stores each ADC count as 25 ADU, EGAIN being per
+	// count), so one frame's read noise is at most 3·29.0·0.0112 = 0.97 e⁻
+	// (astro-analyzer, October 2026; one master's 1.1 e⁻, and a vendor
+	// sheet's 8.5 dB figure, 2.15 e⁻, before).
 	"origin": {
 		Name: "Celestron Origin Mark II", Camera: chipIMX678, Focal: 335, Aperture: 152, Obstruction: 77,
-		Pixel: 2.0, PxLong: 3856, PxShort: 2180, Sub: 10, ReadNoise: 1.1, Mirror: true,
+		Pixel: 2.0, PxLong: 3856, PxShort: 2180, Sub: 10, ReadNoise: 0.97, Mirror: true,
 	},
 	// The original (2023, discontinued): the IMX178 behind a 63 mm
-	// obstruction (41%).
+	// obstruction (41%); its read noise at ISO 200 measured as the Mark II's:
+	// a σ of 30.4 ADU in its bias masters (every session), at 0.0165 e⁻/ADU,
+	// the photon-transfer gain (its EGAIN reads 4.5× that; astro-analyzer),
+	// at most 3·30.4·0.0165 = 1.5 e⁻.
 	"origin-mk1": {
 		Name: "Celestron Origin 2023", Camera: chipIMX178, Focal: 335, Aperture: 152, Obstruction: 63,
-		Pixel: 2.4, PxLong: 3096, PxShort: 2080, Sub: 10, Mirror: true,
+		Pixel: 2.4, PxLong: 3096, PxShort: 2080, Sub: 10, ReadNoise: 1.5, Mirror: true,
 	},
 	// ZWO's refractors, saving portrait frames (here long x short); 10 s
 	// subs in alt-az.
