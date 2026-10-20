@@ -79,6 +79,7 @@
   name: "C 9"
   ra: "22 57 54.0"
   size: 50.0
+  haflux: -8.91
   type: "Emission Nebula"
 - constellation: ""
   dec: "+61 14 06.0"
@@ -278,6 +279,7 @@
   ra: "05 16 29.0"
   size: 60.0
   minor: 36.0
+  haflux: -9.21
   type: "Emission Nebula"
 - constellation: ""
   dec: "+32 34 00.0"
@@ -297,6 +299,7 @@
   ra: "20 56 19.0"
   size: 90.0
   minor: 12.0
+  haflux: -9.56
   type: "Supernova Remnant"
 - constellation: ""
   dec: "+30 35 42.0"
@@ -305,6 +308,7 @@
   name: "C 34"
   ra: "20 45 58.0"
   size: 75.0
+  haflux: -8.83
   type: "Supernova Remnant"
 - constellation: ""
   bmag: 12.49
@@ -338,12 +342,13 @@
 - constellation: ""
   dec: "+25 59 16.0"
   description: "NGC 4565, Needle Galaxy"
-  mag: 12.4
+  mag: -9999
   name: "C 38"
   ra: "12 36 21.0"
   size: 15.0
   surfbr: 22.19
   minor: 2.59
+  bmag: 10.05
   type: "Galaxy"
 - constellation: ""
   dec: "+20 54 42.0"
@@ -444,6 +449,7 @@
   ra: "06 30 54.0"
   size: 100.0
   minor: 62.5
+  haflux: -7.61
   type: "Emission Nebula"
 - constellation: ""
   dec: "+04 54 50.0"
@@ -738,6 +744,7 @@
   name: "C 82"
   ra: "16 40 05.0"
   size: 30.0
+  haflux: -8.30
   type: "Emission Nebula"
 - constellation: ""
   dec: "-49 28 02.0"
@@ -821,6 +828,7 @@
   name: "C 92"
   ra: "10 43 48.0"
   size: 120.0
+  haflux: -6.42
   type: "Emission Nebula"
 - constellation: ""
   dec: "-59 59 00.0"
@@ -885,6 +893,7 @@
   name: "C 100"
   ra: "11 38 18.0"
   size: 65.0
+  haflux: -7.24
   type: "Open Cluster"
 - constellation: ""
   dec: "-63 51 27.0"

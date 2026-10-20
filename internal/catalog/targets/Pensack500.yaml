@@ -445,10 +445,11 @@
 - constellation: Cassiopeia
   dec: +59 18
   description: UGC 192
-  mag: 13.3
+  mag: -9999
   name: IC10
   ra: 00 20.4
   size: 6.4
+  bmag: 11.78
   type: Galaxy
 - constellation: Cassiopeia
   dec: +48 30
@@ -2440,6 +2441,7 @@
   name: NGC 2244
   ra: 06 32.3
   size: 30.0
+  haflux: -8.92
   type: Open Cluster
 - constellation: Monoceros
   dec: +08 22
@@ -2481,6 +2483,7 @@
   name: NGC 2264
   ra: 06 41.0
   size: 40.0
+  haflux: -8.73
   type: N+CL
 - constellation: Monoceros
   dec: +04 37
@@ -2694,6 +2697,7 @@
   ra: 05 35.3
   size: 60.0
   minor: 40.0
+  haflux: -7.24
   type: N+CL
 - constellation: Orion
   dec: -04 49
@@ -2735,6 +2739,7 @@
   name: NGC 2024
   ra: 05 41.7
   size: 30.0
+  haflux: -8.59
   type: Emission Nebula
 - constellation: Orion
   dec: +09 05
@@ -3547,6 +3552,7 @@
   name: NGC 6514
   ra: 18 02.5
   size: 30.0
+  haflux: -8.09
   type: N+CL
 - constellation: Sagittarius
   dec: -27 52
@@ -3585,7 +3591,7 @@
   description: M8 Lagoon Nebula (Cluster = 6530)
   mag: 4.6
   name: NGC 6523
-  ra: 18 04.4
+  ra: 18 03.7
   size: 30.0
   minor: 20.0
   type: Emission Nebula
@@ -3956,12 +3962,13 @@
 - constellation: Triangulum
   dec: +33 12
   description: UGC 1431
-  mag: 14.0
+  mag: -9999
   name: NGC 751
   ra: 01 57.6
   size: 1.8
   bsurfbr: 23.39
   minor: 1.43
+  bmag: 13.39
   type: Galaxy
 - constellation: Triangulum
   dec: +28 50
@@ -4551,6 +4558,7 @@
   name: NGC 6820
   ra: 19 42 27.9
   size: 40.0
+  haflux: -8.82
   type: CL+N
 - constellation: Vulpecula
   dec: +23 18

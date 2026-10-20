@@ -15,6 +15,7 @@
   name: "Sh2-2"
   ra: "17 03 57.0"
   size: 60.0
+  haflux: -9.03
   type: "Emission Nebula"
 - constellation: ""
   dec: "-38 27 34.0"
@@ -39,6 +40,7 @@
   name: "Sh2-5"
   ra: "17 19 50.0"
   size: 100.0
+  haflux: -8.02
   type: "Emission Nebula"
 - constellation: ""
   dec: "-37 06 12.0"
@@ -56,6 +58,7 @@
   name: "Sh2-7"
   ra: "15 59 00.0"
   size: 270.0
+  haflux: -7.53
   type: "Emission Nebula"
 - constellation: ""
   dec: "-36 06 12.0"
@@ -64,6 +67,7 @@
   name: "Sh2-8"
   ra: "17 20 49.0"
   size: 120.0
+  haflux: -7.78
   type: "Emission Nebula"
 - constellation: ""
   dec: "-25 35 34.0"
@@ -72,6 +76,7 @@
   name: "Sh2-9"
   ra: "16 21 11.0"
   size: 80.0
+  haflux: -8.03
   type: "Emission Nebula"
 - constellation: ""
   dec: "-34 05 00.0"
@@ -80,6 +85,7 @@
   name: "Sh2-10"
   ra: "17 17 00.0"
   size: 55.0
+  haflux: -8.70
   type: "Emission Nebula"
 - constellation: ""
   dec: "-34 12 06.0"
@@ -88,6 +94,7 @@
   name: "Sh2-11"
   ra: "17 24 43.0"
   size: 90.0
+  haflux: -7.89
   type: "Wolf-Rayet Nebula"
 - constellation: ""
   dec: "-32 34 54.0"
@@ -96,6 +103,7 @@
   name: "Sh2-12"
   ra: "17 34 42.0"
   size: 120.0
+  haflux: -7.36
   type: "Emission Nebula"
 - constellation: ""
   dec: "-31 33 00.0"
@@ -104,6 +112,7 @@
   name: "Sh2-13"
   ra: "17 30 24.0"
   size: 40.0
+  haflux: -8.90
   type: "Emission Nebula"
 - constellation: ""
   dec: "-30 16 18.0"
@@ -176,6 +185,7 @@
   name: "Sh2-22"
   ra: "17 53 00.0"
   size: 55.0
+  haflux: -8.28
   type: "Emission Nebula"
 - constellation: ""
   dec: "-08 22 00.0"
@@ -200,6 +210,7 @@
   name: "Sh2-25"
   ra: "18 03 41.0"
   size: 90.0
+  haflux: -6.91
   type: "Emission Nebula"
 - constellation: ""
   dec: "-23 28 02.0"
@@ -216,6 +227,7 @@
   name: "Sh2-27"
   ra: "16 35 00.0"
   size: 480.0
+  haflux: -6.58
   type: "Emission Nebula"
 - constellation: ""
   dec: "-23 35 03.1"
@@ -272,6 +284,7 @@
   name: "Sh2-34"
   ra: "18 06 24.0"
   size: 120.0
+  haflux: -8.04
   type: "Emission Nebula"
 - constellation: ""
   dec: "-20 15 00.0"
@@ -280,6 +293,7 @@
   name: "Sh2-35"
   ra: "18 15 54.0"
   size: 40.0
+  haflux: -8.49
   type: "Emission Nebula"
 - constellation: ""
   dec: "+00 23 00.0"
@@ -296,6 +310,7 @@
   name: "Sh2-37"
   ra: "18 16 54.0"
   size: 40.0
+  haflux: -9.52
   type: "Emission Nebula"
 - constellation: ""
   dec: "-18 15 00.0"
@@ -328,6 +343,7 @@
   name: "Sh2-41"
   ra: "18 15 48.0"
   size: 60.0
+  haflux: -8.44
   type: "Emission Nebula"
 - constellation: ""
   dec: "-16 46 00.0"
@@ -352,6 +368,7 @@
   name: "Sh2-44"
   ra: "18 16 30.0"
   size: 50.0
+  haflux: -8.43
   type: "Emission Nebula"
 - constellation: ""
   dec: "-16 10 18.0"
@@ -360,6 +377,7 @@
   name: "Sh2-45"
   ra: "18 20 47.0"
   size: 60.0
+  haflux: -7.72
   type: "Emission Nebula"
 - constellation: ""
   dec: "-14 09 00.0"
@@ -392,6 +410,7 @@
   name: "Sh2-49"
   ra: "18 18 48.0"
   size: 90.0
+  haflux: -7.65
   type: "Emission Nebula"
 - constellation: ""
   dec: "-14 42 00.0"
@@ -433,6 +452,7 @@
   name: "Sh2-54"
   ra: "18 17 52.0"
   size: 80.0
+  haflux: -7.79
   type: "Emission Nebula"
 - constellation: ""
   dec: "-11 45 00.0"
@@ -554,6 +574,7 @@
   name: "Sh2-69"
   ra: "18 44 14.0"
   size: 30.0
+  haflux: -9.70
   type: "Emission Nebula"
 - constellation: ""
   dec: "+07 05 00.0"
@@ -627,6 +648,7 @@
   name: "Sh2-78"
   ra: "19 03 18.0"
   size: 7.0
+  haflux: -10.72
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+13 58 00.0"
@@ -635,6 +657,7 @@
   name: "Sh2-79"
   ra: "19 23 18.0"
   size: 40.0
+  haflux: -9.65
   type: "Emission Nebula"
 - constellation: ""
   dec: "+16 51 38.0"
@@ -691,6 +714,7 @@
   name: "Sh2-86"
   ra: "19 42 28.0"
   size: 40.0
+  haflux: -8.83
   type: "Emission Nebula"
 - constellation: ""
   dec: "+24 35 15.0"
@@ -715,6 +739,7 @@
   name: "Sh2-89"
   ra: "19 50 12.0"
   size: 30.0
+  haflux: -9.69
   type: "Emission Nebula"
 - constellation: ""
   dec: "+26 51 36.0"
@@ -731,6 +756,7 @@
   name: "Sh2-91"
   ra: "19 35 36.0"
   size: 150.0
+  haflux: -9.42
   type: "Supernova Remnant"
 - constellation: ""
   dec: "+28 11 58.0"
@@ -739,6 +765,7 @@
   name: "Sh2-92"
   ra: "19 46 40.0"
   size: 50.0
+  haflux: -8.69
   type: "Emission Nebula"
 - constellation: ""
   dec: "+27 12 54.0"
@@ -755,6 +782,7 @@
   name: "Sh2-94"
   ra: "19 28 16.0"
   size: 100.0
+  haflux: -10.03
   type: "Supernova Remnant"
 - constellation: ""
   dec: "+29 17 20.0"
@@ -771,6 +799,7 @@
   name: "Sh2-96"
   ra: "19 28 42.0"
   size: 100.0
+  haflux: -8.87
   type: "Supernova Remnant"
 - constellation: ""
   dec: "+30 12 48.0"
@@ -819,6 +848,7 @@
   name: "Sh2-102"
   ra: "20 31 42.0"
   size: 40.0
+  haflux: -10.00
   type: "Emission Nebula"
 - constellation: ""
   dec: "+31 10 00.0"
@@ -827,6 +857,7 @@
   name: "Sh2-103"
   ra: "20 51 21.0"
   size: 210.0
+  haflux: -7.95
   type: "Supernova Remnant"
 - constellation: ""
   dec: "+36 45 39.0"
@@ -867,6 +898,7 @@
   name: "Sh2-108"
   ra: "20 23 14.0"
   size: 180.0
+  haflux: -7.50
   type: "Emission Nebula"
 - constellation: ""
   dec: "+40 20 00.0"
@@ -875,6 +907,7 @@
   name: "Sh2-109"
   ra: "20 33 37.0"
   size: 1000.0
+  haflux: -5.96
   type: "Emission Nebula"
 - constellation: ""
   dec: "+32 21 00.0"
@@ -883,6 +916,7 @@
   name: "Sh2-110"
   ra: "21 19 37.0"
   size: 80.0
+  haflux: -9.43
   type: "Emission Nebula"
 - constellation: ""
   dec: "+30 15 00.0"
@@ -907,6 +941,7 @@
   name: "Sh2-113"
   ra: "21 20 48.0"
   size: 60.0
+  haflux: -9.59
   type: "Emission Nebula"
 - constellation: ""
   dec: "+38 42 00.0"
@@ -915,6 +950,7 @@
   name: "Sh2-114"
   ra: "21 21 12.0"
   size: 60.0
+  haflux: -9.49
   type: "Emission Nebula"
 - constellation: ""
   dec: "+47 02 24.0"
@@ -923,6 +959,7 @@
   name: "Sh2-115"
   ra: "20 35 02.0"
   size: 35.0
+  haflux: -8.77
   type: "Emission Nebula"
 - constellation: ""
   dec: "+47 21 04.0"
@@ -947,6 +984,7 @@
   name: "Sh2-118"
   ra: "21 37 30.0"
   size: 360.0
+  haflux: -8.20
   type: "Emission Nebula"
 - constellation: ""
   dec: "+43 56 00.0"
@@ -955,6 +993,7 @@
   name: "Sh2-119"
   ra: "21 18 30.0"
   size: 120.0
+  haflux: -7.65
   type: "Emission Nebula"
 - constellation: ""
   dec: "+49 52 00.0"
@@ -1011,6 +1050,7 @@
   name: "Sh2-126"
   ra: "22 33 27.5"
   size: 160.0
+  haflux: -7.92
   type: "Emission Nebula"
 - constellation: ""
   dec: "+54 37 00.0"
@@ -1035,6 +1075,7 @@
   name: "Sh2-129"
   ra: "21 11 47.0"
   size: 140.0
+  haflux: -8.22
   type: "Emission Nebula"
 - constellation: ""
   dec: "+63 13 00.0"
@@ -1051,6 +1092,7 @@
   name: "Sh2-131"
   ra: "21 38 58.0"
   size: 170.0
+  haflux: -7.19
   type: "Emission Nebula"
 - constellation: ""
   dec: "+56 04 45.0"
@@ -1059,6 +1101,7 @@
   name: "Sh2-132"
   ra: "22 19 09.0"
   size: 60.0
+  haflux: -8.27
   type: "Wolf-Rayet Nebula"
 - constellation: ""
   dec: "+64 04 00.0"
@@ -1067,6 +1110,7 @@
   name: "Sh2-133"
   ra: "21 27 00.0"
   size: 40.0
+  haflux: -9.74
   type: "Emission Nebula"
 - constellation: ""
   dec: "+58 58 00.0"
@@ -1075,6 +1119,7 @@
   name: "Sh2-134"
   ra: "22 18 00.0"
   size: 200.0
+  haflux: -7.77
   type: "Emission Nebula"
 - constellation: ""
   dec: "+58 44 18.0"
@@ -1099,6 +1144,7 @@
   name: "Sh2-137"
   ra: "21 58 00.0"
   size: 50.0
+  haflux: -9.57
   type: "Emission Nebula"
 - constellation: ""
   dec: "+58 28 20.0"
@@ -1139,6 +1185,7 @@
   name: "Sh2-142"
   ra: "22 47 21.0"
   size: 30.0
+  haflux: -9.02
   type: "Emission Nebula"
 - constellation: ""
   dec: "+57 45 00.0"
@@ -1163,6 +1210,7 @@
   name: "Sh2-145"
   ra: "22 25 30.0"
   size: 60.0
+  haflux: -9.12
   type: "Emission Nebula"
 - constellation: ""
   dec: "+59 54 56.0"
@@ -1203,6 +1251,7 @@
   name: "Sh2-150"
   ra: "22 29 16.0"
   size: 60.0
+  haflux: -9.00
   type: "Emission Nebula"
 - constellation: ""
   dec: "+57 05 00.0"
@@ -1211,6 +1260,7 @@
   name: "Sh2-151"
   ra: "23 03 00.0"
   size: 30.0
+  haflux: -9.65
   type: "Emission Nebula"
 - constellation: ""
   dec: "+58 46 59.0"
@@ -1235,6 +1285,7 @@
   name: "Sh2-154"
   ra: "22 52 00.0"
   size: 40.0
+  haflux: -9.13
   type: "Emission Nebula"
 - constellation: ""
   dec: "+62 31 06.0"
@@ -1243,6 +1294,7 @@
   name: "Sh2-155"
   ra: "22 57 54.0"
   size: 50.0
+  haflux: -8.91
   type: "Emission Nebula"
 - constellation: ""
   dec: "+60 14 31.0"
@@ -1259,6 +1311,7 @@
   name: "Sh2-157"
   ra: "23 16 04.0"
   size: 85.0
+  haflux: -8.34
   type: "Wolf-Rayet Nebula"
 - constellation: ""
   dec: "+61 30 00.0"
@@ -1283,6 +1336,7 @@
   name: "Sh2-160"
   ra: "23 04 00.0"
   size: 40.0
+  haflux: -9.87
   type: "Emission Nebula"
 - constellation: ""
   dec: "+61 51 00.0"
@@ -1291,6 +1345,7 @@
   name: "Sh2-161"
   ra: "23 15 00.0"
   size: 55.0
+  haflux: -9.14
   type: "Emission Nebula"
 - constellation: ""
   dec: "+61 12 42.0"
@@ -1299,6 +1354,7 @@
   name: "Sh2-162"
   ra: "23 20 45.0"
   size: 40.0
+  haflux: -10.20
   type: "Wolf-Rayet Nebula"
 - constellation: ""
   dec: "+60 48 01.0"
@@ -1371,6 +1427,7 @@
   name: "Sh2-171"
   ra: "00 03 36.0"
   size: 180.0
+  haflux: -7.66
   type: "Emission Nebula"
 - constellation: ""
   dec: "+61 15 00.0"
@@ -1427,6 +1484,7 @@
   name: "Sh2-178"
   ra: "22 19 00.0"
   size: 420.0
+  haflux: -8.89
   type: "Emission Nebula"
 - constellation: ""
   dec: "+62 51 00.0"
@@ -1468,6 +1526,7 @@
   name: "Sh2-183"
   ra: "00 54 00.0"
   size: 45.0
+  haflux: -9.46
   type: "Emission Nebula"
 - constellation: ""
   dec: "+56 37 29.0"
@@ -1476,6 +1535,7 @@
   name: "Sh2-184"
   ra: "00 52 54.0"
   size: 40.0
+  haflux: -8.70
   type: "Emission Nebula"
 - constellation: ""
   dec: "+60 54 42.0"
@@ -1484,6 +1544,7 @@
   name: "Sh2-185"
   ra: "00 59 29.0"
   size: 120.0
+  haflux: -8.33
   type: "Emission Nebula"
 - constellation: ""
   dec: "+63 07 00.0"
@@ -1524,6 +1585,7 @@
   name: "Sh2-190"
   ra: "02 32 47.0"
   size: 150.0
+  haflux: -7.40
   type: "Emission Nebula"
 - constellation: ""
   dec: "+59 39 18.0"
@@ -1596,6 +1658,7 @@
   name: "Sh2-199"
   ra: "02 51 18.0"
   size: 120.0
+  haflux: -7.69
   type: "Emission Nebula"
 - constellation: ""
   dec: "+62 47 45.0"
@@ -1620,6 +1683,7 @@
   name: "Sh2-202"
   ra: "03 18 54.0"
   size: 180.0
+  haflux: -8.12
   type: "Emission Nebula"
 - constellation: ""
   dec: "+54 49 42.0"
@@ -1628,6 +1692,7 @@
   name: "Sh2-203"
   ra: "03 22 59.0"
   size: 120.0
+  haflux: -9.03
   type: "Emission Nebula"
 - constellation: ""
   dec: "+57 26 00.0"
@@ -1636,6 +1701,7 @@
   name: "Sh2-204"
   ra: "03 55 42.0"
   size: 90.0
+  haflux: -9.17
   type: "Emission Nebula"
 - constellation: ""
   dec: "+53 25 00.0"
@@ -1644,6 +1710,7 @@
   name: "Sh2-205"
   ra: "03 52 14.0"
   size: 180.0
+  haflux: -8.03
   type: "Emission Nebula"
 - constellation: ""
   dec: "+51 18 57.0"
@@ -1652,6 +1719,7 @@
   name: "Sh2-206"
   ra: "04 03 14.0"
   size: 50.0
+  haflux: -9.08
   type: "Emission Nebula"
 - constellation: ""
   dec: "+53 08 29.0"
@@ -1764,6 +1832,7 @@
   name: "Sh2-220"
   ra: "04 03 14.0"
   size: 320.0
+  haflux: -7.09
   type: "Emission Nebula"
 - constellation: ""
   dec: "+46 20 00.0"
@@ -1772,6 +1841,7 @@
   name: "Sh2-221"
   ra: "05 01 42.0"
   size: 120.0
+  haflux: -8.86
   type: "Supernova Remnant"
 - constellation: ""
   dec: "+35 16 47.0"
@@ -1788,6 +1858,7 @@
   name: "Sh2-223"
   ra: "05 17 18.0"
   size: 90.0
+  haflux: -9.07
   type: "Emission Nebula"
 - constellation: ""
   dec: "+42 55 00.0"
@@ -1796,6 +1867,7 @@
   name: "Sh2-224"
   ra: "05 26 36.0"
   size: 50.0
+  haflux: -9.56
   type: "Supernova Remnant"
 - constellation: ""
   dec: "+40 31 01.0"
@@ -1836,6 +1908,7 @@
   name: "Sh2-229"
   ra: "05 16 29.0"
   size: 65.0
+  haflux: -8.88
   type: "Emission Nebula"
 - constellation: ""
   dec: "+34 00 01.0"
@@ -1844,6 +1917,7 @@
   name: "Sh2-230"
   ra: "05 22 00.0"
   size: 300.0
+  haflux: -7.20
   type: "Emission Nebula"
 - constellation: ""
   dec: "+35 45 54.0"
@@ -1860,6 +1934,7 @@
   name: "Sh2-232"
   ra: "05 42 30.0"
   size: 45.0
+  haflux: -9.43
   type: "Emission Nebula"
 - constellation: ""
   dec: "+35 51 19.0"
@@ -1892,6 +1967,7 @@
   name: "Sh2-236"
   ra: "05 22 44.0"
   size: 55.0
+  haflux: -8.26
   type: "Emission Nebula"
 - constellation: ""
   dec: "+34 14 42.0"
@@ -1924,6 +2000,7 @@
   name: "Sh2-240"
   ra: "05 41 06.0"
   size: 150.0
+  haflux: -8.64
   type: "Supernova Remnant"
 - constellation: ""
   dec: "+30 15 00.0"
@@ -1964,6 +2041,7 @@
   name: "Sh2-245"
   ra: "04 02 33.5"
   size: 720.0
+  haflux: -7.16
   type: "Emission Nebula"
 - constellation: ""
   dec: "+14 05 00.0"
@@ -1988,6 +2066,7 @@
   name: "Sh2-248"
   ra: "06 16 36.0"
   size: 60.0
+  haflux: -8.67
   type: "Supernova Remnant"
 - constellation: ""
   dec: "+22 58 30.0"
@@ -1996,6 +2075,7 @@
   name: "Sh2-249"
   ra: "06 22 32.0"
   size: 80.0
+  haflux: -8.42
   type: "Emission Nebula"
 - constellation: ""
   dec: "+07 22 00.0"
@@ -2012,6 +2092,7 @@
   name: "Sh2-251"
   ra: "04 32 54.0"
   size: 35.0
+  haflux: -10.28
   type: "Emission Nebula"
 - constellation: ""
   dec: "+20 39 34.0"
@@ -2020,6 +2101,7 @@
   name: "Sh2-252"
   ra: "06 09 24.0"
   size: 40.0
+  haflux: -8.79
   type: "Emission Nebula"
 - constellation: ""
   dec: "+20 01 00.0"
@@ -2084,6 +2166,7 @@
   name: "Sh2-260"
   ra: "04 55 12.0"
   size: 55.0
+  haflux: -9.81
   type: "Emission Nebula"
 - constellation: ""
   dec: "+15 47 00.0"
@@ -2092,6 +2175,7 @@
   name: "Sh2-261"
   ra: "06 08 36.0"
   size: 60.0
+  haflux: -8.45
   type: "Emission Nebula"
 - constellation: ""
   dec: "+06 10 00.0"
@@ -2108,6 +2192,7 @@
   name: "Sh2-263"
   ra: "05 21 45.0"
   size: 110.0
+  haflux: -9.11
   type: "Emission Nebula"
 - constellation: ""
   dec: "+10 10 00.0"
@@ -2116,6 +2201,7 @@
   name: "Sh2-264"
   ra: "05 36 48.0"
   size: 420.0
+  haflux: -6.57
   type: "Emission Nebula"
 - constellation: ""
   dec: "+07 26 00.0"
@@ -2124,6 +2210,7 @@
   name: "Sh2-265"
   ra: "05 18 36.0"
   size: 60.0
+  haflux: -9.45
   type: "Emission Nebula"
 - constellation: ""
   dec: "+15 16 52.0"
@@ -2148,6 +2235,7 @@
   name: "Sh2-268"
   ra: "06 10 00.0"
   size: 72.0
+  haflux: -8.86
   type: "Emission Nebula"
 - constellation: ""
   dec: "+13 49 45.0"
@@ -2188,6 +2276,7 @@
   name: "Sh2-273"
   ra: "06 40 58.0"
   size: 250.0
+  haflux: -7.04
   type: "Emission Nebula"
 - constellation: ""
   dec: "+13 14 48.0"
@@ -2205,6 +2294,7 @@
   name: "Sh2-275"
   ra: "06 30 54.0"
   size: 100.0
+  haflux: -7.40
   type: "Emission Nebula"
 - constellation: ""
   dec: "-00 09 36.0"
@@ -2213,6 +2303,7 @@
   name: "Sh2-276"
   ra: "05 36 22.0"
   size: 1080.0
+  haflux: -6.13
   type: "Emission Nebula"
 - constellation: ""
   dec: "-01 51 24.0"
@@ -2221,6 +2312,7 @@
   name: "Sh2-277"
   ra: "05 41 42.0"
   size: 120.0
+  haflux: -7.67
   type: "Emission Nebula"
 - constellation: ""
   dec: "-05 39 00.0"
@@ -2229,6 +2321,7 @@
   name: "Sh2-278"
   ra: "05 19 54.0"
   size: 55.0
+  haflux: -8.87
   type: "Emission Nebula"
 - constellation: ""
   dec: "-04 49 15.0"
@@ -2245,6 +2338,7 @@
   name: "Sh2-280"
   ra: "06 34 22.0"
   size: 40.0
+  haflux: -8.64
   type: "Emission Nebula"
 - constellation: ""
   dec: "-05 23 28.0"
@@ -2261,6 +2355,7 @@
   name: "Sh2-282"
   ra: "06 38 08.0"
   size: 35.0
+  haflux: -8.96
   type: "Emission Nebula"
 - constellation: ""
   dec: "+00 44 12.0"
@@ -2277,6 +2372,7 @@
   name: "Sh2-284"
   ra: "06 45 28.0"
   size: 30.0
+  haflux: -9.02
   type: "Emission Nebula"
 - constellation: ""
   dec: "-00 32 00.0"
@@ -2374,6 +2470,7 @@
   name: "Sh2-296"
   ra: "07 04 07.0"
   size: 200.0
+  haflux: -7.43
   type: "Emission Nebula"
 - constellation: ""
   dec: "-12 19 00.0"
@@ -2390,6 +2487,7 @@
   name: "Sh2-298"
   ra: "07 18 30.0"
   size: 40.0
+  haflux: -8.91
   type: "Wolf-Rayet Nebula"
 - constellation: ""
   dec: "-15 17 12.0"
@@ -2430,6 +2528,7 @@
   name: "Sh2-303"
   ra: "06 54 22.0"
   size: 72.0
+  haflux: -9.12
   type: "Emission Nebula"
 - constellation: ""
   dec: "-23 54 12.0"
@@ -2438,6 +2537,7 @@
   name: "Sh2-304"
   ra: "06 44 00.0"
   size: 180.0
+  haflux: -8.40
   type: "Emission Nebula"
 - constellation: ""
   dec: "-18 32 13.0"
@@ -2470,6 +2570,7 @@
   name: "Sh2-308"
   ra: "06 54 00.0"
   size: 45.0
+  haflux: -9.55
   type: "Wolf-Rayet Nebula"
 - constellation: ""
   dec: "-19 26 12.0"
@@ -2486,6 +2587,7 @@
   name: "Sh2-310"
   ra: "07 23 44.0"
   size: 120.0
+  haflux: -7.92
   type: "Emission Nebula"
 - constellation: ""
   dec: "-26 26 12.0"
@@ -2494,6 +2596,7 @@
   name: "Sh2-311"
   ra: "07 52 26.0"
   size: 45.0
+  haflux: -8.24
   type: "Emission Nebula"
 - constellation: ""
   dec: "-24 46 12.0"
@@ -2502,6 +2605,7 @@
   name: "Sh2-312"
   ra: "08 59 00.0"
   size: 300.0
+  haflux: -7.72
   type: "Emission Nebula"
 - constellation: ""
   dec: "-22 51 42.0"
@@ -2510,4 +2614,5 @@
   name: "Sh2-313"
   ra: "12 53 41.0"
   size: 32.0
+  haflux: -9.82
   type: "Emission Nebula"

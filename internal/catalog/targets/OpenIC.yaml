@@ -934,7 +934,7 @@
   constellation: "Cetus"
   dec: "+00 47 30.3"
   description: ""
-  mag: 18.07
+  mag: -9999
   minor: 0.44
   name: "IC 88"
   ra: "01 14 31.30"
@@ -2801,7 +2801,7 @@
   constellation: "Cetus"
   dec: "-00 06 33.1"
   description: ""
-  mag: 16.88
+  mag: -9999
   minor: 0.37
   name: "IC 264"
   ra: "02 48 47.62"
@@ -3024,7 +3024,7 @@
   constellation: "Cetus"
   dec: "-00 12 16.0"
   description: ""
-  mag: 17.93
+  mag: -9999
   minor: 0.54
   name: "IC 283"
   ra: "03 03 50.46"
@@ -4398,6 +4398,7 @@
   name: "IC 410"
   ra: "05 22 42.00"
   size: 40.00
+  haflux: -8.83
   type: "Emission Nebula"
 - bmag: 14.13
   bsurfbr: 23.53
@@ -4504,7 +4505,7 @@
   constellation: "Orion"
   dec: "-07 55 06.0"
   description: ""
-  mag: 15.0
+  mag: -9999
   minor: 2.22
   name: "IC 421"
   ra: "05 32 08.58"
@@ -5199,7 +5200,7 @@
   constellation: "Cancer"
   dec: "+26 10 05.5"
   description: ""
-  mag: 17.19
+  mag: -9999
   minor: 0.77
   name: "IC 492"
   ra: "08 05 38.66"
@@ -8178,7 +8179,7 @@
   constellation: "Virgo"
   dec: "+04 50 45.1"
   description: ""
-  mag: 17.54
+  mag: -9999
   minor: 0.70
   name: "IC 756"
   ra: "12 02 57.81"
@@ -9659,7 +9660,7 @@
   constellation: "Coma Berenices"
   dec: "+17 02 56.3"
   description: ""
-  mag: 16.37
+  mag: -9999
   minor: 0.50
   name: "IC 894"
   ra: "13 32 04.82"
@@ -12049,7 +12050,7 @@
   constellation: "Virgo"
   dec: "+04 17 37.9"
   description: ""
-  mag: 15.50
+  mag: -9999
   minor: 0.58
   name: "IC 1102"
   ra: "15 11 04.95"
@@ -13339,7 +13340,7 @@
   constellation: "Draco"
   dec: "+68 12 09.5"
   description: ""
-  mag: 15.30
+  mag: -9999
   name: "IC 1218"
   ra: "16 16 37.10"
   size: 0.92
@@ -15067,7 +15068,7 @@
   constellation: "Aquarius"
   dec: "-01 04 12.4"
   description: ""
-  mag: 18.25
+  mag: -9999
   minor: 0.53
   name: "IC 1385"
   ra: "21 28 51.19"
@@ -15190,6 +15191,7 @@
   name: "IC 1396"
   ra: "21 38 57.62"
   size: 146.00
+  haflux: -7.27
   type: "Cl+N Emission Nebula"
 - bmag: 15.29
   bsurfbr: 23.55
@@ -15950,7 +15952,7 @@
   constellation: "Aquarius"
   dec: "-08 59 21.0"
   description: ""
-  mag: 15.50
+  mag: -9999
   minor: 0.45
   name: "IC 1464B"
   ra: "23 03 11.04"
@@ -16204,7 +16206,7 @@
   constellation: "Pisces"
   dec: "-04 07 37.2"
   description: "IC 1524"
-  mag: 14.50
+  mag: -9999
   minor: 0.84
   name: "IC 1490"
   ra: "23 59 10.72"
@@ -17103,7 +17105,7 @@
   constellation: "Cetus"
   dec: "-04 07 04.2"
   description: ""
-  mag: 14.85
+  mag: -9999
   minor: 0.77
   name: "IC 1575"
   ra: "00 43 33.36"
@@ -19118,7 +19120,7 @@
   constellation: "Fornax"
   dec: "-25 01 36.1"
   description: ""
-  mag: 14.80
+  mag: -9999
   minor: 1.20
   name: "IC 1768"
   ra: "02 00 49.87"
@@ -19501,6 +19503,7 @@
   name: "IC 1805"
   ra: "02 32 41.51"
   size: 60.00
+  haflux: -8.17
   type: "Cl+N Emission Nebula"
 - bmag: 15.69
   bsurfbr: 23.56
@@ -19611,7 +19614,7 @@
   constellation: "Fornax"
   dec: "-36 40 19.4"
   description: ""
-  mag: 14.26
+  mag: -9999
   minor: 1.22
   name: "IC 1816"
   ra: "02 31 51.00"
@@ -19975,6 +19978,7 @@
   name: "IC 1848"
   ra: "02 51 10.59"
   size: 40.00
+  haflux: -9.02
   type: "Cl+N Emission Nebula"
 - bmag: 15.44
   bsurfbr: 23.75
@@ -20202,7 +20206,7 @@
   constellation: "Eridanus"
   dec: "-02 20 49.5"
   description: ""
-  mag: 16.0
+  mag: -9999
   minor: 0.90
   name: "IC 1870"
   ra: "02 57 53.53"
@@ -20519,7 +20523,7 @@
   constellation: "Perseus"
   dec: "+37 06 44.8"
   description: ""
-  mag: 16.76
+  mag: -9999
   minor: 0.27
   name: "IC 1901"
   ra: "03 16 02.61"
@@ -23713,7 +23717,7 @@
   constellation: "Gemini"
   dec: "+34 13 55.8"
   description: ""
-  mag: 16.26
+  mag: -9999
   minor: 0.82
   name: "IC 2204"
   ra: "07 41 18.10"
@@ -25969,7 +25973,7 @@
   constellation: "Cancer"
   dec: "+32 35 34.6"
   description: ""
-  mag: 16.06
+  mag: -9999
   minor: 0.42
   name: "IC 2439"
   ra: "09 08 38.46"
@@ -30979,7 +30983,7 @@
   constellation: "Leo"
   dec: "+10 17 47.3"
   description: ""
-  mag: 16.94
+  mag: -9999
   minor: 0.25
   name: "IC 2921"
   ra: "11 32 49.28"
@@ -32587,7 +32591,7 @@
   constellation: "Virgo"
   dec: "+12 41 14.3"
   description: ""
-  mag: 15.70
+  mag: -9999
   minor: 0.50
   name: "IC 3078"
   ra: "12 16 00.04"
@@ -37789,7 +37793,7 @@
   constellation: "Virgo"
   dec: "+06 37 15.2"
   description: ""
-  mag: 14.97
+  mag: -9999
   minor: 2.17
   name: "IC 3576"
   ra: "12 36 37.68"
@@ -40136,7 +40140,7 @@
   constellation: "Canes Venatici"
   dec: "+40 35 45.3"
   description: ""
-  mag: 17.19
+  mag: -9999
   minor: 0.42
   name: "IC 3808"
   ra: "12 48 58.76"
@@ -43943,7 +43947,7 @@
   constellation: "Canes Venatici"
   dec: "+39 55 29.7"
   description: ""
-  mag: 17.95
+  mag: -9999
   minor: 0.60
   name: "IC 4165"
   ra: "13 04 56.96"
@@ -44848,7 +44852,7 @@
   constellation: "Hydra"
   dec: "-29 52 52.9"
   description: ""
-  mag: 14.80
+  mag: -9999
   minor: 0.65
   name: "IC 4248"
   ra: "13 26 47.22"
@@ -45153,7 +45157,7 @@
   constellation: "Hydra"
   dec: "-29 43 56.6"
   description: ""
-  mag: 16.60
+  mag: -9999
   minor: 0.54
   name: "IC 4275"
   ra: "13 31 51.30"
@@ -47718,7 +47722,7 @@
   constellation: "Boötes"
   dec: "+27 34 42.7"
   description: ""
-  mag: 16.98
+  mag: -9999
   minor: 0.68
   name: "IC 4514"
   ra: "14 50 55.44"
@@ -48079,7 +48083,7 @@
   constellation: "Corona Borealis"
   dec: "+28 51 09.4"
   description: ""
-  mag: 15.54
+  mag: -9999
   minor: 0.60
   name: "IC 4546"
   ra: "15 26 58.41"
@@ -48929,6 +48933,7 @@
   name: "IC 4628"
   ra: "16 56 58.43"
   size: 89.13
+  haflux: -7.57
   type: "Emission Nebula"
 - constellation: "Ophiuchus"
   dec: "-16 42 35.6"
@@ -49823,7 +49828,7 @@
   constellation: "Telescopium"
   dec: "-56 43 55.9"
   description: ""
-  mag: 13.98
+  mag: -9999
   minor: 0.61
   name: "IC 4719"
   ra: "18 33 11.54"
@@ -51144,7 +51149,7 @@
   constellation: "Telescopium"
   dec: "-54 37 36.1"
   description: ""
-  mag: 13.66
+  mag: -9999
   minor: 1.56
   name: "IC 4839"
   ra: "19 15 34.12"
@@ -53578,6 +53583,7 @@
   name: "IC 5068"
   ra: "20 50 29.76"
   size: 40.00
+  haflux: -9.42
   type: "HII Emission Nebula"
 - bmag: 14.17
   bsurfbr: 23.07
@@ -53970,7 +53976,7 @@
   constellation: "Pavo"
   dec: "-70 50 04.5"
   description: ""
-  mag: 14.40
+  mag: -9999
   minor: 1.17
   name: "IC 5106"
   ra: "21 28 38.13"
@@ -54588,7 +54594,7 @@
   constellation: "Piscis Austrinus"
   dec: "-36 05 19.0"
   description: ""
-  mag: 14.27
+  mag: -9999
   minor: 0.91
   name: "IC 5169"
   ra: "22 10 09.98"
@@ -55904,7 +55910,7 @@
   constellation: "Sculptor"
   dec: "-32 27 06.7"
   description: ""
-  mag: 15.40
+  mag: -9999
   minor: 0.74
   name: "IC 5289 NED02"
   ra: "23 11 17.30"

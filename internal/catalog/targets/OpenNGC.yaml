@@ -266,7 +266,7 @@
   constellation: "Phoenix"
   dec: "-57 01 15.0"
   description: ""
-  mag: 15.50
+  mag: -9999
   minor: 1.10
   name: "NGC 25"
   ra: "00 09 59.28"
@@ -1316,7 +1316,7 @@
   constellation: "Phoenix"
   dec: "-56 58 41.0"
   description: ""
-  mag: 15.70
+  mag: -9999
   minor: 1.12
   name: "NGC 119"
   ra: "00 26 57.61"
@@ -1713,7 +1713,7 @@
   constellation: "Cetus"
   dec: "-08 23 47.2"
   description: ""
-  mag: 13.11
+  mag: -9999
   minor: 1.90
   name: "NGC 157"
   ra: "00 34 46.76"
@@ -2344,7 +2344,7 @@
   constellation: "Phoenix"
   dec: "-56 09 10.9"
   description: ""
-  mag: 15.40
+  mag: -9999
   minor: 1.42
   name: "NGC 212"
   ra: "00 40 13.33"
@@ -2841,7 +2841,7 @@
   constellation: "Sculptor"
   dec: "-25 17 17.6"
   description: "Sculptor Filament, Silver Coin"
-  mag: 11.11
+  mag: -9999
   minor: 4.58
   name: "NGC 253"
   ra: "00 47 33.12"
@@ -3147,6 +3147,7 @@
   name: "NGC 281"
   ra: "00 52 59.35"
   size: 35.00
+  haflux: -8.85
   type: "HII Emission Nebula"
 - bmag: 14.59
   bsurfbr: 23.86
@@ -4714,7 +4715,7 @@
   constellation: "Sculptor"
   dec: "-38 05 00.5"
   description: ""
-  mag: 14.12
+  mag: -9999
   minor: 0.68
   name: "NGC 424"
   ra: "01 11 27.63"
@@ -5057,7 +5058,7 @@
   constellation: "Phoenix"
   dec: "-55 24 05.1"
   description: "NGC 454W"
-  mag: 13.58
+  mag: -9999
   name: "NGC 454 NED01"
   ra: "01 14 21.81"
   size: 1.64
@@ -5067,7 +5068,7 @@
   constellation: "Phoenix"
   dec: "-55 23 49.5"
   description: "NGC 454E"
-  mag: 13.58
+  mag: -9999
   minor: 0.81
   name: "NGC 454 NED02"
   ra: "01 14 24.93"
@@ -6972,7 +6973,7 @@
   constellation: "Phoenix"
   dec: "-41 26 10.3"
   description: ""
-  mag: 13.66
+  mag: -9999
   minor: 2.05
   name: "NGC 625"
   ra: "01 35 04.63"
@@ -7509,7 +7510,7 @@
   constellation: "Aries"
   dec: "+13 07 30.4"
   description: ""
-  mag: 16.71
+  mag: -9999
   minor: 0.43
   name: "NGC 671"
   ra: "01 46 59.17"
@@ -7566,7 +7567,7 @@
   constellation: "Pisces"
   dec: "+05 54 27.1"
   description: ""
-  mag: 12.00
+  mag: -9999
   minor: 0.69
   name: "NGC 676"
   ra: "01 48 57.31"
@@ -8346,7 +8347,7 @@
   constellation: "Eridanus"
   dec: "-56 41 37.2"
   description: "NGC 745S"
-  mag: 14.50
+  mag: -9999
   minor: 1.11
   name: "NGC 745 NED01"
   ra: "01 54 07.72"
@@ -9620,7 +9621,7 @@
   constellation: "Cetus"
   dec: "-00 43 02.2"
   description: "NGC 859"
-  mag: 16.54
+  mag: -9999
   minor: 0.94
   name: "NGC 856"
   ra: "02 13 38.36"
@@ -11433,7 +11434,7 @@
   constellation: "Cetus"
   dec: "+01 54 27.8"
   description: ""
-  mag: 14.95
+  mag: -9999
   minor: 0.75
   name: "NGC 1019"
   ra: "02 38 27.41"
@@ -14563,7 +14564,7 @@
   constellation: "Eridanus"
   dec: "-19 06 00.0"
   description: ""
-  mag: 14.70
+  mag: -9999
   minor: 2.01
   name: "NGC 1297"
   ra: "03 19 14.22"
@@ -15072,7 +15073,7 @@
   constellation: "Eridanus"
   dec: "-08 23 19.0"
   description: ""
-  mag: 12.86
+  mag: -9999
   minor: 1.31
   name: "NGC 1337"
   ra: "03 28 05.96"
@@ -15169,7 +15170,7 @@
   constellation: "Eridanus"
   dec: "-05 32 35.9"
   description: ""
-  mag: 16.39
+  mag: -9999
   minor: 0.54
   name: "NGC 1346"
   ra: "03 30 13.27"
@@ -15923,7 +15924,7 @@
   constellation: "Taurus"
   dec: "-01 17 55.6"
   description: ""
-  mag: 15.22
+  mag: -9999
   minor: 0.62
   name: "NGC 1410"
   ra: "03 41 10.75"
@@ -16174,6 +16175,7 @@
   name: "NGC 1432"
   ra: "03 45 49.59"
   size: 60.00
+  haflux: -11.77
   type: "HII Emission Nebula"
 - bmag: 10.81
   bsurfbr: 23.12
@@ -17710,7 +17712,7 @@
   constellation: "Caelum"
   dec: "-43 37 46.4"
   description: "NGC 1571"
-  mag: 14.00
+  mag: -9999
   minor: 1.36
   name: "NGC 1570"
   ra: "04 22 08.94"
@@ -21780,6 +21782,7 @@
   name: "NGC 1976"
   ra: "05 35 16.48"
   size: 90.00
+  haflux: -7.14
   type: "Cl+N Emission Nebula"
 - constellation: "Orion"
   dec: "-04 50 39.6"
@@ -22231,6 +22234,7 @@
   name: "NGC 2024"
   ra: "05 41 42.57"
   size: 30.00
+  haflux: -8.59
   type: "Emission Nebula"
 - bmag: 11.18
   constellation: "Mensa"
@@ -23678,6 +23682,7 @@
   name: "NGC 2174"
   ra: "06 09 23.62"
   size: 40.00
+  haflux: -8.92
   type: "Emission Nebula"
 - bmag: 7.00
   constellation: "Orion"
@@ -24308,6 +24313,7 @@
   name: "NGC 2237"
   ra: "06 30 54.61"
   size: 80.00
+  haflux: -7.70
   type: "Emission Nebula"
 - bmag: 6.00
   constellation: "Monoceros"
@@ -25403,6 +25409,7 @@
   name: "NGC 2346"
   ra: "07 09 23.01"
   size: 0.87
+  haflux: -10.60
   type: "Planetary Nebula"
 - bmag: 13.31
   bsurfbr: 22.90
@@ -25715,7 +25722,7 @@
   constellation: "Monoceros"
   dec: "-09 39 33.5"
   description: ""
-  mag: 14.56
+  mag: -9999
   minor: 1.11
   name: "NGC 2377"
   ra: "07 24 56.82"
@@ -25812,7 +25819,7 @@
   constellation: "Auriga"
   dec: "+36 52 47.3"
   description: ""
-  mag: 16.50
+  mag: -9999
   minor: 0.44
   name: "NGC 2387"
   ra: "07 28 57.93"
@@ -26074,7 +26081,7 @@
   constellation: "Gemini"
   dec: "+32 49 19.6"
   description: ""
-  mag: 16.26
+  mag: -9999
   minor: 0.65
   name: "NGC 2410"
   ra: "07 35 02.26"
@@ -28140,7 +28147,7 @@
   constellation: "Cancer"
   dec: "+29 32 19.7"
   description: "NGC 2604A"
-  mag: 14.92
+  mag: -9999
   minor: 1.37
   name: "NGC 2604"
   ra: "08 33 23.14"
@@ -29030,7 +29037,7 @@
   constellation: "Ursa Major"
   dec: "+49 08 32.4"
   description: ""
-  mag: 17.12
+  mag: -9999
   minor: 0.51
   name: "NGC 2686A"
   ra: "08 54 58.91"
@@ -29398,7 +29405,7 @@
   constellation: "Hydra"
   dec: "+06 17 34.8"
   description: ""
-  mag: 14.24
+  mag: -9999
   minor: 1.09
   name: "NGC 2718"
   ra: "08 58 50.47"
@@ -29617,6 +29624,7 @@
   name: "NGC 2736"
   ra: "09 00 16.94"
   size: 30.00
+  haflux: -10.62
   type: "Supernova Remnant"
 - bmag: 14.60
   bsurfbr: 22.55
@@ -31356,7 +31364,7 @@
   constellation: "Leo"
   dec: "+23 01 12.4"
   description: "IC 538"
-  mag: 16.00
+  mag: -9999
   minor: 0.82
   name: "NGC 2885"
   ra: "09 27 18.51"
@@ -31627,7 +31635,7 @@
   constellation: "Leo"
   dec: "+10 09 08.8"
   description: ""
-  mag: 13.18
+  mag: -9999
   minor: 2.13
   name: "NGC 2911"
   ra: "09 33 46.11"
@@ -32191,7 +32199,7 @@
   constellation: "Hydra"
   dec: "+03 34 37.2"
   description: ""
-  mag: 15.00
+  mag: -9999
   minor: 0.86
   name: "NGC 2960"
   ra: "09 40 36.38"
@@ -32722,7 +32730,7 @@
   constellation: "Ursa Major"
   dec: "+44 18 51.8"
   description: ""
-  mag: 16.23
+  mag: -9999
   minor: 0.58
   name: "NGC 3010"
   ra: "09 50 33.15"
@@ -33243,7 +33251,7 @@
   constellation: "Antlia"
   dec: "-27 17 10.8"
   description: "NGC 3046"
-  mag: 15.00
+  mag: -9999
   minor: 1.39
   name: "NGC 3051"
   ra: "09 53 58.64"
@@ -33411,7 +33419,7 @@
   constellation: "Ursa Major"
   dec: "+72 10 13.2"
   description: ""
-  mag: 13.12
+  mag: -9999
   minor: 1.78
   name: "NGC 3065"
   ra: "10 01 55.22"
@@ -34336,7 +34344,7 @@
   constellation: "Draco"
   dec: "+73 24 02.7"
   description: ""
-  mag: 11.94
+  mag: -9999
   minor: 3.55
   name: "NGC 3147"
   ra: "10 16 53.65"
@@ -35184,7 +35192,7 @@
   constellation: "Leo"
   dec: "+19 53 54.7"
   description: ""
-  mag: 12.95
+  mag: -9999
   minor: 2.26
   name: "NGC 3226"
   ra: "10 23 27.01"
@@ -35744,7 +35752,7 @@
   constellation: "Ursa Major"
   dec: "+56 05 07.0"
   description: ""
-  mag: 13.16
+  mag: -9999
   minor: 0.62
   name: "NGC 3264"
   ra: "10 32 19.70"
@@ -36353,7 +36361,7 @@
   constellation: "Ursa Major"
   dec: "+53 30 12.2"
   description: ""
-  mag: 11.61
+  mag: -9999
   minor: 1.73
   name: "NGC 3310"
   ra: "10 38 45.86"
@@ -36987,7 +36995,7 @@
   constellation: "Leo"
   dec: "+06 35 48.2"
   description: ""
-  mag: 15.00
+  mag: -9999
   minor: 1.08
   name: "NGC 3362"
   ra: "10 44 51.72"
@@ -37315,7 +37323,7 @@
   constellation: "Ursa Major"
   dec: "+65 46 53.6"
   description: ""
-  mag: 16.11
+  mag: -9999
   minor: 0.67
   name: "NGC 3392"
   ra: "10 51 03.00"
@@ -38599,7 +38607,7 @@
   constellation: "Leo Minor"
   dec: "+27 58 21.0"
   description: ""
-  mag: 12.18
+  mag: -9999
   minor: 2.24
   name: "NGC 3504"
   ra: "11 03 11.21"
@@ -40161,7 +40169,7 @@
   constellation: "Ursa Major"
   dec: "+59 04 28.3"
   description: ""
-  mag: 12.19
+  mag: -9999
   minor: 3.65
   name: "NGC 3642"
   ra: "11 22 17.89"
@@ -41870,7 +41878,7 @@
   constellation: "Ursa Major"
   dec: "+31 54 33.4"
   description: ""
-  mag: 13.74
+  mag: -9999
   minor: 1.00
   name: "NGC 3786"
   ra: "11 39 42.55"
@@ -44906,7 +44914,7 @@
   constellation: "Ursa Major"
   dec: "+44 31 52.8"
   description: ""
-  mag: 11.37
+  mag: -9999
   minor: 4.26
   name: "NGC 4051"
   ra: "12 03 09.61"
@@ -48489,7 +48497,7 @@
   constellation: "Virgo"
   dec: "+07 26 41.6"
   description: ""
-  mag: 13.84
+  mag: -9999
   minor: 1.06
   name: "NGC 4370"
   ra: "12 24 54.90"
@@ -48945,7 +48953,7 @@
   constellation: "Virgo"
   dec: "+09 01 11.5"
   description: ""
-  mag: 16.08
+  mag: -9999
   minor: 0.45
   name: "NGC 4410A"
   ra: "12 26 28.29"
@@ -50775,7 +50783,7 @@
   constellation: "Coma Berenices"
   dec: "+25 59 15.6"
   description: "Needle Galaxy"
-  mag: 10.86
+  mag: -9999
   minor: 2.89
   name: "NGC 4565"
   ra: "12 36 20.78"
@@ -51557,7 +51565,7 @@
   constellation: "Virgo"
   dec: "-06 58 15.6"
   description: ""
-  mag: 14.50
+  mag: -9999
   minor: 0.57
   name: "NGC 4628"
   ra: "12 42 25.26"
@@ -51912,7 +51920,7 @@
   constellation: "Canes Venatici"
   dec: "+32 10 12.9"
   description: ""
-  mag: 10.47
+  mag: -9999
   minor: 0.66
   name: "NGC 4656 NED01"
   ra: "12 43 57.67"
@@ -52354,7 +52362,7 @@
   constellation: "Virgo"
   dec: "+10 59 01.0"
   description: ""
-  mag: 12.52
+  mag: -9999
   minor: 1.11
   name: "NGC 4694"
   ra: "12 48 15.08"
@@ -53028,7 +53036,7 @@
   constellation: "Draco"
   dec: "+72 52 28.7"
   description: ""
-  mag: 12.10
+  mag: -9999
   minor: 2.06
   name: "NGC 4750"
   ra: "12 50 07.27"
@@ -53441,7 +53449,7 @@
   constellation: "Corvus"
   dec: "-12 34 07.1"
   description: ""
-  mag: 12.75
+  mag: -9999
   minor: 0.87
   name: "NGC 4782"
   ra: "12 54 35.72"
@@ -55383,7 +55391,7 @@
   constellation: "Centaurus"
   dec: "-49 28 05.6"
   description: ""
-  mag: 11.86
+  mag: -9999
   minor: 4.03
   name: "NGC 4945"
   ra: "13 05 27.48"
@@ -55665,7 +55673,7 @@
   constellation: "Hydra"
   dec: "-23 40 37.3"
   description: ""
-  mag: 14.79
+  mag: -9999
   minor: 1.04
   name: "NGC 4968"
   ra: "13 07 05.98"
@@ -58552,7 +58560,7 @@
   constellation: "Ursa Major"
   dec: "+62 42 02.5"
   description: ""
-  mag: 16.14
+  mag: -9999
   minor: 1.10
   name: "NGC 5216"
   ra: "13 32 06.89"
@@ -58733,7 +58741,7 @@
   constellation: "Virgo"
   dec: "+02 59 56.1"
   description: ""
-  mag: 16.15
+  mag: -9999
   minor: 0.76
   name: "NGC 5231"
   ra: "13 35 48.25"
@@ -59169,7 +59177,7 @@
   constellation: "Centaurus"
   dec: "-48 20 31.1"
   description: ""
-  mag: 13.82
+  mag: -9999
   minor: 1.69
   name: "NGC 5266A"
   ra: "13 40 37.10"
@@ -59416,7 +59424,7 @@
   constellation: "Canes Venatici"
   dec: "+41 42 45.3"
   description: ""
-  mag: 16.50
+  mag: -9999
   minor: 0.90
   name: "NGC 5290"
   ra: "13 45 19.18"
@@ -60338,7 +60346,7 @@
   constellation: "Canes Venatici"
   dec: "+40 27 42.3"
   description: "NGC 5390"
-  mag: 11.69
+  mag: -9999
   minor: 2.45
   name: "NGC 5371"
   ra: "13 55 39.94"
@@ -60964,7 +60972,7 @@
   constellation: "Virgo"
   dec: "-06 01 50.9"
   description: ""
-  mag: 12.39
+  mag: -9999
   minor: 3.27
   name: "NGC 5427"
   ra: "14 03 26.05"
@@ -63362,7 +63370,7 @@
   constellation: "Lupus"
   dec: "-44 10 27.9"
   description: ""
-  mag: 11.49
+  mag: -9999
   minor: 4.60
   name: "NGC 5643"
   ra: "14 32 40.74"
@@ -64648,7 +64656,7 @@
   constellation: "Libra"
   dec: "-19 04 42.8"
   description: ""
-  mag: 13.60
+  mag: -9999
   minor: 1.39
   name: "NGC 5757"
   ra: "14 47 46.38"
@@ -65175,7 +65183,7 @@
   constellation: "Boötes"
   dec: "+49 40 08.5"
   description: ""
-  mag: 15.94
+  mag: -9999
   minor: 1.05
   name: "NGC 5804"
   ra: "14 57 06.80"
@@ -65648,7 +65656,7 @@
   constellation: "Virgo"
   dec: "+01 35 41.5"
   description: ""
-  mag: 13.37
+  mag: -9999
   minor: 2.22
   name: "NGC 5846A"
   ra: "15 06 29.20"
@@ -66735,7 +66743,7 @@
   constellation: "Serpens"
   dec: "+07 27 27.9"
   description: ""
-  mag: 14.90
+  mag: -9999
   minor: 0.74
   name: "NGC 5940"
   ra: "15 31 18.07"
@@ -69893,7 +69901,7 @@
   constellation: "Draco"
   dec: "+57 47 01.1"
   description: ""
-  mag: 14.30
+  mag: -9999
   minor: 0.95
   name: "NGC 6211"
   ra: "16 41 27.64"
@@ -69967,7 +69975,7 @@
   constellation: "Ursa Minor"
   dec: "+78 11 53.4"
   description: ""
-  mag: 12.82
+  mag: -9999
   minor: 1.63
   name: "NGC 6217"
   ra: "16 32 39.20"
@@ -70179,7 +70187,7 @@
   constellation: "Draco"
   dec: "+70 46 48.8"
   description: ""
-  mag: 13.93
+  mag: -9999
   minor: 1.07
   name: "NGC 6236"
   ra: "16 44 34.65"
@@ -70611,7 +70619,7 @@
   constellation: "Draco"
   dec: "+63 14 31.9"
   description: ""
-  mag: 17.37
+  mag: -9999
   minor: 0.47
   name: "NGC 6275"
   ra: "16 55 33.37"
@@ -71162,7 +71170,7 @@
   constellation: "Ara"
   dec: "-65 00 36.6"
   description: ""
-  mag: 15.50
+  mag: -9999
   minor: 1.56
   name: "NGC 6328"
   ra: "17 23 41.03"
@@ -71560,7 +71568,7 @@
   constellation: "Draco"
   dec: "+62 09 57.9"
   description: ""
-  mag: 17.98
+  mag: -9999
   minor: 0.78
   name: "NGC 6365A"
   ra: "17 22 43.81"
@@ -71803,7 +71811,7 @@
   constellation: "Draco"
   dec: "+57 32 43.4"
   description: ""
-  mag: 16.81
+  mag: -9999
   minor: 0.15
   name: "NGC 6387"
   ra: "17 28 23.83"
@@ -74087,6 +74095,7 @@
   name: "NGC 6611"
   ra: "18 18 48.17"
   size: 120.00
+  haflux: -8.28
   type: "Nebula"
 - bmag: 15.51
   bsurfbr: 24.14
@@ -75469,6 +75478,7 @@
   name: "NGC 6741"
   ra: "19 02 37.00"
   size: 0.13
+  haflux: -10.63
   type: "Planetary Nebula"
 - bmag: 15.00
   constellation: "Draco"
@@ -75735,7 +75745,7 @@
   constellation: "Cygnus"
   dec: "+50 55 59.6"
   description: ""
-  mag: 13.63
+  mag: -9999
   minor: 1.22
   name: "NGC 6764"
   ra: "19 08 16.37"
@@ -76355,7 +76365,7 @@
   constellation: "Sagittarius"
   dec: "-14 48 12.4"
   description: "IC 4895, Barnard's Galaxy"
-  mag: 10.05
+  mag: -9999
   minor: 16.75
   name: "NGC 6822"
   ra: "19 44 57.74"
@@ -76967,11 +76977,11 @@
   surfbr: 23.09
   type: "Galaxy"
 - constellation: "Sagitta"
-  dec: "+21 06 08.1"
+  dec: "+21 05 24.0"
   description: ""
   mag: -9999
   name: "NGC 6873"
-  ra: "20 07 13.89"
+  ra: "20 07 40.80"
   size: 3.00
   type: "Open Cluster"
 - constellation: "Cygnus"
@@ -77855,7 +77865,7 @@
   constellation: "Cepheus"
   dec: "+66 06 20.3"
   description: "NGC 6952"
-  mag: 12.41
+  mag: -9999
   minor: 2.09
   name: "NGC 6951"
   ra: "20 37 14.09"
@@ -77953,6 +77963,7 @@
   name: "NGC 6960"
   ra: "20 45 58.18"
   size: 70.00
+  haflux: -8.86
   type: "Supernova Remnant"
 - bmag: 15.12
   bsurfbr: 23.44
@@ -80711,7 +80722,7 @@
   constellation: "Piscis Austrinus"
   dec: "-27 48 34.1"
   description: ""
-  mag: 13.86
+  mag: -9999
   minor: 1.35
   name: "NGC 7214"
   ra: "22 09 07.68"
@@ -82928,7 +82939,7 @@
   constellation: "Tucana"
   dec: "-63 41 41.0"
   description: ""
-  mag: 15.41
+  mag: -9999
   minor: 0.70
   name: "NGC 7408"
   ra: "22 55 56.86"
@@ -83259,7 +83270,7 @@
   constellation: "Pegasus"
   dec: "+26 08 59.9"
   description: ""
-  mag: 15.00
+  mag: -9999
   minor: 0.25
   name: "NGC 7436A"
   ra: "22 57 56.17"
@@ -83944,7 +83955,7 @@
   constellation: "Grus"
   dec: "-43 25 40.6"
   description: ""
-  mag: 12.73
+  mag: -9999
   minor: 2.17
   name: "NGC 7496"
   ra: "23 09 47.29"
@@ -84093,7 +84104,7 @@
   constellation: "Pegasus"
   dec: "+14 36 33.7"
   description: ""
-  mag: 16.47
+  mag: -9999
   minor: 1.22
   name: "NGC 7509"
   ra: "23 12 21.41"
@@ -85014,7 +85025,7 @@
   constellation: "Pisces"
   dec: "+00 15 40.2"
   description: ""
-  mag: 17.01
+  mag: -9999
   minor: 0.57
   name: "NGC 7589"
   ra: "23 18 15.67"
@@ -86443,7 +86454,7 @@
   constellation: "Pisces"
   dec: "+02 09 18.6"
   description: ""
-  mag: 13.61
+  mag: -9999
   minor: 1.58
   name: "NGC 7714"
   ra: "23 36 14.10"
@@ -86848,7 +86859,7 @@
   constellation: "Sculptor"
   dec: "-29 31 04.1"
   description: ""
-  mag: 15.20
+  mag: -9999
   minor: 1.17
   name: "NGC 7749"
   ra: "23 45 47.55"
@@ -87516,7 +87527,7 @@
   constellation: "Cetus"
   dec: "-10 44 40.8"
   description: ""
-  mag: 15.31
+  mag: -9999
   minor: 1.00
   name: "NGC 7808"
   ra: "00 03 32.13"

@@ -2129,6 +2129,7 @@
   name: "LMC N140"
   ra: "05 24 36.9"
   size: 30.0
+  haflux: -9.73
   type: "HII Region"
 - constellation: ""
   dec: "-69 26 10.0"
@@ -2347,6 +2348,7 @@
   name: "LMC N157A"
   ra: "05 38 36.0"
   size: 40.0
+  haflux: -8.01
   type: "HII Region"
 - constellation: ""
   dec: "-69 10 23.9"

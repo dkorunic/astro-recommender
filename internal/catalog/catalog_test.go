@@ -5,6 +5,7 @@ package catalog
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"os"
 	"path/filepath"
@@ -490,6 +491,15 @@ func TestTypicalSB(t *testing.T) {
 				continue
 			}
 			seen[NameKey(tg.Name)] = true
+			// typicalSB stands in for a catalogued V surface brightness, which
+			// scoring's lightNL takes with its continuum; one from the Hα map
+			// (scripts/hamap.py) is the lines' alone, an H II region's some
+			// 2.6 mag fainter in V, which misses Hα, so those nebulae would
+			// set the median. A planetary's lines are mostly the [O III] V
+			// sees, its flux and catalogued values within about 0.6 mag.
+			if _, flux := tg.FluxSB(); flux && tg.sbClass() != sbPlanetary {
+				continue
+			}
 			if sb, _ := tg.SurfaceBrightness(); sb > 0 && tg.sbClass() != "" {
 				vals[tg.sbClass()] = append(vals[tg.sbClass()], sb)
 			}
@@ -608,6 +618,73 @@ func TestTypicalBV(t *testing.T) {
 		slices.Sort(v)
 		if got := v[len(v)/2]; math.Abs(got-want) > 0.15 {
 			t.Errorf("typical %v: median %.2f over %d objects", want, got, len(v))
+		}
+	}
+}
+
+// TestHaMapSample prints, for scripts/hamap.py (HAMAP=1), every list's
+// emission nebulae that Finkbeiner's Hα map can give a surface brightness:
+// lit nebulae (clusters with nebulosity too, not clusters, whose light is
+// points) of at least 30' (the map's beam is 6', and scripts/calibrate_lines.py
+// fitted vContinuum over the same sizes) without one of their own. Their
+// flux is the script's own: a planetary's haflux is Frew's (scripts/haflux.py),
+// any other's the map's, so it is set aside before asking, and a rerun
+// reselects the same objects. It reads the YAML, not the embedded gobs,
+// which may be older.
+func TestHaMapSample(t *testing.T) {
+	if os.Getenv("HAMAP") == "" {
+		t.Skip("run by scripts/hamap.py")
+	}
+	for _, name := range Lists {
+		ts, _, err := Load("", filepath.Join("targets", name+".yaml"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, tg := range ts {
+			if strings.Contains(strings.ToLower(tg.Type), sbPlanetary) {
+				continue
+			}
+			tg.HaFlux = 0
+			k := tg.kind()
+			if sb, _ := tg.SurfaceBrightness(); sb > 0 || !EmissionLine(tg) || tg.Size < 30 || (k != kindNebula && k != kindClusterNebula) {
+				continue
+			}
+			major, minor := tg.Axes()
+			fmt.Printf("ROW|%s|%s|%s|%s|%.5f|%.5f|%g|%g\n", name, tg.Name, tg.RA, tg.Dec, tg.RADeg, tg.DecDeg, major, minor)
+		}
+	}
+}
+
+// No single galaxy in the embedded lists keeps a V fainter than its B
+// beyond minBV (its own, else OpenNGC/OpenIC's by name): such a V is a
+// nuclear aperture one, which scripts/galaxyv.py replaces with the B, so a
+// list regenerated without rerunning it fails here.
+func TestGalaxyV(t *testing.T) {
+	bmag := map[string]float64{}
+	for _, name := range []string{"OpenNGC", "OpenIC"} {
+		ts, _, err := Load(name, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, tg := range ts {
+			if tg.BMag > 0 {
+				bmag[NameKey(tg.Name)] = tg.BMag
+			}
+		}
+	}
+	for _, name := range Lists {
+		ts, _, err := Load(name, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, tg := range ts {
+			b := tg.BMag
+			if b <= 0 {
+				b = bmag[NameKey(tg.Name)]
+			}
+			if tg.kind() == kindGalaxy && tg.Mag > 0 && b > 0 && b-tg.Mag < minBV {
+				t.Errorf("%s: %s V %v, B %v: an aperture V (scripts/galaxyv.py)", name, tg.Name, tg.Mag, b)
+			}
 		}
 	}
 }

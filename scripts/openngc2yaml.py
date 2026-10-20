@@ -46,6 +46,10 @@ NEBULAE = {"Emission Nebula", "Reflection Nebula", "Wolf-Rayet Nebula", "Superno
 # filament is 70'), IC 1396's 14 x 4' its central cluster (the H II region
 # is 146'). The minor axis is dropped with it.
 SIZES = {"NGC 6960": "70.00", "IC 1396": "146.00"}
+# Positions OpenNGC gives wrongly, against eSky, SIMBAD and our other lists:
+# NGC 6873's is 6.3' west of the 3' cluster that MWSC, Dias and SIMBAD put
+# within 1' of each other (MWSC's here).
+POSITIONS = {"NGC 6873": ("20 07 40.80", "+21 05 24.0")}
 
 
 def typ(r, n, imm):
@@ -116,15 +120,16 @@ def main():
             print(f"- bmag: {r['B-Mag']}")
         if r["SurfBr"]:
             print(f"{'-' if not r['B-Mag'] else ' '} bsurfbr: {r['SurfBr']}")
-        print(f"{'-' if not r['B-Mag'] and not r['SurfBr'] else ' '} constellation: {q(CONSTELLATIONS[r['Const']])}")
-        print(f"  dec: {q(sexagesimal(r['Dec']))}")
-        print(f"  description: {q(desc)}")
         n = name(cat, r["Name"])
+        ra, dec = POSITIONS.get(n, (sexagesimal(r["RA"]), sexagesimal(r["Dec"])))
+        print(f"{'-' if not r['B-Mag'] and not r['SurfBr'] else ' '} constellation: {q(CONSTELLATIONS[r['Const']])}")
+        print(f"  dec: {q(dec)}")
+        print(f"  description: {q(desc)}")
         print(f"  mag: {r['V-Mag'] or vmag.get(n, -9999)}")
         if r["MinAx"] and r["MajAx"] and float(r["MinAx"]) < float(r["MajAx"]) and n not in SIZES:
             print(f"  minor: {r['MinAx']}")
         print(f"  name: {q(n)}")
-        print(f"  ra: {q(sexagesimal(r['RA']))}")
+        print(f"  ra: {q(ra)}")
         print(f"  size: {SIZES.get(n, r['MajAx'] or -9999)}")
         if n in vsurfbr:
             print(f"  surfbr: {vsurfbr[n]}")

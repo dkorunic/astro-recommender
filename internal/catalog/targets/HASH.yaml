@@ -1637,6 +1637,7 @@
   name: "PHR J0615-0025"
   ra: "06 15 20.4"
   size: 1.73
+  haflux: -11.90
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+17 59 20.6"
@@ -1843,6 +1844,7 @@
   name: "M 1-6"
   ra: "06 35 45.1"
   size: 0.07
+  haflux: -11.29
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+24 00 35.6"
@@ -2287,6 +2289,7 @@
   name: "NGC 2346"
   ra: "07 09 22.5"
   size: 2.07
+  haflux: -10.60
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-62 14 24.0"
@@ -9853,6 +9856,7 @@
   name: "Sn 1"
   ra: "16 21 04.4"
   size: 0.1
+  haflux: -11.21
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-31 21 29.1"
@@ -25043,6 +25047,7 @@
   name: "Abell 47"
   ra: "18 35 22.6"
   size: 0.29
+  haflux: -12.60
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-00 15 50.0"
@@ -25655,6 +25660,7 @@
   name: "PC 20"
   ra: "18 43 03.5"
   size: 0.2
+  haflux: -12.26
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+03 34 29.0"
@@ -26491,6 +26497,7 @@
   name: "Te 7"
   ra: "18 51 47.5"
   size: 0.25
+  haflux: -12.61
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-00 43 39.3"
@@ -27148,6 +27155,7 @@
   name: "CBSS 1"
   ra: "19 00 16.1"
   size: 0.08
+  haflux: -12.12
   type: "Planetary Nebula"
 - constellation: ""
   dec: "+38 21 08.0"
@@ -27324,6 +27332,7 @@
   name: "NGC 6741"
   ra: "19 02 37.1"
   size: 0.15
+  haflux: -10.63
   type: "Planetary Nebula"
 - constellation: ""
   dec: "-09 40 05.6"

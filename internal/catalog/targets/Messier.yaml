@@ -186,11 +186,11 @@
   size: 27.0
   type: Open Cluster
 - constellation: Sagittarius
-  dec: -18 25 0
+  dec: -18 33 0
   description: NGC 6603 Milky Way Patch
   mag: 2.5
   name: M 24
-  ra: 18 18 24
+  ra: 18 16 48
   size: 90.0
   minor: 45.0
   type: Star Cloud
@@ -400,13 +400,14 @@
 - constellation: Virgo
   dec: +8 0 0
   description: NGC 4472
-  mag: 12.2
+  mag: -9999
   name: M 49
   ra: 12 29 48
   size: 9.0
   surfbr: 22.09
   bsurfbr: 23.25
   minor: 7.39
+  bmag: 9.35
   type: Elliptical Galaxy
 - constellation: Monocerus
   dec: -8 20 0
@@ -727,13 +728,14 @@
 - constellation: Virgo
   dec: +12 53 0
   description: NGC 4374
-  mag: 10.5
+  mag: -9999
   name: M 84
   ra: 12 25 6
   size: 5.0
   surfbr: 21.89
   bsurfbr: 23.23
   minor: 4.35
+  bmag: 10.01
   type: Lenticular (S0) Galaxy
 - constellation: Coma Berenices
   dec: +18 11 0
@@ -771,13 +773,14 @@
 - constellation: Coma Berenices
   dec: +14 25 0
   description: NGC 4501
-  mag: 13.2
+  mag: -9999
   name: M 88
   ra: 12 32 0
   size: 7.0
   surfbr: 21.89
   bsurfbr: 23.17
   minor: 3.54
+  bmag: 10.24
   type: Spiral Galaxy
 - constellation: Virgo
   dec: +12 33 0
@@ -804,13 +807,14 @@
 - constellation: Coma Berenices
   dec: +14 30 0
   description: NGC 4548
-  mag: 13.6
+  mag: -9999
   name: M 91
   ra: 12 35 24
   size: 5.4
   surfbr: 22.29
   bsurfbr: 23.24
   minor: 4.4
+  bmag: 10.94
   type: Spiral Galaxy
 - constellation: Hercules
   dec: +43 8 0

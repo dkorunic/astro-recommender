@@ -15,6 +15,7 @@
   name: "Gum 2"
   ra: "07 09 20.0"
   size: 50.0
+  haflux: -8.62
   type: "Emission Nebula"
 - constellation: ""
   dec: "-12 19 00.0"
@@ -63,6 +64,7 @@
   name: "Gum 8"
   ra: "07 23 44.0"
   size: 120.0
+  haflux: -7.92
   type: "Emission Nebula"
 - constellation: ""
   dec: "-26 25 40.8"
@@ -79,6 +81,7 @@
   name: "Gum 10"
   ra: "08 16 18.0"
   size: 35.0
+  haflux: -8.63
   type: "Emission Nebula"
 - constellation: ""
   dec: "-36 13 00.0"
@@ -119,6 +122,7 @@
   name: "Gum 14"
   ra: "08 39 10.0"
   size: 140.0
+  haflux: -7.59
   type: "Emission Nebula"
 - constellation: ""
   dec: "-41 14 39.0"
@@ -143,6 +147,7 @@
   name: "Gum 17"
   ra: "08 51 00.0"
   size: 100.0
+  haflux: -7.69
   type: "Emission Nebula"
 - constellation: ""
   dec: "-43 51 00.0"
@@ -191,6 +196,7 @@
   name: "Gum 23"
   ra: "08 59 42.0"
   size: 60.0
+  haflux: -8.69
   type: "Emission Nebula"
 - constellation: ""
   dec: "-48 20 00.0"
@@ -199,6 +205,7 @@
   name: "Gum 24"
   ra: "09 02 42.0"
   size: 40.0
+  haflux: -9.37
   type: "Emission Nebula"
 - constellation: ""
   dec: "-48 41 00.0"
@@ -248,6 +255,7 @@
   name: "Gum 30"
   ra: "10 35 53.0"
   size: 30.0
+  haflux: -8.67
   type: "Emission Nebula"
 - constellation: ""
   dec: "-58 39 01.0"
@@ -280,6 +288,7 @@
   name: "Gum 34a"
   ra: "10 58 00.0"
   size: 80.0
+  haflux: -8.11
   type: "Emission Nebula"
 - constellation: ""
   dec: "-59 32 00.0"
@@ -288,6 +297,7 @@
   name: "Gum 34b"
   ra: "11 03 12.0"
   size: 80.0
+  haflux: -7.99
   type: "Emission Nebula"
 - constellation: ""
   dec: "-61 14 00.0"
@@ -360,6 +370,7 @@
   name: "Gum 42"
   ra: "11 38 00.0"
   size: 72.0
+  haflux: -7.21
   type: "Emission Nebula"
 - constellation: ""
   dec: "-61 38 00.0"
@@ -409,6 +420,7 @@
   name: "Gum 48a"
   ra: "13 19 00.0"
   size: 30.0
+  haflux: -9.01
   type: "Emission Nebula"
 - constellation: ""
   dec: "-62 14 00.0"
@@ -417,6 +429,7 @@
   name: "Gum 48b"
   ra: "13 34 00.0"
   size: 40.0
+  haflux: -8.85
   type: "Emission Nebula"
 - constellation: ""
   dec: "-62 34 00.0"
@@ -449,6 +462,7 @@
   name: "Gum 51"
   ra: "16 10 00.0"
   size: 72.0
+  haflux: -8.41
   type: "Emission Nebula"
 - constellation: ""
   dec: "-48 06 40.0"
@@ -481,6 +495,7 @@
   name: "Gum 55"
   ra: "16 42 00.0"
   size: 420.0
+  haflux: -6.79
   type: "Emission Nebula"
 - constellation: ""
   dec: "-40 30 44.4"
@@ -497,6 +512,7 @@
   name: "Gum 57a"
   ra: "17 01 13.0"
   size: 120.0
+  haflux: -7.83
   type: "Emission Nebula"
 - constellation: ""
   dec: "-37 50 39.0"
@@ -505,6 +521,7 @@
   name: "Gum 57b"
   ra: "17 03 57.0"
   size: 120.0
+  haflux: -7.73
   type: "Emission Nebula"
 - constellation: ""
   dec: "-38 27 34.0"
@@ -553,6 +570,7 @@
   name: "Gum 63"
   ra: "17 19 30.0"
   size: 30.0
+  haflux: -8.22
   type: "Emission Nebula"
 - constellation: ""
   dec: "-35 58 10.0"
@@ -585,6 +603,7 @@
   name: "Gum 65"
   ra: "16 21 11.0"
   size: 80.0
+  haflux: -8.03
   type: "Emission Nebula"
 - constellation: ""
   dec: "-34 12 10.8"
@@ -601,6 +620,7 @@
   name: "Gum 67"
   ra: "17 34 42.0"
   size: 120.0
+  haflux: -7.36
   type: "Emission Nebula"
 - constellation: ""
   dec: "-31 33 00.0"
@@ -609,6 +629,7 @@
   name: "Gum 68"
   ra: "17 30 24.0"
   size: 40.0
+  haflux: -8.90
   type: "Emission Nebula"
 - constellation: ""
   dec: "-31 15 18.0"
@@ -649,6 +670,7 @@
   name: "Gum 73"
   ra: "16 35 00.0"
   size: 700.0
+  haflux: -6.44
   type: "Emission Nebula"
 - constellation: ""
   dec: "-23 20 00.0"
@@ -657,6 +679,7 @@
   name: "Gum 74a"
   ra: "18 01 00.0"
   size: 40.0
+  haflux: -8.84
   type: "Emission Nebula"
 - constellation: ""
   dec: "-23 27 36.0"
@@ -665,6 +688,7 @@
   name: "Gum 74b"
   ra: "18 04 42.0"
   size: 40.0
+  haflux: -8.67
   type: "Emission Nebula"
 - constellation: ""
   dec: "-23 59 15.0"
@@ -673,6 +697,7 @@
   name: "Gum 75"
   ra: "18 09 17.0"
   size: 35.0
+  haflux: -8.11
   type: "Emission Nebula"
 - constellation: ""
   dec: "-23 01 51.0"
@@ -697,6 +722,7 @@
   name: "Gum 77b"
   ra: "18 15 54.0"
   size: 40.0
+  haflux: -8.49
   type: "Emission Nebula"
 - constellation: ""
   dec: "-19 40 19.8"
@@ -713,6 +739,7 @@
   name: "Gum 79"
   ra: "18 16 30.0"
   size: 50.0
+  haflux: -8.43
   type: "Emission Nebula"
 - constellation: ""
   dec: "-14 09 00.0"
@@ -761,6 +788,7 @@
   name: "Gum 84"
   ra: "18 17 52.0"
   size: 80.0
+  haflux: -7.79
   type: "Emission Nebula"
 - constellation: ""
   dec: "-11 44 00.0"

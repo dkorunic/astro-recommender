@@ -120,12 +120,13 @@
 - constellation: ""
   dec: "-26 03 00.0"
   description: "NGC 7314"
-  mag: 13.0
+  mag: -9999
   name: "Arp 14"
   ra: "22 35 45.0"
   size: 4.0
   surfbr: 22.19
   minor: 1.62
+  bmag: 11.60
   type: "Galaxy"
 - constellation: ""
   dec: "-05 33 00.0"
@@ -303,12 +304,13 @@
 - constellation: ""
   dec: "+26 04 00.0"
   description: "NGC 4615"
-  mag: 15.2
+  mag: -9999
   name: "Arp 34"
   ra: "12 41 37.0"
   size: 1.5
   surfbr: 22.39
   minor: 0.45
+  bmag: 13.89
   type: "Galaxy"
 - constellation: ""
   dec: "-01 18 00.0"
@@ -519,11 +521,12 @@
 - constellation: ""
   dec: "-09 11 00.0"
   description: "NGC 341A, NGC 341B"
-  mag: 15.0
+  mag: -9999
   name: "Arp 59"
   ra: "01 00 45.0"
   size: 1.0
   surfbr: 22.09
+  bmag: 13.97
   type: "Galaxy"
 - constellation: ""
   dec: "+26 05 00.0"
@@ -693,12 +696,13 @@
 - constellation: ""
   dec: "+17 36 00.0"
   description: "NGC 5490C"
-  mag: 14.7
+  mag: -9999
   name: "Arp 79"
   ra: "14 10 07.0"
   size: 1.0
   surfbr: 22.69
   minor: 0.78
+  bmag: 13.06
   type: "Galaxy"
 - constellation: ""
   dec: "+74 05 00.0"
@@ -722,11 +726,12 @@
 - constellation: ""
   dec: "+25 10 00.0"
   description: "NGC 2535, NGC 2536"
-  mag: 14.2
+  mag: -9999
   name: "Arp 82"
   ra: "08 11 16.0"
   size: 2.0
   surfbr: 22.29
+  bmag: 13.30
   type: "Galaxy"
 - constellation: ""
   dec: "+15 20 00.0"
@@ -1072,11 +1077,12 @@
 - constellation: ""
   dec: "+17 44 00.0"
   description: "NGC 6040B, NGC 6040A"
-  mag: 15.0
+  mag: -9999
   name: "Arp 122"
   ra: "16 04 26.0"
   size: 0.9
   surfbr: 22.49
+  bmag: 14.60
   type: "Galaxy"
 - constellation: ""
   dec: "-11 29 00.0"
@@ -1409,12 +1415,13 @@
 - constellation: ""
   dec: "+54 31 00.0"
   description: "NGC 4194"
-  mag: 13.3
+  mag: -9999
   name: "Arp 160"
   ra: "12 14 10.0"
   size: 3.0
   surfbr: 21.99
   minor: 2.09
+  bmag: 12.95
   type: "Galaxy"
 - constellation: ""
   dec: "+00 20 00.0"
@@ -1538,12 +1545,13 @@
 - constellation: ""
   dec: "+28 52 00.0"
   description: "NGC 3068"
-  mag: 15.4
+  mag: -9999
   name: "Arp 174"
   ra: "09 58 38.0"
   size: 0.7
   surfbr: 23.09
   minor: 0.56
+  bmag: 15.07
   type: "Galaxy"
 - constellation: ""
   dec: "+11 24 12.0"
@@ -1633,12 +1641,13 @@
 - constellation: ""
   dec: "+78 11 00.0"
   description: "NGC 6217"
-  mag: 13.9
+  mag: -9999
   name: "Arp 185"
   ra: "16 32 40.0"
   size: 2.0
   surfbr: 22.09
   minor: 1.46
+  bmag: 11.88
   type: "Galaxy"
 - constellation: ""
   dec: "-08 34 00.0"
@@ -2355,12 +2364,13 @@
 - constellation: ""
   dec: "+34 51 00.0"
   description: "NGC 4861"
-  mag: 13.5
+  mag: -9999
   name: "Arp 266"
   ra: "12 59 01.0"
   size: 4.4
   surfbr: 24.29
   minor: 1.67
+  bmag: 12.86
   type: "Galaxy"
 - constellation: ""
   dec: "+31 32 00.0"
@@ -2497,11 +2507,12 @@
 - constellation: ""
   dec: "+23 59 00.0"
   description: "NGC 169, IC 1559"
-  mag: 14.0
+  mag: -9999
   name: "Arp 282"
   ra: "00 36 52.0"
   size: 1.5
   surfbr: 21.59
+  bmag: 13.42
   type: "Galaxy"
 - constellation: ""
   dec: "+41 59 00.0"
@@ -2970,11 +2981,12 @@
 - constellation: ""
   dec: "+58 44 02.0"
   description: "Helix Galaxy, NGC 2685"
-  mag: 12.7
+  mag: -9999
   name: "Arp 336"
   ra: "08 55 35.0"
   size: 4.3
   surfbr: 22.59
+  bmag: 12.16
   type: "Galaxy"
 - constellation: ""
   dec: "+69 40 48.0"

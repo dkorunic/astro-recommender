@@ -495,6 +495,7 @@
   name: "DEM L 43"
   ra: "04 58 47.3"
   size: 50.0
+  haflux: -9.74
   type: "HII Region"
 - constellation: ""
   dec: "-66 15 59.9"
@@ -1741,6 +1742,7 @@
   name: "DEM L 177"
   ra: "05 24 16.9"
   size: 30.0
+  haflux: -9.80
   type: "HII Region"
 - constellation: ""
   dec: "-69 27 59.1"
@@ -1785,6 +1787,7 @@
   name: "DEM L 182"
   ra: "05 25 16.5"
   size: 33.0
+  haflux: -10.05
   type: "HII Region"
 - constellation: ""
   dec: "-66 21 47.3"
@@ -1915,6 +1918,7 @@
   name: "DEM L 195"
   ra: "05 26 38.6"
   size: 35.0
+  haflux: -9.88
   type: "HII Region"
 - constellation: ""
   dec: "-67 38 52.4"
@@ -2266,6 +2270,7 @@
   name: "DEM L 232"
   ra: "05 32 41.0"
   size: 30.0
+  haflux: -9.63
   type: "HII Region"
 - constellation: ""
   dec: "-68 45 56.8"
@@ -2485,6 +2490,7 @@
   name: "DEM L 257"
   ra: "05 37 44.9"
   size: 45.0
+  haflux: -9.88
   type: "HII Region"
 - constellation: ""
   dec: "-68 14 21.2"
@@ -2535,6 +2541,7 @@
   name: "DEM L 263"
   ra: "05 37 28.3"
   size: 40.0
+  haflux: -8.04
   type: "HII Region"
 - constellation: ""
   dec: "-66 35 25.6"
@@ -2578,6 +2585,7 @@
   name: "DEM L 268"
   ra: "05 37 45.7"
   size: 65.0
+  haflux: -9.51
   type: "HII Region"
 - constellation: ""
   dec: "-69 26 31.7"
@@ -2936,6 +2944,7 @@
   name: "DEM L 310"
   ra: "05 44 48.4"
   size: 60.0
+  haflux: -8.43
   type: "HII Region"
 - constellation: ""
   dec: "-69 46 22.8"
@@ -4543,4 +4552,5 @@
   name: "DEM S 167"
   ra: "01 30 19.8"
   size: 35.0
+  haflux: -9.66
   type: "HII Region"

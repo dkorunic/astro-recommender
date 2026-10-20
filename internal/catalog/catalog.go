@@ -114,8 +114,9 @@ const maxNumber, minSB = 35, 10
 
 // minHaFlux and maxHaFlux bound a known log Hα flux (erg cm⁻² s⁻¹): the
 // faintest planetaries Frew et al. measured are near -14, the brightest
-// (NGC 7293) -8.6.
-const minHaFlux, maxHaFlux = -17.0, -7.0
+// (NGC 7293) -8.6; scripts/hamap.py's H II regions run to the 40° Gum
+// Nebula's -5.4 (Carina -6.4).
+const minHaFlux, maxHaFlux = -17.0, -5.0
 
 // Classes are the object classes -type selects, in help order.
 var Classes = []string{classGalaxy, classCluster, classNebula, classEmission, classComet, classOther}

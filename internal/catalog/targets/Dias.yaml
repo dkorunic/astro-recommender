@@ -3927,6 +3927,7 @@
   name: "NGC 2264"
   ra: "06 40 58.0"
   size: 39.0
+  haflux: -8.74
   type: "Cl+N Emission Nebula"
 - constellation: ""
   dec: "-16 31 00.0"
@@ -10671,6 +10672,7 @@
   name: "NGC 6334"
   ra: "17 20 49.0"
   size: 31.0
+  haflux: -8.29
   type: "Cl+N Emission Nebula"
 - constellation: ""
   dec: "-37 54 00.0"

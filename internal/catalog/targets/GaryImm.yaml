@@ -30,6 +30,7 @@
   name: Abell 85
   ra: 23 59 54
   size: 35.0
+  haflux: -10.53
   type: Supernova Remnant
 - constellation: Hydra
   dec: 02 44 00
@@ -241,6 +242,7 @@
   name: IC 1318
   ra: 20 23 14
   size: 240.0
+  haflux: -7.12
   type: Emission Nebula
 - constellation: Cepheus
   dec: +57 29 21
@@ -250,6 +252,7 @@
   ra: 21 38 58
   size: 60.0
   minor: 17.14
+  haflux: -9.27
   type: Dark Nebula
 - constellation: Cassiopeia
   dec: 62 02 39
@@ -258,6 +261,7 @@
   name: IC 1795
   ra: 02 26 32
   size: 30.0
+  haflux: -9.69
   type: Emission Nebula
 - constellation: Cassiopeia
   dec: 61 28 30
@@ -266,6 +270,7 @@
   name: IC 1805
   ra: 02 32 47
   size: 120.0
+  haflux: -7.52
   type: Emission Nebula
 - constellation: Cassiopeia
   dec: 60 24 30
@@ -275,6 +280,7 @@
   ra: 02 51 18
   size: 90.0
   minor: 22.5
+  haflux: -8.41
   type: Emission Nebula
 - constellation: Eridanus
   dec: -07 15 00
@@ -300,6 +306,7 @@
   ra: 05 16 29
   size: 60.0
   minor: 36.0
+  haflux: -9.21
   type: Emission Nebula
 - constellation: Auriga
   dec: 33 25 00
@@ -309,6 +316,7 @@
   ra: 05 22 44
   size: 40.0
   minor: 30.0
+  haflux: -8.84
   type: Emission Nebula
 - constellation: Auriga
   dec: +34 25 24
@@ -327,6 +335,7 @@
   ra: 05 41 00
   size: 30.0
   minor: 10.0
+  haflux: -9.31
   type: Dark Nebula
 - constellation: Gemini
   dec: +22 31 00
@@ -336,6 +345,7 @@
   ra: 06 16 36
   size: 60.0
   minor: 48.0
+  haflux: -8.77
   type: Supernova Remnant
 - constellation: Scorpius
   dec: -19 27 24
@@ -363,6 +373,7 @@
   ra: 20 51 01
   size: 80.0
   minor: 66.67
+  haflux: -8.54
   type: Emission Nebula
 - constellation: Cygnus
   dec: +47 16 01
@@ -540,6 +551,7 @@
   ra: 18 18 48
   size: 35.0
   minor: 7.29
+  haflux: -8.66
   type: Emission Nebula
 - constellation: Sagittarius
   dec: -16 10 18
@@ -842,6 +854,7 @@
   ra: 04 03 14
   size: 145.0
   minor: 36.25
+  haflux: -7.93
   type: Emission Nebula
 - constellation: Camelopardalis
   dec: 60 55 14
@@ -920,6 +933,7 @@
   name: NGC 2024
   ra: 05 41 42
   size: 30.0
+  haflux: -8.59
   type: Dark Nebula
 - constellation: Cetus
   dec: -13 52 24
@@ -967,6 +981,7 @@
   ra: 06 09 24
   size: 40.0
   minor: 30.0
+  haflux: -8.92
   type: Emission Nebula
 - constellation: Monoceros
   dec: 05 03 00
@@ -976,6 +991,7 @@
   ra: 06 30 54
   size: 80.0
   minor: 50.0
+  haflux: -7.70
   type: Emission Nebula
 - constellation: Monoceros
   dec: 10 09 24
@@ -1001,6 +1017,7 @@
   name: NGC 2264
   ra: 06 40 58
   size: 120.0
+  haflux: -7.65
   type: Emission Nebula
 - constellation: Canis Major
   dec: -11 18 50
@@ -1009,6 +1026,7 @@
   name: NGC 2327
   ra: 07 04 07
   size: 170.0
+  haflux: -7.49
   type: Emission Nebula
 - constellation: Canis Major
   dec: -13 13 36
@@ -1018,6 +1036,7 @@
   ra: 07 18 30
   size: 40.0
   minor: 20.0
+  haflux: -9.21
   type: Wolf-Rayet Nebula
 - constellation: Gemini
   dec: 29 29 17
@@ -1052,6 +1071,7 @@
   name: NGC 2467
   ra: 07 52 26
   size: 50.0
+  haflux: -8.23
   type: Emission Nebula
 - constellation: Sculptor
   dec: -25 17 18
@@ -1072,6 +1092,7 @@
   ra: 09 00 16
   size: 40.0
   minor: 9.33
+  haflux: -10.54
   type: Supernova Remnant
 - constellation: Cassiopeia
   dec: 56 37 29
@@ -1081,6 +1102,7 @@
   ra: 00 52 54
   size: 35.0
   minor: 30.0
+  haflux: -8.85
   type: Emission Nebula
 - constellation: Vela
   dec: -40 26 11
@@ -1162,24 +1184,26 @@
 - constellation: Coma Berenices
   dec: +25 30 03
   description: Ringed Galaxy
-  mag: 12.4
+  mag: -9999
   name: NGC 4725
   ra: 12 50 27
   size: 11.0
   surfbr: 22.89
   bsurfbr: 23.39
   minor: 8.04
+  bmag: 9.92
   type: Galaxy
 - constellation: Canes Venatici
   dec: 36 35 38
   description: Crab Galaxy
-  mag: 12.0
+  mag: -9999
   name: NGC 5033
   ra: 13 13 28
   size: 11.0
   surfbr: 23.29
   bsurfbr: 23.78
   minor: 5.12
+  bmag: 10.70
   type: Galaxy
 - constellation: Centaurus
   dec: -43 01 08
@@ -1237,6 +1261,7 @@
   ra: 16 40 05
   size: 30.0
   minor: 18.0
+  haflux: -8.52
   type: Emission Nebula
 - constellation: Scorpius
   dec: -37 06 12
@@ -1254,6 +1279,7 @@
   name: NGC 6334
   ra: 17 20 49
   size: 60.0
+  haflux: -7.97
   type: Emission Nebula
 - constellation: Scorpius
   dec: -38 29 00
@@ -1271,6 +1297,7 @@
   name: NGC 6357
   ra: 17 24 43
   size: 50.0
+  haflux: -7.99
   type: Wolf-Rayet Nebula
 - constellation: Sagittarius
   dec: -27 53 18
@@ -1325,6 +1352,7 @@
   name: NGC 6820
   ra: 19 42 28
   size: 40.0
+  haflux: -8.83
   type: Emission Nebula
 - constellation: Cygnus
   dec: +50 31 30
@@ -1370,6 +1398,7 @@
   ra: 20 45 58
   size: 70.0
   minor: 53.33
+  haflux: -8.97
   type: Supernova Remnant
 - constellation: Cygnus
   dec: 32 01 36
@@ -1379,6 +1408,7 @@
   ra: 20 50 28
   size: 60.0
   minor: 25.71
+  haflux: -9.62
   type: Supernova Remnant
 - constellation: Cygnus
   dec: 31 44 36
@@ -1388,6 +1418,7 @@
   ra: 20 56 19
   size: 60.0
   minor: 8.0
+  haflux: -10.06
   type: Supernova Remnant
 - constellation: Cygnus
   dec: 44 31 00
@@ -1501,6 +1532,7 @@
   ra: 00 03 36
   size: 60.0
   minor: 12.0
+  haflux: -10.32
   type: Emission Nebula
 - constellation: Perseus
   dec: +57 07 42
@@ -1528,6 +1560,7 @@
   name: OU 4
   ra: 21 11 47
   size: 60.0
+  haflux: -9.58
   type: Emission Nebula
 - constellation: Monoceros
   dec: -10 38 15
@@ -1544,6 +1577,7 @@
   name: Rho Ophiuchi
   ra: 16 25 35
   size: 300.0
+  haflux: -8.46
   type: Emission Nebula
 - constellation: Scorpius
   dec: -38 27 34
@@ -1560,6 +1594,7 @@
   name: Sh2-054
   ra: 18 17 52
   size: 120.0
+  haflux: -7.61
   type: Emission Nebula
 - constellation: Cygnus
   dec: 35 16 36
@@ -1576,6 +1611,7 @@
   name: Sh2-103
   ra: 20 51 21
   size: 180.0
+  haflux: -7.99
   type: Supernova Remnant
 - constellation: Cygnus
   dec: 37 22 49
@@ -1600,6 +1636,7 @@
   name: Sh2-114
   ra: 21 21 12
   size: 60.0
+  haflux: -9.49
   type: Emission Nebula
 - constellation: Cepheus
   dec: 56 04 45
@@ -1608,6 +1645,7 @@
   name: Sh2-132
   ra: 22 19 09
   size: 60.0
+  haflux: -8.27
   type: Wolf-Rayet Nebula
 - constellation: Cepheus
   dec: 62 31 06
@@ -1616,6 +1654,7 @@
   name: Sh2-155
   ra: 22 57 54
   size: 40.0
+  haflux: -9.21
   type: Dark Nebula
 - constellation: Cassiopeia
   dec: 60 24 36
@@ -1624,6 +1663,7 @@
   name: Sh2-157
   ra: 23 16 04
   size: 85.0
+  haflux: -8.34
   type: Wolf-Rayet Nebula
 - constellation: Cepheus
   dec: 61 30 00
@@ -1672,6 +1712,7 @@
   name: Sh2-223
   ra: 05 17 18
   size: 90.0
+  haflux: -9.07
   type: Emission Nebula
 - constellation: Auriga
   dec: 42 55 00
@@ -1680,6 +1721,7 @@
   name: Sh2-224
   ra: 05 26 36
   size: 60.0
+  haflux: -9.53
   type: Supernova Remnant
 - constellation: Taurus
   dec: 28 05 00
@@ -1688,6 +1730,7 @@
   name: Sh2-240
   ra: 05 41 06
   size: 180.0
+  haflux: -8.44
   type: Supernova Remnant
 - constellation: Orion
   dec: 18 03 18
@@ -1704,6 +1747,7 @@
   name: Sh2-261
   ra: 06 08 36
   size: 45.0
+  haflux: -8.51
   type: Emission Nebula
 - constellation: Canis Major
   dec: -18 29 53
@@ -1720,6 +1764,7 @@
   name: Sh2-302
   ra: 07 31 32
   size: 30.0
+  haflux: -9.16
   type: Emission Nebula
 - constellation: Canis Major
   dec: -23 56 00
@@ -1728,6 +1773,7 @@
   name: Sh2-308
   ra: 06 54 00
   size: 60.0
+  haflux: -9.34
   type: Emission Nebula
 - constellation: Hydra
   dec: -22 51 42
@@ -1793,6 +1839,7 @@
   name: Vela Bridge
   ra: 08 37 39
   size: 60.0
+  haflux: -9.12
   type: Supernova Remnant
 - constellation: Vela
   dec: -45 56 30
@@ -1801,6 +1848,7 @@
   name: Vela Pencil
   ra: 09 00 16
   size: 30.0
+  haflux: -9.99
   type: Supernova Remnant
 - constellation: Vela
   dec: -43 50 43
@@ -1809,6 +1857,7 @@
   name: Vela Spiral Flame
   ra: 08 54 21
   size: 60.0
+  haflux: -9.33
   type: Supernova Remnant
 - constellation: Cygnus
   dec: 36 11 00

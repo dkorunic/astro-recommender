@@ -79,6 +79,7 @@
   name: "Ced 7"
   ra: "02 32 04.2"
   size: 50.0
+  haflux: -8.41
   type: "Emission Nebula"
 - constellation: ""
   dec: "+63 25 35.4"
@@ -87,6 +88,7 @@
   name: "Ced 8"
   ra: "02 43 57.5"
   size: 120.0
+  haflux: -8.65
   type: "Emission Nebula"
 - constellation: ""
   dec: "+60 25 52.3"
@@ -95,6 +97,7 @@
   name: "Ced 9a"
   ra: "02 51 19.2"
   size: 60.0
+  haflux: -8.04
   type: "Emission Nebula"
 - constellation: ""
   dec: "+58 18 49.3"
@@ -215,6 +218,7 @@
   name: "Ced 18b"
   ra: "03 44 16.4"
   size: 150.0
+  haflux: -8.63
   type: "Emission Nebula"
 - constellation: ""
   dec: "+32 09 59.0"
@@ -391,6 +395,7 @@
   name: "Ced 26"
   ra: "04 03 26.4"
   size: 157.0
+  haflux: -7.31
   type: "Emission Nebula"
 - constellation: ""
   dec: "+27 37 14.9"
@@ -543,6 +548,7 @@
   name: "Ced 42"
   ra: "05 16 18.5"
   size: 30.0
+  haflux: -10.62
   type: "Emission Nebula"
 - constellation: ""
   dec: "+33 30 54.0"
@@ -639,6 +645,7 @@
   name: "Ced 54"
   ra: "05 35 06.6"
   size: 30.0
+  haflux: -10.71
   type: "Emission Nebula"
 - constellation: ""
   dec: "-05 33 58.7"
@@ -671,6 +678,7 @@
   name: "Ced 55d"
   ra: "05 35 18.8"
   size: 66.0
+  haflux: -7.04
   type: "Emission Nebula"
 - constellation: ""
   dec: "-04 50 04.2"
@@ -703,6 +711,7 @@
   name: "Ced 56"
   ra: "05 37 31.6"
   size: 30.0
+  haflux: -10.86
   type: "Emission Nebula"
 - constellation: ""
   dec: "-01 12 10.1"
@@ -783,6 +792,7 @@
   name: "Ced 55p"
   ra: "05 41 51.0"
   size: 31.0
+  haflux: -8.59
   type: "Emission Nebula"
 - constellation: ""
   dec: "-02 19 08.8"
@@ -855,6 +865,7 @@
   name: "Ced 60"
   ra: "05 56 36.9"
   size: 60.0
+  haflux: -10.89
   type: "Emission Nebula"
 - constellation: ""
   dec: "+30 29 48.5"
@@ -1023,6 +1034,7 @@
   name: "Ced 76b"
   ra: "06 32 18.9"
   size: 64.0
+  haflux: -7.57
   type: "Emission Nebula"
 - constellation: ""
   dec: "+07 24 41.0"
@@ -1079,6 +1091,7 @@
   name: "Ced 84b"
   ra: "06 41 00.5"
   size: 60.0
+  haflux: -8.51
   type: "Emission Nebula"
 - constellation: ""
   dec: "+06 21 18.0"
@@ -1455,6 +1468,7 @@
   name: "Ced 109a"
   ra: "10 45 05.0"
   size: 120.1
+  haflux: -6.42
   type: "Emission Nebula"
 - constellation: ""
   dec: "-60 43 14.5"
@@ -1927,6 +1941,7 @@
   name: "Ced 152a"
   ra: "18 03 44.0"
   size: 90.0
+  haflux: -6.91
   type: "Emission Nebula"
 - constellation: ""
   dec: "-23 52 16.7"
@@ -2055,6 +2070,7 @@
   name: "Ced 159"
   ra: "18 18 52.2"
   size: 35.0
+  haflux: -7.98
   type: "Emission Nebula"
 - constellation: ""
   dec: "-16 00 33.5"
@@ -2079,6 +2095,7 @@
   name: "Ced 161"
   ra: "18 20 46.1"
   size: 46.0
+  haflux: -7.77
   type: "Emission Nebula"
 - constellation: ""
   dec: "-18 25 39.7"
@@ -2359,6 +2376,7 @@
   name: "Ced 182b"
   ra: "21 56 36.7"
   size: 73.0
+  haflux: -10.61
   type: "Emission Nebula"
 - constellation: ""
   dec: "+47 30 30.6"
@@ -2423,6 +2441,7 @@
   name: "Ced 190"
   ra: "22 12 40.2"
   size: 100.0
+  haflux: -9.79
   type: "Emission Nebula"
 - constellation: ""
   dec: "+58 40 02.6"
@@ -2463,6 +2482,7 @@
   name: "Ced 195a"
   ra: "22 39 48.5"
   size: 180.0
+  haflux: -7.91
   type: "Emission Nebula"
 - constellation: ""
   dec: "+57 48 27.0"
@@ -2471,6 +2491,7 @@
   name: "Ced 195b"
   ra: "22 43 14.7"
   size: 150.0
+  haflux: -8.05
   type: "Emission Nebula"
 - constellation: ""
   dec: "+66 10 30.4"
@@ -2535,6 +2556,7 @@
   name: "Ced 203"
   ra: "22 16 58.2"
   size: 30.0
+  haflux: -9.17
   type: "Emission Nebula"
 - constellation: ""
   dec: "+63 13 04.4"
