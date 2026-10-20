@@ -362,12 +362,12 @@ The `-filter` choices are classes rather than products: filters of the same clas
 | `-camera` | Cameras | Pixels | Colour: peak QE, read noise | Mono |
 |---|---|---|---|---|
 | `imx174` | ASI174MM | 5.86 µm, 1936 × 1216 | – | 77%, 3.5 e⁻ at gain 300 |
-| `imx183` | ASI183MM Pro | 2.4 µm, 5496 × 3672 | – | 84%, 2.1 e⁻ at gain 120 |
+| `imx183` | ASI183MM Pro, ASI183MM, ASI183GT | 2.4 µm, 5496 × 3672 | – | 84%, 2.1 e⁻ at gain 120 |
 | `imx224` | ASI224MC, Unistellar eVscope / eQuinox | 3.75 µm, 1304 × 976 | 78%, 1.6 e⁻ at gain 60 | – |
 | `imx249` | ToupTek GPM174M | 5.86 µm, 1920 × 1200 | – | 89%, 4.0 e⁻ at gain 1778 (ToupTek) |
 | `imx290` | ToupTek G3M290C/M | 2.9 µm, 1936 × 1096 | 81% (ToupTek), 1.65 e⁻ at gain 60 | 81% (ToupTek), 1.65 e⁻ at gain 60 |
 | `imx294` | ASI294MC Pro | 4.63 µm, 4144 × 2822 | 75%, 1.7 e⁻ at gain 120 | – |
-| `imx366` | ToupTek SkyEye45AC Plus | 4.40 µm, 8192 × 5460 | 80%, 1.35 e⁻ at gain 100 (ToupTek) | – |
+| `imx366` | ASI4400MC Pro, ToupTek SkyEye45AC Plus | 4.40 µm, 8192 × 5460 | 80%, 1.7 e⁻ at gain 136 | – |
 | `imx410` | ASI2400MC Pro | 5.94 µm, 6072 × 4042 | 80%, 1.5 e⁻ at gain 140 | – |
 | `imx428` | ToupTek ATR428M/C | 4.5 µm, 3200 × 2200 | 79%, 2.4 e⁻ at gain 100 (ToupTek) | 79%, 2.5 e⁻ at gain 100 (ToupTek) |
 | `imx432` | ASI432MM | 9 µm, 1608 × 1104 | – | 79%, 4.3 e⁻ at gain 140 |
@@ -380,8 +380,8 @@ The `-filter` choices are classes rather than products: filters of the same clas
 | `imx485` | ASI485MC | 2.9 µm, 3840 × 2160 | 85%, 2.3 e⁻ at gain 80 | – |
 | `imx492` | ASI294MM Pro (2×2 binned) | 4.63 µm, 4144 × 2822 | – | 90%, 1.8 e⁻ at gain 120 |
 | `imx533` | ASI533MC/MM Pro | 3.76 µm, 3008 × 3008 | 80%, 1.5 e⁻ at gain 100 | 91%, 1.5 e⁻ at gain 100 |
-| `imx571` | ASI2600MC/MM Pro | 3.76 µm, 6248 × 4176 | 80%, 1.4 e⁻ at gain 100 | 91%, 1.4 e⁻ at gain 100 |
-| `imx585` | ASI585MC/MM Pro, Seestar S30 Pro, Vespera II, Vespera 3, Vaonis Atlas, ORBIS 60EDX | 2.9 µm, 3840 × 2160 | 91%, 1.0 e⁻ at gain 200 | 91%, 1.0 e⁻ at gain 200 |
+| `imx571` | ASI2600MC/MM Pro, ASI2600MC Duo, ASI2600MC Air | 3.76 µm, 6248 × 4176 | 80%, 1.4 e⁻ at gain 100 | 91%, 1.4 e⁻ at gain 100 |
+| `imx585` | ASI585MC/MM Pro, ASI585MC/MM, ASI585MC Air, Seestar S30 Pro, Vespera II, Vespera 3, Vaonis Atlas, ORBIS 60EDX | 2.9 µm, 3840 × 2160 | 91%, 1.0 e⁻ at gain 200 | 91%, 1.0 e⁻ at gain 200 |
 | `imx662` | ASI662MC/MM, Seestar S30, DWARF mini | 2.9 µm, 1920 × 1080 | 91%, 1.2 e⁻ at gain 200 | 91%, 1.2 e⁻ at gain 200 |
 | `imx664` | ASI664MC | 2.9 µm, 2704 × 1536 | 91%, 0.8 e⁻ at gain 252 | – |
 | `imx676` | ASI676MC/MM, Vespera Pro, Vespera Pro 2 | 2.0 µm, 3552 × 3552 | 83%, 0.75 e⁻ at gain 180 | 83%, 0.75 e⁻ at gain 180 |

@@ -151,17 +151,18 @@ var (
 		},
 		Broad: [3]float64{0.411, 0.540, 0.309},
 	}
-	// ToupTek SkyEye45AC Plus product page's spectral sensitivity chart.
+	// ZWO ASI4400MC Pro product page's chart (ToupTek's SkyEye45AC Plus
+	// page has the same one, to 0.01).
 	imx366 = Response{
 		Lines: [catalog.NumLines][3]float64{
-			catalog.Ha:      {0.792, 0.168, 0.053},
-			catalog.OIII:    {0.063, 0.885, 0.488},
-			catalog.SII:     {0.703, 0.187, 0.069},
-			catalog.Hb:      {0.058, 0.734, 0.633},
-			catalog.NII6548: {0.802, 0.170, 0.051},
-			catalog.NII6583: {0.773, 0.165, 0.055},
+			catalog.Ha:      {0.793, 0.169, 0.053},
+			catalog.OIII:    {0.061, 0.880, 0.497},
+			catalog.SII:     {0.710, 0.186, 0.068},
+			catalog.Hb:      {0.059, 0.726, 0.641},
+			catalog.NII6548: {0.805, 0.171, 0.051},
+			catalog.NII6583: {0.782, 0.167, 0.055},
 		},
-		Broad: [3]float64{0.365, 0.470, 0.289},
+		Broad: [3]float64{0.366, 0.470, 0.290},
 	}
 	// ToupTek ATR428M/C product page's colour chart.
 	imx428 = Response{
@@ -400,10 +401,13 @@ var Cameras = map[string]Sensor{
 		Pixel: 1.45, PxLong: 3864, PxShort: 2192,
 		Colour: &Variant{Response: &imx715, Gain: 100, QE: 0.80, ReadNoise: 1.2},
 	},
-	// ToupTek's SkyEye45AC Plus: the read noise its HCG chart's at gain 100.
+	// ZWO's ASI4400MC Pro (also ToupTek's SkyEye45AC Plus): the read noise
+	// its chart's at gain 136, where it drops from 5.8 e⁻ (its table's 1.1
+	// is gain 400's). No Dark yet: its chart's 0.126 e⁻/s at 25 °C would
+	// move typicalDark, the charted median, from 0.16 to 0.13.
 	"imx366": {
 		Pixel: 4.40, PxLong: 8192, PxShort: 5460,
-		Colour: &Variant{Response: &imx366, Gain: 100, QE: 0.80, ReadNoise: 1.35},
+		Colour: &Variant{Response: &imx366, Gain: 136, QE: 0.80, ReadNoise: 1.7},
 	},
 	// ToupTek's ATR428M/C (global shutter, sold for solar imaging): one peak
 	// QE for both, as ToupTek quotes it; each version's HCG read noise at
