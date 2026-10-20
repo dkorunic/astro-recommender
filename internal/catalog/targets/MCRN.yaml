@@ -776,7 +776,6 @@
   name: "MCRN 97"
   ra: "05 21 45.0"
   size: 110.0
-  haflux: -9.11
   type: "Emission Nebula"
 - constellation: ""
   dec: "+32 49 09.0"

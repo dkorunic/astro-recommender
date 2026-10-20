@@ -12,7 +12,8 @@ hamap.measure takes Finkbeiner's map (2003, ApJS 146, 407, in Rayleighs;
 the full-sky HEALPix file, cached under --cache, which NASA SkyView's
 "H-Alpha Comp" cutouts this was first fitted with resample within 3%)
 over a box twice the object's size: the mean over the object's disc less
-the median of a ring from 1.25 to 2 radii (the Milky Way's diffuse Hα).
+the median of a ring from 1.25 to 2 radii (the Milky Way's diffuse Hα),
+none where the ring is hamap.RING_MAX of the disc or more.
 scripts/hamap.py measures the nebulae without a surface brightness the
 same way, so refit after changing either. Its lines derived from V are
     lines = V / fV,   fV = sum of share x Bessell V at the line (lineV),
@@ -20,7 +21,7 @@ whose Hα share is what the map measures. vContinuum is the median over the
 sample of the derived Hα against the measured, in magnitudes: the part of
 a nebula's catalogued V light that is stars and continuum. Exact duplicates
 (one nebula under two names, same size and surface brightness) count once;
-objects without map data are listed and skipped. Prints the table,
+objects without a measurement are listed and skipped. Prints the table,
 the median and interquartile range; bake vContinuum into score.go by hand.
 """
 
@@ -80,7 +81,7 @@ def main():
         seen.add((round(size), sb))
         meas = measure(hmap, ra, dec, size)
         if meas is None:
-            print(f"{lst:9} {name:13} no map data", file=sys.stderr)
+            print(f"{lst:9} {name:13} no map data, or ring-dominated", file=sys.stderr)
             continue
         fv = sum(s * t for s, t in zip(shares, LINE_V))
         derived = shares[0] * PHOTONS_V0 * 10 ** (-0.4 * sb) / fv / RAYLEIGH

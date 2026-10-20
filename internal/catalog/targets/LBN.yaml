@@ -66,7 +66,6 @@
   ra: 15 50 39.6
   size: 45
   minor: 12
-  haflux: -11.53
   type: HII region
 - constellation: Sagittarius
   dec: -26 11 08
@@ -102,7 +101,6 @@
   ra: 16 30 46.6
   size: 65
   minor: 20
-  haflux: -9.31
   type: HII region
 - constellation: Ophiucus
   dec: -08 02 38
@@ -112,7 +110,6 @@
   ra: 16 12 42.1
   size: 35
   minor: 15
-  haflux: -11.29
   type: HII region
 - constellation: Sagittarius
   dec: -24 50 28
@@ -141,7 +138,6 @@
   ra: 16 32 46.1
   size: 150
   minor: 30
-  haflux: -9.58
   type: HII region
 - constellation: Ophiucus
   dec: -07 05 45
@@ -170,7 +166,6 @@
   ra: 15 50 36.5
   size: 140
   minor: 90
-  haflux: -10.14
   type: HII region
 - constellation: Ophiucus
   dec: -09 36 42
@@ -199,7 +194,6 @@
   ra: 16 28 44.0
   size: 40
   minor: 20
-  haflux: -9.45
   type: HII region
 - constellation: Serpens
   dec: -01 57 08
@@ -366,7 +360,6 @@
   ra: 20 03 09.0
   size: 210
   minor: 90
-  haflux: -10.22
   type: HII region
 - constellation: Sagittarius
   dec: -20 18 57
@@ -394,7 +387,6 @@
   ra: 16 06 33.3
   size: 40
   minor: 10
-  haflux: -12.39
   type: HII region
 - constellation: Sagittarius
   dec: -19 38 52
@@ -617,7 +609,6 @@
   ra: 18 33 52.1
   size: 30
   minor: 10
-  haflux: -10.27
   type: HII region
 - constellation: Serpens
   dec: -12 58 40
@@ -728,7 +719,6 @@
   ra: 18 34 41.8
   size: 40
   minor: 15
-  haflux: -10.69
   type: HII region
 - constellation: Scutum
   dec: -06 37 26
@@ -903,7 +893,6 @@
   ra: 19 45 40.0
   size: 180
   minor: 90
-  haflux: -10.36
   type: HII region
 - constellation: Ophiucus
   dec: +07 03 58
@@ -1021,7 +1010,6 @@
   ra: 20 31 36.2
   size: 85
   minor: 30
-  haflux: -12.05
   type: HII region
 - constellation: Aquila
   dec: -01 30 10
@@ -1031,7 +1019,6 @@
   ra: 20 25 35.3
   size: 35
   minor: 10
-  haflux: -12.21
   type: HII region
 - constellation: Aquila
   dec: -00 21 00
@@ -1068,7 +1055,6 @@
   ra: 20 27 34.6
   size: 140
   minor: 10
-  haflux: -12.06
   type: HII region
 - constellation: Aquila
   dec: -01 19 42
@@ -1078,7 +1064,6 @@
   ra: 20 33 35.1
   size: 35
   minor: 30
-  haflux: -11.03
   type: HII region
 - constellation: Aquila
   dec: -00 49 32
@@ -1265,7 +1250,6 @@
   ra: 22 28 24.0
   size: 200
   minor: 30
-  haflux: -10.56
   type: HII region
 - constellation: Delphinus
   dec: +18 10 45
@@ -1311,7 +1295,6 @@
   ra: 19 36 59.2
   size: 120
   minor: 2
-  haflux: -11.30
   type: HII region
 - constellation: Cygnus
   dec: +31 26 11
@@ -1461,7 +1444,6 @@
   ra: 20 03 54.9
   size: 33
   minor: 15
-  haflux: -10.49
   type: HII region
 - constellation: Cygnus
   dec: +36 37 15
@@ -1471,7 +1453,6 @@
   ra: 19 43 49.1
   size: 195
   minor: 30
-  haflux: -9.75
   type: HII region
 - constellation: Cygnus
   dec: +34 08 43
@@ -1481,7 +1462,6 @@
   ra: 20 06 55.2
   size: 40
   minor: 20
-  haflux: -10.12
   type: HII region
 - constellation: Vulpecula
   dec: +26 41 30
@@ -1519,7 +1499,6 @@
   ra: 20 05 54.4
   size: 60
   minor: 50
-  haflux: -9.38
   type: HII region
 - constellation: Cygnus
   dec: +35 28 21
@@ -1556,7 +1535,6 @@
   ra: 20 03 53.5
   size: 80
   minor: 50
-  haflux: -9.40
   type: HII region
 - constellation: Cygnus
   dec: +33 49 09
@@ -1566,7 +1544,6 @@
   ra: 20 13 56.5
   size: 53
   minor: 15
-  haflux: -9.81
   type: HII region
 - constellation: Cygnus
   dec: +37 37 15
@@ -1576,7 +1553,6 @@
   ra: 19 43 47.5
   size: 30
   minor: 6
-  haflux: -11.70
   type: HII region
 - constellation: Cygnus
   dec: +35 10 36
@@ -1614,7 +1590,6 @@
   ra: 20 03 51.7
   size: 80
   minor: 10
-  haflux: -10.86
   type: HII region
 - constellation: Cygnus
   dec: +34 59 09
@@ -1633,7 +1608,6 @@
   ra: 20 09 53.1
   size: 90
   minor: 20
-  haflux: -9.19
   type: HII region
 - constellation: Cygnus
   dec: +36 58 28
@@ -1661,7 +1635,6 @@
   ra: 20 23 56.9
   size: 80
   minor: 40
-  haflux: -9.46
   type: HII region
 - constellation: Cygnus
   dec: +38 42 42
@@ -1707,7 +1680,6 @@
   ra: 20 03 49.1
   size: 60
   minor: 20
-  haflux: -9.37
   type: HII region
 - constellation: Cygnus
   dec: +31 11 20
@@ -1737,7 +1709,6 @@
   ra: 20 09 50.0
   size: 90
   minor: 30
-  haflux: -9.08
   type: HII region
 - constellation: Cygnus
   dec: +38 28 36
@@ -1782,7 +1753,6 @@
   ra: 20 28 55.6
   size: 130
   minor: 60
-  haflux: -9.76
   type: HII region
 - constellation: Cygnus
   dec: +39 28 21
@@ -1792,7 +1762,6 @@
   ra: 20 00 46.2
   size: 35
   minor: 10
-  haflux: -10.44
   type: HII region
 - constellation: Cygnus
   dec: +40 17 54
@@ -1802,7 +1771,6 @@
   ra: 19 53 44.0
   size: 70
   minor: 10
-  haflux: -11.42
   type: HII region
 - constellation: Cygnus
   dec: +40 47 38
@@ -1812,7 +1780,6 @@
   ra: 19 49 42.6
   size: 60
   minor: 40
-  haflux: -10.78
   type: HII region
 - constellation: Cygnus
   dec: +40 08 02
@@ -1822,7 +1789,6 @@
   ra: 19 55 44.5
   size: 45
   minor: 10
-  haflux: -11.11
   type: HII region
 - constellation: Cygnus
   dec: +38 19 05
@@ -1860,7 +1826,6 @@
   ra: 20 15 50.3
   size: 50
   minor: 30
-  haflux: -9.45
   type: HII region
 - constellation: Cygnus
   dec: +40 18 13
@@ -1870,7 +1835,6 @@
   ra: 19 58 44.6
   size: 40
   minor: 10
-  haflux: -10.95
   type: HII region
 - constellation: Cygnus
   dec: +38 58 54
@@ -1880,7 +1844,6 @@
   ra: 20 09 48.2
   size: 120
   minor: 20
-  haflux: -9.07
   type: HII region
 - constellation: Cygnus
   dec: +37 59 24
@@ -1890,7 +1853,6 @@
   ra: 20 17 50.8
   size: 30
   minor: 15
-  haflux: -10.34
   type: HII region
 - constellation: Cygnus
   dec: +36 39 59
@@ -1900,7 +1862,6 @@
   ra: 20 27 54.0
   size: 70
   minor: 30
-  haflux: -9.52
   type: HII region
 - constellation: Cygnus
   dec: +37 09 49
@@ -1920,7 +1881,6 @@
   ra: 20 19 51.0
   size: 40
   minor: 10
-  haflux: -10.02
   type: HII region
 - constellation: Cygnus
   dec: +40 08 32
@@ -1958,7 +1918,6 @@
   ra: 20 06 46.1
   size: 45
   minor: 20
-  haflux: -9.39
   type: HII region
 - constellation: Cygnus
   dec: +40 18 36
@@ -1985,7 +1944,6 @@
   ra: 20 29 53.7
   size: 30
   minor: 20
-  haflux: -11.10
   type: HII region
 - constellation: Pegasus
   dec: +22 23 56
@@ -2004,7 +1962,6 @@
   ra: 19 49 39.5
   size: 52
   minor: 10
-  haflux: -10.21
   type: HII region
 - constellation: Cygnus
   dec: +40 28 47
@@ -2053,7 +2010,6 @@
   ra: 20 31 53.1
   size: 110
   minor: 60
-  haflux: -9.88
   type: HII region
 - constellation: Cygnus
   dec: +41 08 43
@@ -2083,7 +2039,6 @@
   ra: 20 36 54.5
   size: 40
   minor: 10
-  haflux: -10.90
   type: HII region
 - constellation: Cygnus
   dec: +35 11 14
@@ -2093,7 +2048,6 @@
   ra: 20 49 59.0
   size: 40
   minor: 10
-  haflux: -11.76
   type: HII region
 - constellation: Cygnus
   dec: +36 20 51
@@ -2141,7 +2095,6 @@
   ra: 20 42 56.1
   size: 180
   minor: 150
-  haflux: -8.76
   type: HII region
 - constellation: Cygnus
   dec: +40 39 16
@@ -2189,7 +2142,6 @@
   ra: 20 19 46.8
   size: 120
   minor: 60
-  haflux: -8.37
   type: HII region
 - constellation: Cygnus
   dec: +40 39 31
@@ -2238,7 +2190,6 @@
   ra: 20 50 57.4
   size: 45
   minor: 30
-  haflux: -10.17
   type: HII region
 - constellation: Cygnus
   dec: +38 10 47
@@ -2248,7 +2199,6 @@
   ra: 20 41 53.8
   size: 101
   minor: 20
-  haflux: -9.88
   type: HII region
 - constellation: Cygnus
   dec: +41 09 34
@@ -2276,7 +2226,6 @@
   ra: 20 54 58.4
   size: 50
   minor: 20
-  haflux: -11.17
   type: HII region
 - constellation: Cygnus
   dec: +41 49 20
@@ -2324,7 +2273,6 @@
   ra: 20 51 56.7
   size: 70
   minor: 10
-  haflux: -10.17
   type: HII region
 - constellation: Cygnus
   dec: +35 51 46
@@ -2372,7 +2320,6 @@
   ra: 20 03 38.5
   size: 60
   minor: 15
-  haflux: -9.69
   type: HII region
 - constellation: Cygnus
   dec: +41 14 56
@@ -2391,7 +2338,6 @@
   ra: 20 03 38.2
   size: 80
   minor: 30
-  haflux: -9.55
   type: HII region
 - constellation: Cygnus
   dec: +38 50 57
@@ -2411,7 +2357,6 @@
   ra: 20 07 39.4
   size: 70
   minor: 5
-  haflux: -10.38
   type: HII region
 - constellation: Cygnus
   dec: +39 10 51
@@ -2420,7 +2365,6 @@
   name: LBN 265
   ra: 20 42 52.5
   size: 40
-  haflux: -9.93
   type: HII region
 - constellation: Cygnus
   dec: +36 26 45
@@ -2478,7 +2422,6 @@
   ra: 20 35 49.1
   size: 40
   minor: 10
-  haflux: -11.03
   type: HII region
 - constellation: Cygnus
   dec: +44 48 28
@@ -2532,7 +2475,6 @@
   ra: 20 18 42.3
   size: 30
   minor: 20
-  haflux: -9.55
   type: HII region
 - constellation: Cygnus
   dec: +42 09 56
@@ -2542,7 +2484,6 @@
   ra: 20 26 45.3
   size: 70
   minor: 20
-  haflux: -9.64
   type: HII region
 - constellation: Cygnus
   dec: +42 22 52
@@ -2596,7 +2537,6 @@
   ra: 20 33 47.5
   size: 50
   minor: 45
-  haflux: -9.48
   type: HII region
 - constellation: Cygnus
   dec: +41 40 17
@@ -2615,7 +2555,6 @@
   ra: 21 38 11.3
   size: 70
   minor: 10
-  haflux: -10.65
   type: HII region
 - constellation: Cygnus
   dec: +42 00 13
@@ -2625,7 +2564,6 @@
   ra: 20 31 46.3
   size: 45
   minor: 20
-  haflux: -9.80
   type: HII region
 - constellation: Cygnus
   dec: +39 01 20
@@ -2635,7 +2573,6 @@
   ra: 20 51 54.1
   size: 60
   minor: 25
-  haflux: -9.71
   type: HII region
 - constellation: Cygnus
   dec: +37 31 49
@@ -2673,7 +2610,6 @@
   ra: 20 29 44.9
   size: 50
   minor: 40
-  haflux: -9.87
   type: HII region
 - constellation: Cygnus
   dec: +45 48 32
@@ -2711,7 +2647,6 @@
   ra: 20 01 33.8
   size: 50
   minor: 20
-  haflux: -9.96
   type: HII region
 - constellation: Cygnus
   dec: +44 19 31
@@ -2740,7 +2675,6 @@
   ra: 20 22 41.4
   size: 60
   minor: 10
-  haflux: -9.67
   type: HII region
 - constellation: Cygnus
   dec: +44 39 23
@@ -2768,7 +2702,6 @@
   ra: 20 19 40.0
   size: 40
   minor: 10
-  haflux: -10.86
   type: HII region
 - constellation: Cygnus
   dec: +38 41 45
@@ -2817,7 +2750,6 @@
   ra: 20 46 50.4
   size: 120
   minor: 30
-  haflux: -10.29
   type: HII region
 - constellation: Cygnus
   dec: +43 10 13
@@ -2827,7 +2759,6 @@
   ra: 20 31 44.4
   size: 42
   minor: 10
-  haflux: -10.22
   type: HII region
 - constellation: Cygnus
   dec: +45 09 20
@@ -2846,7 +2777,6 @@
   name: LBN 311
   ra: 20 47 50.6
   size: 40
-  haflux: -10.06
   type: HII region
 - constellation: Cygnus
   dec: +42 20 37
@@ -2856,7 +2786,6 @@
   ra: 20 38 46.9
   size: 40
   minor: 20
-  haflux: -9.94
   type: HII region
 - constellation: Cygnus
   dec: +45 49 01
@@ -2876,7 +2805,6 @@
   ra: 20 20 39.2
   size: 30
   minor: 10
-  haflux: -10.52
   type: HII region
 - constellation: Cygnus
   dec: +44 10 10
@@ -2886,7 +2814,6 @@
   ra: 20 30 42.4
   size: 90
   minor: 60
-  haflux: -8.81
   type: HII region
 - constellation: Cygnus
   dec: +38 12 16
@@ -3001,7 +2928,6 @@
   ra: 20 51 49.4
   size: 80
   minor: 30
-  haflux: -9.05
   type: HII region
 - constellation: Cygnus
   dec: +42 31 17
@@ -3011,7 +2937,6 @@
   ra: 20 50 48.7
   size: 40
   minor: 30
-  haflux: -9.51
   type: HII region
 - constellation: Cygnus
   dec: +43 01 10
@@ -3021,7 +2946,6 @@
   ra: 20 48 47.6
   size: 60
   minor: 20
-  haflux: -9.32
   type: HII region
 - constellation: Cygnus
   dec: +45 00 23
@@ -3031,7 +2955,6 @@
   ra: 20 34 41.6
   size: 40
   minor: 20
-  haflux: -9.75
   type: HII region
 - constellation: Cygnus
   dec: +47 39 09
@@ -3067,7 +2990,6 @@
   name: LBN 334
   ra: 20 47 46.3
   size: 60
-  haflux: -9.26
   type: HII region
 - constellation: Cygnus
   dec: +46 59 41
@@ -3086,7 +3008,6 @@
   ra: 20 21 35.1
   size: 60
   minor: 20
-  haflux: -9.88
   type: HII region
 - constellation: Cygnus
   dec: +45 40 20
@@ -3132,7 +3053,6 @@
   ra: 20 46 45.3
   size: 70
   minor: 40
-  haflux: -9.73
   type: HII region
 - constellation: Cygnus
   dec: +43 01 30
@@ -3142,7 +3062,6 @@
   ra: 20 54 48.7
   size: 60
   minor: 30
-  haflux: -9.28
   type: HII region
 - constellation: Cygnus
   dec: +43 41 17
@@ -3161,7 +3080,6 @@
   ra: 20 24 35.6
   size: 80
   minor: 40
-  haflux: -9.99
   type: HII region
 - constellation: Cygnus
   dec: +47 39 38
@@ -3171,7 +3089,6 @@
   ra: 20 21 34.0
   size: 180
   minor: 20
-  haflux: -9.27
   type: HII region
 - constellation: Cygnus
   dec: +38 22 53
@@ -3181,7 +3098,6 @@
   ra: 21 23 00.2
   size: 100
   minor: 30
-  haflux: -9.80
   type: HII region
 - constellation: Cygnus
   dec: +38 47 48
@@ -3200,7 +3116,6 @@
   ra: 20 55 48.6
   size: 40
   minor: 20
-  haflux: -9.81
   type: HII region
 - constellation: Cygnus
   dec: +43 11 33
@@ -3210,7 +3125,6 @@
   ra: 20 55 48.6
   size: 45
   minor: 20
-  haflux: -9.67
   type: HII region
 - constellation: Cygnus
   dec: +44 11 17
@@ -3230,7 +3144,6 @@
   ra: 20 36 39.8
   size: 180
   minor: 120
-  haflux: -9.20
   type: HII region
 - constellation: Cygnus
   dec: +47 10 06
@@ -3240,7 +3153,6 @@
   ra: 20 29 36.5
   size: 85
   minor: 30
-  haflux: -9.30
   type: HII region
 - constellation: Cygnus
   dec: +44 21 17
@@ -3269,7 +3181,6 @@
   ra: 21 35 04.4
   size: 90
   minor: 40
-  haflux: -9.99
   type: HII region
 - constellation: Cygnus
   dec: +43 11 45
@@ -3434,7 +3345,6 @@
   ra: 20 35 36.4
   size: 30
   minor: 2
-  haflux: -11.34
   type: HII region
 - constellation: Cygnus
   dec: +44 11 51
@@ -3473,7 +3383,6 @@
   ra: 20 36 36.2
   size: 50
   minor: 2
-  haflux: -10.60
   type: HII region
 - constellation: Cygnus
   dec: +49 29 48
@@ -3483,7 +3392,6 @@
   ra: 20 24 30.6
   size: 105
   minor: 10
-  haflux: -10.58
   type: HII region
 - constellation: Cygnus
   dec: +45 21 36
@@ -3571,7 +3479,6 @@
   ra: 20 31 32.1
   size: 50
   minor: 10
-  haflux: -10.18
   type: HII region
 - constellation: Cygnus
   dec: +45 51 45
@@ -3763,7 +3670,6 @@
   ra: 21 35 55.5
   size: 120
   minor: 12
-  haflux: -11.40
   type: HII region
 - constellation: Cygnus
   dec: +50 11 54
@@ -3840,7 +3746,6 @@
   ra: 21 29 48.9
   size: 80
   minor: 10
-  haflux: -10.65
   type: HII region
 - constellation: Cygnus
   dec: +48 33 01
@@ -4101,7 +4006,6 @@
   ra: 21 11 18.3
   size: 60
   minor: 5
-  haflux: -10.59
   type: HII region
 - constellation: Cepheus
   dec: +58 35 38
@@ -4361,7 +4265,6 @@
   ra: 22 07 42.5
   size: 45
   minor: 10
-  haflux: -10.49
   type: HII region
 - constellation: Cepheus
   dec: +67 21 34
@@ -4371,7 +4274,6 @@
   ra: 20 55 38.8
   size: 150
   minor: 50
-  haflux: -10.84
   type: HII region
 - constellation: Cepheus
   dec: +64 23 08
@@ -4381,7 +4283,6 @@
   ra: 21 28 08.2
   size: 80
   minor: 20
-  haflux: -9.87
   type: HII region
 - constellation: Andromeda
   dec: +41 46 16
@@ -4545,7 +4446,6 @@
   ra: 22 09 37.3
   size: 100
   minor: 50
-  haflux: -9.10
   type: HII region
 - constellation: Cepheus
   dec: +68 27 34
@@ -4642,7 +4542,6 @@
   ra: 22 18 37.3
   size: 35
   minor: 25
-  haflux: -10.45
   type: HII region
 - constellation: Cepheus
   dec: +57 55 47
@@ -4733,7 +4632,6 @@
   ra: 21 40 46.2
   size: 35
   minor: 20
-  haflux: -12.17
   type: HII region
 - constellation: Cepheus
   dec: +58 31 02
@@ -4777,7 +4675,6 @@
   ra: 22 31 39.5
   size: 35
   minor: 5
-  haflux: -10.61
   type: HII region
 - constellation: Cepheus
   dec: +61 15 56
@@ -4834,7 +4731,6 @@
   ra: 22 33 36.4
   size: 50
   minor: 20
-  haflux: -10.50
   type: HII region
 - constellation: Cepheus
   dec: +62 36 02
@@ -4853,7 +4749,6 @@
   ra: 22 05 01.2
   size: 120
   minor: 20
-  haflux: -10.41
   type: HII region
 - constellation: Cepheus
   dec: +62 26 03
@@ -4917,7 +4812,6 @@
   ra: 22 00 46.3
   size: 155
   minor: 30
-  haflux: -10.98
   type: HII region
 - constellation: Cepheus
   dec: +59 46 22
@@ -5043,7 +4937,6 @@
   ra: 23 20 12.3
   size: 30
   minor: 25
-  haflux: -10.58
   type: HII region
 - constellation: Cepheus
   dec: +78 11 47
@@ -5220,7 +5113,6 @@
   ra: 21 52 07.9
   size: 70
   minor: 60
-  haflux: -11.23
   type: HII region
 - constellation: Pisces
   dec: +18 26 35
@@ -5230,7 +5122,6 @@
   ra: 00 29 36.5
   size: 80
   minor: 20
-  haflux: -11.55
   type: HII region
 - constellation: Cassiopeia
   dec: +60 28 41
@@ -5257,7 +5148,6 @@
   ra: 23 13 46.8
   size: 30
   minor: 20
-  haflux: -12.84
   type: HII region
 - constellation: Pisces
   dec: +17 56 33
@@ -5267,7 +5157,6 @@
   ra: 00 31 36.6
   size: 40
   minor: 10
-  haflux: -13.29
   type: HII region
 - constellation: Cepheus
   dec: +74 06 27
@@ -5277,7 +5166,6 @@
   ra: 23 21 54.4
   size: 40
   minor: 15
-  haflux: -11.93
   type: HII region
 - constellation: Cassiopeia
   dec: +62 16 42
@@ -5287,7 +5175,6 @@
   ra: 23 58 32.3
   size: 30
   minor: 2
-  haflux: -11.60
   type: HII region
 - constellation: Cassiopeia
   dec: +64 39 42
@@ -5376,7 +5263,6 @@
   ra: 00 03 35.4
   size: 35
   minor: 10
-  haflux: -11.32
   type: HII region
 - constellation: Cepheus
   dec: +68 36 42
@@ -5491,7 +5377,6 @@
   ra: 00 33 47.8
   size: 60
   minor: 15
-  haflux: -11.04
   type: HII region
 - constellation: Cassiopeia
   dec: +50 16 29
@@ -5554,7 +5439,6 @@
   ra: 22 49 27.0
   size: 140
   minor: 70
-  haflux: -10.80
   type: HII region
 - constellation: Cassiopeia
   dec: +57 56 22
@@ -5654,7 +5538,6 @@
   ra: 01 07 04.3
   size: 450
   minor: 300
-  haflux: -9.80
   type: HII region
 - constellation: Cassiopeia
   dec: +65 46 16
@@ -5782,7 +5665,6 @@
   ra: 03 58 30.6
   size: 80
   minor: 30
-  haflux: -11.27
   type: HII region
 - constellation: Cepheus
   dec: +85 05 54
@@ -5792,7 +5674,6 @@
   ra: 04 44 35.3
   size: 105
   minor: 30
-  haflux: -11.45
   type: HII region
 - constellation: Cassiopeia
   dec: +58 22 28
@@ -5874,7 +5755,6 @@
   ra: 02 11 42.5
   size: 35
   minor: 10
-  haflux: -11.56
   type: HII region
 - constellation: Cassiopeia
   dec: +61 53 44
@@ -6296,7 +6176,6 @@
   ra: 03 55 02.0
   size: 30
   minor: 10
-  haflux: -11.18
   type: HII region
 - constellation: Camelopardalis
   dec: +66 32 00
@@ -6618,7 +6497,6 @@
   ra: 03 11 01.7
   size: 180
   minor: 60
-  haflux: -10.91
   type: HII region
 - constellation: Aries
   dec: +30 11 12
@@ -6906,7 +6784,6 @@
   ra: 03 52 11.9
   size: 45
   minor: 15
-  haflux: -11.54
   type: HII region
 - constellation: Perseus
   dec: +32 08 26
@@ -6978,7 +6855,6 @@
   ra: 05 58 50.6
   size: 50
   minor: 20
-  haflux: -11.53
   type: HII region
 - constellation: Perseus
   dec: +35 26 25
@@ -7102,7 +6978,6 @@
   ra: 04 01 00.8
   size: 150
   minor: 60
-  haflux: -11.32
   type: HII region
 - constellation: Auriga
   dec: +38 01 38
@@ -7183,7 +7058,6 @@
   ra: 05 38 24.8
   size: 120
   minor: 30
-  haflux: -10.57
   type: HII region
 - constellation: Lynx
   dec: +47 11 55
@@ -7221,7 +7095,6 @@
   ra: 04 31 04.6
   size: 360
   minor: 120
-  haflux: -10.26
   type: HII region
 - constellation: Auriga
   dec: +35 32 38
@@ -7231,7 +7104,6 @@
   ra: 05 25 20.8
   size: 55
   minor: 10
-  haflux: -10.17
   type: HII region
 - constellation: Auriga
   dec: +34 23 13
@@ -7278,7 +7150,6 @@
   ra: 04 23 00.2
   size: 140
   minor: 10
-  haflux: -10.71
   type: HII region
 - constellation: Taurus
   dec: +24 36 38
@@ -7288,7 +7159,6 @@
   ra: 04 28 01.8
   size: 300
   minor: 30
-  haflux: -10.15
   type: HII region
 - constellation: Lynx
   dec: +46 21 25
@@ -7427,7 +7297,6 @@
   ra: 04 32 59.9
   size: 130
   minor: 30
-  haflux: -10.79
   type: HII region
 - constellation: Taurus
   dec: +19 37 02
@@ -7454,7 +7323,6 @@
   ra: 04 27 54.5
   size: 150
   minor: 20
-  haflux: -10.26
   type: HII region
 - constellation: Eridanus
   dec: -03 47 36
@@ -7795,7 +7663,6 @@
   ra: 05 21 47.0
   size: 70
   minor: 10
-  haflux: -10.36
   type: HII region
 - constellation: Orion
   dec: +18 01 14
@@ -7821,7 +7688,6 @@
   ra: 04 55 39.8
   size: 40
   minor: 4
-  haflux: -11.14
   type: HII region
 - constellation: Eridanus
   dec: -03 51 32
@@ -7909,7 +7775,6 @@
   ra: 03 28 25.0
   size: 65
   minor: 2
-  haflux: -11.59
   type: HII region
 - constellation: Orion
   dec: +07 08 05
@@ -7919,7 +7784,6 @@
   ra: 05 18 41.9
   size: 30
   minor: 5
-  haflux: -10.85
   type: HII region
 - constellation: Orion
   dec: +06 58 10
@@ -7929,7 +7793,6 @@
   ra: 05 17 41.7
   size: 40
   minor: 5
-  haflux: -10.88
   type: HII region
 - constellation: Orion
   dec: +14 09 23
@@ -7984,7 +7847,6 @@
   ra: 05 44 44.5
   size: 30
   minor: 5
-  haflux: -10.64
   type: HII region
 - constellation: Orion
   dec: +09 03 08
@@ -8003,7 +7865,6 @@
   ra: 05 19 39.2
   size: 40
   minor: 3
-  haflux: -11.36
   type: HII region
 - constellation: Orion
   dec: +05 02 48
@@ -8023,7 +7884,6 @@
   ra: 05 20 39.1
   size: 40
   minor: 6
-  haflux: -10.82
   type: HII region
 - constellation: Orion
   dec: +04 13 10
@@ -8043,7 +7903,6 @@
   ra: 05 19 38.6
   size: 50
   minor: 5
-  haflux: -10.67
   type: HII region
 - constellation: Orion
   dec: +04 52 14
@@ -8082,7 +7941,6 @@
   ra: 05 28 38.2
   size: 55
   minor: 10
-  haflux: -10.26
   type: HII region
 - constellation: Gemini
   dec: +12 17 52
@@ -8101,7 +7959,6 @@
   ra: 05 22 37.0
   size: 120
   minor: 30
-  haflux: -9.96
   type: HII region
 - constellation: Gemini
   dec: +16 44 57
@@ -8265,7 +8122,6 @@
   ra: 06 00 39.6
   size: 240
   minor: 90
-  haflux: -9.58
   type: HII region
 - constellation: Eridanus
   dec: -06 09 14
@@ -8483,7 +8339,6 @@
   ra: 06 31 41.8
   size: 55
   minor: 10
-  haflux: -10.22
   type: HII region
 - constellation: Orion
   dec: +01 01 00
@@ -8947,7 +8802,6 @@
   ra: 05 53 27.3
   size: 50
   minor: 10
-  haflux: -10.03
   type: HII region
 - constellation: Monoceros
   dec: +00 26 56
@@ -9015,7 +8869,6 @@
   ra: 05 47 25.2
   size: 60
   minor: 10
-  haflux: -10.09
   type: HII region
 - constellation: Monoceros
   dec: -05 18 32
@@ -9034,7 +8887,6 @@
   ra: 05 11 19.3
   size: 70
   minor: 5
-  haflux: -10.57
   type: HII region
 - constellation: Orion
   dec: -09 23 29
@@ -9130,7 +8982,6 @@
   ra: 05 38 21.6
   size: 50
   minor: 15
-  haflux: -10.04
   type: HII region
 - constellation: Monoceros
   dec: -06 15 58
@@ -9156,7 +9007,6 @@
   ra: 05 30 19.7
   size: 60
   minor: 30
-  haflux: -9.91
   type: HII region
 - constellation: Lepus
   dec: -12 17 59
@@ -9166,7 +9016,6 @@
   ra: 05 33 19.3
   size: 50
   minor: 10
-  haflux: -10.58
   type: HII region
 - constellation: Lepus
   dec: -11 48 25
@@ -9258,7 +9107,6 @@
   ra: 05 58 17.5
   size: 68
   minor: 35
-  haflux: -11.07
   type: HII region
 - constellation: Monoceros
   dec: -10 33 46
@@ -9366,7 +9214,6 @@
   ra: 07 16 23.7
   size: 70
   minor: 10
-  haflux: -10.31
   type: HII region
 - constellation: Monoceros
   dec: -08 25 44
@@ -9376,7 +9223,6 @@
   ra: 07 21 24.5
   size: 40
   minor: 5
-  haflux: -10.71
   type: HII region
 - constellation: Canis Major
   dec: -11 14 24
@@ -9632,7 +9478,6 @@
   ra: 07 29 08.6
   size: 33
   minor: 5
-  haflux: -10.90
   type: HII region
 - constellation: Canis Major
   dec: -23 59 39
@@ -9754,7 +9599,6 @@
   ra: 07 25 56.0
   size: 130
   minor: 25
-  haflux: -9.91
   type: HII region
 - constellation: Pyxis
   dec: -22 20 41
@@ -9774,7 +9618,6 @@
   ra: 07 44 56.1
   size: 120
   minor: 20
-  haflux: -9.59
   type: HII region
 - constellation: Pyxis
   dec: -24 40 41
@@ -9794,7 +9637,6 @@
   ra: 08 44 11.1
   size: 70
   minor: 10
-  haflux: -9.94
   type: HII region
 - constellation: Pyxis
   dec: -24 01 04
@@ -9804,7 +9646,6 @@
   ra: 08 47 11.5
   size: 60
   minor: 10
-  haflux: -10.59
   type: HII region
 - constellation: Pyxis
   dec: -24 51 14
@@ -9814,7 +9655,6 @@
   ra: 08 50 10.9
   size: 70
   minor: 10
-  haflux: -10.02
   type: HII region
 - constellation: Pyxis
   dec: -25 11 37
@@ -9862,7 +9702,6 @@
   ra: 08 54 07.8
   size: 80
   minor: 10
-  haflux: -10.04
   type: HII region
 - constellation: Pyxis
   dec: -28 42 07
@@ -9892,7 +9731,6 @@
   ra: 09 07 06.5
   size: 120
   minor: 60
-  haflux: -9.25
   type: HII region
 - constellation: Pyxis
   dec: -28 02 59
@@ -9921,7 +9759,6 @@
   ra: 09 25 09.9
   size: 75
   minor: 30
-  haflux: -10.84
   type: HII region
 - constellation: Antlia
   dec: -31 13 13
@@ -9931,7 +9768,6 @@
   ra: 09 30 09.1
   size: 180
   minor: 20
-  haflux: -9.34
   type: HII region
 - constellation: Antlia
   dec: -29 14 19
@@ -9951,7 +9787,6 @@
   ra: 10 01 12.8
   size: 140
   minor: 30
-  haflux: -9.89
   type: HII region
 - constellation: Libra
   dec: -29 50 53
@@ -9961,7 +9796,6 @@
   ra: 15 19 02.8
   size: 90
   minor: 75
-  haflux: -10.47
   type: HII region
 - constellation: Scorpius
   dec: -25 58 53
@@ -10015,7 +9849,6 @@
   ra: 15 52 58.3
   size: 70
   minor: 20
-  haflux: -9.89
   type: HII region
 - constellation: Scorpius
   dec: -23 18 46
@@ -10211,7 +10044,6 @@
   ra: 16 48 02.5
   size: 300
   minor: 30
-  haflux: -9.48
   type: HII region
 - constellation: Ophiucus
   dec: -19 36 46
@@ -10221,7 +10053,6 @@
   ra: 16 25 55.5
   size: 150
   minor: 60
-  haflux: -9.67
   type: HII region
 - constellation: Scorpius
   dec: -31 20 54

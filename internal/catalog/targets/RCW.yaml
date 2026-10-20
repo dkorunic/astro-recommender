@@ -8,7 +8,6 @@
   name: "RCW 1"
   ra: "07 10 20.2"
   size: 150.0
-  haflux: -8.56
   type: "Emission Nebula"
 - constellation: ""
   dec: "-10 27 13.0"
@@ -546,7 +545,6 @@
   name: "RCW 63"
   ra: "12 19 40.6"
   size: 250.0
-  haflux: -9.48
   type: "Emission Nebula"
 - constellation: ""
   dec: "-62 57 39.2"
@@ -902,7 +900,6 @@
   name: "RCW 104"
   ra: "16 24 12.0"
   size: 45.0
-  haflux: -9.38
   type: "Emission Nebula"
 - constellation: ""
   dec: "-49 07 50.2"
@@ -1327,7 +1324,6 @@
   name: "RCW 153"
   ra: "18 18 57.1"
   size: 60.0
-  haflux: -9.73
   type: "Emission Nebula"
 - constellation: ""
   dec: "-16 59 40.6"
@@ -1354,7 +1350,6 @@
   name: "RCW 156"
   ra: "18 17 54.8"
   size: 50.0
-  haflux: -9.17
   type: "Emission Nebula"
 - constellation: ""
   dec: "-16 44 00.0"

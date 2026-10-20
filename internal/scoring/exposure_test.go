@@ -479,13 +479,13 @@ func TestSubsCloudedOut(t *testing.T) {
 // An emission-line target's V surface brightness measures its lines only as
 // far as the V passband reaches them, and its catalogue magnitude also counts
 // stars and continuum (vContinuum, fitted by scripts/calibrate_lines.py):
-// an H II region's lines are 1.63 mag brighter than its V, a planetary's,
-// [O III] inside V, 0.36; a galaxy's light is its V.
+// an H II region's lines are 1.68 mag brighter than its V, a planetary's,
+// [O III] inside V, 0.41; a galaxy's light is its V.
 func TestLightNL(t *testing.T) {
 	for _, c := range []struct {
 		typ   string
 		boost float64
-	}{{"HII region", 1.63}, {"Supernova Remnant", 1.34}, {"Wolf-Rayet Nebula", 0.78}, {"Planetary Nebula", 0.36}, {"Galaxy", 0}} {
+	}{{"HII region", 1.68}, {"Supernova Remnant", 1.39}, {"Wolf-Rayet Nebula", 0.83}, {"Planetary Nebula", 0.41}, {"Galaxy", 0}} {
 		tg := catalog.Target{Type: c.typ}
 		if got := atmos.MagFromNL(atmos.NanoLamberts(22)) - atmos.MagFromNL(lightNL(tg, 22)); math.Abs(got-c.boost) > 0.01 {
 			t.Errorf("%s: lines %.3f mag brighter than V, want %.2f", c.typ, got, c.boost)
@@ -767,6 +767,13 @@ func TestLightNLFlux(t *testing.T) {
 	// To 0.1%: K&S's nanoLamberts go as e^(-0.92104 m), not 10^(-0.4 m).
 	if got := lightNL(pn, sb) * atmos.PhotonsV0 / atmos.NanoLamberts(0) * area; math.Abs(got/photons-1) > 1e-3 {
 		t.Errorf("photons %v, want %v", got, photons)
+	}
+	// A map nebula's subs take the typical, catalogued, value (ExposureSB),
+	// which lightNL must take with its continuum, as without the flux.
+	neb := catalog.Target{Type: "HII region", Size: 35, HaFlux: -8.85}
+	typical, _ := neb.ExposureSB()
+	if got, want := lightNL(neb, typical), lightNL(catalog.Target{Type: "HII region", Size: 35}, typical); got != want {
+		t.Errorf("map nebula at its typical SB: %v nL, want %v", got, want)
 	}
 }
 

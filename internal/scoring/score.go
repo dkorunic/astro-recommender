@@ -594,22 +594,23 @@ func (b beam) through(nm float64, band [2]float64) float64 {
 
 // vContinuum (mag) is the share of an emission nebula's catalogued V light
 // that is not its lines (the stars inside it, scattered continuum), fitted by
-// scripts/calibrate_lines.py: the median over 15 nebulae of 30' and more of
+// scripts/calibrate_lines.py: the median over 13 nebulae of 30' and more of
 // Finkbeiner (2003)'s Hα map against their lines derived from V by catalog.LineV
-// (interquartile range 0.22-1.92 mag).
-const vContinuum = 0.99
+// (interquartile range -0.03-2.22 mag).
+const vContinuum = 0.94
 
 // lightNL returns the light in nanoLamberts of tg at V surface brightness
 // sb: a continuum's is its V; an emission-line target's is its lines, which
 // V measures only as far as its passband reaches them (catalog.LineV) less what of
-// it is continuum (vContinuum): 1.63 mag brighter than V for an H II region,
-// 0.36 for a planetary, whose [O III] V holds. A surface brightness from a
+// it is continuum (vContinuum): 1.68 mag brighter than V for an H II region,
+// 0.41 for a planetary, whose [O III] V holds. A surface brightness from a
 // measured line flux (catalog.Target.FluxSB) holds no stars and was summed
 // in photons, so it is undone exactly: V's photon-weighted share of the
-// lines, no vContinuum.
+// lines, no vContinuum. Only sb that is FluxSB's: ExposureSB gives a nebula
+// with a map flux its class's typical, catalogued, value.
 func lightNL(tg catalog.Target, sb float64) float64 {
 	nl := atmos.NanoLamberts(sb)
-	if _, ok := tg.FluxSB(); ok {
+	if fsb, ok := tg.FluxSB(); ok && sb == fsb {
 		var through, all float64
 		for l, w := range tg.Lines() {
 			through += w * catalog.LineNM[l] * catalog.LineV[l]

@@ -546,10 +546,20 @@ func TestExposureSB(t *testing.T) {
 		{Target{Type: "Comet", Track: [][2]float64{{0, 0}}}, 0, false},
 		// The Horsehead is a dark nebula imaged for IC 434's Hα (emissionNames).
 		{Target{Name: "Barnard 33", Type: "Dark Nebula"}, typicalSB["emission"], true},
+		// An H II region's map flux scores, but its subs take the typical.
+		{Target{Type: "HII region", Size: 35, HaFlux: -8.85}, typicalSB["emission"], true},
+		{Target{Type: "HII region", Size: 35, HaFlux: -8.85, SurfBr: 23}, 23, false},
 	} {
 		if sb, assumed := c.tg.ExposureSB(); sb != c.sb || assumed != c.assumed {
 			t.Errorf("%s %q: %v %v, want %v %v", c.tg.Name, c.tg.Type, sb, assumed, c.sb, c.assumed)
 		}
+	}
+	// A planetary's flux, Frew's, is its own.
+	pn := Target{Type: "Planetary Nebula", Size: 1, HaFlux: -10}
+	if want, _ := pn.FluxSB(); want <= 0 {
+		t.Fatal("planetary: no FluxSB")
+	} else if sb, assumed := pn.ExposureSB(); sb != want || assumed {
+		t.Errorf("planetary: %v %v, want %v false", sb, assumed, want)
 	}
 }
 

@@ -803,7 +803,6 @@
   ra: "23 59 54.0"
   rating: 5
   size: 35.0
-  haflux: -10.53
   type: "Supernova Remnant"
 - constellation: "Cep"
   dec: "+70 42 42.0"
@@ -7767,7 +7766,6 @@
   ra: "00 06 36.0"
   rating: 3
   size: 90.0
-  haflux: -9.95
   type: "Supernova Remnant"
 - constellation: "Tau"
   dec: "+28 10 59.0"
@@ -7832,7 +7830,6 @@
   ra: "16 45 58.0"
   rating: 3
   size: 30.0
-  haflux: -10.14
   type: "Emission Nebula"
 - constellation: "Lep"
   dec: "-22 30 00.0"
@@ -7971,7 +7968,6 @@
   ra: "20 04 06.0"
   rating: 2
   size: 60.0
-  haflux: -10.25
   type: "Emission Nebula"
 - constellation: "Cyg"
   dec: "+36 42 00.0"
@@ -8146,7 +8142,6 @@
   ra: "04 58 51.0"
   rating: 2
   size: 90.0
-  haflux: -10.13
   type: "Supernova Remnant"
 - constellation: "Per"
   dec: "+48 38 52.0"
@@ -8361,7 +8356,6 @@
   ra: "09 02 42.0"
   rating: 2
   size: 40.0
-  haflux: -9.37
   type: "Emission Nebula"
 - constellation: "Vel"
   dec: "-48 41 00.0"
@@ -10364,7 +10358,6 @@
   ra: "20 17 08.0"
   rating: 2
   size: 120.0
-  haflux: -8.33
   type: "Emission Nebula"
 - constellation: "Cyg"
   dec: "+47 46 06.0"
@@ -11003,7 +10996,6 @@
   ra: "20 50 29.0"
   rating: 2
   size: 40.0
-  haflux: -9.30
   type: "Emission Nebula"
 - constellation: "Cyg"
   dec: "+44 24 05.0"
@@ -11013,7 +11005,6 @@
   ra: "20 51 01.0"
   rating: 5
   size: 80.0
-  haflux: -8.47
   type: "Emission Nebula"
 - constellation: "Cyg"
   dec: "+47 23 42.0"
@@ -17084,7 +17075,6 @@
   ra: "09 00 16.0"
   rating: 4
   size: 40.0
-  haflux: -9.91
   type: "Supernova Remnant"
 - constellation: "UMa"
   dec: "+60 28 46.0"
@@ -24650,7 +24640,6 @@
   ra: "21 11 47.0"
   rating: 5
   size: 60.0
-  haflux: -9.58
   type: "Emission Nebula"
 - constellation: "Mon"
   dec: "-10 07 00.0"
@@ -25016,7 +25005,6 @@
   ra: "08 24 07.0"
   rating: 2
   size: 50.0
-  haflux: -9.52
   type: "Supernova Remnant"
 - constellation: "Cep"
   dec: "+67 45 57.0"
@@ -25062,7 +25050,6 @@
   ra: "16 24 12.0"
   rating: 2
   size: 45.0
-  haflux: -9.38
   type: "Emission Nebula"
 - constellation: "Nor"
   dec: "-51 04 04.0"
@@ -25459,7 +25446,6 @@
   ra: "18 16 54.0"
   rating: 3
   size: 40.0
-  haflux: -9.52
   type: "Emission Nebula"
 - constellation: "Sgr"
   dec: "-18 15 00.0"
@@ -25919,7 +25905,6 @@
   ra: "19 35 36.0"
   rating: 3
   size: 150.0
-  haflux: -9.42
   type: "Supernova Remnant"
 - constellation: "Vul"
   dec: "+28 11 58.0"
@@ -25948,7 +25933,6 @@
   ra: "19 28 16.0"
   rating: 2
   size: 100.0
-  haflux: -10.03
   type: "Supernova Remnant"
 - constellation: "Cyg"
   dec: "+32 41 00.0"
@@ -26109,7 +26093,6 @@
   ra: "21 37 30.0"
   rating: 1
   size: 360.0
-  haflux: -8.20
   type: "Emission Nebula"
 - constellation: "Cyg"
   dec: "+43 56 00.0"
@@ -26202,7 +26185,6 @@
   ra: "21 27 00.0"
   rating: 1
   size: 40.0
-  haflux: -9.74
   type: "Emission Nebula"
 - constellation: "Cep"
   dec: "+58 58 00.0"
@@ -26231,7 +26213,6 @@
   ra: "21 58 00.0"
   rating: 1
   size: 50.0
-  haflux: -9.57
   type: "Emission Nebula"
 - constellation: "Cep"
   dec: "+58 28 20.0"
@@ -26295,7 +26276,6 @@
   ra: "22 25 30.0"
   rating: 2
   size: 60.0
-  haflux: -9.12
   type: "Emission Nebula"
 - constellation: "Cep"
   dec: "+59 54 56.0"
@@ -26436,7 +26416,6 @@
   ra: "23 04 00.0"
   rating: 2
   size: 40.0
-  haflux: -9.87
   type: "Emission Nebula"
 - constellation: "Cas"
   dec: "+61 51 00.0"
@@ -27194,7 +27173,6 @@
   ra: "05 21 45.0"
   rating: 4
   size: 110.0
-  haflux: -9.11
   type: "Emission Nebula"
 - constellation: "Ori"
   dec: "+10 10 00.0"
@@ -27214,7 +27192,6 @@
   ra: "05 18 36.0"
   rating: 2
   size: 60.0
-  haflux: -9.45
   type: "Emission Nebula"
 - constellation: "Ori"
   dec: "+15 16 52.0"
@@ -29594,7 +29571,6 @@
   ra: "08 37 39.0"
   rating: 4
   size: 60.0
-  haflux: -9.12
   type: "Supernova Remnant"
 - constellation: "Vel"
   dec: "-44 58 18.0"
@@ -29604,7 +29580,6 @@
   ra: "08 30 00.0"
   rating: 4
   size: 80.0
-  haflux: -9.09
   type: "Supernova Remnant"
 - constellation: "Vel"
   dec: "-44 56 55.0"
@@ -29614,7 +29589,6 @@
   ra: "08 40 02.0"
   rating: 5
   size: 300.0
-  haflux: -7.70
   type: "Supernova Remnant"
 - constellation: "Vel"
   dec: "-43 50 43.0"
@@ -29624,7 +29598,6 @@
   ra: "08 54 21.0"
   rating: 4
   size: 60.0
-  haflux: -9.33
   type: "Supernova Remnant"
 - constellation: "Vel"
   dec: "-44 56 19.0"
@@ -29634,7 +29607,6 @@
   ra: "08 44 00.0"
   rating: 4
   size: 80.0
-  haflux: -9.68
   type: "Supernova Remnant"
 - constellation: "Dra"
   dec: "+66 24 12.0"

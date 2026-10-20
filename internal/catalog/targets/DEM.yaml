@@ -2585,7 +2585,6 @@
   name: "DEM L 268"
   ra: "05 37 45.7"
   size: 65.0
-  haflux: -9.51
   type: "HII Region"
 - constellation: ""
   dec: "-69 26 31.7"

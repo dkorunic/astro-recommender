@@ -16,9 +16,11 @@ and the Veil carry a cluster's or star's magnitude, LBN none). For each,
 measure() takes the mean over the object's disc less the median of a ring
 from 1.25 to 2 radii (the Milky Way's diffuse Hα), the geometry
 scripts/calibrate_lines.py fitted vContinuum with, so a map flux and a
-catalogued surface brightness rank on one footing; an object the ring
-outshines (the Pelican beside the North America) reads too faint, which
-still ranks it above unknown. The mean intensity over the ellipse of its
+catalogued surface brightness rank on one footing. Where the ring's median
+is RING_MAX (0.8) of the disc's mean or more, the ring lies on the same
+complex (IC 1795 on W3 and the Heart, the Pelican beside the North America)
+and the difference would read far too faint: the flux stays unknown, as
+in calibrate_lines. The mean intensity over the ellipse of its
 axes is its integrated flux, log10 erg cm⁻² s⁻¹, written as `haflux:`
 before the type line, and catalog.Target.FluxSB turns it back into the
 lines' surface brightness. A nebula's map value is the narrowband surveys':
@@ -55,6 +57,9 @@ PIXELS = 48  # the measurement grid's side, as calibrate_lines' SkyView cutouts 
 HC_ERG_NM = 1.98644586e-9  # catalog.hcErgNM
 HA_NM = 656.3  # catalog.LineNM[Ha]
 ARCMIN = math.pi / 180 / 60
+# A ring this bright against the disc sits on the same complex (IC 1795's on
+# W3 and the Heart: 89 of 103 R), and the difference is mostly its noise.
+RING_MAX = 0.8
 
 
 class Map:
@@ -112,7 +117,8 @@ class Map:
 def measure(hmap, ra, dec, size):
     """Mean Hα over the disc of the major axis less the ring's median, R:
     calibrate_lines' SkyView geometry, a PIXELS-square gnomonic grid over
-    twice the size; None where the map has no finite value."""
+    twice the size; None where the map has no finite value or the ring's
+    median is RING_MAX of the disc's mean or more."""
     side, c = 2 * size / 60, (PIXELS - 1) / 2
     d0, a0 = math.radians(dec), math.radians(ra)
     disc, ring = [], []
@@ -129,7 +135,10 @@ def measure(hmap, ra, dec, size):
                 disc.append(v)
             elif 1.25 <= r <= 2:
                 ring.append(v)
-    return statistics.mean(disc) - statistics.median(ring)
+    mean, background = statistics.mean(disc), statistics.median(ring)
+    if background >= RING_MAX * mean:
+        return None
+    return mean - background
 
 
 def flux(rayleighs, major, minor):
@@ -162,8 +171,8 @@ def main():
         if k not in cache:
             cache[k] = measure(hmap, ra, dec, major)
         r = cache[k]
-        if r is None or r <= 0:
-            print(f"warning: {lst}: {name}: {r if r is None else round(r, 1)} R, outshone by its ring", file=sys.stderr)
+        if r is None:
+            print(f"warning: {lst}: {name}: no map value, or its ring is {RING_MAX:.0%} of its disc", file=sys.stderr)
             continue
         found[(lst, name, ra_s, dec_s)] = flux(r, major, minor)
     for fname in sorted(os.listdir(TARGETS)):

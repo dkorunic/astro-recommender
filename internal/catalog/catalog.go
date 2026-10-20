@@ -312,11 +312,19 @@ var typicalSBGuess = map[string]bool{sbReflection: true}
 
 // ExposureSB returns the surface brightness the sub-exposure estimate uses:
 // the object's own (SurfaceBrightness), else its class's typical one with
-// assumed true; 0 when no estimate applies (sbClass).
+// assumed true; 0 when no estimate applies (sbClass). A non-planetary's
+// HaFlux, the Hα map's (scripts/hamap.py), counts for the score only: it is
+// the mean over the whole catalogued extent, while the subs' levels
+// (levelScale) were fitted to catalogued values: the whole Veil's 210′
+// disc, a shell around empty sky, read 11 nights with the Origin, NGC 281
+// 2. A planetary's flux, Frew's, holds what is imaged.
 func (t Target) ExposureSB() (float64, bool) {
 	class := t.sbClass()
 	if class == "" {
 		return 0, false
+	}
+	if class != sbPlanetary {
+		t.HaFlux = 0
 	}
 	if sb, _ := t.SurfaceBrightness(); sb > 0 {
 		return sb, false

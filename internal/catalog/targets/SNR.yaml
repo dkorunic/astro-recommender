@@ -24,7 +24,6 @@
   name: "SNR G005.4-01.2"
   ra: "18 02 10.0"
   size: 35.0
-  haflux: -9.54
   type: "Supernova Remnant"
 - constellation: ""
   dec: "-24 00 00.0"
@@ -113,7 +112,6 @@
   name: "SNR G017.8+16.7"
   ra: "17 24 10.0"
   size: 51.0
-  haflux: -11.54
   type: "Supernova Remnant"
 - constellation: ""
   dec: "-12 58 00.0"
@@ -122,7 +120,6 @@
   name: "SNR G018.9-01.1"
   ra: "18 29 50.0"
   size: 33.0
-  haflux: -9.99
   type: "Supernova Remnant"
 - constellation: ""
   dec: "-11 16 00.0"
@@ -131,7 +128,6 @@
   name: "SNR G021.8-03.0"
   ra: "18 41 50.0"
   size: 60.0
-  haflux: -10.37
   type: "Supernova Remnant"
 - constellation: ""
   dec: "-01 31 00.0"
@@ -176,7 +172,6 @@
   name: "SNR G038.7-01.3"
   ra: "19 06 40.0"
   size: 32.0
-  haflux: -11.20
   type: "Supernova Remnant"
 - constellation: ""
   dec: "+04 55 00.0"
@@ -205,7 +200,6 @@
   name: "SNR G053.6-02.2"
   ra: "19 38 50.0"
   size: 33.0
-  haflux: -10.81
   type: "Supernova Remnant"
 - constellation: ""
   dec: "+18 56 00.0"
@@ -258,7 +252,6 @@
   name: "SNR G067.6+00.9"
   ra: "19 57 45.0"
   size: 50.0
-  haflux: -10.02
   type: "Supernova Remnant"
 - constellation: ""
   dec: "+31 29 00.0"
@@ -285,7 +278,6 @@
   name: "SNR G069.0+02.7"
   ra: "19 53 20.0"
   size: 80.0
-  haflux: -9.08
   type: "Supernova Remnant"
 - constellation: ""
   dec: "+19 23 00.0"
@@ -331,7 +323,6 @@
   name: "SNR G082.2+05.3"
   ra: "20 19 00.0"
   size: 95.0
-  haflux: -8.78
   type: "Supernova Remnant"
 - constellation: ""
   dec: "+44 53 00.0"
@@ -392,7 +383,6 @@
   name: "SNR G116.5+01.1"
   ra: "23 53 40.0"
   size: 80.0
-  haflux: -9.64
   type: "Supernova Remnant"
 - constellation: ""
   dec: "+36 30 00.0"
@@ -401,7 +391,6 @@
   name: "SNR G116.6-26.1"
   ra: "00 23 00.0"
   size: 235.0
-  haflux: -9.81
   type: "Supernova Remnant"
 - constellation: ""
   dec: "+62 26 00.0"
@@ -410,7 +399,6 @@
   name: "SNR G116.9+00.2"
   ra: "23 59 10.0"
   size: 34.0
-  haflux: -10.39
   type: "Supernova Remnant"
 - constellation: ""
   dec: "+72 45 00.0"
@@ -419,7 +407,6 @@
   name: "SNR G119.5+10.2"
   ra: "00 06 40.0"
   size: 90.0
-  haflux: -9.93
   type: "Supernova Remnant"
 - constellation: ""
   dec: "+64 09 00.0"
@@ -436,7 +423,6 @@
   name: "SNR G126.2+01.6"
   ra: "01 22 00.0"
   size: 70.0
-  haflux: -10.59
   type: "Supernova Remnant"
 - constellation: ""
   dec: "+63 10 00.0"
@@ -573,7 +559,6 @@
   name: "SNR G206.9+02.3"
   ra: "06 48 40.0"
   size: 60.0
-  haflux: -10.05
   type: "Supernova Remnant"
 - constellation: ""
   dec: "-00 30 00.0"
@@ -593,7 +578,6 @@
   name: "SNR G260.4-03.4"
   ra: "08 22 10.0"
   size: 60.0
-  haflux: -9.43
   type: "Supernova Remnant"
 - constellation: ""
   dec: "-45 50 00.0"
@@ -611,7 +595,6 @@
   name: "SNR G266.2-01.2"
   ra: "08 52 00.0"
   size: 120.0
-  haflux: -9.04
   type: "Supernova Remnant"
 - constellation: ""
   dec: "-52 07 00.0"
@@ -628,7 +611,6 @@
   name: "SNR G279.0+01.1"
   ra: "09 57 40.0"
   size: 95.0
-  haflux: -10.52
   type: "Supernova Remnant"
 - constellation: ""
   dec: "-59 00 00.0"
@@ -691,7 +673,6 @@
   name: "SNR G296.1-00.5"
   ra: "11 51 10.0"
   size: 37.0
-  haflux: -10.53
   type: "Supernova Remnant"
 - constellation: ""
   dec: "-52 25 00.0"
@@ -719,7 +700,6 @@
   name: "SNR G315.1+02.7"
   ra: "14 24 30.0"
   size: 190.0
-  haflux: -8.93
   type: "Supernova Remnant"
 - constellation: ""
   dec: "-62 30 00.0"
@@ -728,7 +708,6 @@
   name: "SNR G315.4-02.3"
   ra: "14 43 00.0"
   size: 42.0
-  haflux: -9.71
   type: "Supernova Remnant"
 - constellation: ""
   dec: "-60 36 00.0"
@@ -754,7 +733,6 @@
   name: "SNR G320.4-01.2"
   ra: "15 14 30.0"
   size: 35.0
-  haflux: -9.40
   type: "Supernova Remnant"
 - constellation: ""
   dec: "-59 16 00.0"
@@ -782,7 +760,6 @@
   name: "SNR G327.6+14.6"
   ra: "15 02 50.0"
   size: 30.0
-  haflux: -10.96
   type: "Supernova Remnant"
 - constellation: ""
   dec: "-51 02 00.0"

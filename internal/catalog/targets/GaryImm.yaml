@@ -30,7 +30,6 @@
   name: Abell 85
   ra: 23 59 54
   size: 35.0
-  haflux: -10.53
   type: Supernova Remnant
 - constellation: Hydra
   dec: 02 44 00
@@ -252,7 +251,6 @@
   ra: 21 38 58
   size: 60.0
   minor: 17.14
-  haflux: -9.27
   type: Dark Nebula
 - constellation: Cassiopeia
   dec: 62 02 39
@@ -261,7 +259,6 @@
   name: IC 1795
   ra: 02 26 32
   size: 30.0
-  haflux: -9.69
   type: Emission Nebula
 - constellation: Cassiopeia
   dec: 61 28 30
@@ -373,7 +370,6 @@
   ra: 20 51 01
   size: 80.0
   minor: 66.67
-  haflux: -8.54
   type: Emission Nebula
 - constellation: Cygnus
   dec: +47 16 01
@@ -1092,7 +1088,6 @@
   ra: 09 00 16
   size: 40.0
   minor: 9.33
-  haflux: -10.54
   type: Supernova Remnant
 - constellation: Cassiopeia
   dec: 56 37 29
@@ -1532,7 +1527,6 @@
   ra: 00 03 36
   size: 60.0
   minor: 12.0
-  haflux: -10.32
   type: Emission Nebula
 - constellation: Perseus
   dec: +57 07 42
@@ -1560,7 +1554,6 @@
   name: OU 4
   ra: 21 11 47
   size: 60.0
-  haflux: -9.58
   type: Emission Nebula
 - constellation: Monoceros
   dec: -10 38 15
@@ -1577,7 +1570,6 @@
   name: Rho Ophiuchi
   ra: 16 25 35
   size: 300.0
-  haflux: -8.46
   type: Emission Nebula
 - constellation: Scorpius
   dec: -38 27 34
@@ -1839,7 +1831,6 @@
   name: Vela Bridge
   ra: 08 37 39
   size: 60.0
-  haflux: -9.12
   type: Supernova Remnant
 - constellation: Vela
   dec: -45 56 30
@@ -1848,7 +1839,6 @@
   name: Vela Pencil
   ra: 09 00 16
   size: 30.0
-  haflux: -9.99
   type: Supernova Remnant
 - constellation: Vela
   dec: -43 50 43
@@ -1857,7 +1847,6 @@
   name: Vela Spiral Flame
   ra: 08 54 21
   size: 60.0
-  haflux: -9.33
   type: Supernova Remnant
 - constellation: Cygnus
   dec: 36 11 00

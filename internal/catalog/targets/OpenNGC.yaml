@@ -16175,7 +16175,6 @@
   name: "NGC 1432"
   ra: "03 45 49.59"
   size: 60.00
-  haflux: -11.77
   type: "HII Emission Nebula"
 - bmag: 10.81
   bsurfbr: 23.12
@@ -29624,7 +29623,6 @@
   name: "NGC 2736"
   ra: "09 00 16.94"
   size: 30.00
-  haflux: -10.62
   type: "Supernova Remnant"
 - bmag: 14.60
   bsurfbr: 22.55
