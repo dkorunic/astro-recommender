@@ -138,6 +138,55 @@ var (
 		},
 		Broad: [3]float64{0.409, 0.547, 0.317},
 	}
+	// ZWO ASI715MC manual (2024), p6, relative and peaking at 820 nm, so its
+	// visible may read low as the ASI462 manual's did (imx462).
+	imx715 = Response{
+		Lines: [catalog.NumLines][3]float64{
+			catalog.Ha:      {0.940, 0.373, 0.139},
+			catalog.OIII:    {0.061, 0.840, 0.470},
+			catalog.SII:     {0.887, 0.413, 0.175},
+			catalog.Hb:      {0.047, 0.690, 0.595},
+			catalog.NII6548: {0.944, 0.372, 0.136},
+			catalog.NII6583: {0.936, 0.374, 0.142},
+		},
+		Broad: [3]float64{0.411, 0.540, 0.309},
+	}
+	// ToupTek SkyEye45AC Plus product page's spectral sensitivity chart.
+	imx366 = Response{
+		Lines: [catalog.NumLines][3]float64{
+			catalog.Ha:      {0.792, 0.168, 0.053},
+			catalog.OIII:    {0.063, 0.885, 0.488},
+			catalog.SII:     {0.703, 0.187, 0.069},
+			catalog.Hb:      {0.058, 0.734, 0.633},
+			catalog.NII6548: {0.802, 0.170, 0.051},
+			catalog.NII6583: {0.773, 0.165, 0.055},
+		},
+		Broad: [3]float64{0.365, 0.470, 0.289},
+	}
+	// ToupTek ATR428M/C product page's colour chart.
+	imx428 = Response{
+		Lines: [catalog.NumLines][3]float64{
+			catalog.Ha:      {0.966, 0.188, 0.065},
+			catalog.OIII:    {0.026, 0.772, 0.461},
+			catalog.SII:     {0.909, 0.220, 0.084},
+			catalog.Hb:      {0.023, 0.592, 0.583},
+			catalog.NII6548: {0.969, 0.191, 0.063},
+			catalog.NII6583: {0.961, 0.189, 0.068},
+		},
+		Broad: [3]float64{0.398, 0.447, 0.255},
+	}
+	// ZWO ASI290 manual, p7 (ToupTek's G3M290C page has no chart).
+	imx290 = Response{
+		Lines: [catalog.NumLines][3]float64{
+			catalog.Ha:      {0.892, 0.173, 0.066},
+			catalog.OIII:    {0.051, 0.861, 0.457},
+			catalog.SII:     {0.816, 0.205, 0.082},
+			catalog.Hb:      {0.041, 0.698, 0.605},
+			catalog.NII6548: {0.898, 0.173, 0.064},
+			catalog.NII6583: {0.886, 0.173, 0.068},
+		},
+		Broad: [3]float64{0.401, 0.464, 0.265},
+	}
 	// ZWO ASI485MC manual V1.0, p6, the ASI482MC manual's chart too, so the IMX482's.
 	imx485 = Response{
 		Lines: [catalog.NumLines][3]float64{
@@ -271,8 +320,9 @@ const (
 )
 
 // Cameras are the -camera presets by lower-case chip name, from the camera
-// makers' manuals and product pages (ZWO's, else Player One's, October
-// 2026): the pixels of the camera's output, its peak QE (the vendor's, often
+// makers' manuals and product pages (ZWO's, else Player One's, else
+// ToupTek's, October 2026; ToupTek's gain is its HCG mode's gain value, 100
+// at 0 dB): the pixels of the camera's output, its peak QE (the vendor's, often
 // an estimate) and its read noise at the vendor's deep-sky gain, where the
 // high conversion gain mode switches on (ZWO's gain in 0.1 dB, read off its
 // chart to about ±0.2 e⁻). A version is left out where no astro camera
@@ -344,6 +394,39 @@ var Cameras = map[string]Sensor{
 		Colour: &Variant{Response: &imx676, Gain: 180, QE: 0.83, ReadNoise: 0.75},
 		Mono:   &Variant{Gain: 180, QE: 0.83, ReadNoise: 0.75},
 	},
+	// The read noise ZWO's chart's at gain 100, where it drops from 1.7 e⁻
+	// at 50 (the conversion gain switch).
+	"imx715": {
+		Pixel: 1.45, PxLong: 3864, PxShort: 2192,
+		Colour: &Variant{Response: &imx715, Gain: 100, QE: 0.80, ReadNoise: 1.2},
+	},
+	// ToupTek's SkyEye45AC Plus: the read noise its HCG chart's at gain 100.
+	"imx366": {
+		Pixel: 4.40, PxLong: 8192, PxShort: 5460,
+		Colour: &Variant{Response: &imx366, Gain: 100, QE: 0.80, ReadNoise: 1.35},
+	},
+	// ToupTek's ATR428M/C (global shutter, sold for solar imaging): one peak
+	// QE for both, as ToupTek quotes it; each version's HCG read noise at
+	// gain 100.
+	"imx428": {
+		Pixel: 4.5, PxLong: 3200, PxShort: 2200,
+		Colour: &Variant{Response: &imx428, Gain: 100, QE: 0.79, ReadNoise: 2.4},
+		Mono:   &Variant{Gain: 100, QE: 0.79, ReadNoise: 2.5},
+	},
+	// ToupTek's G3M290C/M: its peak QE (ZWO's ASI290 manual says TBD); the
+	// read noise and the frame ZWO's (ASI290 manual, gain 60, where it drops
+	// from 2.6 e⁻ at 50).
+	"imx290": {
+		Pixel: 2.9, PxLong: 1936, PxShort: 1096,
+		Colour: &Variant{Response: &imx290, Gain: 60, QE: 0.81, ReadNoise: 1.65},
+		Mono:   &Variant{Gain: 60, QE: 0.81, ReadNoise: 1.65},
+	},
+	// ToupTek's GPM174M guide camera. No high conversion gain mode: its
+	// chart's read noise at gain 1778, where it levels off.
+	"imx249": {
+		Pixel: 5.86, PxLong: 1920, PxShort: 1200,
+		Mono: &Variant{Gain: 1778, QE: 0.89, ReadNoise: 4.0},
+	},
 	"imx410": {
 		Pixel: 5.94, PxLong: 6072, PxShort: 4042,
 		Colour: &Variant{Response: &imx410, Gain: 140, QE: 0.80, ReadNoise: 1.5},
@@ -370,12 +453,13 @@ var Cameras = map[string]Sensor{
 	},
 	// The original Origin's and Stellina's: ZWO publishes no peak QE (its
 	// ASI178 manual says TBD); 0.70 is the colour figure rk.edu.pl quotes
-	// from Sony's datasheet, second-hand. The read noise ZWO's chart's at
-	// gain 100.
+	// from Sony's datasheet, second-hand; the mono's 0.81 ToupTek's G3M178M
+	// figure. The read noise ZWO's chart's at gain 100, for both.
 	// Dark current: ZWO ASI678 CN manual V1.0's ASI178MC chart.
 	chipIMX178: {
 		Pixel: 2.4, Dark: 0.95, PxLong: 3096, PxShort: 2080,
 		Colour: &Variant{Response: &imx178, Gain: 100, QE: 0.70, ReadNoise: 1.7},
+		Mono:   &Variant{Gain: 100, QE: 0.81, ReadNoise: 1.7},
 	},
 	"imx485": {
 		Pixel: 2.9, PxLong: 3840, PxShort: 2160,
