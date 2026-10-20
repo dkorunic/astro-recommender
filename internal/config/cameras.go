@@ -316,6 +316,19 @@ var (
 		},
 		Broad: [3]float64{0.337, 0.405, 0.264},
 	}
+	// QHY's QHY5III568C chart (Sony's, relative), from Lunatico's copy of
+	// QHY's page.
+	imx568 = Response{
+		Lines: [catalog.NumLines][3]float64{
+			catalog.Ha:      {0.859, 0.307, 0.055},
+			catalog.OIII:    {0.032, 0.886, 0.505},
+			catalog.SII:     {0.779, 0.341, 0.071},
+			catalog.Hb:      {0.028, 0.717, 0.651},
+			catalog.NII6548: {0.862, 0.308, 0.054},
+			catalog.NII6583: {0.853, 0.307, 0.058},
+		},
+		Broad: [3]float64{0.354, 0.545, 0.286},
+	}
 )
 
 // The Seestar S50 Pro's OmniVision OS08B10: no maker's chart for the chip,
@@ -422,6 +435,24 @@ var (
 		Lines: [catalog.NumLines]float64{catalog.Ha: 0.896, catalog.OIII: 0.958, catalog.SII: 0.839, catalog.Hb: 0.944, catalog.NII6548: 0.900, catalog.NII6583: 0.889},
 		Broad: 0.901,
 	}
+	// QHY's QHY5III568M chart (Sony's, relative), from Lunatico's copy of
+	// QHY's page.
+	imx568Mono = MonoResponse{
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.894, catalog.OIII: 0.962, catalog.SII: 0.878, catalog.Hb: 0.946, catalog.NII6548: 0.897, catalog.NII6583: 0.890},
+		Broad: 0.921,
+	}
+	// QHY's QHY530 page, its absolute chart (a pale pink curve and grid:
+	// --sat-min 0.1 --grid-max 0.9, --box and --xpx at the frame).
+	imx530Mono = MonoResponse{
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.686, catalog.OIII: 0.958, catalog.SII: 0.655, catalog.Hb: 0.972, catalog.NII6548: 0.689, catalog.NII6583: 0.680},
+		Broad: 0.854,
+	}
+	// QHY's QHY550 page, its absolute chart (as imx530Mono's): the
+	// front-illuminated Pregius' 70% peak, flat from 470 to 580 nm.
+	imx250Mono = MonoResponse{
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.839, catalog.OIII: 0.982, catalog.SII: 0.795, catalog.Hb: 0.985, catalog.NII6548: 0.845, catalog.NII6583: 0.834},
+		Broad: 0.911,
+	}
 )
 
 // The chips the -scope presets share, as Cameras keys.
@@ -438,8 +469,8 @@ const (
 
 // Cameras are the -camera presets by lower-case chip name, from the camera
 // makers' manuals and product pages (ZWO's, else Player One's, else
-// ToupTek's, October 2026; ToupTek's gain is its HCG mode's gain value, 100
-// at 0 dB): the pixels of the camera's output, its peak QE (the vendor's, often
+// ToupTek's, else QHY's, October 2026; ToupTek's gain is its HCG mode's
+// gain value, 100 at 0 dB, QHY's its own 0-350 scale): the pixels of the camera's output, its peak QE (the vendor's, often
 // an estimate) and its read noise at the vendor's deep-sky gain, where the
 // high conversion gain mode switches on (ZWO's gain in 0.1 dB, read off its
 // chart to about ±0.2 e⁻). A version is left out where no astro camera
@@ -546,6 +577,32 @@ var Cameras = map[string]Sensor{
 	"imx249": {
 		Pixel: 5.86, PxLong: 1920, PxShort: 1200,
 		Mono: &Variant{MonoResponse: &imx249Mono, Gain: 1778, QE: 0.89, ReadNoise: 4.0},
+	},
+	// QHY's QHY5III568C/M (Pregius S, global shutter). No high conversion
+	// gain mode: its chart's read noise at gain 250, where it levels off.
+	// QHY publishes only relative charts, so the peak QE is FLIR's EMVA 1288
+	// report for its Dragonfly S DR-U3-50S4M/C, 523 nm: the mono's 67% and
+	// the colour's green 53% (its red and blue, 63% and 86% of the green,
+	// against the chart's 88% and 78%).
+	"imx568": {
+		Pixel: 2.74, PxLong: 2472, PxShort: 2064,
+		Colour: &Variant{Response: &imx568, Gain: 250, QE: 0.53, ReadNoise: 1.54},
+		Mono:   &Variant{MonoResponse: &imx568Mono, Gain: 250, QE: 0.67, ReadNoise: 1.54},
+	},
+	// QHY's QHY530M Pro II (Pregius S, global shutter, Camera Link): its
+	// chart's 88% peak, no high conversion gain mode, the read noise at gain
+	// 200, where it levels off. No Dark: its chart stops at 20 °C (0.085).
+	"imx530": {
+		Pixel: 2.74, PxLong: 5328, PxShort: 4608,
+		Mono: &Variant{MonoResponse: &imx530Mono, Gain: 200, QE: 0.88, ReadNoise: 1.3},
+	},
+	// QHY's QHY550M (Pregius, global shutter; its QHY550P the polarized
+	// version): its chart's 70% peak, the read noise at gain 200, past which
+	// it hardly falls. No Dark: its chart stops at 10 °C, flattening below
+	// 0 °C to 0.043 at -20 °C.
+	"imx250": {
+		Pixel: 3.45, PxLong: 2460, PxShort: 2070,
+		Mono: &Variant{MonoResponse: &imx250Mono, Gain: 200, QE: 0.70, ReadNoise: 2.1},
 	},
 	// ZWO's ASI120MM Mini (also Omegon's Guide 1200 and Lacerta's MGEN-3).
 	// No high conversion gain mode: its chart's read noise at gain 33, past

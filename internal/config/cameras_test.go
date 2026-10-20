@@ -17,8 +17,8 @@ import (
 // carries a response: each value 0-1, red leading at Hα and [S II], green at
 // [O III], blue at Hβ against red, every dye passing some of every line.
 func TestCameras(t *testing.T) {
-	if len(Cameras) != 32 {
-		t.Errorf("%d presets, want 32", len(Cameras))
+	if len(Cameras) != 35 {
+		t.Errorf("%d presets, want 35", len(Cameras))
 	}
 	for key, s := range Cameras {
 		if key != strings.ToLower(key) || s.Pixel <= 0 || s.Pixel > 20 || s.PxShort <= 0 || s.PxLong < s.PxShort {

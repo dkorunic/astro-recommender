@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 """Digitize a colour sensor's QE chart into internal/config's Response.
 
-    scripts/qe_digitize.py CHART.png --x FIRST LAST [--xpx PX0 PX1] [--box X0 Y0 X1 Y1] [--dark] [--mono COLOUR [--black-max V]]
+    scripts/qe_digitize.py CHART.png --x FIRST LAST [--xpx PX0 PX1] [--box X0 Y0 X1 Y1] [--dark] [--mono COLOUR [--black-max V] [--sat-min S]]
 
 Needs Pillow and NumPy. CHART is a vendor's colour QE chart (red, green and
 blue curves against wavelength), rendered from its PDF page, e.g. with
@@ -71,6 +71,7 @@ def main():
     ap.add_argument("--light-grid", action="store_true", help="white gridlines on a tinted background (Sony's CCD charts); give --box")
     ap.add_argument("--mono", choices=["black", *HUES], help="a mono chart's single curve, by its colour")
     ap.add_argument("--grid-max", type=float, default=0.86, help="gridlines' brightness limit; raise it for pale ones")
+    ap.add_argument("--sat-min", type=float, default=0.3, help="--mono hue's saturation limit; lower it for a pale curve (QHY's pink)")
     ap.add_argument("--black-max", type=float, default=0.45, help="--mono black's brightness limit; lower it for dark grey gridlines")
     ap.add_argument("--xpx", nargs=2, type=float, metavar=("PX0", "PX1"), help="image columns of --x's wavelengths, for a chart without vertical gridlines")
     args = ap.parse_args()
@@ -140,7 +141,7 @@ def main():
     elif args.mono:
         lo, hi = HUES[args.mono]
         inside = (hue >= lo) | (hue <= hi) if lo > hi else (hue >= lo) & (hue <= hi)
-        masks = {args.mono: inside & (sat > 0.3) & (val > 0.08)}
+        masks = {args.mono: inside & (sat > args.sat_min) & (val > 0.08)}
     names = list(masks)
     # Height above the lowest gridline, in the chart's units of gridline steps.
     base, step = max(hy), (max(hy) - min(hy)) / (len(hy) - 1)
