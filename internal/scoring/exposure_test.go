@@ -103,7 +103,7 @@ func TestCameraGain(t *testing.T) {
 	mono, _ := newCamera(cfg, &Sky{})
 	ha := [catalog.NumLines]float64{catalog.Ha: 1}
 	col, mon := c.channels(nil, "ha", 7, ha, filterPass{}), mono.channels(nil, "ha", 7, ha, filterPass{})
-	if len(mon) != 1 || mon[0].share != 1 || math.Abs(mon[0].obj/(g*0.95)-1) > 1e-9 || col[red].share != 0.25 {
+	if len(mon) != 1 || mon[0].share != 1 || math.Abs(mon[0].obj/(g*cfg.MonoResponse().Line(catalog.Ha))-1) > 1e-9 || col[red].share != 0.25 {
 		t.Errorf("Hα mono %+v", mon)
 	}
 	// A charted mono preset at its own response: the IMX174's front-lit
@@ -526,10 +526,10 @@ func TestCalibrationSample(t *testing.T) {
 // A colour sensor's channels add their SNR², each over its own pixels: through
 // Hα the red quarter sees the nebula at 0.77 of the peak, the green half at
 // 0.34 and the blue quarter at 0.11 (the IMX678's config.Response), against a mono sensor's
-// 0.95 on every pixel. Read-noise limited a channel's SNR² goes as its
-// response squared, so colour needs 0.95²/Σ share·r² = 4.3x mono's subs;
+// 0.88 on every pixel (sonyMono). Read-noise limited a channel's SNR² goes as
+// its response squared, so colour needs 0.88²/Σ share·r² = 3.7x mono's subs;
 // sky limited, its sky in the band scaling with the same response, as its
-// response, 0.95/Σ share·r = 2.4x. An average pixel charged the read noise of
+// response, 0.88/Σ share·r = 2.3x. An average pixel charged the read noise of
 // all four would need far more; one that saw Hα on red only, 4x either way.
 func TestSubsBayerChannels(t *testing.T) {
 	s := mutSky(141)

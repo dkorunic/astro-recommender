@@ -111,7 +111,7 @@ func TestCameraFlag(t *testing.T) {
 	if cfg, _ := mutParse(t, mutBase("-camera", "icx694", "-mono", "-focal", "400", "-aperture", "80")...); cfg.MonoResponse() != &icx694Mono || cfg.CameraLabel() != "ICX694 mono" {
 		t.Errorf("a charted mono preset: response %v, label %q", cfg.MonoResponse(), cfg.CameraLabel())
 	}
-	if cfg, _ := mutParse(t, mutBase("-camera", "imx455", "-mono", "-focal", "400", "-aperture", "80")...); cfg.MonoResponse() != &sonyMono {
+	if cfg, _ := mutParse(t, mutBase("-camera", "imx678", "-mono", "-focal", "400", "-aperture", "80")...); cfg.MonoResponse() != &sonyMono {
 		t.Error("an uncharted mono preset is not sonyMono")
 	}
 	if cfg, _ := mutParse(t, mutBase("-fov", "2x1")...); cfg.ColourResponse() != &imx678 || cfg.CameraLabel() != "" || cfg.ScopeLabel() != "" {

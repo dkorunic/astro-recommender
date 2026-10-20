@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 """Digitize a colour sensor's QE chart into internal/config's Response.
 
-    scripts/qe_digitize.py CHART.png --x FIRST LAST [--xpx PX0 PX1] [--box X0 Y0 X1 Y1] [--dark] [--mono COLOUR [--black-max V] [--sat-min S]]
+    scripts/qe_digitize.py CHART.png --x FIRST LAST [--xpx PX0 PX1] [--box X0 Y0 X1 Y1] [--dark] [--mono COLOUR [--black-max V] [--sat-min S]] [--per-watt]
 
 Needs Pillow and NumPy. CHART is a vendor's colour QE chart (red, green and
 blue curves against wavelength), rendered from its PDF page, e.g. with
@@ -24,7 +24,11 @@ blue), printed as MonoResponse's fields; a black curve is told from the
 plot's frame by leaving out the rows and columns that are mostly dark, a
 coloured one by its hue at any brightness (neutral labels and gridlines
 left out). A chart with tick marks instead of vertical gridlines takes
---xpx, the image columns of --x's two wavelengths.
+--xpx, the image columns of --x's two wavelengths. --per-watt converts a
+chart of the response per watt, as Sony's "relative response" charts are
+(their curve / wavelength is the QE curve makers publish, Allied Vision's
+"absolute QE" and ZWO's alike), to one per photon before anything is taken
+relative to the peak.
 """
 
 import argparse
@@ -73,6 +77,7 @@ def main():
     ap.add_argument("--grid-max", type=float, default=0.86, help="gridlines' brightness limit; raise it for pale ones")
     ap.add_argument("--sat-min", type=float, default=0.3, help="--mono hue's saturation limit; lower it for a pale curve (QHY's pink)")
     ap.add_argument("--black-max", type=float, default=0.45, help="--mono black's brightness limit; lower it for dark grey gridlines")
+    ap.add_argument("--per-watt", action="store_true", help="the chart is a response per watt (Sony's relative response): divide by the wavelength for QE")
     ap.add_argument("--xpx", nargs=2, type=float, metavar=("PX0", "PX1"), help="image columns of --x's wavelengths, for a chart without vertical gridlines")
     args = ap.parse_args()
     img = np.asarray(Image.open(args.chart).convert("RGB")).astype(float) / 255
@@ -162,6 +167,11 @@ def main():
                     return (base - ys.mean()) / step
         return 0.0
 
+    if args.per_watt:
+        # A response per watt (Sony's "relative response") to one per photon,
+        # the QE: the signal a watt makes is QE x the photons in it, which
+        # grow as the wavelength.
+        per_watt, height = height, lambda name, nm, warn=False: per_watt(name, nm, warn) * 500 / nm
     curves = {n: np.array([height(n, nm) for nm in range(400, 701)]) for n in names}
     # The peak over the whole chart: a sensor whose response peaks in the
     # near infrared (IMX462, IMX464) has its vendor peak QE there.

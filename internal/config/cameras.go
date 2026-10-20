@@ -50,13 +50,11 @@ func (r *MonoResponse) Line(l catalog.Line) float64 {
 	return r.Lines[l]
 }
 
-// sonyMono is the mono response of a preset without its own: read off
-// Sony's curve for its back-illuminated chips, which a front-illuminated
-// chip or a CCD falls well below in the red.
-var sonyMono = MonoResponse{
-	Lines: [catalog.NumLines]float64{catalog.Ha: 0.95, catalog.OIII: 0.85, catalog.SII: 0.9, catalog.Hb: 0.8, catalog.NII6548: 0.95, catalog.NII6583: 0.95},
-	Broad: 0.8,
-}
+// sonyMono is the mono response of a preset without its own (the IMX678's)
+// and of -mono without -camera: the IMX585's, a STARVIS 2 chip whose maker
+// charts its QE, as the IMX662's and IMX676's Sony charts read per watt
+// within 0.03.
+var sonyMono = imx585Mono
 
 // Variant is a sensor's colour or mono camera: its peak QE and its read
 // noise at Gain, the vendor's deep-sky setting in its own units (ZWO's and
@@ -92,9 +90,14 @@ const typicalDark = 0.16
 // chart's peak; [O III] with 495.9 nm at a third of 500.7's flux, [S II] the
 // doublet's mean), each channel's mean over 400-700 nm the continuum's.
 // Several vendors share one chart across chips; where two of a chip's charts
-// disagree, the comment says which was taken.
+// disagree, the comment says which was taken. Sony's charts ("relative
+// response", copied by most camera makers) are the response per watt: their
+// curve / wavelength is the QE (Allied Vision's "absolute QE" curves and
+// ZWO's own QE charts are exactly that), so they are read with --per-watt,
+// each comment saying "per watt", and peak in the green.
 var (
-	// ZWO ASI678MC manual V1.0, §3.3.
+	// ZWO ASI678MC manual V1.0, p6, its QE chart (blue peaking highest, as
+	// a per-photon curve does; no Sony chart to check it against).
 	imx678 = Response{
 		Lines: [catalog.NumLines][3]float64{
 			catalog.Ha:      {0.774, 0.341, 0.107},
@@ -106,29 +109,29 @@ var (
 		},
 		Broad: [3]float64{0.397, 0.565, 0.394},
 	}
-	// ZWO ASI2600MC Pro manual (2026), p8.
+	// ZWO ASI2600MC Pro manual (2026), p8, per watt.
 	imx571 = Response{
 		Lines: [catalog.NumLines][3]float64{
-			catalog.Ha:      {0.804, 0.151, 0.049},
-			catalog.OIII:    {0.032, 0.931, 0.505},
-			catalog.SII:     {0.748, 0.178, 0.066},
-			catalog.Hb:      {0.027, 0.735, 0.680},
-			catalog.NII6548: {0.810, 0.152, 0.047},
-			catalog.NII6583: {0.801, 0.151, 0.051},
+			catalog.Ha:      {0.637, 0.119, 0.039},
+			catalog.OIII:    {0.033, 0.969, 0.526},
+			catalog.SII:     {0.578, 0.138, 0.051},
+			catalog.Hb:      {0.029, 0.786, 0.727},
+			catalog.NII6548: {0.643, 0.120, 0.037},
+			catalog.NII6583: {0.633, 0.119, 0.040},
 		},
-		Broad: [3]float64{0.349, 0.459, 0.292},
+		Broad: [3]float64{0.292, 0.437, 0.324},
 	}
-	// ZWO ASI533MC Pro manual (2026), p8.
+	// ZWO ASI533MC Pro manual (2026), p8, per watt.
 	imx533 = Response{
 		Lines: [catalog.NumLines][3]float64{
-			catalog.Ha:      {0.808, 0.152, 0.047},
-			catalog.OIII:    {0.031, 0.900, 0.553},
-			catalog.SII:     {0.752, 0.172, 0.066},
-			catalog.Hb:      {0.029, 0.665, 0.714},
-			catalog.NII6548: {0.812, 0.154, 0.044},
-			catalog.NII6583: {0.803, 0.150, 0.050},
+			catalog.Ha:      {0.645, 0.122, 0.037},
+			catalog.OIII:    {0.033, 0.951, 0.571},
+			catalog.SII:     {0.586, 0.134, 0.052},
+			catalog.Hb:      {0.031, 0.717, 0.770},
+			catalog.NII6548: {0.650, 0.123, 0.035},
+			catalog.NII6583: {0.639, 0.120, 0.039},
 		},
-		Broad: [3]float64{0.342, 0.456, 0.294},
+		Broad: [3]float64{0.288, 0.437, 0.328},
 	}
 	// ZWO ASI585MC Pro manual (2026), p9; the ASI585MC's CN manual V1.0 has the IMX662's curve instead, green at Hα 0.37.
 	imx585 = Response{
@@ -154,67 +157,68 @@ var (
 		},
 		Broad: [3]float64{0.425, 0.540, 0.315},
 	}
-	// ZWO ASI676MC manual (2024), p8.
+	// ZWO ASI676MC manual (2024), p8, per watt.
 	imx676 = Response{
 		Lines: [catalog.NumLines][3]float64{
-			catalog.Ha:      {0.934, 0.384, 0.135},
-			catalog.OIII:    {0.043, 0.848, 0.453},
-			catalog.SII:     {0.877, 0.421, 0.167},
-			catalog.Hb:      {0.034, 0.718, 0.583},
-			catalog.NII6548: {0.938, 0.384, 0.133},
-			catalog.NII6583: {0.930, 0.383, 0.139},
+			catalog.Ha:      {0.807, 0.332, 0.117},
+			catalog.OIII:    {0.049, 0.963, 0.515},
+			catalog.SII:     {0.740, 0.356, 0.141},
+			catalog.Hb:      {0.039, 0.838, 0.680},
+			catalog.NII6548: {0.812, 0.333, 0.115},
+			catalog.NII6583: {0.802, 0.330, 0.120},
 		},
-		Broad: [3]float64{0.409, 0.547, 0.317},
+		Broad: [3]float64{0.373, 0.559, 0.368},
 	}
-	// ZWO ASI715MC manual (2024), p6, relative and peaking at 820 nm, so its
-	// visible may read low as the ASI462 manual's did (imx462).
+	// ZWO ASI715MC manual (2024), per watt; its chart is the ASI664 manual's
+	// IMX664 one to 0.01, so ZWO may have reused it.
 	imx715 = Response{
 		Lines: [catalog.NumLines][3]float64{
-			catalog.Ha:      {0.940, 0.373, 0.139},
-			catalog.OIII:    {0.061, 0.840, 0.470},
-			catalog.SII:     {0.887, 0.413, 0.175},
-			catalog.Hb:      {0.047, 0.690, 0.595},
-			catalog.NII6548: {0.944, 0.372, 0.136},
-			catalog.NII6583: {0.936, 0.374, 0.142},
+			catalog.Ha:      {0.815, 0.323, 0.120},
+			catalog.OIII:    {0.069, 0.956, 0.535},
+			catalog.SII:     {0.750, 0.349, 0.148},
+			catalog.Hb:      {0.055, 0.807, 0.697},
+			catalog.NII6548: {0.820, 0.323, 0.119},
+			catalog.NII6583: {0.809, 0.323, 0.123},
 		},
-		Broad: [3]float64{0.411, 0.540, 0.309},
+		Broad: [3]float64{0.376, 0.554, 0.360},
 	}
-	// ZWO ASI4400MC Pro product page's chart (ToupTek's SkyEye45AC Plus
-	// page has the same one, to 0.01).
+	// ZWO ASI4400MC Pro product page's chart, per watt (ToupTek's SkyEye45AC
+	// Plus page has the same one, to 0.01).
 	imx366 = Response{
 		Lines: [catalog.NumLines][3]float64{
-			catalog.Ha:      {0.793, 0.169, 0.053},
-			catalog.OIII:    {0.061, 0.880, 0.497},
-			catalog.SII:     {0.710, 0.186, 0.068},
-			catalog.Hb:      {0.059, 0.726, 0.641},
-			catalog.NII6548: {0.805, 0.171, 0.051},
-			catalog.NII6583: {0.782, 0.167, 0.055},
+			catalog.Ha:      {0.643, 0.137, 0.043},
+			catalog.OIII:    {0.065, 0.938, 0.530},
+			catalog.SII:     {0.562, 0.147, 0.054},
+			catalog.Hb:      {0.065, 0.795, 0.703},
+			catalog.NII6548: {0.654, 0.139, 0.042},
+			catalog.NII6583: {0.633, 0.135, 0.045},
 		},
-		Broad: [3]float64{0.366, 0.470, 0.290},
+		Broad: [3]float64{0.320, 0.459, 0.329},
 	}
-	// ToupTek ATR428M/C product page's colour chart.
+	// ToupTek's ATR428M product page's colour chart (ATR428M-Wave_length.jpg,
+	// Wayback 2026-09-26), per watt.
 	imx428 = Response{
 		Lines: [catalog.NumLines][3]float64{
-			catalog.Ha:      {0.966, 0.188, 0.065},
-			catalog.OIII:    {0.026, 0.772, 0.461},
-			catalog.SII:     {0.909, 0.220, 0.084},
-			catalog.Hb:      {0.023, 0.592, 0.583},
-			catalog.NII6548: {0.969, 0.191, 0.063},
-			catalog.NII6583: {0.961, 0.189, 0.068},
+			catalog.Ha:      {0.844, 0.165, 0.057},
+			catalog.OIII:    {0.030, 0.887, 0.530},
+			catalog.SII:     {0.776, 0.187, 0.072},
+			catalog.Hb:      {0.028, 0.699, 0.688},
+			catalog.NII6548: {0.849, 0.167, 0.055},
+			catalog.NII6583: {0.837, 0.165, 0.059},
 		},
-		Broad: [3]float64{0.398, 0.447, 0.255},
+		Broad: [3]float64{0.364, 0.464, 0.308},
 	}
-	// ZWO ASI290 manual, p7 (ToupTek's G3M290C page has no chart).
+	// ZWO ASI290 manual, p7, per watt (ToupTek's G3M290C page has no chart).
 	imx290 = Response{
 		Lines: [catalog.NumLines][3]float64{
-			catalog.Ha:      {0.892, 0.173, 0.066},
-			catalog.OIII:    {0.051, 0.861, 0.457},
-			catalog.SII:     {0.816, 0.205, 0.082},
-			catalog.Hb:      {0.041, 0.698, 0.605},
-			catalog.NII6548: {0.898, 0.173, 0.064},
-			catalog.NII6583: {0.886, 0.173, 0.068},
+			catalog.Ha:      {0.743, 0.144, 0.055},
+			catalog.OIII:    {0.056, 0.943, 0.500},
+			catalog.SII:     {0.664, 0.167, 0.067},
+			catalog.Hb:      {0.047, 0.785, 0.680},
+			catalog.NII6548: {0.750, 0.144, 0.054},
+			catalog.NII6583: {0.736, 0.144, 0.056},
 		},
-		Broad: [3]float64{0.401, 0.464, 0.265},
+		Broad: [3]float64{0.354, 0.462, 0.306},
 	}
 	// ZWO ASI485MC manual V1.0, p6, the ASI482MC manual's chart too, so the IMX482's.
 	imx485 = Response{
@@ -228,31 +232,30 @@ var (
 		},
 		Broad: [3]float64{0.380, 0.485, 0.342},
 	}
-	// Player One's Neptune-C II chart, relative and peaking in the near
-	// infrared like the ASI462 manual's, so its visible may read low as that
-	// one did (imx462).
+	// Player One's Neptune-C II chart, per watt (peaking in the near infrared
+	// as charted, in the green per photon).
 	imx464 = Response{
 		Lines: [catalog.NumLines][3]float64{
-			catalog.Ha:      {0.826, 0.253, 0.124},
-			catalog.OIII:    {0.041, 0.764, 0.440},
-			catalog.SII:     {0.772, 0.286, 0.145},
-			catalog.Hb:      {0.032, 0.598, 0.562},
-			catalog.NII6548: {0.830, 0.252, 0.120},
-			catalog.NII6583: {0.818, 0.253, 0.126},
+			catalog.Ha:      {0.767, 0.235, 0.115},
+			catalog.OIII:    {0.050, 0.933, 0.537},
+			catalog.SII:     {0.700, 0.259, 0.132},
+			catalog.Hb:      {0.040, 0.751, 0.705},
+			catalog.NII6548: {0.773, 0.235, 0.112},
+			catalog.NII6583: {0.758, 0.235, 0.116},
 		},
-		Broad: [3]float64{0.365, 0.438, 0.292},
+		Broad: [3]float64{0.359, 0.482, 0.366},
 	}
-	// ZWO ASI178 manual V1.3, p7 (relative, 400-700 nm).
+	// ZWO ASI178 manual V1.3, p7 (400-700 nm), per watt.
 	imx178 = Response{
 		Lines: [catalog.NumLines][3]float64{
-			catalog.Ha:      {0.770, 0.152, 0.054},
-			catalog.OIII:    {0.039, 0.923, 0.486},
-			catalog.SII:     {0.691, 0.179, 0.068},
-			catalog.Hb:      {0.032, 0.740, 0.650},
-			catalog.NII6548: {0.779, 0.152, 0.053},
-			catalog.NII6583: {0.759, 0.153, 0.057},
+			catalog.Ha:      {0.610, 0.121, 0.043},
+			catalog.OIII:    {0.041, 0.960, 0.505},
+			catalog.SII:     {0.534, 0.138, 0.053},
+			catalog.Hb:      {0.034, 0.791, 0.694},
+			catalog.NII6548: {0.618, 0.121, 0.042},
+			catalog.NII6583: {0.599, 0.121, 0.045},
 		},
-		Broad: [3]float64{0.356, 0.452, 0.288},
+		Broad: [3]float64{0.299, 0.431, 0.319},
 	}
 	// ZWO's ASI662MC/ASI462MC comparison (March 2023, p3), the absolute QE
 	// whose 81% peak is the green at 510 nm (its ASI662MC chart reproduces
@@ -269,66 +272,67 @@ var (
 		},
 		Broad: [3]float64{0.414, 0.502, 0.391},
 	}
-	// ZWO ASI224MC manual V1.4, p7.
+	// ZWO ASI224MC manual V1.4, p7, per watt.
 	imx224 = Response{
 		Lines: [catalog.NumLines][3]float64{
-			catalog.Ha:      {0.949, 0.191, 0.083},
-			catalog.OIII:    {0.053, 0.834, 0.458},
-			catalog.SII:     {0.864, 0.229, 0.100},
-			catalog.Hb:      {0.046, 0.666, 0.588},
-			catalog.NII6548: {0.953, 0.189, 0.081},
-			catalog.NII6583: {0.941, 0.192, 0.086},
+			catalog.Ha:      {0.812, 0.163, 0.071},
+			catalog.OIII:    {0.060, 0.938, 0.515},
+			catalog.SII:     {0.722, 0.192, 0.083},
+			catalog.Hb:      {0.053, 0.770, 0.679},
+			catalog.NII6548: {0.817, 0.162, 0.069},
+			catalog.NII6583: {0.803, 0.164, 0.073},
 		},
-		Broad: [3]float64{0.416, 0.454, 0.267},
+		Broad: [3]float64{0.377, 0.465, 0.314},
 	}
-	// ZWO ASI294MC Pro manual (2026), p8.
+	// ZWO ASI294MC Pro manual (2026), p8, per watt.
 	imx294 = Response{
 		Lines: [catalog.NumLines][3]float64{
-			catalog.Ha:      {0.888, 0.168, 0.052},
-			catalog.OIII:    {0.033, 0.908, 0.497},
-			catalog.SII:     {0.810, 0.190, 0.067},
-			catalog.Hb:      {0.027, 0.700, 0.672},
-			catalog.NII6548: {0.894, 0.168, 0.051},
-			catalog.NII6583: {0.880, 0.168, 0.055},
+			catalog.Ha:      {0.706, 0.134, 0.042},
+			catalog.OIII:    {0.034, 0.949, 0.520},
+			catalog.SII:     {0.628, 0.148, 0.052},
+			catalog.Hb:      {0.028, 0.751, 0.722},
+			catalog.NII6548: {0.712, 0.134, 0.041},
+			catalog.NII6583: {0.697, 0.133, 0.043},
 		},
-		Broad: [3]float64{0.383, 0.466, 0.288},
+		Broad: [3]float64{0.321, 0.445, 0.321},
 	}
-	// ZWO ASI2400MC Pro manual V1.2, p6.
+	// ZWO ASI2400MC Pro manual V1.2, p6, per watt.
 	imx410 = Response{
 		Lines: [catalog.NumLines][3]float64{
-			catalog.Ha:      {0.826, 0.109, 0.040},
-			catalog.OIII:    {0.051, 0.596, 0.493},
-			catalog.SII:     {0.743, 0.138, 0.052},
-			catalog.Hb:      {0.048, 0.456, 0.658},
-			catalog.NII6548: {0.832, 0.108, 0.039},
-			catalog.NII6583: {0.819, 0.111, 0.042},
+			catalog.Ha:      {0.674, 0.089, 0.033},
+			catalog.OIII:    {0.055, 0.638, 0.529},
+			catalog.SII:     {0.591, 0.110, 0.042},
+			catalog.Hb:      {0.053, 0.502, 0.725},
+			catalog.NII6548: {0.680, 0.088, 0.032},
+			catalog.NII6583: {0.666, 0.090, 0.034},
 		},
-		Broad: [3]float64{0.372, 0.404, 0.275},
+		Broad: [3]float64{0.324, 0.403, 0.315},
 	}
-	// Player One's Zeus 455C chart (ZWO's ASI6200 manuals have none).
+	// Player One's Zeus 455C chart (ZWO's ASI6200 manuals have none; --dark):
+	// labelled QE, but Sony's curve scaled to the 80% peak, so per watt.
 	imx455 = Response{
 		Lines: [catalog.NumLines][3]float64{
-			catalog.Ha:      {0.800, 0.070, 0.020},
-			catalog.OIII:    {0.016, 0.835, 0.499},
-			catalog.SII:     {0.722, 0.092, 0.028},
-			catalog.Hb:      {0.012, 0.650, 0.657},
-			catalog.NII6548: {0.805, 0.071, 0.019},
-			catalog.NII6583: {0.791, 0.070, 0.021},
+			catalog.Ha:      {0.642, 0.056, 0.016},
+			catalog.OIII:    {0.017, 0.881, 0.527},
+			catalog.SII:     {0.566, 0.072, 0.022},
+			catalog.Hb:      {0.013, 0.704, 0.712},
+			catalog.NII6548: {0.648, 0.057, 0.015},
+			catalog.NII6583: {0.634, 0.056, 0.017},
 		},
-		Broad: [3]float64{0.337, 0.405, 0.264},
+		Broad: [3]float64{0.284, 0.396, 0.300},
 	}
-	// QHY's QHY5III568C chart (Sony's, relative), from Lunatico's copy of
-	// QHY's page.
+	// QHY's QHY5III568C chart (Sony's), from Lunatico's copy of QHY's page,
+	// per watt.
 	imx568 = Response{
 		Lines: [catalog.NumLines][3]float64{
-			catalog.Ha:      {0.859, 0.307, 0.055},
-			catalog.OIII:    {0.032, 0.886, 0.505},
-			catalog.SII:     {0.779, 0.341, 0.071},
-			catalog.Hb:      {0.028, 0.717, 0.651},
-			catalog.NII6548: {0.862, 0.308, 0.054},
-			catalog.NII6583: {0.853, 0.307, 0.058},
+			catalog.Ha:      {0.686, 0.246, 0.044},
+			catalog.OIII:    {0.033, 0.930, 0.530},
+			catalog.SII:     {0.608, 0.266, 0.055},
+			catalog.Hb:      {0.030, 0.774, 0.702},
+			catalog.NII6548: {0.691, 0.247, 0.043},
+			catalog.NII6583: {0.680, 0.245, 0.046},
 		},
-		Broad: [3]float64{0.354, 0.545, 0.286},
+		Broad: [3]float64{0.298, 0.520, 0.319},
 	}
 	// ZWO ASI1600 manual (rev 1.4, 2020), p7 (Panasonic's chart, relative).
 	mn34230 = Response{
@@ -356,18 +360,18 @@ var (
 		},
 		Broad: [3]float64{0.351, 0.410, 0.370},
 	}
-	// The Imaging Source's DFK 33UX252 datasheet, p4 (Sony's IMX252LQR-C,
-	// relative; tick marks only, so read with the curve's own axes).
+	// The Imaging Source's DFK 33UX252 datasheet, p4 (Sony's IMX252LQR-C, per
+	// watt; tick marks only, so read with the curve's own axes, ÷ λ).
 	imx252 = Response{
 		Lines: [catalog.NumLines][3]float64{
-			catalog.Ha:      {0.944, 0.170, 0.060},
-			catalog.OIII:    {0.024, 0.807, 0.385},
-			catalog.SII:     {0.870, 0.213, 0.077},
-			catalog.Hb:      {0.018, 0.641, 0.517},
-			catalog.NII6548: {0.951, 0.170, 0.058},
-			catalog.NII6583: {0.936, 0.171, 0.062},
+			catalog.Ha:      {0.822, 0.148, 0.052},
+			catalog.OIII:    {0.027, 0.923, 0.440},
+			catalog.SII:     {0.739, 0.181, 0.066},
+			catalog.Hb:      {0.022, 0.753, 0.608},
+			catalog.NII6548: {0.829, 0.149, 0.050},
+			catalog.NII6583: {0.812, 0.149, 0.054},
 		},
-		Broad: [3]float64{0.396, 0.440, 0.235},
+		Broad: [3]float64{0.361, 0.458, 0.284},
 	}
 )
 
@@ -389,44 +393,47 @@ var os08b10 = Response{
 }
 
 // The mono responses, each digitized by scripts/qe_digitize.py --mono from
-// the maker's chart, relative to its peak: a CCD's and a front-illuminated
-// chip's red falls well below sonyMono's.
+// the maker's chart, relative to its peak, a Sony chart per watt as the colour
+// ones: a CCD's and a front-illuminated chip's red falls below sonyMono's.
 var (
-	// ZWO ASI294 manual V2.2, p6 (ToupTek's ATR294M chart reads the same).
+	// ZWO ASI294 manual V2.2, p6, per watt (ToupTek's ATR294M chart reads
+	// the same).
 	imx492Mono = MonoResponse{
-		Lines: [catalog.NumLines]float64{catalog.Ha: 0.862, catalog.OIII: 0.982, catalog.SII: 0.829, catalog.Hb: 0.955, catalog.NII6548: 0.866, catalog.NII6583: 0.857},
-		Broad: 0.913,
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.664, catalog.OIII: 0.993, catalog.SII: 0.623, catalog.Hb: 0.993, catalog.NII6548: 0.668, catalog.NII6583: 0.657},
+		Broad: 0.859,
 	}
 	// ZWO ASI174 manual, p7 (absolute, its 78% peak).
 	imx174Mono = MonoResponse{
 		Lines: [catalog.NumLines]float64{catalog.Ha: 0.632, catalog.OIII: 0.998, catalog.SII: 0.579, catalog.Hb: 0.997, catalog.NII6548: 0.632, catalog.NII6583: 0.626},
 		Broad: 0.823,
 	}
-	// ZWO ASI Mini manual, p6 (the ASI290MM Mini's).
+	// ZWO ASI Mini manual, p6 (the ASI290MM Mini's), per watt.
 	imx290Mono = MonoResponse{
-		Lines: [catalog.NumLines]float64{catalog.Ha: 0.939, catalog.OIII: 0.907, catalog.SII: 0.914, catalog.Hb: 0.876, catalog.NII6548: 0.940, catalog.NII6583: 0.936},
-		Broad: 0.882,
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.786, catalog.OIII: 0.998, catalog.SII: 0.747, catalog.Hb: 0.990, catalog.NII6548: 0.789, catalog.NII6583: 0.781},
+		Broad: 0.887,
 	}
-	// ToupTek's GPM174M page.
+	// ToupTek's GPM174M page, per watt: Sony's IMX174/IMX249 curve, which
+	// then reads ZWO's ASI174 QE chart (imx174Mono) to 0.007.
 	imx249Mono = MonoResponse{
-		Lines: [catalog.NumLines]float64{catalog.Ha: 0.803, catalog.OIII: 0.974, catalog.SII: 0.761, catalog.Hb: 0.942, catalog.NII6548: 0.808, catalog.NII6583: 0.799},
-		Broad: 0.865,
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.626, catalog.OIII: 0.997, catalog.SII: 0.578, catalog.Hb: 0.990, catalog.NII6548: 0.631, catalog.NII6583: 0.620},
+		Broad: 0.822,
 	}
-	// ZWO ASI178 manual V1.3, p7 (ToupTek's G3M178M chart reads the same
-	// to 0.005).
+	// ZWO ASI178 manual V1.3, p7, per watt (ToupTek's G3M178M chart reads
+	// the same to 0.005).
 	imx178Mono = MonoResponse{
-		Lines: [catalog.NumLines]float64{catalog.Ha: 0.809, catalog.OIII: 0.976, catalog.SII: 0.788, catalog.Hb: 0.966, catalog.NII6548: 0.813, catalog.NII6583: 0.805},
-		Broad: 0.891,
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.618, catalog.OIII: 0.979, catalog.SII: 0.587, catalog.Hb: 0.994, catalog.NII6548: 0.621, catalog.NII6583: 0.613},
+		Broad: 0.833,
 	}
-	// ZWO ASI183 manual V1.4, p7.
+	// ZWO ASI183 manual V1.4, p7, per watt.
 	imx183Mono = MonoResponse{
-		Lines: [catalog.NumLines]float64{catalog.Ha: 0.799, catalog.OIII: 0.976, catalog.SII: 0.779, catalog.Hb: 0.954, catalog.NII6548: 0.803, catalog.NII6583: 0.797},
-		Broad: 0.892,
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.617, catalog.OIII: 0.991, catalog.SII: 0.587, catalog.Hb: 0.995, catalog.NII6548: 0.621, catalog.NII6583: 0.613},
+		Broad: 0.844,
 	}
-	// ZWO ASI432 manual V1.0, p6.
+	// ZWO ASI432 manual V1.0, p6, per watt; its QE peaks at or below the
+	// chart's 400 nm edge, which it is taken relative to.
 	imx432Mono = MonoResponse{
-		Lines: [catalog.NumLines]float64{catalog.Ha: 0.954, catalog.OIII: 0.853, catalog.SII: 0.928, catalog.Hb: 0.827, catalog.NII6548: 0.957, catalog.NII6583: 0.952},
-		Broad: 0.870,
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.834, catalog.OIII: 0.977, catalog.SII: 0.791, catalog.Hb: 0.972, catalog.NII6548: 0.837, catalog.NII6583: 0.828},
+		Broad: 0.909,
 	}
 	// ZWO's absolute chart for its 3.76 µm chips, one curve in the ASI2600MM
 	// Pro (p8), ASI533MM Pro (p8) and ASI461MM Pro (p8) manuals to 0.003 (the
@@ -440,15 +447,16 @@ var (
 		Lines: [catalog.NumLines]float64{catalog.Ha: 0.881, catalog.OIII: 0.994, catalog.SII: 0.859, catalog.Hb: 0.993, catalog.NII6548: 0.883, catalog.NII6583: 0.878},
 		Broad: 0.954,
 	}
-	// ZWO ASI662MC/MM manual, p8, peaking at Hα.
+	// ZWO ASI662MC/MM manual, p8, per watt (peaking at Hα as charted); its
+	// QE peaks at or below the chart's 400 nm edge, as the IMX432's.
 	imx662Mono = MonoResponse{
-		Lines: [catalog.NumLines]float64{catalog.Ha: 1.000, catalog.OIII: 0.837, catalog.SII: 1.000, catalog.Hb: 0.815, catalog.NII6548: 1.000, catalog.NII6583: 1.000},
-		Broad: 0.884,
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.876, catalog.OIII: 0.963, catalog.SII: 0.855, catalog.Hb: 0.963, catalog.NII6548: 0.878, catalog.NII6583: 0.873},
+		Broad: 0.929,
 	}
-	// ZWO ASI676MM manual, p8.
+	// ZWO ASI676MM manual, p8, per watt.
 	imx676Mono = MonoResponse{
-		Lines: [catalog.NumLines]float64{catalog.Ha: 0.984, catalog.OIII: 0.844, catalog.SII: 1.000, catalog.Hb: 0.812, catalog.NII6548: 0.983, catalog.NII6583: 0.986},
-		Broad: 0.888,
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.865, catalog.OIII: 0.975, catalog.SII: 0.859, catalog.Hb: 0.964, catalog.NII6548: 0.866, catalog.NII6583: 0.864},
+		Broad: 0.939,
 	}
 	// On Semi's absolute chart in ZWO's ASI Mini manual, p6 (dark grey
 	// gridlines: --black-max 0.3).
@@ -475,11 +483,11 @@ var (
 		Lines: [catalog.NumLines]float64{catalog.Ha: 0.896, catalog.OIII: 0.958, catalog.SII: 0.839, catalog.Hb: 0.944, catalog.NII6548: 0.900, catalog.NII6583: 0.889},
 		Broad: 0.901,
 	}
-	// QHY's QHY5III568M chart (Sony's, relative), from Lunatico's copy of
-	// QHY's page.
+	// QHY's QHY5III568M chart (Sony's), from Lunatico's copy of QHY's page,
+	// per watt (QHY's absolute IMX530 chart, imx530Mono, reads within 0.01).
 	imx568Mono = MonoResponse{
-		Lines: [catalog.NumLines]float64{catalog.Ha: 0.894, catalog.OIII: 0.962, catalog.SII: 0.878, catalog.Hb: 0.946, catalog.NII6548: 0.897, catalog.NII6583: 0.890},
-		Broad: 0.921,
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.678, catalog.OIII: 0.959, catalog.SII: 0.650, catalog.Hb: 0.968, catalog.NII6548: 0.682, catalog.NII6583: 0.673},
+		Broad: 0.852,
 	}
 	// QHY's QHY530 page, its absolute chart (a pale pink curve and grid:
 	// --sat-min 0.1 --grid-max 0.9, --box and --xpx at the frame).
@@ -534,11 +542,11 @@ var (
 		Lines: [catalog.NumLines]float64{catalog.Ha: 0.941, catalog.OIII: 0.957, catalog.SII: 0.913, catalog.Hb: 0.883, catalog.NII6548: 0.939, catalog.NII6583: 0.941},
 		Broad: 0.912,
 	}
-	// The Imaging Source's DMK 37BUX287 manual, §4.1 (Sony's IMX273/287,
-	// relative; tick marks only, so read with the curve's own axes).
+	// The Imaging Source's DMK 37BUX287 manual, §4.1 (Sony's IMX273/287, per
+	// watt; tick marks only, so read with the curve's own axes, ÷ λ).
 	imx287Mono = MonoResponse{
-		Lines: [catalog.NumLines]float64{catalog.Ha: 0.949, catalog.OIII: 0.840, catalog.SII: 0.916, catalog.Hb: 0.819, catalog.NII6548: 0.951, catalog.NII6583: 0.946},
-		Broad: 0.858,
+		Lines: [catalog.NumLines]float64{catalog.Ha: 0.849, catalog.OIII: 0.988, catalog.SII: 0.800, catalog.Hb: 0.990, catalog.NII6548: 0.853, catalog.NII6583: 0.843},
+		Broad: 0.919,
 	}
 )
 
@@ -585,11 +593,12 @@ var Cameras = map[string]Sensor{
 		Mono:   &Variant{MonoResponse: &imx585Mono, Gain: 200, QE: 0.91, ReadNoise: 1.0},
 	},
 	// The read noise ZWO's current ASI6200 chart's (its v1.4 manual's 1.5
-	// predates the 0.86 e⁻ revision).
+	// predates the 0.86 e⁻ revision). The mono takes ZWO's curve for the
+	// IMX571's 3.76 µm pixels (zwo376Mono), the ASI6200 manual charting none.
 	"imx455": {
 		Pixel: 3.76, PxLong: 9576, PxShort: 6388,
 		Colour: &Variant{Response: &imx455, Gain: 100, QE: 0.80, ReadNoise: 1.35},
-		Mono:   &Variant{Gain: 100, QE: 0.91, ReadNoise: 1.35},
+		Mono:   &Variant{MonoResponse: &zwo376Mono, Gain: 100, QE: 0.91, ReadNoise: 1.35},
 	},
 	// Dark current: ZWO ASI294MC Pro manual (2026), §3.6.
 	"imx294": {
@@ -645,11 +654,13 @@ var Cameras = map[string]Sensor{
 	},
 	// ToupTek's ATR428M/C (global shutter, sold for solar imaging): one peak
 	// QE for both, as ToupTek quotes it; each version's HCG read noise at
-	// gain 100.
+	// gain 100. The mono takes the IMX250's curve (front-illuminated Pregius
+	// too, whose 9 µm IMX432 reads the same at Hα per watt), ToupTek charting
+	// only the colour.
 	"imx428": {
 		Pixel: 4.5, PxLong: 3200, PxShort: 2200,
 		Colour: &Variant{Response: &imx428, Gain: 100, QE: 0.79, ReadNoise: 2.4},
-		Mono:   &Variant{Gain: 100, QE: 0.79, ReadNoise: 2.5},
+		Mono:   &Variant{MonoResponse: &imx250Mono, Gain: 100, QE: 0.79, ReadNoise: 2.5},
 	},
 	// ToupTek's G3M290C/M: its peak QE (ZWO's ASI290 manual says TBD); the
 	// read noise and the frame ZWO's (ASI290 manual, gain 60, where it drops
@@ -817,11 +828,13 @@ var Cameras = map[string]Sensor{
 		Mono: &Variant{MonoResponse: &imx174Mono, Gain: 300, QE: 0.77, ReadNoise: 3.5},
 	},
 	// The colour peak QE from ZWO's ASI462MC/ASI662MC comparison ("about
-	// 81%"); the read noise its chart's at gain 80, for both versions.
+	// 81%"); the read noise its chart's at gain 80, for both versions. The
+	// mono takes the IMX290's curve (its STARVIS predecessor's), ZWO's
+	// ASI462 manual charting only the colour.
 	chipIMX462: {
 		Pixel: 2.9, PxLong: 1936, PxShort: 1096,
 		Colour: &Variant{Response: &imx462, Gain: 80, QE: 0.81, ReadNoise: 1.05},
-		Mono:   &Variant{Gain: 80, QE: 0.89, ReadNoise: 1.05},
+		Mono:   &Variant{MonoResponse: &imx290Mono, Gain: 80, QE: 0.89, ReadNoise: 1.05},
 	},
 	// The original Origin's and Stellina's: ZWO publishes no peak QE (its
 	// ASI178 manual says TBD); 0.70 is the colour figure rk.edu.pl quotes
