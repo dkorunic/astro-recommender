@@ -247,3 +247,27 @@ func writeCache(cache string, data []byte) {
 		_ = os.Remove(f.Name())
 	}
 }
+
+// Prune removes the cache files whose names match pattern (filepath.Match)
+// and were last written more than age ago: a cache keyed by date (COBS's,
+// some 2.5 MB a night) otherwise keeps one file per day for good. Errors
+// only leave the files where they are.
+func Prune(pattern string, age time.Duration) {
+	dir, err := os.UserCacheDir()
+	if err != nil {
+		return
+	}
+	dir = filepath.Join(dir, "astro-recommender")
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return
+	}
+	for _, e := range entries {
+		if ok, _ := filepath.Match(pattern, e.Name()); !ok || e.IsDir() {
+			continue
+		}
+		if fi, err := e.Info(); err == nil && time.Since(fi.ModTime()) > age {
+			_ = os.Remove(filepath.Join(dir, e.Name()))
+		}
+	}
+}

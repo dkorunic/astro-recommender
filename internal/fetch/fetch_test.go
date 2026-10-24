@@ -320,3 +320,29 @@ func TestWriteCacheRenameFails(t *testing.T) {
 		t.Errorf("leftover temp files: %v", tmps)
 	}
 }
+
+// Prune removes only the matching files older than its age.
+func TestPrune(t *testing.T) {
+	tempCache(t)
+	base, _ := os.UserCacheDir()
+	dir := filepath.Join(base, "astro-recommender")
+	if err := os.MkdirAll(dir, 0o750); err != nil {
+		t.Fatal(err)
+	}
+	old := time.Now().Add(-48 * time.Hour)
+	for name, mtime := range map[string]time.Time{"cobs-1.json": old, "cobs-2.json": time.Now(), "other.json": old} {
+		path := filepath.Join(dir, name)
+		if err := os.WriteFile(path, []byte("{}"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Chtimes(path, mtime, mtime); err != nil {
+			t.Fatal(err)
+		}
+	}
+	Prune("cobs-*.json", 24*time.Hour)
+	for name, want := range map[string]bool{"cobs-1.json": false, "cobs-2.json": true, "other.json": true} {
+		if _, err := os.Stat(filepath.Join(dir, name)); (err == nil) != want {
+			t.Errorf("%s kept %v, want %v", name, err == nil, want)
+		}
+	}
+}

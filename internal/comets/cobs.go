@@ -21,6 +21,10 @@ const (
 	cobsURL      = "https://cobs.si/api/obs_list.api?format=json&from_date=%s&to_date=%s"
 	cobsDays     = 30            // observations this far before the night count
 	cobsCacheAge = 6 * time.Hour // observers report through the day
+	// cobsKeep is how long a night's cached answer is kept before Prune
+	// removes it: long past cobsCacheAge, so a run on another -date keeps
+	// today's.
+	cobsKeep = 7 * 24 * time.Hour
 	// cobsMaxPages bounds the pages of 2500 records followed: 30 days held
 	// 3236 records in the autumn of 2025, two pages.
 	cobsMaxPages = 10
@@ -55,6 +59,7 @@ func FetchObserved(ctx context.Context, day time.Time) (Observed, error) {
 	from := to.AddDate(0, 0, -cobsDays)
 	url := fmt.Sprintf(cobsURL, from.Format(time.DateOnly), to.Format(time.DateOnly))
 	get := func(ctx context.Context) ([]byte, error) { return allPages(ctx, url) }
+	fetch.Prune("cobs-*.json", cobsKeep) // one file per night, each a few MB
 
 	return fetch.CachedGet(ctx, get, "cobs-"+to.Format(time.DateOnly)+"-all.json", cobsCacheAge, parseObserved)
 }
