@@ -86,22 +86,23 @@ func TestTargetLists(t *testing.T) {
 
 func TestLoadRejectsBadCoordinates(t *testing.T) {
 	for name, yml := range map[string]string{
-		"empty dec":   `[{name: X, ra: "00 50 00", dec: ""}]`,
-		"dec > 90":    `[{name: X, ra: "00 50 00", dec: "95 00 00"}]`,
-		"ra >= 24":    `[{name: X, ra: "24 00 00", dec: "10 00 00"}]`,
-		"ra < 0":      `[{name: X, ra: "-01 00 00", dec: "10 00 00"}]`,
-		"nan":         `[{name: X, ra: "NaN", dec: "NaN"}]`,
-		"size nan":    `[{name: X, ra: "00 50 00", dec: "10 00 00", size: .nan}]`,
-		"size inf":    `[{name: X, ra: "00 50 00", dec: "10 00 00", size: .inf}]`,
-		"mag nan":     `[{name: X, ra: "00 50 00", dec: "10 00 00", mag: .nan}]`,
-		"bmag inf":    `[{name: X, ra: "00 50 00", dec: "10 00 00", bmag: .inf}]`,
-		"surfbr nan":  `[{name: X, ra: "00 50 00", dec: "10 00 00", surfbr: .nan}]`,
-		"bsurfbr nan": `[{name: X, ra: "00 50 00", dec: "10 00 00", bsurfbr: .nan}]`,
-		"mag 40":      `[{name: X, ra: "00 50 00", dec: "10 00 00", mag: 40}]`, // nothing in a target list is that faint
-		"surfbr 99":   `[{name: X, ra: "00 50 00", dec: "10 00 00", surfbr: 99}]`,
-		"minor nan":   `[{name: X, ra: "00 50 00", dec: "10 00 00", size: 10, minor: .nan}]`,
-		"minor>size":  `[{name: X, ra: "00 50 00", dec: "10 00 00", size: 10, minor: 12}]`,
-		"minor alone": `[{name: X, ra: "00 50 00", dec: "10 00 00", minor: 5}]`, // no major axis to sit under
+		"empty dec":     `[{name: X, ra: "00 50 00", dec: ""}]`,
+		"dec > 90":      `[{name: X, ra: "00 50 00", dec: "95 00 00"}]`,
+		"ra >= 24":      `[{name: X, ra: "24 00 00", dec: "10 00 00"}]`,
+		"ra < 0":        `[{name: X, ra: "-01 00 00", dec: "10 00 00"}]`,
+		"nan":           `[{name: X, ra: "NaN", dec: "NaN"}]`,
+		"size nan":      `[{name: X, ra: "00 50 00", dec: "10 00 00", size: .nan}]`,
+		"size inf":      `[{name: X, ra: "00 50 00", dec: "10 00 00", size: .inf}]`,
+		"mag nan":       `[{name: X, ra: "00 50 00", dec: "10 00 00", mag: .nan}]`,
+		"bmag inf":      `[{name: X, ra: "00 50 00", dec: "10 00 00", bmag: .inf}]`,
+		"surfbr nan":    `[{name: X, ra: "00 50 00", dec: "10 00 00", surfbr: .nan}]`,
+		"bsurfbr nan":   `[{name: X, ra: "00 50 00", dec: "10 00 00", bsurfbr: .nan}]`,
+		"mag 40":        `[{name: X, ra: "00 50 00", dec: "10 00 00", mag: 40}]`, // nothing in a target list is that faint
+		"surfbr 99":     `[{name: X, ra: "00 50 00", dec: "10 00 00", surfbr: 99}]`,
+		"minor nan":     `[{name: X, ra: "00 50 00", dec: "10 00 00", size: 10, minor: .nan}]`,
+		"minor>size":    `[{name: X, ra: "00 50 00", dec: "10 00 00", size: 10, minor: 12}]`,
+		"minor alone":   `[{name: X, ra: "00 50 00", dec: "10 00 00", minor: 5}]`,                                      // no major axis to sit under
+		"haflux bright": `[{name: X, ra: "00 50 00", dec: "10 00 00", type: Planetary Nebula, size: 0.1, haflux: -5}]`, // SB 1.9: a typo
 	} {
 		f := filepath.Join(t.TempDir(), "t.yaml")
 		if err := os.WriteFile(f, []byte(yml), 0o600); err != nil {

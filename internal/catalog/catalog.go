@@ -719,6 +719,13 @@ func Load(listName, file string) ([]Target, string, error) {
 		if tg.Minor > 0 && tg.Minor > tg.Size {
 			return nil, "", fmt.Errorf("%w for %s: minor %v exceeds size %v", errNumber, tg.Name, tg.Minor, tg.Size)
 		}
+		// A flux over a size makes a surface brightness, bounded as surfbr
+		// is: a typo in either (haflux -5 on a 0.1' planetary, 1.9) would
+		// make the object immune to sky glow. The brightest real one is
+		// IC 4997's 11.6.
+		if sb, ok := tg.FluxSB(); ok && sb < minSB {
+			return nil, "", fmt.Errorf("%w for %s: haflux %v over %v' is %.1f mag/arcsec², brighter than %v", errNumber, tg.Name, tg.HaFlux, tg.Size, sb, minSB)
+		}
 		tg.RADeg, tg.DecDeg = ra*15, dec // hours -> degrees
 		tg.Constellation = constellation.Of(tg.RADeg, tg.DecDeg)
 	}
