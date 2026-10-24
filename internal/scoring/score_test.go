@@ -298,11 +298,12 @@ func TestScoreRuns(t *testing.T) {
 // first-quarter Moon of 26 January 2026 from a Bortle 6 site, a sky-limited
 // target in Ursa Major: an H II region gains most from Hα, whose 7 nm band
 // also passes [N II] (and less from dual-band, whose [O III] half lets in
-// three times the moonlight per nm for a tenth of its light), nothing from
-// [O III] or [S II]; a planetary most from dual-band, its [N II] as bright as
-// Hα putting two-fifths of its light in the Hα band beside the half in
-// [O III]'s, then [O III], then Hα; a remnant most from Hα with its [N II],
-// then quad-band, a little from [S II]; a galaxy or a cluster is never
+// three times the moonlight per nm for under a tenth of its photons),
+// nothing from [O III] or [S II]; a planetary most from dual-band, its
+// [N II] as bright as Hα putting two-fifths of its photons in the Hα band
+// beside [O III]'s 0.42, then Hα, whose band sees less moonlight and
+// extinction, then [O III]; a remnant most from Hα with its [N II], then
+// quad-band, a little from [S II]; a galaxy or a cluster is never
 // filtered.
 func TestScoreFilter(t *testing.T) {
 	cfg := &config.Config{Lat: 45.8, Lon: 16, AltMin: 30, AltMax: 80, SizeMax: 300, NoWeather: true, ExtinctionSet: true, Extinction: 0.2, Bortle: 6, FilterNM: 7}
@@ -326,7 +327,7 @@ func TestScoreFilter(t *testing.T) {
 		// nebulae, the narrower first; continuum (a galaxy, a cluster) loses
 		// as much light as sky through them, so they never help it.
 		{"HII Region", []string{"ha", "dual", "cls", "lpro", ""}, map[string]bool{"oiii": true, "sii": true}},
-		{"Planetary Nebula", []string{"dual", "oiii", "ha", "cls", "lpro", ""}, map[string]bool{"sii": true}},
+		{"Planetary Nebula", []string{"dual", "ha", "oiii", "cls", "lpro", ""}, map[string]bool{"sii": true}},
 		{"Supernova Remnant", []string{"ha", "quad", "tri", "cls", "sii", "lpro", ""}, map[string]bool{"oiii": true}},
 		{"Spiral Galaxy", []string{""}, map[string]bool{"ha": true, "oiii": true, "sii": true, "dual": true, "tri": true, "quad": true, "cls": true, "lpro": true}},
 		{"Globular Cluster", []string{""}, map[string]bool{"cls": true, "lpro": true}},
@@ -395,7 +396,7 @@ func TestScoreFilter(t *testing.T) {
 	for _, c := range []struct{ list, typ, want string }{
 		{"dual,ha,oiii", "HII Region", "ha"},
 		{"oiii,ha,dual", "HII Region", "ha"},
-		{"ha,oiii", "Planetary Nebula", "oiii"},
+		{"oiii,ha", "Planetary Nebula", "ha"},
 		{"ha,oiii,dual", "Spiral Galaxy", ""},
 		{"sii", "HII Region", ""},
 		{"dual", "HII Region", "dual"},
@@ -571,7 +572,7 @@ func TestBeamThrough(t *testing.T) {
 	fast := *cfg
 	fast.FRatio, fast.Obstructed = origin.fRatio, origin.obstructed
 	slow, shifted := passes(cfg, hii, "ha"), passes(&fast, hii, "ha")
-	lines := hii.Lines()
+	lines := hii.Photons()
 	want := lines[catalog.Ha]*0.8843 + lines[catalog.NII6548] + lines[catalog.NII6583]*0.249
 	if math.Abs(shifted.w-want) > 0.002 || shifted.glow != slow.glow || shifted.rayleigh != slow.rayleigh || shifted.w >= slow.w {
 		t.Errorf("Hα through f/2.2: %+v, want w %.4f and the collimated sky of %+v", shifted, want, slow)

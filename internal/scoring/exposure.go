@@ -149,7 +149,7 @@ type channel struct {
 
 // channels returns the sensor's channels through the -filter choice name
 // ("" none), fp what it passes and width the line bands' width. The sky, and
-// an object without emission lines (lines zero, Target.Lines), are
+// an object without emission lines (lines zero, Target.Photons), are
 // continuum: unfiltered and broadband spread over the camera band, the glow
 // flat per nm and the moonlight as it scatters (atmos.BandMean against V's),
 // at each channel's mean response over the band (config.Response.Broad), through a
@@ -416,7 +416,7 @@ func Subs(cfg *config.Config, s *Sky, r Result, planned []bool) Estimate {
 		}
 		obs = in
 	}
-	lines := r.Lines()
+	lines := r.Photons()
 	chans := c.channels(nil, r.Filter, cfg.FilterNM, lines, fp)
 	if !slices.ContainsFunc(chans, func(ch channel) bool { return ch.obj > 0 }) {
 		return Estimate{}

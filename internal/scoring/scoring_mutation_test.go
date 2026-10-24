@@ -656,8 +656,8 @@ func TestMutBandExtinction(t *testing.T) {
 		s.Ext[i], s.ExtRayleigh[i], s.ExtAerosol[i] = 0.2, ray, aer
 	}
 	tg := catalog.Target{Name: "N", Type: "Emission Nebula", RADeg: 90.5, Size: 20}
-	lines := tg.Lines()
-	// weighted is the factor (λ/551)^p weighted by the share of each line
+	lines := tg.Photons()
+	// weighted is the factor (λ/551)^p weighted by the photon share of each line
 	// the 7 nm bands reach: [N II] 654.8/658.3 in Hα's.
 	weighted := func(p float64, ls ...catalog.Line) float64 {
 		var f, w float64

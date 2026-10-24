@@ -422,6 +422,29 @@ func (t Target) Lines() [NumLines]float64 {
 	return [NumLines]float64{Ha: 1 / sum, OIII: r.oiii / sum, SII: r.sii / sum, Hb: hb / sum, NII6548: r.nii / 4 / sum, NII6583: r.nii * 3 / 4 / sum, OIII4959: r.oiii / 3 / sum}
 }
 
+// Photons returns Lines as shares of the photons rather than of the energy,
+// each line's weighted by its wavelength (a photon of λ carries hc/λ): what
+// a camera counts, so the scoring's shares of an object's light. An Hα
+// photon carries 0.76 of an [O III] one's energy, so Hα's share of an H II
+// region's photons is 0.50 against 0.47 of its energy, a planetary's 0.19
+// against 0.16. All 0 when it is not EmissionLine.
+func (t Target) Photons() [NumLines]float64 {
+	shares := t.Lines()
+	var sum float64
+	for l, s := range shares {
+		shares[l] = s * LineNM[l]
+		sum += shares[l]
+	}
+	if sum == 0 {
+		return shares
+	}
+	for l := range shares {
+		shares[l] /= sum
+	}
+
+	return shares
+}
+
 // starMag reports whether t's catalogued magnitude is a star's or a
 // cluster's rather than its nebula's (starMagWords, starMagNames).
 func (t Target) starMag() bool {

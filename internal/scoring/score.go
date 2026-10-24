@@ -109,7 +109,7 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 			}
 			tallies[c].reset(fp)
 			if camNL > 0 {
-				tallies[c].chans = cam.channels(tallies[c].chans, name, cfg.FilterNM, tg.Lines(), fp)
+				tallies[c].chans = cam.channels(tallies[c].chans, name, cfg.FilterNM, tg.Photons(), fp)
 			}
 			active, choice = append(active, &tallies[c]), append(choice, c)
 		}
@@ -286,7 +286,7 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, ts []*tally, mos
 	emission := catalog.EmissionLine(tg)
 	if emission {
 		objNL /= atmos.CameraBand
-		all := broadPasses(tg, tg.Lines(), cameraBand)
+		all := broadPasses(tg, tg.Photons(), cameraBand)
 		lineRay, lineAer = all.ray-1, all.aer-1
 	}
 	objRef := objNL + s.RefNL // the same object under a pristine sky
@@ -456,7 +456,7 @@ func frameFill(fill float64) float64 {
 }
 
 // filterPass is what one -filter choice passes for one target: w, its share
-// of the target's light (the lines in the filter's bands, catalog.Target.Lines),
+// of the target's light (the lines in the filter's bands, catalog.Target.Photons),
 // and glow, rayleigh and mie, the shares of atmos.SkyParts' parts against the
 // unfiltered camera band (atmos.BroadSky over each band, summed over the
 // bands, which a dual-band filter takes onto one frame). w is 0 without a
@@ -472,7 +472,7 @@ func passes(cfg *config.Config, tg catalog.Target, name string) filterPass {
 	if name == "" {
 		return fp
 	}
-	lines := tg.Lines()
+	lines := tg.Photons()
 	if bands := config.Broadband[name]; bands != nil {
 		return broadPasses(tg, lines, bands)
 	}
@@ -596,35 +596,30 @@ func (b beam) through(nm float64, band [2]float64) float64 {
 // that is not its lines (the stars inside it, scattered continuum), fitted by
 // scripts/calibrate_lines.py: the median over 13 nebulae of 30' and more of
 // Finkbeiner (2003)'s Hα map against their lines derived from V by catalog.LineV
-// (interquartile range -0.03-2.22 mag).
-const vContinuum = 0.94
+// (interquartile range 0.19-2.45 mag).
+const vContinuum = 1.16
 
 // lightNL returns the light in nanoLamberts of tg at V surface brightness
-// sb: a continuum's is its V; an emission-line target's is its lines, which
-// V measures only as far as its passband reaches them (catalog.LineV) less what of
-// it is continuum (vContinuum): 1.68 mag brighter than V for an H II region,
-// 0.41 for a planetary, whose [O III] V holds. A surface brightness from a
-// measured line flux (catalog.Target.FluxSB) holds no stars and was summed
-// in photons, so it is undone exactly: V's photon-weighted share of the
-// lines, no vContinuum. Only sb that is FluxSB's: ExposureSB gives a nebula
-// with a map flux its class's typical, catalogued, value.
+// sb: a continuum's is its V; an emission-line target's is its lines'
+// photons, which V counts only as far as its passband reaches them
+// (catalog.LineV over the photon shares, catalog.Target.Photons), less what
+// of it is continuum (vContinuum): 1.61 mag brighter than V for an H II
+// region, 0.29 for a planetary, whose [O III] V holds. A surface brightness
+// from a measured line flux (catalog.Target.FluxSB) holds no stars and was
+// counted in photons the same way, so it is undone exactly, without
+// vContinuum. Only sb that is FluxSB's: ExposureSB gives a nebula with a map
+// flux its class's typical, catalogued, value.
 func lightNL(tg catalog.Target, sb float64) float64 {
 	nl := atmos.NanoLamberts(sb)
-	if fsb, ok := tg.FluxSB(); ok && sb == fsb {
-		var through, all float64
-		for l, w := range tg.Lines() {
-			through += w * catalog.LineNM[l] * catalog.LineV[l]
-			all += w * catalog.LineNM[l]
-		}
-
-		return nl * all / through
-	}
 	var fv float64
-	for l, w := range tg.Lines() {
-		fv += w * catalog.LineV[l]
+	for l, p := range tg.Photons() {
+		fv += p * catalog.LineV[l]
 	}
 	if fv == 0 {
 		return nl
+	}
+	if fsb, ok := tg.FluxSB(); ok && sb == fsb {
+		return nl / fv
 	}
 
 	return nl / fv * math.Pow(10, -0.4*vContinuum)
@@ -635,7 +630,7 @@ var cameraBand = [][2]float64{{atmos.CameraLo, atmos.CameraHi}}
 
 // broadPasses is passes for a broadband filter's bands, against the
 // unfiltered camera band (atmos.BroadSky): an emission-line target's w is
-// its passed lines' share of them (Target.Lines sum to 1, so passing every
+// its passed lines' share of them (Target.Photons sum to 1, so passing every
 // line is 1, as unfiltered), anything else's its continuum's, taken flat per
 // nm.
 func broadPasses(tg catalog.Target, lines [catalog.NumLines]float64, bands [][2]float64) filterPass {

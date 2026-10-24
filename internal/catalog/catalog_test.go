@@ -724,3 +724,26 @@ func TestFluxSB(t *testing.T) {
 		}
 	}
 }
+
+// Photons are Lines weighted by wavelength, summing to 1: an H II region's
+// Hα holds 0.50 of its photons against 0.47 of its energy, a planetary's
+// 0.19 against 0.16, and [O III]'s share falls; nothing for a continuum.
+func TestPhotons(t *testing.T) {
+	for _, c := range []struct {
+		typ string
+		ha  float64
+	}{{"HII Region", 0.501}, {"Planetary Nebula", 0.194}} {
+		tg := Target{Type: c.typ}
+		e, p := tg.Lines(), tg.Photons()
+		var sum float64
+		for _, s := range p {
+			sum += s
+		}
+		if math.Abs(sum-1) > 1e-12 || math.Abs(p[Ha]-c.ha) > 0.001 || p[Ha] <= e[Ha] || p[OIII] >= e[OIII] {
+			t.Errorf("%s: photon shares %v (sum %v), want Hα %.3f above the energy's %.3f, [O III] below", c.typ, p, sum, c.ha, e[Ha])
+		}
+	}
+	if p := (Target{Type: "Galaxy"}).Photons(); p != [NumLines]float64{} {
+		t.Errorf("a galaxy's photon shares %v, want none", p)
+	}
+}

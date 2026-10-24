@@ -479,13 +479,13 @@ func TestSubsCloudedOut(t *testing.T) {
 // An emission-line target's V surface brightness measures its lines only as
 // far as the V passband reaches them, and its catalogue magnitude also counts
 // stars and continuum (vContinuum, fitted by scripts/calibrate_lines.py):
-// an H II region's lines are 1.68 mag brighter than its V, a planetary's,
-// [O III] inside V, 0.41; a galaxy's light is its V.
+// an H II region's lines are 1.61 mag brighter than its V, a planetary's,
+// [O III] inside V, 0.29 (in photons, catalog.Target.Photons); a galaxy's light is its V.
 func TestLightNL(t *testing.T) {
 	for _, c := range []struct {
 		typ   string
 		boost float64
-	}{{"HII region", 1.68}, {"Supernova Remnant", 1.39}, {"Wolf-Rayet Nebula", 0.83}, {"Planetary Nebula", 0.41}, {"Galaxy", 0}} {
+	}{{"HII region", 1.61}, {"Supernova Remnant", 1.33}, {"Wolf-Rayet Nebula", 0.74}, {"Planetary Nebula", 0.29}, {"Galaxy", 0}} {
 		tg := catalog.Target{Type: c.typ}
 		if got := atmos.MagFromNL(atmos.NanoLamberts(22)) - atmos.MagFromNL(lightNL(tg, 22)); math.Abs(got-c.boost) > 0.01 {
 			t.Errorf("%s: lines %.3f mag brighter than V, want %.2f", c.typ, got, c.boost)
@@ -513,7 +513,7 @@ func TestCalibrationSample(t *testing.T) {
 				continue
 			}
 			seen[catalog.NameKey(x.Name)] = true
-			ln := x.Lines()
+			ln := x.Photons()
 			fmt.Printf("ROW|%s|%s|%s|%.4f|%.4f|%.1f|%.2f", l, x.Name, x.Type, x.RADeg, x.DecDeg, x.Size, sb)
 			for _, s := range ln {
 				fmt.Printf("|%.4f", s)

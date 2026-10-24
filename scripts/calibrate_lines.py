@@ -16,8 +16,9 @@ the median of a ring from 1.25 to 2 radii (the Milky Way's diffuse Hα),
 none where the ring is hamap.RING_MAX of the disc or more.
 scripts/hamap.py measures the nebulae without a surface brightness the
 same way, so refit after changing either. Its lines derived from V are
-    lines = V / fV,   fV = sum of share x Bessell V at the line (lineV),
-whose Hα share is what the map measures. vContinuum is the median over the
+    lines = V / fV,   fV = sum of photon share x Bessell V at the line (lineV),
+the shares catalog.Target.Photons, as scoring counts the lines, whose Hα
+share is what the map measures. vContinuum is the median over the
 sample of the derived Hα against the measured, in magnitudes: the part of
 a nebula's catalogued V light that is stars and continuum. Exact duplicates
 (one nebula under two names, same size and surface brightness) count once;
