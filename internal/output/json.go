@@ -69,6 +69,11 @@ type sky struct { // betteralign:ignore
 	AirglowMag float64    `json:"airglowMag,omitempty"` // the zenith's change from the solar cycle, mag/arcsec²; negative is brighter
 	Extinction [2]float64 `json:"extinction"`           // min and max over the window, mag per airmass
 	Filter     *filter    `json:"filter,omitempty"`
+	// Washout is scoring.Sky.Washout: no hour of the window clear enough with
+	// seeing under 4", so the text report lists no target (these still do);
+	// WashoutReason "cloud" when the weather alone does it, else "seeing".
+	Washout       bool   `json:"washout"`
+	WashoutReason string `json:"washoutReason,omitempty"`
 }
 
 type filter struct { // betteralign:ignore
@@ -169,25 +174,33 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 			r.Frame.Mosaic = cfg.Mosaic
 		}
 	}
-	for t := s.Start.Truncate(time.Hour); forecastFetched(s) && t.Before(s.End); t = t.Add(time.Hour) {
-		hour := map[string]any{"hour": t.In(cfg.Loc), "extinction": s.ExtinctionAt(t, cfg.Extinction)}
+	r.Sky.WashoutReason = washoutReason(s)
+	r.Sky.Washout = r.Sky.WashoutReason != ""
+	for t := s.Start.Truncate(time.Hour); forecastFetched(s) && !t.After(s.LastHour()); t = t.Add(time.Hour) {
+		// An hour from End on, the text table's, has only what the window's
+		// last minutes read from it (see Weather): no extinction, wind, gust,
+		// rain or 7Timer seeing.
+		after := !t.Before(s.End)
+		hour := map[string]any{"hour": t.In(cfg.Loc)}
+		if !after {
+			hour["extinction"] = s.ExtinctionAt(t, cfg.Extinction)
+		}
 		if h, ok := s.Weather[t.Unix()]; ok {
 			hour["cloud"], hour["low"], hour["mid"], hour["high"] = h.Cloud, h.Low, h.Mid, h.High
-			// The gust scored, and past its cap the forecast's too.
-			g := scoring.Gust(h.Gust, h.Wind)
-			hour["dewSpread"], hour["wind"], hour["gust"] = h.Temp-h.DewPoint, h.Wind, g
-			if g < h.Gust {
-				hour["gustForecast"] = h.Gust
-			}
-			if h.Precip >= 0 { // not NaN
-				hour["precipitation"] = h.Precip
+			hour["dewSpread"] = h.Temp - h.DewPoint
+			if !after {
+				hour["wind"] = h.Wind
+				gustRain(hour, h)
 			}
 			if h.Seeing > 0 {
 				hour["seeingArcsec"] = math.Round(h.Seeing*100) / 100
 			}
 		}
 		if a, ok := s.Astro[weather.AstroKey(t)]; ok {
-			hour["transparency"], hour["seeing"] = a.Transparency, weather.SeeingLabel(a.Seeing)
+			hour["transparency"] = a.Transparency
+			if !after {
+				hour["seeing"] = weather.SeeingLabel(a.Seeing)
+			}
 		}
 		r.Forecast = append(r.Forecast, hour)
 	}
@@ -252,4 +265,17 @@ func moonUp(s *scoring.Sky) []span {
 	}
 
 	return spans
+}
+
+// gustRain adds the hour's gust as scored, the forecast's too past its cap,
+// and its rain when known.
+func gustRain(hour map[string]any, h weather.HourWeather) {
+	g := scoring.Gust(h.Gust, h.Wind)
+	hour["gust"] = g
+	if g < h.Gust {
+		hour["gustForecast"] = h.Gust
+	}
+	if h.Precip >= 0 { // not NaN
+		hour["precipitation"] = h.Precip
+	}
 }

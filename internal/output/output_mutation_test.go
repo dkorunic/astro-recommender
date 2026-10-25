@@ -1032,3 +1032,131 @@ func TestMutJ2000(t *testing.T) {
 		t.Errorf("comet J2000 %v %v, of date again %v %v", ra, dec, back, d)
 	}
 }
+
+// A forecast with no usable hour replaces the tables with one line: cloud
+// when the weather alone does it, else the seeing.
+func TestMutClouded(t *testing.T) {
+	cfg, s := mutSky(t)
+	cfg.Plan = time.Hour
+	s.Quality = make([]float64, len(s.Grid))
+	for i := range s.Quality {
+		s.Quality[i] = scoring.MinQuality / 2
+	}
+	res := mutResults(s)
+	washed := func() string { return mutCapture(t, func() { Results(cfg, s, res) }) }
+	if out := washed(); out != washoutText(s, "cloud")+"\n" {
+		t.Errorf("clouded results: %q", out)
+	}
+	if out := mutCapture(t, func() { Plan(cfg, s, []plan.Slot{{Start: s.Grid[0], End: s.End, Result: &res[0]}}) }); out != "" {
+		t.Errorf("clouded plan: %q", out)
+	}
+	if l := mutCapture(t, func() { Legend(cfg, s, 0) }); l != "" {
+		t.Errorf("legend with no table printed:\n%s", l)
+	}
+	// 59 clear minutes in a row are still no session; 60 are.
+	for i := 30; i < 89; i++ {
+		s.Quality[i] = scoring.MinQuality
+	}
+	if out := washed(); out != washoutText(s, "cloud")+"\n" {
+		t.Errorf("59 usable minutes: %q", out)
+	}
+	s.Quality[89] = scoring.MinQuality
+	if out := washed(); strings.Contains(out, "No target is observable") {
+		t.Errorf("an hour usable still clouded out: %q", out)
+	}
+	// Seeing at the limit in one of those minutes breaks the hour.
+	s.Seeing = make([]float64, len(s.Grid))
+	for i := range s.Seeing {
+		s.Seeing[i] = 2
+	}
+	s.Seeing[60] = scoring.MaxSeeing
+	if out := washed(); out != washoutText(s, "seeing")+"\n" {
+		t.Errorf("bad-seeing results: %q", out)
+	}
+	s.Seeing[60] = scoring.MaxSeeing - 0.1
+	if out := washed(); strings.Contains(out, "No target is observable") {
+		t.Errorf("seeing under the limit still washed out: %q", out)
+	}
+	if got := washoutText(s, "cloud"); !strings.Contains(got, "no 60 minutes in a row at") {
+		t.Errorf("cloud text: %q", got)
+	}
+	// Minutes the forecast does not cover hold only the rest's mean, so an
+	// hour of them is no washout.
+	kept := slices.Clone(s.Quality)
+	for i := range s.Quality {
+		s.Quality[i] = 0
+	}
+	s.Covered = make([]bool, len(s.Grid))
+	for i := range 60 {
+		s.Covered[i] = true
+	}
+	if s.Washout() || s.Clouded() {
+		t.Error("an uncovered hour washed out")
+	}
+	s.Covered[60] = true // 59 uncovered minutes left
+	if !s.Washout() {
+		t.Error("59 uncovered minutes kept the list")
+	}
+	s.Covered, s.Quality = nil, kept
+	// A window shorter than an hour needs every minute, and says so.
+	s.Grid, s.Quality, s.Seeing = s.Grid[:30], s.Quality[30:60], s.Seeing[30:60]
+	if s.Washout() {
+		t.Error("a 30-minute window usable throughout washed out")
+	}
+	s.Quality[29] = 0
+	if !s.Washout() {
+		t.Error("a 30-minute window with an unusable minute not washed out")
+	}
+	if got := washoutText(s, "cloud"); !strings.Contains(got, "no 30 minutes in a row (the whole window) at") {
+		t.Errorf("short-window text: %q", got)
+	}
+}
+
+// The forecast table and JSON add the hour the window's last minutes round
+// to, when the forecast has it, since those minutes read its cloud.
+func TestMutLastHour(t *testing.T) {
+	_, s := mutSky(t)
+	last := s.Grid[len(s.Grid)-1]
+	if got := s.LastHour(); !got.Equal(last.Truncate(time.Hour)) {
+		t.Errorf("without the next hour: %v", got)
+	}
+	s.Weather = map[int64]weather.HourWeather{s.End.Unix(): {}}
+	if got := s.LastHour(); !got.Equal(s.End) {
+		t.Errorf("with the next hour: %v, want %v", got, s.End)
+	}
+	s.Grid = s.Grid[:len(s.Grid)-30] // last minute 21:29 rounds down
+	if got := s.LastHour(); !got.Equal(last.Truncate(time.Hour)) {
+		t.Errorf("rounding down: %v", got)
+	}
+}
+
+// The hour after the window shows its cloud, not the rain and gusts that
+// fall after it, in the table and in JSON, which also flags a washout.
+func TestMutAfterHour(t *testing.T) {
+	cfg, s := mutSky(t)
+	s.Weather = map[int64]weather.HourWeather{s.End.Unix(): {Cloud: 63, Mid: 63, Temp: 5, DewPoint: 4, Wind: 2, Gust: 30, Precip: 0.5}}
+	mutColor(t, false)
+	out := mutCapture(t, func() { Weather(cfg, s) })
+	lines := mutTable(t, out, "Forecast")
+	last := lines[len(lines)-1]
+	if f := strings.Fields(last); len(f) != 8 || f[1] != "63%" || f[4] != "-" || f[7] != "-" {
+		t.Errorf("hour after the window: %q", last)
+	}
+	s.Quality = make([]float64, len(s.Grid)) // all clouded
+	doc := map[string]any{}
+	if err := json.Unmarshal([]byte(mutCapture(t, func() {
+		if err := JSON(cfg, s, "", nil, nil); err != nil {
+			t.Error(err)
+		}
+	})), &doc); err != nil {
+		t.Fatal(err)
+	}
+	if sk := doc["sky"].(map[string]any); sk["washout"] != true || sk["washoutReason"] != "cloud" {
+		t.Errorf("sky %v", sk)
+	}
+	fc := doc["forecast"].([]any)
+	h := fc[len(fc)-1].(map[string]any)
+	if h["cloud"] != 63.0 || h["dewSpread"] != 1.0 || h["precipitation"] != nil || h["gust"] != nil || h["wind"] != nil || h["extinction"] != nil {
+		t.Errorf("hour after the window %v", h)
+	}
+}

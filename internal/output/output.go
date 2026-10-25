@@ -235,14 +235,23 @@ func Weather(cfg *config.Config, s *scoring.Sky) {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	row(w, "01", names(weatherColumns)...)
 	na := paint("39", "-")
-	for t := s.Start.Truncate(time.Hour); t.Before(s.End); t = t.Add(time.Hour) {
+	for t := s.Start.Truncate(time.Hour); !t.After(s.LastHour()); t = t.Add(time.Hour) {
 		cloud, layers, dew, wind, transp, seeing := na, na, na, na, na, na
 		// The value scoring used: hourly from the aerosols or the elevation alone, else the fixed one.
 		k := s.ExtinctionAt(t, cfg.Extinction)
 		ext := paint(scale(k, 0.25, 0.4), fmt.Sprintf("%.2f", k))
+		// An hour from End on is shown for the cloud, dew and upper-air seeing
+		// the window's last minutes read from it (the nearest hour); its
+		// extinction, wind, rain and 7Timer seeing they take from their own
+		// hour, so those stay "-". 7Timer's transparency is per 3-hour block,
+		// which those minutes share.
+		after := !t.Before(s.End)
+		if after {
+			ext = na
+		}
 		if h, ok := s.Weather[t.Unix()]; ok {
 			cloud = paint(scale(h.Cloud, 30, 70), fmt.Sprintf("%.0f%%", h.Cloud))
-			if h.Precip >= weather.RainGate/2 { // the cell is painted once either way
+			if h.Precip >= weather.RainGate/2 && !after { // the cell is painted once either way
 				cloud = paint("31", fmt.Sprintf("%.0f%% %.1fmm", h.Cloud, h.Precip))
 			}
 			layers = paint("39", fmt.Sprintf("%.0f/%.0f/%.0f%%", h.Low, h.Mid, h.High))
@@ -254,6 +263,9 @@ func Weather(cfg *config.Config, s *scoring.Sky) {
 				mark = "~"
 			}
 			wind = paint(scale(g, 20, 35), fmt.Sprintf("%.0f/%s%.0f km/h", h.Wind, mark, g))
+			if after {
+				wind = na
+			}
 			// The upper-air estimate, as scoring's blur; 7Timer's class stands in for hours without one.
 			if h.Seeing > 0 {
 				seeing = paint(scale(h.Seeing, 2, 2.5), fmt.Sprintf("~%.1f\"", h.Seeing)) // 7Timer's classes 6 and 8
@@ -261,7 +273,7 @@ func Weather(cfg *config.Config, s *scoring.Sky) {
 		}
 		if a, ok := s.Astro[weather.AstroKey(t)]; ok {
 			transp = paint(scale(float64(a.Transparency), 3, 6), fmt.Sprintf("%d/8", a.Transparency))
-			if s.Weather[t.Unix()].Seeing == 0 {
+			if s.Weather[t.Unix()].Seeing == 0 && !after {
 				seeing = paint(scale(float64(a.Seeing), 6, 8), weather.SeeingLabel(a.Seeing))
 			}
 		}
@@ -272,6 +284,11 @@ func Weather(cfg *config.Config, s *scoring.Sky) {
 }
 
 func Plan(cfg *config.Config, s *scoring.Sky, slots []plan.Slot) {
+	if s.Washout() { // Results says why
+		emptyPlan = true
+
+		return
+	}
 	emptyPlan = !slices.ContainsFunc(slots, func(p plan.Slot) bool { return p.Result != nil })
 	if emptyPlan {
 		// A grid of "no target" rows says less than one line.
@@ -381,6 +398,14 @@ func fit(order [][]string, render func(drop map[string]bool, desc int) (string, 
 // empty): at most TermWidth when that is set. On a terminal narrower than
 // the table, fit drops the columns of dropOrder, then cuts descriptions.
 func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) int {
+	if reason := washoutReason(s); reason != "" {
+		noTargets = true
+		for _, l := range wrapped(washoutText(s, reason)) {
+			fmt.Println(l)
+		}
+
+		return 0
+	}
 	noTargets = len(results) == 0
 	if noTargets {
 		for _, l := range wrapped(emptyText(cfg, s)) {
@@ -406,6 +431,35 @@ func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) int {
 	}
 
 	return width
+}
+
+// washoutText replaces the target table when washoutReason gives reason:
+// the cloud, else the seeing, over the stretch scoring.Sky.UsableNeed asks
+// for (the whole of a window shorter than scoring.MinUsable).
+func washoutText(s *scoring.Sky, reason string) string {
+	need := fmt.Sprintf("%d minutes in a row", s.UsableNeed())
+	if s.UsableNeed() < int(scoring.MinUsable/time.Minute) {
+		need += " (the whole window)"
+	}
+	if reason == "cloud" {
+		return fmt.Sprintf("No target is observable tonight: the forecast leaves no %s at %.0f%% of a clear sky or better (cloud, rain, dew or gusts).", need, scoring.MinQuality*100)
+	}
+
+	return fmt.Sprintf(`No target is observable tonight: no %s are both clear enough and under %.0f" of forecast seeing.`, need, scoring.MaxSeeing)
+}
+
+// washoutReason is "" while some hour of the window is usable
+// (scoring.Sky.Washout), else "cloud" when the weather alone rules every one
+// out, "seeing" otherwise.
+func washoutReason(s *scoring.Sky) string {
+	switch {
+	case !s.Washout():
+		return ""
+	case s.Clouded():
+		return "cloud"
+	default:
+		return "seeing"
+	}
 }
 
 // emptyText says that no target passed and which limits to loosen: the

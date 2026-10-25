@@ -38,6 +38,7 @@ type Sky struct {
 	ExtAerosol   []float64    // its aerosol part, scaled as λ^-1.3
 	MoonLight    []atmos.Moon // atmos.MoonLight per grid minute
 	Quality      []float64    // clear-sky fraction x rain x dew x gust x transparency, 1 = perfect
+	Covered      []bool       // per grid minute, the weather forecast's own hour (else fillGaps' mean); nil in a hand-built Sky = all
 	Temp         []float64    // air temperature per grid minute, °C: the forecast's, its mean where it has none, nightTemp without one
 	Seeing       []float64    // zenith seeing per grid minute, FWHM arcsec at 500 nm: the upper-air estimate, else 7Timer's, else typicalSeeing
 	Elevation    float64      // site elevation in m, from Open-Meteo; NaN if unknown
@@ -274,6 +275,7 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 		s.Seeing[i] = cmp.Or(s.Seeing[i], typicalSeeing)
 	}
 	fillGaps("weather", sky, skyOK, len(s.Weather) > 0, end.Sub(start))
+	s.Covered = skyOK
 	fillTemp(s.Temp, skyOK)
 	fillGaps("transparency", transp, transpOK, len(s.Astro) > 0, end.Sub(start))
 	for i := range s.Quality {
@@ -377,6 +379,59 @@ func ramp(v, good, bad, floor float64) float64 {
 	return 1 - f*(1-floor)
 }
 
+// MinQuality is the Quality below which a minute is no use for imaging:
+// four fifths of the sky clouded, or rain, dew and gusts as bad.
+const MinQuality = 0.2
+
+// MaxSeeing is the zenith seeing, FWHM arcseconds (Sky.Seeing), from which
+// a minute is no use for imaging either.
+const MaxSeeing = 4.0
+
+// MinUsable is the shortest unbroken stretch of usable minutes worth a
+// session; a window shorter than it needs to be usable throughout.
+const MinUsable = time.Hour
+
+// Clouded reports that the forecast leaves no MinUsable stretch of the
+// window at MinQuality or better, so no target is really observable
+// whatever its geometry. Without a forecast Quality is 1 and it is false;
+// minutes the forecast does not cover count as usable, since their Quality
+// is only the covered minutes' mean.
+func (s *Sky) Clouded() bool {
+	return !s.usable(func(i int) bool { return s.unknown(i) || s.Quality[i] >= MinQuality })
+}
+
+// Washout reports that no MinUsable stretch of the window is usable: at
+// MinQuality or better and with seeing under MaxSeeing (a Sky without
+// Seeing judges the weather alone). Clouded says whether the weather alone
+// does it.
+func (s *Sky) Washout() bool {
+	return !s.usable(func(i int) bool {
+		return s.unknown(i) || s.Quality[i] >= MinQuality && (i >= len(s.Seeing) || s.Seeing[i] < MaxSeeing)
+	})
+}
+
+// UsableNeed is the unbroken usable minutes Clouded and Washout ask for:
+// MinUsable's, or every minute of a shorter window.
+func (s *Sky) UsableNeed() int { return min(int(MinUsable/time.Minute), len(s.Quality)) }
+
+// LastHour is the last forecast hour the window's minutes read: the hour
+// the last minute rounds to when the forecast has it (BuildSky takes cloud
+// from the nearest hour), which starts at or after End, else the last
+// minute's own. Before Start's hour for an empty grid.
+func (s *Sky) LastHour() time.Time {
+	if len(s.Grid) == 0 {
+		return s.Start.Truncate(time.Hour).Add(-time.Hour)
+	}
+	last := s.Grid[len(s.Grid)-1]
+	if r := last.Round(time.Hour); r.After(last) {
+		if _, ok := s.Weather[r.Unix()]; ok {
+			return r
+		}
+	}
+
+	return last.Truncate(time.Hour)
+}
+
 // ExtinctionAt returns the extinction for time t: from that hour's aerosol
 // optical depth when known, typicalAOD when only the elevation is known,
 // and fallback otherwise (or when -extinction was given, as elevation is NaN then).
@@ -429,3 +484,26 @@ func hm(d time.Duration) string {
 
 	return fmt.Sprintf("%dh %02dm", m/60, m%60)
 }
+
+// usable reports whether ok holds for MinUsable of consecutive grid
+// minutes, or for every minute of a shorter window; true for an empty
+// Quality (a hand-built Sky), which judges nothing.
+func (s *Sky) usable(ok func(i int) bool) bool {
+	need := s.UsableNeed()
+	run := 0
+	for i := range s.Quality {
+		if !ok(i) {
+			run = 0
+
+			continue
+		}
+		if run++; run >= need {
+			return true
+		}
+	}
+
+	return need == 0
+}
+
+// unknown reports that the weather forecast does not cover minute i.
+func (s *Sky) unknown(i int) bool { return i < len(s.Covered) && !s.Covered[i] }

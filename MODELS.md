@@ -445,6 +445,8 @@ Q = (1 - C)\cdot
 
 When a forecast covers only part of the window, the uncovered minutes get the **mean of the covered ones**. A perfect sky would favour targets that are up only then. With no forecast at all, Q = 1. Weather only weighs the score. UP and the observable runs stay purely geometric.
 
+A minute is usable when it reaches Q = 0.2 (`scoring.MinQuality`: four fifths of the sky clouded, or rain, dew and gusts as bad) with the zenith seeing (`Sky.Seeing`, the forecast's or the typical 2.5″) under 4″ (`scoring.MaxSeeing`). When no hour of the window is usable throughout (`scoring.MinUsable`, 60 minutes in a row; a shorter window must be usable from end to end; a minute the weather forecast does not cover counts as usable, since its Q is only the covered minutes' mean, `Sky.Covered`), no target is really observable, whatever its geometry: the text report says so in place of the target table, naming the cloud when Q alone does it, else the seeing, and leaves the night plan out (`-json` and `-csv` still list them, JSON's `sky.washout`/`washoutReason` saying so). The seeing half needs the upper-air estimate: 7Timer's classes read at most 2.75″ (class 8's middle, `weather.SeeingArcsec`) and the fallback is 2.5″, so without the ECMWF profile (past its 15 days, or a failed fetch) only the weather washes a night out. Treating class 8 (> 2.5″) as unusable would be the harsher rule; it was not taken.
+
 The ramps are heuristics: the thresholds are judgment, not measurement (see [Heuristics](#heuristics)).
 
 ## Scoring a target
@@ -907,6 +909,7 @@ The models above come from the literature. The following are this project's own 
 | Dew ramp | spread 4 → 1 °C, × 1 → 0.7 | dew on optics ends sessions |
 | Gust ramp | 20 → 40 km/h, × 1 → 0.5, gusts at most 3× the mean wind, not capped below 20 km/h | shaken frames get discarded; mountain grid points' gusts run 5–10× the wind |
 | Rain gate | 0 → 0.1 mm/h, × 1 → 0 | nobody images in rain |
+| Washed-out night | no 60 minutes in a row at Q ≥ 0.2 with zenith seeing < 4″ | a fifth of a clear sky is no imaging, nor are 4″ stars at the Origin's 1.2″/px, nor a half-hour gap in the cloud; the forecast table still shows the night, with the hour after the window when its last half hour reads it |
 | Transparency ramp | 7Timer 1 → 8, × 1 → 0.5, only without CAMS aerosols | haze dims but does not stop imaging; CAMS's is in the extinction |
 | Aerosol scale height | 1.5 km, from the IFS cell's ground up | Hayes & Latham (1975); CALIOP 1.5–2 km over land |
 | SUBS levels for a faint object | Levels × √(S/B_ref) below a pristine sky's brightness | reported totals grow as 1/S, not a fixed SNR's 1/S² ([Sub-exposure estimate](#sub-exposure-estimate)) |
