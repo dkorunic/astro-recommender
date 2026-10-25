@@ -187,6 +187,17 @@ scripts/caldwell2yaml.py $X cald.wiki > $T/Caldwell.yaml
 scripts/fillmag.py --minor-only $T/Caldwell.yaml > /tmp/c.yaml && mv /tmp/c.yaml $T/Caldwell.yaml
 ```
 
+## Bright stars
+
+### `bsc2go.py`
+
+Writes `internal/stars/bsc.go`, the stars the STAR column names: the Yale Bright Star Catalogue's (CDS V/50) to V 4.0, Bayer letters in Greek, T CrB (listed at its outburst's V 2.0) left out. Rerun only to change `MAX_MAG` or `SKIP`.
+
+```sh
+curl -o bsc.tsv 'https://vizier.cds.unistra.fr/viz-bin/asu-tsv?-source=V/50/catalog&-out=HR,Name,Vmag,_RAJ2000,_DEJ2000&Vmag=%3C%3D4.0&-out.max=unlimited'
+scripts/bsc2go.py bsc.tsv > internal/stars/bsc.go
+```
+
 ## Seeing model
 
 ### `dewan.py`

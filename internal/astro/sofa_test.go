@@ -146,16 +146,16 @@ func TestSOFA(t *testing.T) {
 		limit float64
 	}{
 		{"Sun (degrees)", worst.sun, 1.0 / 60},
-		{"Moon (degrees)", worst.moon, 0.4},
-		{"topocentric Moon (degrees)", worst.moonTopo, 0.4},
-		{"Moon illumination (percentage points)", worst.illum, 0.3}, // against the true fraction (1 + cos i)/2; 0.27 seen
+		{"Moon (degrees)", worst.moon, 30 * arcsec},                 // 18″ seen, against Moon98 (itself ~10″)
+		{"topocentric Moon (degrees)", worst.moonTopo, 45 * arcsec}, // 28″ seen: also a spherical Earth and mean sidereal time
+		{"Moon illumination (percentage points)", worst.illum, 0.2}, // against the true fraction (1 + cos i)/2; 0.14 seen
 		{"GMST (degrees)", worst.gmst, 0.3 * arcsec},
 		{"precession (degrees)", worst.prec, 0.01 * arcsec}, // 0.004″ seen; a t² slip in zeta is 0.075″
 		{"target altitude (degrees)", worst.alt, 0.3 / 60},
 		{"Earth position (AU)", worst.earth, 0.00025},                // 0.000215 seen; dropping the r 2g term gives 0.00026
 		{"Sun ecliptic longitude (degrees)", worst.sunLon, 1.0 / 60}, // 0.0123° seen, as the Sun's RA/Dec
-		{"Moon distance (Earth radii)", worst.moonDist, 0.25},        // 0.19 seen of 56-64: the moonlight's (60.27/d)² within 1%
-		{"Moon phase angle (degrees)", worst.phase, 0.4},             // 0.35° seen: 180° less the elongation, and the Moon's own error
+		{"Moon distance (Earth radii)", worst.moonDist, 0.01},        // 0.0034 seen of 56-64
+		{"Moon phase angle (degrees)", worst.phase, 0.2},             // 0.17° seen: 180° less the elongation, the Sun's parallax from the Moon
 		{"ecliptic coordinates (degrees)", worst.ecl, 5 * arcsec},    // 3.9″ seen, the low-precision obliquity's at 2050
 		{"target azimuth on the sky (degrees)", worst.az, 0.3 / 60},  // as the altitude
 	} {

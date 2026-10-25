@@ -53,10 +53,19 @@ type span struct {
 }
 
 type moon struct { // betteralign:ignore
-	Illumination  float64 `json:"illumination"`
-	PhaseAngle    float64 `json:"phaseAngle"`
-	MinSeparation float64 `json:"minSeparation"`
-	Up            []span  `json:"up"` // when it is above the horizon within the window
+	Illumination  float64  `json:"illumination"`
+	PhaseAngle    float64  `json:"phaseAngle"`
+	MinSeparation float64  `json:"minSeparation"`
+	Up            []span   `json:"up"`                // when it is above the horizon within the window
+	Eclipse       *eclipse `json:"eclipse,omitempty"` // a lunar eclipse within the window
+}
+
+// eclipse is the stretches of the window the Moon is in the Earth's
+// penumbra, the umbra (partly or wholly) and wholly in the umbra.
+type eclipse struct { // betteralign:ignore
+	Penumbral *span `json:"penumbral,omitempty"`
+	Umbral    *span `json:"umbral,omitempty"`
+	Total     *span `json:"total,omitempty"`
 }
 
 type sky struct { // betteralign:ignore
@@ -124,10 +133,17 @@ type target struct { // betteralign:ignore
 	SkyMag        float64           `json:"skyMag"`
 	SB            *float64          `json:"surfaceBrightness,omitempty"`
 	SBEstimated   bool              `json:"surfaceBrightnessEstimated,omitempty"`
+	BrightStar    *starJSON         `json:"brightStar,omitempty"` // the STAR column's
 	Px            *float64          `json:"px,omitempty"`
 	Mosaic        *mosaic           `json:"mosaic,omitempty"` // more than one panel only
 	Filter        string            `json:"filter,omitempty"` // the -filter choice that scored best; none helped when absent
 	Subs          *scoring.Estimate `json:"subs,omitempty"`   // with framing: the sub-exposure estimate
+}
+
+type starJSON struct { // betteralign:ignore
+	Name       string  `json:"name"`
+	Mag        float64 `json:"mag"`
+	Separation float64 `json:"separation"` // arcminutes from the target's centre
 }
 
 type mosaic struct { // betteralign:ignore
@@ -146,7 +162,7 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 	r := report{
 		Location: location{Place: place, TimeZone: cfg.Loc.String(), Lat: cfg.Lat, Lon: cfg.Lon},
 		Window:   window{Start: s.Start, End: s.End, Dusk: s.Night[0], Dawn: s.Night[1], Twilight: cfg.Twilight},
-		Moon:     moon{Up: moonUp(s), Illumination: s.Illum, MinSeparation: s.MoonSep, PhaseAngle: s.MoonPhase},
+		Moon:     moon{Up: moonUp(s), Illumination: s.Illum, MinSeparation: s.MoonSep, PhaseAngle: s.MoonPhase, Eclipse: eclipseJSON(s)},
 		Sky: sky{
 			ZenithMag: cfg.ZenithMag(), SQM: cfg.SQM, SQMSource: cfg.SQMSource,
 			SolarFlux: cfg.SolarFlux, SolarBasis: cfg.SolarBasis,
@@ -236,6 +252,9 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 			tg.BMag = &res.BMag
 		}
 		tg.Subs = res.Exposure
+		if st, sep, ok := brightStar(cfg, s, res); ok {
+			tg.BrightStar = &starJSON{Name: st.Name, Mag: st.Mag, Separation: math.Round(sep*600) / 10}
+		}
 		if m := res.Mosaic; m.Panels() > 1 {
 			tg.Mosaic = &mosaic{Cols: m.Cols, Rows: m.Rows}
 		}
@@ -248,6 +267,21 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 	enc.SetIndent("", "  ")
 
 	return enc.Encode(r)
+}
+
+// eclipseJSON is the window's lunar eclipse, nil without one.
+func eclipseJSON(s *scoring.Sky) *eclipse {
+	var e eclipse
+	for i, field := range []**span{&e.Penumbral, &e.Umbral, &e.Total} {
+		if sp, ok := eclipseSpan(s, eclipsePhases[i].phase); ok {
+			*field = &sp
+		}
+	}
+	if e.Penumbral == nil {
+		return nil
+	}
+
+	return &e
 }
 
 // moonUp lists the spans within the window during which the Moon is up, its

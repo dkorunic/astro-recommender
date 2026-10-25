@@ -251,10 +251,10 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, ts []*tally, mos
 	// falls) is rejected on the cosine alone. On a moonlit night with low
 	// altitude limits Separation's trigonometry was 40% of scoring.
 	unit := astro.Unit(ra, dec) // a comet's is redone per minute
-	loosest := -1.0
+	loosest, loosestK := -1.0, 1.0
 	for _, t := range ts {
 		t.cosMoon = math.Cos(t.fp.moonK() * s.MoonSep * deg)
-		loosest = max(loosest, t.cosMoon)
+		loosest, loosestK = max(loosest, t.cosMoon), min(loosestK, t.fp.moonK())
 	}
 
 	// The limits compare as sines, so the Asin runs only for the minutes
@@ -331,7 +331,7 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, ts []*tally, mos
 			}
 			m := &s.MoonUnit[i]
 			c = max(-1, min(1, unit[0]*m[0]+unit[1]*m[1]+unit[2]*m[2]))
-			if c > loosest {
+			if s.tooClose(i, c, loosest, loosestK) {
 				continue
 			}
 			rho = math.Acos(c) / deg
@@ -352,7 +352,7 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, ts []*tally, mos
 		var glow, rayleigh, mie float64
 		parts, blur := false, -1.0
 		for _, t := range ts {
-			if c > t.cosMoon {
+			if s.tooClose(i, c, t.cosMoon, t.fp.moonK()) {
 				continue
 			}
 			if !parts && (t.fp.w > 0 || len(t.chans) > 0) {
@@ -392,6 +392,20 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, ts []*tally, mos
 	r.MaxAlt, r.MaxAt = math.Asin(maxSin)/deg, s.Grid[maxAt]
 
 	return r, true
+}
+
+// tooClose reports whether minute i's Moon separation, of cosine c, is
+// inside a limit of cosine cosMoon, k × MoonSep. While the Earth's shadow
+// dims the Moon the limit shrinks with its light; Eclipse is nil on every
+// other night, so the cosine is redone only then.
+func (s *Sky) tooClose(i int, c, cosMoon, k float64) bool {
+	return c > cosMoon && (s.Eclipse == nil || s.eclipseClose(i, c, k))
+}
+
+// eclipseClose is tooClose's limit of k × MoonSep in minute i of an
+// eclipse night, kept out of line so that tooClose inlines.
+func (s *Sky) eclipseClose(i int, c, k float64) bool {
+	return s.Eclipse[i].Light == 1 || c > math.Cos(k*s.MoonSep*s.Eclipse[i].Light*deg)
 }
 
 // where returns tg's mid-window position of date (degrees; a comet's

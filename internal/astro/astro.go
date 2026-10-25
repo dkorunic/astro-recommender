@@ -287,19 +287,12 @@ func Galactic(ra, dec float64) (float64, float64) {
 // The header's rises and sets use it; the moonlight rule stays geometric.
 const MoonHorizon = -(34.0 + 16.0) / 60
 
-// MoonRADec returns the Moon's geocentric right ascension and declination in
-// degrees (Astronomical Almanac low-precision formula, ~0.4°).
+// MoonRADec returns the Moon's geocentric right ascension and declination of
+// date in degrees (Astronomy Engine's series, moon.go, within an arcminute).
 func MoonRADec(t time.Time) (float64, float64) {
-	n := DaysJ2000(t)
-	T := n / 36525
-	s := func(a, b float64) float64 { return math.Sin((a + b*T) * deg) }
-	lambda := 218.32 + 481267.881*T +
-		6.29*s(135.0, 477198.87) - 1.27*s(259.3, -413335.36) + 0.66*s(235.7, 890534.22) +
-		0.21*s(269.9, 954397.74) - 0.19*s(357.5, 35999.05) - 0.11*s(186.5, 966404.03)
-	beta := 5.13*s(93.3, 483202.02) + 0.28*s(228.2, 960400.89) -
-		0.28*s(318.3, 6003.15) - 0.17*s(217.6, -407332.21)
+	ra, dec, _ := moon(t)
 
-	return eclipticToEquatorial(lambda*deg, beta*deg, n)
+	return ra, dec
 }
 
 // eclipticToEquatorial converts ecliptic longitude/latitude (radians) to right
@@ -333,13 +326,11 @@ func Altitude(ra, dec float64, t time.Time, lat, lon float64) float64 {
 }
 
 // MoonTopo returns the Moon's topocentric right ascension and declination in
-// degrees: MoonRADec seen from the observer instead of the Earth's centre, at
-// its horizontal parallax (Astronomical Almanac low precision, 54-61'). The
-// shift is up to 1°, more than MoonRADec's own error; astroplan's Moon is
+// degrees: MoonRADec seen from the observer instead of the Earth's centre,
+// shifted by up to its horizontal parallax (54-61'); astroplan's Moon is
 // topocentric too.
 func MoonTopo(t time.Time, lat, lon float64) (float64, float64) {
-	ra, dec := MoonRADec(t)
-	dist := MoonDistance(t)
+	ra, dec, dist := moon(t)
 	sinRA, cosRA := math.Sincos(ra * deg)
 	sinDec, cosDec := math.Sincos(dec * deg)
 	sinLST, cosLST := math.Sincos(LST(t, lon) * deg)
@@ -351,18 +342,12 @@ func MoonTopo(t time.Time, lat, lon float64) (float64, float64) {
 	return math.Mod(math.Atan2(y, x)/deg+360, 360), math.Atan2(z, math.Hypot(x, y)) / deg
 }
 
-// MoonDistance returns the Moon's geocentric distance in Earth radii (55.9-63.8,
-// mean 60.27) from its horizontal parallax (Astronomical Almanac low precision).
-// The fundamental arguments differ from MoonRADec's in their last digits:
-// both are Almanac editions' spellings of the same angles, each validated
-// against SOFA (TestSOFA), so neither is a typo to "fix".
+// MoonDistance returns the Moon's geocentric distance in Earth equatorial
+// radii (55.9-63.8, mean 60.27).
 func MoonDistance(t time.Time) float64 {
-	T := DaysJ2000(t) / 36525
-	c := func(a, b float64) float64 { return math.Cos((a + b*T) * deg) }
-	parallax := 0.9508 + 0.0518*c(134.9, 477198.85) + 0.0095*c(259.2, -413335.38) +
-		0.0078*c(235.7, 890534.23) + 0.0028*c(269.9, 954397.70)
+	_, _, dist := moon(t)
 
-	return 1 / math.Sin(parallax*deg)
+	return dist
 }
 
 // LST returns the local mean sidereal time in degrees (GMST + east longitude).

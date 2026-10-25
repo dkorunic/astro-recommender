@@ -33,17 +33,18 @@ type Sky struct {
 	MoonPos      [][2]float64 // topocentric RA/Dec of date, degrees
 	MoonUnit     [][3]float64 // astro.Unit of MoonPos, for the per-minute Moon separations
 	MoonAlt      []float64
-	Ext          []float64    // extinction per grid minute, mag per airmass, at 550 nm: ExtRayleigh + atmos.OzoneExtinction + ExtAerosol
-	ExtRayleigh  []float64    // its Rayleigh part, which a filter band scales as λ⁻⁴
-	ExtAerosol   []float64    // its aerosol part, scaled as λ^-1.3
-	MoonLight    []atmos.Moon // atmos.MoonLight per grid minute
-	Quality      []float64    // clear-sky fraction x rain x dew x gust x transparency, 1 = perfect
-	Covered      []bool       // per grid minute, the weather forecast's own hour (else fillGaps' mean); nil in a hand-built Sky = all
-	Temp         []float64    // air temperature per grid minute, °C: the forecast's, its mean where it has none, nightTemp without one
-	Seeing       []float64    // zenith seeing per grid minute, FWHM arcsec at 500 nm: the upper-air estimate, else 7Timer's, else typicalSeeing
-	Elevation    float64      // site elevation in m, from Open-Meteo; NaN if unknown
-	AODElevation float64      // the ground AOD's column stands on, m (Forecast.AODElevation); NaN if unknown
-	SunLon       float64      // the Sun's ecliptic longitude at mid-window, degrees, for the zodiacal light
+	Ext          []float64       // extinction per grid minute, mag per airmass, at 550 nm: ExtRayleigh + atmos.OzoneExtinction + ExtAerosol
+	ExtRayleigh  []float64       // its Rayleigh part, which a filter band scales as λ⁻⁴
+	ExtAerosol   []float64       // its aerosol part, scaled as λ^-1.3
+	MoonLight    []atmos.Moon    // atmos.MoonLight per grid minute, dimmed by Eclipse
+	Eclipse      []astro.Eclipse // astro.LunarEclipse per grid minute; nil when the Moon misses the Earth's shadow all window
+	Quality      []float64       // clear-sky fraction x rain x dew x gust x transparency, 1 = perfect
+	Covered      []bool          // per grid minute, the weather forecast's own hour (else fillGaps' mean); nil in a hand-built Sky = all
+	Temp         []float64       // air temperature per grid minute, °C: the forecast's, its mean where it has none, nightTemp without one
+	Seeing       []float64       // zenith seeing per grid minute, FWHM arcsec at 500 nm: the upper-air estimate, else 7Timer's, else typicalSeeing
+	Elevation    float64         // site elevation in m, from Open-Meteo; NaN if unknown
+	AODElevation float64         // the ground AOD's column stands on, m (Forecast.AODElevation); NaN if unknown
+	SunLon       float64         // the Sun's ecliptic longitude at mid-window, degrees, for the zodiacal light
 	Illum        float64
 	MoonPhase    float64 // phase angle in degrees, 0 = full
 	MoonDist     float64 // geocentric distance in Earth radii
@@ -183,6 +184,38 @@ func missingSeeing(f Forecast, start, end time.Time) (int, int) {
 	return missing, needed
 }
 
+// eclipses returns astro.LunarEclipse per minute of grid, nil when the Moon
+// misses the Earth's shadow throughout. The shadow reaches 1.59° from the
+// antisolar point at most (the penumbra and the Moon's radius at perigee),
+// and the Moon moves against it under 0.6°/h, so a night whose Moon at
+// mid-window, illum lit (geocentric: (1 + cos d)/2 at d from the antisolar
+// point), is farther than that and half the window's motion needs no look.
+func eclipses(grid []time.Time, illum float64) []astro.Eclipse {
+	if len(grid) == 0 {
+		return nil
+	}
+	half := grid[len(grid)-1].Sub(grid[0]).Hours() / 2
+	if math.Acos(max(-1, min(1, 2*illum-1)))/deg > 1.7+0.6*half {
+		return nil
+	}
+	var out []astro.Eclipse
+	for i, t := range grid {
+		e := astro.LunarEclipse(t)
+		if e.Phase == astro.NoEclipse {
+			continue
+		}
+		if out == nil {
+			out = make([]astro.Eclipse, len(grid))
+			for j := range out {
+				out[j].Light = 1
+			}
+		}
+		out[i] = e
+	}
+
+	return out
+}
+
 // BuildSky samples the night [start, end) on a 1-minute grid with forecast
 // f; it does no I/O.
 func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
@@ -215,6 +248,7 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 		s.MoonUnit[i] = astro.Unit(s.MoonPos[i][0], s.MoonPos[i][1])
 		s.MoonAlt[i] = astro.Altitude(s.MoonPos[i][0], s.MoonPos[i][1], t, cfg.Lat, cfg.Lon)
 	}
+	s.Eclipse = eclipses(s.Grid, s.Illum)
 
 	s.Quality = make([]float64, len(s.Grid))
 	s.Ext = make([]float64, len(s.Grid))
@@ -229,6 +263,9 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 		s.Ext[i] = s.ExtinctionAt(t, cfg.Extinction)
 		s.ExtRayleigh[i], s.ExtAerosol[i] = s.extinctionParts(t, cfg.Extinction)
 		s.MoonLight[i] = atmos.MoonLight(s.Ext[i], s.ExtRayleigh[i], s.ExtAerosol[i], s.MoonAlt[i], s.MoonPhase, s.MoonDist)
+		if s.Eclipse != nil {
+			s.MoonLight[i].NL *= s.Eclipse[i].Light
+		}
 		// Cloud, temperature, dew point, wind and the upper-air seeing are
 		// Open-Meteo's values at the hour, so a minute takes the nearest
 		// hour's (a cloud bank arrives half an hour sooner than read from the

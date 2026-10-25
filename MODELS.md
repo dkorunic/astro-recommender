@@ -148,26 +148,9 @@ If the Sun is already below the limit at noon and rises above it soon after, tha
 
 `internal/astro`
 
-**Position.** The Moon's geocentric ecliptic coordinates use the *Astronomical Almanac* low-precision series ([section D][aa]). The longitude has six periodic terms and the latitude four:
+**Position and distance.** The Moon's geocentric ecliptic longitude, latitude (of date) and distance come from [Astronomy Engine][astronomy-engine]'s series (`moon.go`, ported from its `CalcMoon` and checked against its Python to 1e-13), itself Montenbruck & Pfleger's ([*Astronomy on the Personal Computer*][montenbruck]) version of the Improved Lunar Ephemeris (1954, from Brown's theory): the mean longitudes of the Moon L₀, its anomaly l, the Sun's anomaly l′, the argument of latitude F and the elongation D, with their long-period perturbations, then 104 periodic terms in multiples of (l, l′, F, D) for the longitude, the latitude's argument, its factor and the sine of the parallax, plus ten for the latitude's N and eleven planetary terms in the longitude. They are summed with complex exponentials, e^{i(p·l + q·l′ + r·F + s·D)}, from powers of each argument's e^{i·arg}. The distance is the parallax's: r = 1/(0.999953253 sin π) Earth equatorial radii, 55.9–63.8 with a mean of 60.27. The series runs on Terrestrial Time, UT + ΔT, with ΔT from Espenak & Meeus' polynomials ([NASA][deltat]; 69 s in 2026, the Moon moving 35″ in that time), and the result is rotated to RA/Dec of date as for the Sun.
 
-```math
-\begin{aligned}
-\lambda &= 218.32^\circ + 481267.881^\circ T + 6.29\sin(135.0 + 477198.87T) - 1.27\sin(259.3 - 413335.36T) \\
-&\quad + 0.66\sin(235.7 + 890534.22T) + 0.21\sin(269.9 + 954397.74T) \\
-&\quad - 0.19\sin(357.5 + 35999.05T) - 0.11\sin(186.5 + 966404.03T) \\[4pt]
-\beta &= 5.13^\circ \sin(93.3 + 483202.02T) + 0.28\sin(228.2 + 960400.89T) \\
-&\quad - 0.28\sin(318.3 + 6003.15T) - 0.17\sin(217.6 - 407332.21T)
-\end{aligned}
-```
-
-These are rotated to RA/Dec as for the Sun. The result is good to about 0.4°.
-
-**Distance** comes from the horizontal parallax series. The result r is in Earth radii: 55.9–63.8, with a mean of 60.27:
-
-```math
-\pi = 0.9508^\circ + 0.0518\cos(134.9 + 477198.85T) + 0.0095\cos(259.2 - 413335.38T) + 0.0078\cos(235.7 + 890534.23T) + 0.0028\cos(269.9 + 954397.70T),
-\qquad r = \frac{1}{\sin\pi}
-```
+Against SOFA's Moon98 (`TestSOFA`, 3000 dates in 2000–2050) the position is within 18″ and the distance within 0.0034 Earth radii; it replaced the *Astronomical Almanac*'s six-term low-precision series ([section D][aa]), 0.4° and 0.19 Earth radii off, too coarse for the Earth's shadow (below), whose umbra is 0.7° across at the Moon.
 
 **Topocentric shift.** The Moon is close enough that the observer's position moves it by up to 1°. The observer is treated as a unit vector on a spherical Earth, rotated by the local sidereal time, and subtracted from the Moon's geocentric vector of length r ([Meeus][meeus] ch. 40):
 
@@ -183,9 +166,13 @@ The Moon's altitude and its separation from each target both use this topocentri
 \text{illuminated fraction} = \frac{1-\cos\psi}{2} ,\qquad \text{phase angle } \alpha_\text{phase} \approx 180^\circ - \psi \quad (0 = \text{full})
 ```
 
-The illumination, phase angle and distance are taken once, at the middle of the window, and drive both the Moon-distance rule and the moonlight model below. Against SOFA (`TestSOFA`) the distance is within 0.19 Earth radii (0.3%, 0.6% in the moonlight's (60.27/r)²), the phase angle within 0.35° of the true angle at the Moon and the illumination within 0.27 percentage points of the true illuminated fraction (1 + cos i)/2.
+The illumination, phase angle and distance are taken once, at the middle of the window, and drive both the Moon-distance rule and the moonlight model below. Against SOFA (`TestSOFA`) the phase angle is within 0.17° of the true angle at the Moon (the Sun's parallax seen from the Moon, which 180° − ψ leaves out) and the illumination within 0.14 percentage points of the true illuminated fraction (1 + cos i)/2.
 
 **Rise and set.** The header's "rises" and "sets" (and the JSON `moon.up` spans) are the minutes the Moon's topocentric centre crosses −50′: the upper limb on the refracted horizon, 34′ of refraction plus 16′ of semi-diameter, as the almanacs define moonrise and moonset ([USNO][usno-twilight]). The moonlight model and the Moon-distance rule keep the geometric horizon (centre above 0°); the few minutes between change nothing there.
+
+**Lunar eclipses** (`eclipse.go`, `astro.LunarEclipse`). Each minute the Earth's shadow is laid across the Moon as [Astronomy Engine][astronomy-engine]'s `_CalcShadow` does: its axis runs from the Sun through the Earth's centre, and in the plane across it at the Moon, u of the Sun's distance beyond the Earth, the umbra's radius is k = R☉ − (1 + u)(R☉ − R⊕) and the penumbra's p = −R☉ + (1 + u)(R☉ + R⊕), with R⊕ = 6371 + 88 km (the atmosphere's enlargement of the shadow) and R☉ = 695 700 km. The Moon's centre is r from the axis; the phase is penumbral while r < p + R☾ (1737.4 km), partial while r < k + R☾, total while r + R☾ < k, as its `SearchLunarEclipse` tells them apart; `TestLunarEclipse` holds the phases of seven eclipses of 2025–2028 to its contact times within 2 minutes, our Almanac Sun against its VSOP87 one. Seen from a point c from the axis in that plane, the Sun's and the Earth's discs scale to radii (p − k)/2 and (p + k)/2 with centres c apart (they touch at the penumbra's edge, the Earth's covers the Sun's within the umbra), so the share of the Sun the point sees is one less their overlap. The Moon's light is that share averaged over its disc, taken as uniformly bright (near full it is), on 8 rings of equal area (256 points), with the Sun's limb darkening left out; in the umbra, where a point sees no Sun, the sunlight the Earth's atmosphere refracts in stands in, a flat 10⁻⁴ (10 magnitudes down: a bright totality, Danjon L = 4; the umbra's gradient and the Danjon scale are left out, which changes nothing the score sees, as moonlight 10 magnitudes down is far under any sky).
+
+`scoring.BuildSky` keeps the minute's eclipse in `Sky.Eclipse` (nil on every other night: the shadow reaches at most 1.59° from the antisolar point, so a night whose Moon at mid-window is farther than 1.7° plus 0.6°/h over half the window is never looked at) and multiplies the moonlight (`Sky.MoonLight`'s flux) by the light. The Moon-distance rule shrinks with it, the limit becoming light × illumination in degrees ([Is this minute observable?](#is-this-minute-observable)), so a totally eclipsed Moon keeps targets no farther than the Moon below the horizon does. The header's Moon line and JSON's `moon.eclipse` list the penumbral, umbral (partly or wholly in the umbra) and total stretches within the window.
 
 ## Comets
 
@@ -463,7 +450,7 @@ A minute counts when all of these hold (the rules come from [uptonight][uptonigh
 
 1. `-alt-min ≤ h ≤ -alt-max`, 30°–80° by default, within 0°–90°. Being above 30° also guarantees an airmass ≤ 2.
 2. h is above the local horizon profile at the target's azimuth, when `-horizon` is given.
-3. **The Moon-distance rule**: while the Moon is above the horizon, the target is at least `illumination in %` degrees from it. For example, a 60%-lit Moon keeps a broadband target 60° away; through a filter, an emission-line target's limit shrinks by how much moonlight the filter's bands pass against its own light in them ([Nebula filters](#nebula-filters)): 18° for an H II region through a 7 nm dual-band filter or Hα alone, the floor (0.3 of the limit) that the Moon's halo sets. Unlike uptonight, the rule is skipped while the Moon is down.
+3. **The Moon-distance rule**: while the Moon is above the horizon, the target is at least `illumination in %` degrees from it. For example, a 60%-lit Moon keeps a broadband target 60° away; through a filter, an emission-line target's limit shrinks by how much moonlight the filter's bands pass against its own light in them ([Nebula filters](#nebula-filters)): 18° for an H II region through a 7 nm dual-band filter or Hα alone, the floor (0.3 of the limit) that the Moon's halo sets. Unlike uptonight, the rule is skipped while the Moon is down, and during a lunar eclipse the limit is multiplied by the share of the Moon's light the Earth's shadow leaves ([Lunar eclipses](#the-moon)): a 100° limit is 3° at the peak of a deep partial eclipse, 0.01° in totality.
 
 The longest unbroken stretch of observable minutes is reported as OBSERVABLE. A target whose longest stretch is shorter than `-min-run` is dropped.
 
@@ -663,6 +650,8 @@ F_{\text{frame}} = \max_{\text{grids}}\ \frac{F_{\text{fill}}}{\text{panels}}
 - The night's time is shared among a mosaic's panels, so the score is divided by the panel count.
 - `-mosaic N` tries every grid of at most N panels, and the fewest panels win a tie.
 - Objects of unknown size get F = 1.
+
+**Bright stars (STAR).** A star to V 4.0 that can fall in the frame is named in the STAR column, the brightest of the Yale Bright Star Catalogue's 517 to that magnitude (`internal/stars`, generated by `scripts/bsc2go.py` from CDS V/50; T CrB, listed at its 1946 outburst's V 2.0, left out) within the half-diagonal of the frame (of a mosaic's whole grid) from the target's centre, since the camera's angle is unknown; without framing the frame is the Origin Mark II's. Positions are J2000 at the J2000 epoch, proper motion left out (under 1′ by 2026). In a small telescope such a star's halo, spikes and internal reflections spread across the object; how far depends on the optics, so it is a warning and enters no score.
 
 ## Sub-exposure estimate
 
@@ -879,6 +868,8 @@ The models above come from the literature. The following are this project's own 
 |---|---|---|
 | Moon-distance rule | ≥ illumination % in degrees (filtered: × f_R/w², 0.3–1) | uptonight's rule; skipped with the Moon down; the floor is the halo and gradients near the Moon, which no scattering model here holds |
 | A filter for the whole night | each choice scored as worn every minute, the one that gains most kept (the most uncapped weight; with a camera, the best mean per-sub SNR² of the sub-exposure model over its own observable minutes, the fewest-subs choice) | a filter changed mid-target means a second set of flats and a split stack |
+| Moon in the umbra | 10⁻⁴ of its light, flat; the Moon's disc uniformly bright, the Sun's limb darkening left out | a bright totality (Danjon L = 4); darker ones change nothing the score sees, moonlight 10 mag down being far under any sky; the Moon-distance limit scaled linearly with the light, as the rule is with the illumination |
+| Bright-star reach (STAR) | V ≤ 4.0 within the frame's half-diagonal (without framing the Origin Mark II's) | a warning, not a score: how far a halo or reflection spreads depends on the optics |
 | Altitude window | 30°–80° | uptonight's limits; ≥ 30° keeps the airmass ≤ 2 |
 | Emission line ratios | one set per type ([Nebula filters](#nebula-filters)) | single objects scatter by factors of a few; no list has line fluxes |
 | Hβ | Hα/2.86 for every type | case-B recombination; dust raises the ratio, so dusty H II regions' Hβ is overstated |
@@ -923,7 +914,9 @@ Treat SCORE as a way to order tonight's options, not as an absolute measure of q
 
 | Topic | Source |
 |---|---|
-| Sun, Moon low-precision formulas, obliquity | *The Astronomical Almanac*, [sections C][aa-sun] and [D][aa] |
+| Sun low-precision formulas, obliquity | *The Astronomical Almanac*, [section C][aa-sun] |
+| Moon position and distance, lunar eclipse geometry | [Astronomy Engine][astronomy-engine] v2.1.19 (MIT), after [Montenbruck & Pfleger][montenbruck], *Astronomy on the Personal Computer*; ΔT: [Espenak & Meeus][deltat] |
+| Bright stars (STAR) | Hoffleit & Warren (1991), *The Bright Star Catalogue*, 5th revised edition, CDS [V/50](https://cdsarc.cds.unistra.fr/viz-bin/cat/V/50) |
 | Sidereal time | [Aoki et al. (1982)][aoki], A&A 105, 359; [Meeus][meeus] eq. 12.4 |
 | Precession | [Lieske et al. (1977)][lieske], A&A 58, 1; [Meeus][meeus] eqs. 21.2–21.4 |
 | Coordinate transformations, separations, illumination, parallax | [Meeus, *Astronomical Algorithms*][meeus], chs. 13, 17, 40, 48 |
@@ -952,6 +945,9 @@ Treat SCORE as a way to order tonight's options, not as an absolute measure of q
 | Observability rules, target lists | [uptonight][uptonight] |
 
 [aa]: https://aa.usno.navy.mil/publications/asa
+[astronomy-engine]: https://github.com/cosinekitty/astronomy
+[montenbruck]: https://link.springer.com/book/10.1007/978-3-540-67221-0
+[deltat]: https://eclipse.gsfc.nasa.gov/SEhelp/deltatpoly2004.html
 [aa-sun]: https://aa.usno.navy.mil/faq/sun_approx
 [usno-twilight]: https://aa.usno.navy.mil/faq/RST_defs
 [meeus]: https://ui.adsabs.harvard.edu/abs/1998aalg.book.....M

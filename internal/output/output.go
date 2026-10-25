@@ -28,6 +28,7 @@ import (
 	"github.com/dkorunic/astro-recommender/internal/constellation"
 	"github.com/dkorunic/astro-recommender/internal/plan"
 	"github.com/dkorunic/astro-recommender/internal/scoring"
+	"github.com/dkorunic/astro-recommender/internal/stars"
 	"github.com/dkorunic/astro-recommender/internal/weather"
 	"github.com/fatih/color"
 	"golang.org/x/term"
@@ -120,7 +121,7 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 	headerLine("Window:  ", fmt.Sprintf("%s - %s (%s%s)", s.Start.Format("2006-01-02 "+layout), s.End.Format("2006-01-02 "+layout),
 		durText(s.End.Sub(s.Start)), night))
 	headerLine("Moon:    ", fmt.Sprintf("%s illuminated, targets kept at least %.0f° away%s, %s", paint(scale(s.Illum, 0.3, 0.7), fmt.Sprintf("%.0f%%", s.Illum*100)),
-		s.MoonSep, filterMoon(cfg, s), moonText(s)))
+		s.MoonSep, filterMoon(cfg, s), moonText(s)+eclipseText(s)))
 	headerLine("Size:    ", fmt.Sprintf("%.1f' - %.1f'", cfg.SizeMin, cfg.SizeMax))
 	if cfg.MinRun > 0 {
 		headerLine("Min run: ", fmt.Sprintf("at least %s observable without a break", durText(cfg.MinRun)))
@@ -415,6 +416,9 @@ func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) int {
 		return 0
 	}
 	order := dropOrder
+	if cfg.Framing {
+		order = framedOrder(order)
+	}
 	// PX carries a mosaic's grid, without which SUBS, per panel, reads short.
 	if slices.ContainsFunc(results[:min(cfg.Top, len(results))], func(r scoring.Result) bool { return r.Mosaic.Panels() > 1 }) {
 		order = slices.DeleteFunc(slices.Clone(order), func(g []string) bool { return slices.Contains(g, pxColumn) })
@@ -544,13 +548,17 @@ func resultsTable(cfg *config.Config, s *scoring.Sky, results []scoring.Result, 
 		d := shortDesc(r.Description, desc)
 		widest = max(widest, utf8.RuneCountInString(d))
 		code, subs := subsText(r.Exposure)
+		starCode, star := "39", "-"
+		if st, _, ok := brightStar(cfg, s, r); ok {
+			starCode, star = "33", fmt.Sprintf("%s %.1f", st.Name, st.Mag)
+		}
 		// Every column's cell, in resultColumns' order; cols picks those shown.
 		all := []string{
 			paint("39", strconv.Itoa(i+1)), paint("36", r.Name), paint("39", d), paint(types[i], r.Type),
 			paint("39", constellation.Abbr(r.Constellation)), paint("39", ra), paint("39", dec), paint("39", size),
 			paint(up[i], fmt.Sprintf("%.2f", r.Foto)), paint(scale(r.Score, 0.66, 0.33), fmt.Sprintf("%.2f", r.Score)),
 			paint("39", runText(s, r)), paint("39", altText(s, r.MaxAlt, r.MaxAt)),
-			paint(sky[i], fmt.Sprintf("%.1f", r.SkyMag)), paint("39", magText(r.Target)), paint("39", sbText(r)),
+			paint(sky[i], fmt.Sprintf("%.1f", r.SkyMag)), paint("39", magText(r.Target)), paint("39", sbText(r)), paint(starCode, star),
 			paint("39", filterText(r)), paint("39", px), paint(code, subs),
 		}
 		row(w, "", pick(all, resultColumns, cols)...)
@@ -558,6 +566,20 @@ func resultsTable(cfg *config.Config, s *scoring.Sky, results []scoring.Result, 
 	w.Flush()
 
 	return buf.String(), tableWidth(buf.String()), widest
+}
+
+// brightStar returns the brightest star (stars.Brightest) that can fall in
+// r's frame, centred on it at any angle: within the half-diagonal of its
+// mosaic's grid, else of cfg's frame, the Origin Mark II's without framing.
+// It also returns the separation in degrees.
+func brightStar(cfg *config.Config, s *scoring.Sky, r scoring.Result) (stars.Star, float64, bool) {
+	w, h := cfg.FOVLong, cfg.FOVShort
+	if r.Mosaic.W > 0 {
+		w, h = r.Mosaic.W, r.Mosaic.H
+	}
+	ra, dec := J2000(s, r.Target)
+
+	return stars.Brightest(ra, dec, math.Hypot(w, h)/2/60)
 }
 
 // altText is the MAX ALT and PEAK cell: the altitude and when it is reached.
@@ -629,6 +651,54 @@ func moonText(s *scoring.Sky) string {
 	return "never up"
 }
 
+// eclipsePhases are the phases of a lunar eclipse the header and JSON list,
+// each the stretch the Moon is at least that deep in the Earth's shadow.
+var eclipsePhases = []struct {
+	name  string
+	phase astro.EclipsePhase
+}{{"penumbral", astro.Penumbral}, {"umbral", astro.Partial}, {"total", astro.Total}}
+
+// eclipseSpan returns the stretch of the window in which the Moon is at
+// least phase deep in the Earth's shadow, false when it never is; a night
+// holds one eclipse at most, so the stretch is unbroken.
+func eclipseSpan(s *scoring.Sky, phase astro.EclipsePhase) (span, bool) {
+	first, last := -1, -1
+	for i, e := range s.Eclipse {
+		if e.Phase >= phase {
+			if first < 0 {
+				first = i
+			}
+			last = i
+		}
+	}
+	if first < 0 {
+		return span{}, false
+	}
+
+	to := s.Grid[last].Add(time.Minute)
+	if to.After(s.End) {
+		to = s.End
+	}
+
+	return span{From: s.Grid[first], To: to}, true
+}
+
+// eclipseText is the Moon line's lunar eclipse, its phases within the
+// window, "" without one.
+func eclipseText(s *scoring.Sky) string {
+	var phases []string
+	for _, p := range eclipsePhases {
+		if sp, ok := eclipseSpan(s, p.phase); ok {
+			phases = append(phases, p.name+" "+spanText(s, sp.From, sp.To))
+		}
+	}
+	if len(phases) == 0 {
+		return ""
+	}
+
+	return "; lunar eclipse, " + strings.Join(phases, ", ") + " (its light and distance limit dim with it)"
+}
+
 // descWidth caps the DESCRIPTION cell: tabwriter makes the column as wide as
 // the longest description shown, and Caldwell's alias lists run past 100
 // characters, 192-column rows. 40 holds every GaryImm description (37), so
@@ -641,12 +711,21 @@ const descWidth, minDesc = 40, 15
 const descKeep = 22
 
 // dropOrder is the order a narrow terminal drops target columns in, least
-// needed for choosing tonight's target first: the position is for the mount
-// (-csv carries it), then detail the score already weighs; UP repeats what
-// OBSERVABLE shows, and most descriptions name the type; on a phone the
-// peak's time and the filter go last, leaving what and when to shoot, how
-// well and for how long.
-var dropOrder = [][]string{{raColumn, decColumn}, {"CON"}, {"MAG"}, {"SB"}, {"SKY"}, {sizeColumn}, {pxColumn}, {"UP"}, {typeColumn}, {"MAX ALT"}, {filterColumn}}
+// needed for choosing tonight's target first: STAR is only a warning, the
+// position is for the mount (-csv carries it), UP repeats what OBSERVABLE
+// shows, then detail the score already weighs (with framing SIZE goes
+// before SKY, as PX shows it against the frame: framedOrder); most
+// descriptions name the type; on a phone the peak's time and the filter go
+// last, leaving what and when to shoot, how well and for how long.
+var dropOrder = [][]string{{starColumn}, {raColumn, decColumn}, {"CON"}, {"UP"}, {"MAG"}, {"SB"}, {"SKY"}, {sizeColumn}, {pxColumn}, {typeColumn}, {"MAX ALT"}, {filterColumn}}
+
+// framedOrder is order with SIZE moved to just after SB.
+func framedOrder(order [][]string) [][]string {
+	out := slices.DeleteFunc(slices.Clone(order), func(g []string) bool { return slices.Contains(g, sizeColumn) })
+	at := slices.IndexFunc(out, func(g []string) bool { return slices.Contains(g, "SB") }) + 1
+
+	return slices.Insert(out, at, []string{sizeColumn})
+}
 
 // planDropOrder is dropOrder for the night plan: what to shoot when, and
 // how well, stay.
@@ -654,7 +733,7 @@ var planDropOrder = [][]string{{typeColumn}, {peakColumn}}
 
 // raColumn, decColumn, sizeColumn, typeColumn and peakColumn are named by
 // the drop orders.
-const raColumn, decColumn, sizeColumn, typeColumn, peakColumn = "RA", "DEC", "SIZE", "TYPE", "PEAK ALT"
+const raColumn, decColumn, sizeColumn, typeColumn, peakColumn, starColumn = "RA", "DEC", "SIZE", "TYPE", "PEAK ALT", "STAR"
 
 // dropped and planDropped hold the columns Results and Plan left out, and
 // noTargets and emptyPlan that they printed no table, so the legend leaves
@@ -946,6 +1025,7 @@ var resultColumns = []column{
 	{"SKY", "sky brightness at the object, mag/arcsec² (higher is darker)"},
 	{"MAG", "integrated magnitude, V (B where only blue is known)"},
 	{"SB", "object surface brightness, mag/arcsec² (higher is fainter)"},
+	{starColumn, "brightest star to V 4 that can fall in the frame (without framing, the Origin's), and its magnitude: halos and reflections"},
 	{filterColumn, "the filter of yours that helps most, worn all night, or none"},
 	{pxColumn, "size in pixels (NxM: mosaic panels needed)"},
 	{subsColumn, "-sub second subs for a good image, per panel; N nights: more than tonight fits; never: past what flats leave of the sky"},

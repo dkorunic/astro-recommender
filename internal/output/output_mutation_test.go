@@ -346,8 +346,9 @@ func TestMutResultsAlignment(t *testing.T) {
 	}
 	// Columns of the first row: rank 1, PX 190·60/2 = 5700.
 	f := strings.Fields(lines[1])
-	// SUBS last: more than the 100 subs tonight allows, as nights.
-	if f[0] != "1" || f[len(f)-1] != "nights" || f[len(f)-3] != "5700" || f[len(f)-4] != "21.0" {
+	// SUBS last: more than the 100 subs tonight allows, as nights; STAR
+	// after SB, μ And (3.9) 1.4° off in the 400' x 300' frame.
+	if f[0] != "1" || f[len(f)-1] != "nights" || f[len(f)-3] != "5700" || strings.Join(f[len(f)-6:len(f)-3], " ") != "μ And 3.9" || f[len(f)-7] != "21.0" {
 		t.Errorf("row %q", f)
 	}
 	if !strings.Contains(lines[2], " -  ") || !strings.HasSuffix(strings.TrimRight(lines[3], " "), "-") {
@@ -754,6 +755,25 @@ func TestMutResultsFit(t *testing.T) {
 	if h := header(mutCapture(t, func() { Results(cfg, s, res) })); !slices.Contains(h, "RA") {
 		t.Errorf("RA dropped with room for the descriptions: %q", h)
 	}
+	// With framing SIZE goes right after SB, the rest in dropOrder's order.
+	framed := framedOrder(dropOrder)
+	sb := slices.IndexFunc(framed, func(g []string) bool { return slices.Contains(g, "SB") })
+	if len(framed) != len(dropOrder) || !slices.Equal(framed[sb+1], []string{sizeColumn}) ||
+		!slices.EqualFunc(slices.DeleteFunc(slices.Clone(framed), func(g []string) bool { return slices.Contains(g, sizeColumn) }),
+			slices.DeleteFunc(slices.Clone(dropOrder), func(g []string) bool { return slices.Contains(g, sizeColumn) }), slices.Equal) {
+		t.Errorf("framedOrder = %v", framed)
+	}
+	// STAR, a warning only, is the first column to go: at the widest
+	// terminal without it every other column is still there.
+	for TermWidth = full; TermWidth > 20; TermWidth-- {
+		if h := header(mutCapture(t, func() { Results(cfg, s, res) })); !slices.Contains(h, starColumn) {
+			if !slices.Contains(h, "RA") || !slices.Contains(h, "CON") {
+				t.Errorf("STAR dropped only after RA or CON, at %d columns: %q", TermWidth, h)
+			}
+
+			break
+		}
+	}
 }
 
 // SCORE keeps its absolute colour on every row; TYPE goes plain when every
@@ -1158,5 +1178,42 @@ func TestMutAfterHour(t *testing.T) {
 	h := fc[len(fc)-1].(map[string]any)
 	if h["cloud"] != 63.0 || h["dewSpread"] != 1.0 || h["precipitation"] != nil || h["gust"] != nil || h["wind"] != nil || h["extinction"] != nil {
 		t.Errorf("hour after the window %v", h)
+	}
+}
+
+func TestMutEclipseText(t *testing.T) {
+	_, s := mutSky(t)
+	if got := eclipseText(s); got != "" || eclipseJSON(s) != nil {
+		t.Errorf("no eclipse: %q %v", got, eclipseJSON(s))
+	}
+	// Penumbral from 20:10, umbral 20:40-21:20 with totality 21:00-21:09,
+	// still penumbral at the window's end.
+	s.Eclipse = make([]astro.Eclipse, len(s.Grid))
+	for i := range s.Eclipse {
+		switch {
+		case i >= 60 && i < 70:
+			s.Eclipse[i] = astro.Eclipse{Phase: astro.Total}
+		case i >= 40 && i < 80:
+			s.Eclipse[i] = astro.Eclipse{Phase: astro.Partial}
+		case i >= 10:
+			s.Eclipse[i] = astro.Eclipse{Phase: astro.Penumbral}
+		default:
+			s.Eclipse[i] = astro.Eclipse{Light: 1}
+		}
+	}
+	want := "; lunar eclipse, penumbral 20:10-22:00, umbral 20:40-21:20, total 21:00-21:10 (its light and distance limit dim with it)"
+	if got := eclipseText(s); got != want {
+		t.Errorf("eclipseText = %q, want %q", got, want)
+	}
+	e := eclipseJSON(s)
+	if e == nil || !e.Penumbral.To.Equal(s.End) || !e.Umbral.From.Equal(s.Grid[40]) || !e.Total.To.Equal(s.Grid[70]) {
+		t.Errorf("eclipseJSON = %+v", e)
+	}
+	// A penumbral eclipse alone has no umbral or total stretch.
+	for i := range s.Eclipse {
+		s.Eclipse[i].Phase = min(s.Eclipse[i].Phase, astro.Penumbral)
+	}
+	if e := eclipseJSON(s); e == nil || e.Umbral != nil || e.Total != nil {
+		t.Errorf("penumbral eclipseJSON = %+v", e)
 	}
 }
