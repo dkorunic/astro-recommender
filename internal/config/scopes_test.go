@@ -43,6 +43,14 @@ func TestScopes(t *testing.T) {
 	if len(stated) != len(Scopes) {
 		t.Errorf("%d stated fields for %d scopes", len(stated), len(Scopes))
 	}
+	// Every preset is alt-az; Draco's rotating sensor and the ORBIS'
+	// de-rotator take the field rotation out.
+	derotated := map[string]bool{"draco": true, "orbis-60edx": true}
+	for key, s := range Scopes {
+		if want := map[bool]string{true: MountDerotated, false: MountAltAz}[derotated[key]]; s.Mount != want {
+			t.Errorf("%s: mount %q, want %q", key, s.Mount, want)
+		}
+	}
 	for key, s := range Scopes {
 		long, short := s.fov()
 		long, short = long/60, short/60

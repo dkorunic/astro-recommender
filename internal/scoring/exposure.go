@@ -116,11 +116,7 @@ func newCamera(cfg *config.Config, s *Sky) (camera, bool) {
 		monoResponse: cfg.MonoResponse(),
 		mean:         cfg.MeanStack, residual: cfg.Residual, seeing: s.Seeing,
 	}
-	// The diffraction FWHM, 1.03 λ/D at 550 nm, and a pixel's, added in
-	// quadrature to the seeing.
-	diff := 1.03 * 550e-9 / (cfg.Aperture / 1000) * 206265
-	px := pixelFWHM * cfg.Scale
-	c.optics2 = diff*diff + px*px
+	c.optics2 = opticsFWHM2(cfg)
 	if cfg.Dark > 0 && len(s.Temp) > 0 {
 		c.dark = make([]float64, len(s.Temp))
 		for i, t := range s.Temp {

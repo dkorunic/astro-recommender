@@ -65,6 +65,7 @@ type Config struct {
 	Camera         string   // -camera's (or -scope's chip's) Cameras key, lower case; "" for a camera given by -sensor/-pixel
 	Scope          string   // -scope's Scopes key; "" without one
 	SubsNeeds      string   // framing without -scope: the flags SUBS lacks ("-aperture", "-camera", both), without which it would borrow the Origin's optics or sensor and is left out; "" when it has them
+	Mount          string   // -mount: MountAltAz, MountDerotated or MountEq; -scope's by default, else MountEq (with framing)
 	Types          []string // -type: catalog.Classes to keep, nil = all
 	Horizon        horizon.Horizon
 	Plan           time.Duration
@@ -110,6 +111,7 @@ type Config struct {
 	Mono           bool    // -mono: a monochrome camera, every pixel sees every band
 	SensorTempSet  bool    // -sensor-temp given: the sensor is held there, else ambient + scoring's sensorWarm
 	MeanStack      bool    // -stack mean: subs averaged with equal weight (smart telescopes' live stacks), else weighted by SNR²
+	AltAz          bool    // Mount is MountAltAz: field rotation limits the observable minutes
 	NoWeather      bool
 	NoGeocode      bool
 	NoSQM          bool
@@ -125,7 +127,7 @@ func Parse() (Config, error) {
 	var focal, pixel float64
 	var camera, scopeName string
 	var filterStd bool
-	var stack string
+	var stack, mount string
 	var horizonFile string
 	var ra, dec, types string
 	flag.Float64Var(&cfg.Lat, "lat", 0, "latitude in degrees, north positive (required)")
@@ -170,6 +172,7 @@ func Parse() (Config, error) {
 	flag.Float64Var(&cfg.SensorTemp, "sensor-temp", 0, "with framing, a cooled camera's sensor temperature in °C, -60 to 60; without it the sensor is uncooled, 10 °C above the forecast air")
 	flag.Float64Var(&cfg.Reject, "reject", 0.15, "with framing, the share of subs discarded (tracking, satellites, wind), 0-0.9, which tonight's time must make up")
 	flag.StringVar(&stack, "stack", "", "with framing, how the subs are stacked: mean (equal weights, as smart telescopes' live stacks; the default with -scope) or weighted (by each sub's SNR², as PixInsight or Siril can; the default otherwise)")
+	flag.StringVar(&mount, "mount", "", "with framing, the mount: altaz (its field turns through each sub, so a minute whose rotation trails the object's edge by more than a star's width is not observable), derotated (alt-az with a field derotator, as Draco and the ORBIS 60EDX: none) or eq (equatorial, or on a wedge: none); -scope's by default, else eq")
 	flag.Float64Var(&cfg.Residual, "residual", 0.002, "with framing, what flats and gradient removal leave of the sky in the stack, a share 0-0.05, which caps its SNR however many subs (0 = none)")
 	flag.BoolVar(&cfg.Mono, "mono", false, "with framing, the camera is monochrome, so every pixel sees every filter band; not with -scope, whose cameras are colour")
 	flag.StringVar(&cfg.Filter, "filter", "", "filters you own, comma-separated: for emission-line targets dual (Ha + OIII at once), tri (+ Hb), quad (+ Hb and SII), ha, oiii, sii; broadband light pollution filters cls (Astronomik CLS) and lpro (Optolong L-Pro) for any target; each target is scored without and with each worn all night, and FILTER shows the one that gains it most (with framing, the one SUBS needs fewest subs through) (default none)")
@@ -232,6 +235,9 @@ func Parse() (Config, error) {
 	cfg.MeanStack = stack == "mean" || stack == "" && cfg.Scope != ""
 	if stack != "" && stack != "mean" && stack != "weighted" {
 		return Config{}, fmt.Errorf("%w: -stack must be mean or weighted", errInvalidFlag)
+	}
+	if err := cfg.setMount(mount, base); err != nil {
+		return Config{}, err
 	}
 	if err := cfg.beam(set, filterStd, focal, base); err != nil {
 		return Config{}, err
@@ -555,9 +561,25 @@ func (cfg *Config) frameSizes(set map[string]bool, minPx float64) error {
 	return nil
 }
 
+// setMount sets Mount from -mount, else base's with -scope, else MountEq,
+// and AltAz from it.
+func (cfg *Config) setMount(mount string, base Scope) error {
+	switch {
+	case mount == "" && cfg.Scope != "":
+		mount = base.Mount
+	case mount == "":
+		mount = MountEq
+	case mount != MountAltAz && mount != MountDerotated && mount != MountEq:
+		return fmt.Errorf("%w: -mount must be %s, %s or %s", errInvalidFlag, MountAltAz, MountDerotated, MountEq)
+	}
+	cfg.Mount, cfg.AltAz = mount, mount == MountAltAz
+
+	return nil
+}
+
 // cameraFlags are the sub-exposure flags, besides -mono, that need framing.
 // Their order is -h's ("Camera and exposure").
-var cameraFlags = []string{"aperture", "obstruction", "throughput", "qe", "read-noise", "dark", "sensor-temp", "sub", "reject", "stack", "residual"}
+var cameraFlags = []string{"aperture", "obstruction", "throughput", "qe", "read-noise", "dark", "sensor-temp", "sub", "reject", "stack", "mount", "residual"}
 
 // camera checks the sub-exposure flags, which need framing like -mosaic,
 // and fills the base scope's values for those not given (its camera's QE
@@ -568,7 +590,7 @@ func (cfg *Config) camera(set map[string]bool, preset *Variant, base Scope) erro
 	given := cfg.Mono || slices.ContainsFunc(cameraFlags, func(f string) bool { return set[f] })
 	if !cfg.Framing {
 		if given {
-			return fmt.Errorf("%w: -aperture, -obstruction, -sub, -qe, -read-noise, -mono, -throughput, -dark, -sensor-temp, -reject, -stack and -residual need framing (-scope, -fov, -scale or -focal)", errInvalidFlag)
+			return fmt.Errorf("%w: -aperture, -obstruction, -sub, -qe, -read-noise, -mono, -throughput, -dark, -sensor-temp, -reject, -stack, -mount and -residual need framing (-scope, -fov, -scale or -focal)", errInvalidFlag)
 		}
 
 		return nil

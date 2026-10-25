@@ -260,6 +260,7 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, ts []*tally, mos
 	// The limits compare as sines, so the Asin runs only for the minutes
 	// that pass them (and for alt): the bulk of the minutes do not.
 	sinMin, sinMax := math.Sin(cfg.AltMin*deg), math.Sin(cfg.AltMax*deg)
+	rot := newRotation(cfg, s, tg, dec)
 	r := Result{Target: tg, Frame: 1}
 	// Unknown sizes get no frame penalty. An object no mosaic holds cannot be
 	// framed whatever -size-max says (with -rotate the limit is the long side,
@@ -298,11 +299,12 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, ts []*tally, mos
 			hz = hz.WithDec(dec)
 		}
 		ha := s.LST[i] - ra
-		var sinAlt float64
+		var sinAlt, cosHA float64
 		if tg.Track != nil {
 			sinAlt = hz.SinAlt(ha)
 		} else {
-			sinAlt = hz.SinAltCos(s.CosLST[i]*cosRA + s.SinLST[i]*sinRA)
+			cosHA = s.CosLST[i]*cosRA + s.SinLST[i]*sinRA
+			sinAlt = hz.SinAltCos(cosHA)
 		}
 		if sinAlt > maxSin {
 			maxSin, maxAt = sinAlt, i
@@ -320,6 +322,9 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, ts []*tally, mos
 		}
 		// The azimuth is only needed against a horizon profile.
 		if len(cfg.Horizon) > 0 && a < cfg.Horizon.At(hz.Az(ha)) {
+			continue
+		}
+		if rot.trailed(i, a, sinAlt, cosHA) {
 			continue
 		}
 		// c is the cosine of the Moon separation, -1 (no limit) with the

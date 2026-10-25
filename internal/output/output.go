@@ -95,6 +95,12 @@ func frameDesc(cfg *config.Config) string {
 	if cfg.Rotate {
 		extra += ", rotatable"
 	}
+	switch cfg.Mount {
+	case config.MountAltAz:
+		extra += ", alt-az (field rotation limits large objects high up)"
+	case config.MountDerotated:
+		extra += ", alt-az with a field derotator"
+	}
 	if cfg.SubsNeeds != "" {
 		extra += ", SUBS needs " + cfg.SubsNeeds
 	}
@@ -489,6 +495,9 @@ func emptyText(cfg *config.Config, s *scoring.Sky) string {
 	if len(cfg.Skip) > 0 {
 		limits, flags = append(limits, fmt.Sprintf("%d skipped", len(cfg.Skip))), append(flags, "-skip")
 	}
+	if cfg.Framing && cfg.AltAz {
+		limits, flags = append(limits, "an alt-az mount's field rotation"), append(flags, "-mount eq (with a wedge)")
+	}
 	if s.MoonSep >= 1 && slices.ContainsFunc(s.MoonAlt, func(a float64) bool { return a > 0 }) {
 		limits = append(limits, fmt.Sprintf("at least %.0f° from the Moon while it is up%s", s.MoonSep, filterMoon(cfg, s)))
 	}
@@ -579,7 +588,7 @@ func brightStar(cfg *config.Config, s *scoring.Sky, r scoring.Result) (stars.Sta
 	}
 	ra, dec := J2000(s, r.Target)
 
-	return stars.Brightest(ra, dec, math.Hypot(w, h)/2/60)
+	return stars.Brightest(ra, dec, math.Hypot(w, h)/2/60, stars.Planets(s.Grid[len(s.Grid)/2]))
 }
 
 // altText is the MAX ALT and PEAK cell: the altitude and when it is reached.
@@ -1018,7 +1027,7 @@ var resultColumns = []column{
 	{raColumn, "J2000 right ascension, hh mm.m"},
 	{decColumn, "J2000 declination, ±dd mm"},
 	{sizeColumn, "major axis in arcminutes (with -rotate: major x minor)"},
-	{"UP", "fraction of the night observable (altitude, horizon, Moon)"},
+	{"UP", "fraction of the night observable (altitude, horizon, Moon, an alt-az mount's field rotation)"},
 	{"SCORE", "imaging quality 0-1; 1 = all night under a perfect dark sky"},
 	{"OBSERVABLE", "longest unbroken observable stretch (+ there are more)"},
 	{"MAX ALT", "highest altitude, and when"},

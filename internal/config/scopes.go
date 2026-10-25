@@ -24,12 +24,23 @@ import (
 type Scope struct {
 	Name, Sensor                 string // as shown; Sensor names a chip without a preset
 	Camera                       string
+	Mount                        string  // MountAltAz or MountDerotated: every preset is alt-az (several take a wedge: -mount eq)
 	Focal, Aperture, Obstruction float64 // mm
 	Pixel                        float64 // µm
 	Sub, ReadNoise               float64 // s, e⁻
 	PxLong, PxShort              int
 	NoSubs, Mirror               bool
 }
+
+// The -mount kinds: an alt-az mount, whose field turns through each sub;
+// one with a field derotator (DwarfLab Draco's rotating sensor, the ORBIS
+// 60EDX's ±180° de-rotator), whose field does not; an equatorial mount, or
+// a smart telescope on a wedge in its EQ mode.
+const (
+	MountAltAz     = "altaz"
+	MountDerotated = "derotated"
+	MountEq        = "eq"
+)
 
 // originKey is the Origin Mark II's -scope, the default frame.
 const originKey = "origin"
@@ -47,7 +58,7 @@ var Scopes = map[string]Scope{
 	// (astro-analyzer, October 2026; one master's 1.1 e⁻, and a vendor
 	// sheet's 8.5 dB figure, 2.15 e⁻, before).
 	"origin": {
-		Name: "Celestron Origin Mark II", Camera: chipIMX678, Focal: 335, Aperture: 152, Obstruction: 77,
+		Name: "Celestron Origin Mark II", Mount: MountAltAz, Camera: chipIMX678, Focal: 335, Aperture: 152, Obstruction: 77,
 		Pixel: 2.0, PxLong: 3856, PxShort: 2180, Sub: 10, ReadNoise: 0.97, Mirror: true,
 	},
 	// The original (2023, discontinued): the IMX178 behind a 63 mm
@@ -56,51 +67,54 @@ var Scopes = map[string]Scope{
 	// the photon-transfer gain (its EGAIN reads 4.5× that; astro-analyzer),
 	// at most 3·30.4·0.0165 = 1.5 e⁻.
 	"origin-mk1": {
-		Name: "Celestron Origin 2023", Camera: chipIMX178, Focal: 335, Aperture: 152, Obstruction: 63,
+		Name: "Celestron Origin 2023", Mount: MountAltAz, Camera: chipIMX178, Focal: 335, Aperture: 152, Obstruction: 63,
 		Pixel: 2.4, PxLong: 3096, PxShort: 2080, Sub: 10, ReadNoise: 1.5, Mirror: true,
 	},
 	// ZWO's refractors, saving portrait frames (here long x short); 10 s
 	// subs in alt-az.
-	"seestar-s50":     {Name: "ZWO Seestar S50", Camera: chipIMX462, Focal: 250, Aperture: 50, Pixel: 2.9, PxLong: 1920, PxShort: 1080, Sub: 10},
-	"seestar-s30":     {Name: "ZWO Seestar S30", Camera: chipIMX662, Focal: 150, Aperture: 30, Pixel: 2.9, PxLong: 1920, PxShort: 1080, Sub: 10},
-	"seestar-s30-pro": {Name: "ZWO Seestar S30 Pro", Camera: chipIMX585, Focal: 160, Aperture: 30, Pixel: 2.9, PxLong: 3840, PxShort: 2160, Sub: 10},
-	"seestar-s50-pro": {Name: "ZWO Seestar S50 Pro", Camera: chipOS08B10, Focal: 260, Aperture: 50, Pixel: 2.9, PxLong: 3840, PxShort: 2160, Sub: 10},
+	"seestar-s50":     {Name: "ZWO Seestar S50", Mount: MountAltAz, Camera: chipIMX462, Focal: 250, Aperture: 50, Pixel: 2.9, PxLong: 1920, PxShort: 1080, Sub: 10},
+	"seestar-s30":     {Name: "ZWO Seestar S30", Mount: MountAltAz, Camera: chipIMX662, Focal: 150, Aperture: 30, Pixel: 2.9, PxLong: 1920, PxShort: 1080, Sub: 10},
+	"seestar-s30-pro": {Name: "ZWO Seestar S30 Pro", Mount: MountAltAz, Camera: chipIMX585, Focal: 160, Aperture: 30, Pixel: 2.9, PxLong: 3840, PxShort: 2160, Sub: 10},
+	"seestar-s50-pro": {Name: "ZWO Seestar S50 Pro", Mount: MountAltAz, Camera: chipOS08B10, Focal: 260, Aperture: 50, Pixel: 2.9, PxLong: 3840, PxShort: 2160, Sub: 10},
 	// DwarfLab: 15 s, the auto mode's limit on the DWARF II and mini (the
 	// DWARF 3's is unpublished). The DWARF II's IMX415 and focal length are
 	// from reviews; its 1.45 µm the chip's, which matches their 3° field.
 	// Draco saves a 2x2 binned 50 MP frame and has a central obstruction of
-	// unpublished size.
-	"dwarf-2":    {Name: "DwarfLab DWARF II", Sensor: "IMX415", Focal: 100, Aperture: 24, Pixel: 1.45, PxLong: 3840, PxShort: 2160, Sub: 15},
-	"dwarf-3":    {Name: "DwarfLab DWARF 3", Camera: chipIMX678, Focal: 150, Aperture: 35, Pixel: 2.0, PxLong: 3840, PxShort: 2160, Sub: 15},
-	"dwarf-mini": {Name: "DwarfLab DWARF mini", Camera: chipIMX662, Focal: 150, Aperture: 30, Pixel: 2.9, PxLong: 1920, PxShort: 1080, Sub: 15},
-	"draco":      {Name: "DwarfLab Draco", Sensor: "OmniVision OV50Q40", Focal: 340, Aperture: 90, Pixel: 2.394, PxLong: 4096, PxShort: 3072, Sub: 15, NoSubs: true},
+	// unpublished size; in alt-az its sensor turns against the field
+	// (subs to 300 s), the others' does not (their EQ mode tilts the base).
+	"dwarf-2":    {Name: "DwarfLab DWARF II", Mount: MountAltAz, Sensor: "IMX415", Focal: 100, Aperture: 24, Pixel: 1.45, PxLong: 3840, PxShort: 2160, Sub: 15},
+	"dwarf-3":    {Name: "DwarfLab DWARF 3", Mount: MountAltAz, Camera: chipIMX678, Focal: 150, Aperture: 35, Pixel: 2.0, PxLong: 3840, PxShort: 2160, Sub: 15},
+	"dwarf-mini": {Name: "DwarfLab DWARF mini", Mount: MountAltAz, Camera: chipIMX662, Focal: 150, Aperture: 30, Pixel: 2.9, PxLong: 1920, PxShort: 1080, Sub: 15},
+	"draco":      {Name: "DwarfLab Draco", Mount: MountDerotated, Sensor: "OmniVision OV50Q40", Focal: 340, Aperture: 90, Pixel: 2.394, PxLong: 4096, PxShort: 3072, Sub: 15, NoSubs: true},
 	// Vaonis' refractors, 10 s subs. Stellina's chip is named by third
 	// parties only; its pixels are the maker's and the IMX178's.
-	"stellina":    {Name: "Vaonis Stellina", Camera: chipIMX178, Focal: 400, Aperture: 80, Pixel: 2.4, PxLong: 3096, PxShort: 2080, Sub: 10},
-	"vespera":     {Name: "Vaonis Vespera", Camera: chipIMX462, Focal: 200, Aperture: 50, Pixel: 2.9, PxLong: 1920, PxShort: 1080, Sub: 10},
-	"vespera-2":   {Name: "Vaonis Vespera II", Camera: chipIMX585, Focal: 250, Aperture: 50, Pixel: 2.9, PxLong: 3840, PxShort: 2160, Sub: 10},
-	"vespera-pro": {Name: "Vaonis Vespera Pro", Camera: chipIMX676, Focal: 250, Aperture: 50, Pixel: 2.0, PxLong: 3536, PxShort: 3536, Sub: 10},
+	"stellina":    {Name: "Vaonis Stellina", Mount: MountAltAz, Camera: chipIMX178, Focal: 400, Aperture: 80, Pixel: 2.4, PxLong: 3096, PxShort: 2080, Sub: 10},
+	"vespera":     {Name: "Vaonis Vespera", Mount: MountAltAz, Camera: chipIMX462, Focal: 200, Aperture: 50, Pixel: 2.9, PxLong: 1920, PxShort: 1080, Sub: 10},
+	"vespera-2":   {Name: "Vaonis Vespera II", Mount: MountAltAz, Camera: chipIMX585, Focal: 250, Aperture: 50, Pixel: 2.9, PxLong: 3840, PxShort: 2160, Sub: 10},
+	"vespera-pro": {Name: "Vaonis Vespera Pro", Mount: MountAltAz, Camera: chipIMX676, Focal: 250, Aperture: 50, Pixel: 2.0, PxLong: 3536, PxShort: 3536, Sub: 10},
 	// Vaonis states 245 mm for the 2026 models but repeats the Vespera II's
 	// field and 2.39"/px, which are 250 mm's; the stated focal length kept.
-	"vespera-3":     {Name: "Vaonis Vespera 3", Camera: chipIMX585, Focal: 245, Aperture: 50, Pixel: 2.9, PxLong: 3840, PxShort: 2160, Sub: 10},
-	"vespera-pro-2": {Name: "Vaonis Vespera Pro 2", Camera: chipIMX676, Focal: 245, Aperture: 50, Pixel: 2.0, PxLong: 3536, PxShort: 3536, Sub: 10},
+	"vespera-3":     {Name: "Vaonis Vespera 3", Mount: MountAltAz, Camera: chipIMX585, Focal: 245, Aperture: 50, Pixel: 2.9, PxLong: 3840, PxShort: 2160, Sub: 10},
+	"vespera-pro-2": {Name: "Vaonis Vespera Pro 2", Mount: MountAltAz, Camera: chipIMX676, Focal: 245, Aperture: 50, Pixel: 2.0, PxLong: 3536, PxShort: 3536, Sub: 10},
 	// The modular Atlas (2026): one 80 mm f/4.5 apochromat module (the Twin
 	// carries two, each its own frame); 30 s, its stated alt-az limit.
-	"atlas": {Name: "Vaonis Atlas", Camera: chipIMX585, Focal: 360, Aperture: 80, Pixel: 2.9, PxLong: 3840, PxShort: 2160, Sub: 30},
+	"atlas": {Name: "Vaonis Atlas", Mount: MountAltAz, Camera: chipIMX585, Focal: 360, Aperture: 80, Pixel: 2.9, PxLong: 3840, PxShort: 2160, Sub: 30},
 	// Sky-Watcher's first, shown at Imaging World in October 2026 and not yet
 	// on sale: a 60 mm f/5 ED refractor (a flip mirror sends the light to an
-	// eyepiece instead), the IMX585 at 3840x2160, from the trade-show
+	// eyepiece instead), the IMX585 at 3840x2160 and an integrated ±180°
+	// field de-rotator on its alt-az mount, from the trade-show
 	// specifications, "subject to change"; its sub length unstated, 10 s as
 	// the other small refractors'.
-	"orbis-60edx": {Name: "Sky-Watcher ORBIS 60EDX", Camera: chipIMX585, Focal: 300, Aperture: 60, Pixel: 2.9, PxLong: 3840, PxShort: 2160, Sub: 10},
+	"orbis-60edx": {Name: "Sky-Watcher ORBIS 60EDX", Mount: MountDerotated, Camera: chipIMX585, Focal: 300, Aperture: 60, Pixel: 2.9, PxLong: 3840, PxShort: 2160, Sub: 10},
 	// Unistellar's 114 mm f/4 Newtonians, the sensor at prime focus behind
-	// an obstruction of unpublished size; 4 s subs. The eVscope 2's frame
+	// an obstruction of unpublished size; 4 s subs, alt-az with software
+	// derotation between subs only (Unistellar: no mechanical derotator). The eVscope 2's frame
 	// is the 2048x1536 crop that its stated 34.2'x45.6' field gives; the
 	// Odyssey's chip is unnamed, its frame worked out from the stated
 	// 33.6'x45' and 1.45 µm.
-	"evscope":   {Name: "Unistellar eVscope / eQuinox", Camera: chipIMX224, Focal: 450, Aperture: 114, Pixel: 3.75, PxLong: 1304, PxShort: 976, Sub: 4, NoSubs: true, Mirror: true},
-	"evscope-2": {Name: "Unistellar eVscope 2 / eQuinox 2", Sensor: "IMX347", Focal: 450, Aperture: 114, Pixel: 2.9, PxLong: 2048, PxShort: 1536, Sub: 4, NoSubs: true, Mirror: true},
-	"odyssey":   {Name: "Unistellar Odyssey / Odyssey Pro", Sensor: "unnamed 1.45 µm", Focal: 320, Aperture: 85, Pixel: 1.45, PxLong: 2888, PxShort: 2156, Sub: 4, NoSubs: true, Mirror: true},
+	"evscope":   {Name: "Unistellar eVscope / eQuinox", Mount: MountAltAz, Camera: chipIMX224, Focal: 450, Aperture: 114, Pixel: 3.75, PxLong: 1304, PxShort: 976, Sub: 4, NoSubs: true, Mirror: true},
+	"evscope-2": {Name: "Unistellar eVscope 2 / eQuinox 2", Mount: MountAltAz, Sensor: "IMX347", Focal: 450, Aperture: 114, Pixel: 2.9, PxLong: 2048, PxShort: 1536, Sub: 4, NoSubs: true, Mirror: true},
+	"odyssey":   {Name: "Unistellar Odyssey / Odyssey Pro", Mount: MountAltAz, Sensor: "unnamed 1.45 µm", Focal: 320, Aperture: 85, Pixel: 1.45, PxLong: 2888, PxShort: 2156, Sub: 4, NoSubs: true, Mirror: true},
 }
 
 // ScopeNames returns the -scope presets, sorted.

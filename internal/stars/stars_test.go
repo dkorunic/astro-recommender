@@ -23,7 +23,7 @@ func TestBrightest(t *testing.T) {
 		// Within 3° of both Sirius and Mirzam (β CMa, 2.0): the brighter wins.
 		{"between Sirius and Mirzam", 98.5, -17.4, 3, "α CMa", 2.75, true},
 	} {
-		s, sep, ok := Brightest(c.ra, c.dec, c.radius)
+		s, sep, ok := Brightest(c.ra, c.dec, c.radius, nil)
 		if ok != c.mustFind || ok && (s.Name != c.star || math.Abs(sep-c.sep) > 0.01) {
 			t.Errorf("%s: %q %.3f° %v, want %q %.2f° %v", c.name, s.Name, sep, ok, c.star, c.sep, c.mustFind)
 		}

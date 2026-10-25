@@ -203,3 +203,31 @@ func TestStackDefaults(t *testing.T) {
 		}
 	}
 }
+
+// -mount defaults to -scope's mount (alt-az, Draco's and the ORBIS'
+// derotated) and to eq otherwise, and like the camera flags needs framing.
+func TestMountDefaults(t *testing.T) {
+	for _, tc := range []struct {
+		mount string
+		args  []string
+	}{
+		{MountAltAz, []string{"-scope", "seestar-s50"}},
+		{MountEq, []string{"-scope", "seestar-s50", "-mount", "eq"}},
+		{MountDerotated, []string{"-scope", "draco"}},
+		{MountAltAz, []string{"-scope", "draco", "-mount", "altaz"}},
+		{MountEq, []string{"-fov", "2x1.5", "-scale", "2"}},
+		{MountAltAz, []string{"-fov", "2x1.5", "-scale", "2", "-mount", "altaz"}},
+		{MountDerotated, []string{"-fov", "2x1.5", "-scale", "2", "-mount", "derotated"}},
+		{MountEq, nil},
+	} {
+		cfg, err := mutParse(t, mutBase(tc.args...)...)
+		if err != nil || cfg.Mount != tc.mount || cfg.AltAz != (tc.mount == MountAltAz) {
+			t.Errorf("%v: mount %q (alt-az %v), want %q, %v", tc.args, cfg.Mount, cfg.AltAz, tc.mount, err)
+		}
+	}
+	for _, args := range [][]string{{"-scope", "origin", "-mount", "dobson"}, {"-mount", "altaz"}} {
+		if _, err := mutParse(t, mutBase(args...)...); err == nil {
+			t.Errorf("%v: no error", args)
+		}
+	}
+}
