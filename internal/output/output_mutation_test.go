@@ -1217,6 +1217,13 @@ func TestMutEclipseText(t *testing.T) {
 	if got := moonFloor(cfg, s); got != " (down to 21° in the eclipse)" {
 		t.Errorf("moonFloor at half light = %q", got)
 	}
+	// A filter's 0.3 (minMoonK, Hα on an H II region) applies in the
+	// eclipse too: 42° × 0.5 × 0.3.
+	cfg.Filter, cfg.FilterNM = "ha", 7
+	if got := moonFloor(cfg, s); got != " (down to 13° through a filter, 6° in the eclipse)" {
+		t.Errorf("moonFloor at half light through a filter = %q", got)
+	}
+	cfg.Filter = ""
 	s.Eclipse = saved
 	e := eclipseJSON(s)
 	if e == nil || !e.Penumbral.To.Equal(s.End) || !e.Umbral.From.Equal(s.Grid[40]) || !e.Total.To.Equal(s.Grid[70]) {

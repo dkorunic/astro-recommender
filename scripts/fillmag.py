@@ -32,6 +32,7 @@ Messier.yaml before the lists that borrow from it.
 import re
 import sys
 
+from galaxyv import GROUP
 from mwsc2yaml import entries, lookup
 
 
@@ -62,9 +63,13 @@ def main():
         if f.get("type") == "Planetary Nebula" and v and float(f.get("mag", -9999)) - float(v) > 1.5:
             print(f"{f['name']}: mag {f['mag']} is the central star's, OpenNGC's {v}", file=sys.stderr)
             chunk = re.sub(r"^(\s*mag: ).*$", rf"\g<1>{v}", chunk, count=1, flags=re.M)
+        # A galaxy group (GaryImm's Arp 316, Markarian's Chain, the Deer Lick
+        # Group) is sized as the group, but its name finds one member's row:
+        # that galaxy's surface brightness and shape are not the group's.
+        group = "galax" in f.get("type", "").lower() and any(w in f.get("type", "").lower() for w in GROUP)
         for field, table in tables.items():
             v = next((table[k] for k in keys if k in table), None)
-            if v is None:
+            if v is None or group and field != "mag":
                 continue
             if field == "mag" and f.get("mag") == "-9999":
                 chunk = re.sub(r"^(\s*mag: )-9999$", rf"\g<1>{v}", chunk, count=1, flags=re.M)
@@ -81,7 +86,7 @@ def main():
             ax = axes.get(ids[0])
             if ax and not ax[0] / 2 <= size <= ax[0] * 2:
                 ax = None
-        if ax and "minor" not in f and size > 0:
+        if ax and "minor" not in f and size > 0 and not group:
             chunk = re.sub(r"^(\s*)(type: )", rf"\g<1>minor: {round(size * ax[1] / ax[0], 2)}\n\g<1>\g<2>", chunk, count=1, flags=re.M)
         chunks[i] = chunk
     sys.stdout.write("\n- ".join(chunks))

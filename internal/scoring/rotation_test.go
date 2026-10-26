@@ -57,4 +57,14 @@ func TestRotationTrail(t *testing.T) {
 	if r := newRotation(cfg, s, catalog.Target{Name: "huge", Size: 300}, 55); math.Abs(r.k/0.7546-45.46/30) > 1e-3 {
 		t.Errorf("k past the corner %v, want the corner's", r.k)
 	}
+	// Without -aperture the Origin's stands in, so its diffraction is left
+	// out: the pixels' 0.84" alone.
+	if r := newRotation(cfg, s, tg, 55); math.Abs(r.optics2-0.77*0.77-0.84*0.84) > 0.01 {
+		t.Errorf("optics² %v, want diffraction and pixels", r.optics2)
+	}
+	guess := *cfg
+	guess.SubsNeeds = "-aperture and -camera"
+	if r := newRotation(&guess, s, tg, 55); math.Abs(r.optics2-0.84*0.84) > 0.01 {
+		t.Errorf("optics² without -aperture %v, want the pixels' alone", r.optics2)
+	}
 }

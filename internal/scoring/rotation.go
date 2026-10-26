@@ -5,6 +5,7 @@ package scoring
 
 import (
 	"math"
+	"strings"
 
 	"github.com/dkorunic/astro-recommender/internal/atmos"
 	"github.com/dkorunic/astro-recommender/internal/catalog"
@@ -39,11 +40,19 @@ func newRotation(cfg *config.Config, s *Sky, tg catalog.Target, dec float64) rot
 	radius := min(math.Hypot(cfg.FOVLong, cfg.FOVShort)/2, tg.Size/2) // arcminutes
 	sinLat, cosLat := math.Sincos(cfg.Lat * deg)
 	sinDec, cosDec := math.Sincos(dec * deg)
+	// Without -aperture (SUBS then needs it) the aperture is the Origin's,
+	// whose diffraction says nothing of this telescope's: the pixels'
+	// blur alone, under the seeing that dominates the star's width anyway.
+	optics2 := opticsFWHM2(cfg)
+	if strings.Contains(cfg.SubsNeeds, "-aperture") {
+		px := pixelFWHM * cfg.Scale
+		optics2 = px * px
+	}
 
 	return rotation{
 		seeing: s.Seeing, k: earthRate * cosLat * cfg.Sub * radius * 60 / cfg.Scale,
 		sinDec: sinDec, cosDec: cosDec, sinLat: sinLat, cosLat: cosLat,
-		optics2: opticsFWHM2(cfg), scale2: cfg.Scale * cfg.Scale,
+		optics2: optics2, scale2: cfg.Scale * cfg.Scale,
 	}
 }
 

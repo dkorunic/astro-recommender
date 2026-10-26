@@ -99,8 +99,7 @@
   name: Arp 316
   ra: 10 18 06
   size: 30.0
-  surfbr: 24.0
-  type: Galaxy
+  type: Galaxy Group
 - constellation: Leo
   dec: 13 05 00
   description: Leo Triplet
@@ -763,10 +762,7 @@
   name: M 86
   ra: 12 26 12
   size: 60.0
-  surfbr: 22.09
-  bsurfbr: 23.90
-  minor: 43.87
-  type: Galaxy
+  type: Galaxy Group
 - constellation: Canes Venatici
   dec: 41 07 12
   description: Croc's Eye or Cat's Eye Galaxy
@@ -1467,10 +1463,7 @@
   name: NGC 7331
   ra: 22 37 04
   size: 25.0
-  surfbr: 22.19
-  bsurfbr: 23.08
-  minor: 10.14
-  type: Galaxy
+  type: Galaxy Group
 - constellation: Cepheus
   dec: 58 07 54
   description: Wizard Nebula

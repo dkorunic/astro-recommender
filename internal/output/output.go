@@ -232,7 +232,9 @@ func headerLine(name, value string) {
 
 // forecastFetched reports whether any forecast came back, so there is a
 // forecast table to print.
-func forecastFetched(s *scoring.Sky) bool { return s.Weather != nil || s.Astro != nil || s.AOD != nil }
+func forecastFetched(s *scoring.Sky) bool {
+	return len(s.Weather) > 0 || len(s.Astro) > 0 || len(s.AOD) > 0
+}
 
 func Weather(cfg *config.Config, s *scoring.Sky) {
 	if !forecastFetched(s) {
@@ -511,15 +513,17 @@ func emptyText(cfg *config.Config, s *scoring.Sky) string {
 // scoring.LoosestMoonK of it (nothing when that loosens it by no whole
 // degree, or to none: a new Moon's 1° says nothing), and a lunar eclipse,
 // which scales it by the least light the Earth's shadow leaves in the
-// window (scoring.Sky.tooClose), shown down to 0°; "" when neither does.
+// window (scoring.Sky.tooClose), shown down to 0°, and with a filter
+// scales that too, as both apply at once; "" when neither does.
 func moonFloor(cfg *config.Config, s *scoring.Sky) string {
 	var parts []string
-	if lo := math.Round(s.MoonSep * scoring.LoosestMoonK(cfg)); lo != math.Round(s.MoonSep) && lo != 0 {
+	k := scoring.LoosestMoonK(cfg)
+	if lo := math.Round(s.MoonSep * k); lo != math.Round(s.MoonSep) && lo != 0 {
 		parts = append(parts, fmt.Sprintf("%.0f° through a filter", lo))
 	}
 	if len(s.Eclipse) > 0 {
 		light := slices.MinFunc(s.Eclipse, func(a, b astro.Eclipse) int { return cmp.Compare(a.Light, b.Light) }).Light
-		if lo := math.Round(s.MoonSep * light); lo != math.Round(s.MoonSep) {
+		if lo := math.Round(s.MoonSep * light * k); lo != math.Round(s.MoonSep) {
 			parts = append(parts, fmt.Sprintf("%.0f° in the eclipse", lo))
 		}
 	}
