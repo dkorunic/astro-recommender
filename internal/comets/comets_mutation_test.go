@@ -287,6 +287,13 @@ func TestMutObserved(t *testing.T) {
 	if _, ok := c.offset(nil); ok {
 		t.Error("no observations moved the magnitude")
 	}
+	// An unnumbered fragment's letter is the packed designation's last
+	// column, as comet.key has it, however COBS writes that column.
+	for _, tc := range [][3]string{{"K19Y040", "B", "K19Y04b"}, {"K19Y04b", "B", "K19Y04b"}, {"73P", "BT", "73Pbt"}, {"K22E020", "", "K22E020"}} {
+		if got := cobsKey(tc[0], tc[1]); got != tc[2] {
+			t.Errorf("cobsKey(%q, %q) %q, want %q", tc[0], tc[1], got, tc[2])
+		}
+	}
 }
 
 // cobsTransport answers COBS's obs_list with one record of comet 9Z per
@@ -333,6 +340,12 @@ func TestMutObservedPages(t *testing.T) {
 	http.DefaultTransport = ct
 	if seen, err := FetchObserved(context.Background(), day); err != nil || len(seen["9Z"]) != 3 || len(ct.reqs) != 0 {
 		t.Errorf("cached pages: %v %v, requests %v", seen, err, ct.reqs)
+	}
+	// An answer without its page count would be read as one page.
+	ct = &cobsTransport{pages: 0}
+	http.DefaultTransport = ct
+	if seen, err := FetchObserved(context.Background(), day.AddDate(0, 0, 2)); err == nil {
+		t.Errorf("an answer without its page count accepted: %v", seen)
 	}
 	ct = &cobsTransport{pages: 3, fail: 2}
 	http.DefaultTransport = ct

@@ -195,7 +195,8 @@ func TestScopeMono(t *testing.T) {
 
 // A scope's built-in filter is -filter's default and gives the bands their
 // widths; a given -filter-nm replaces the widths, a given -filter only the
-// choice, and a scope without one, or no -scope, changes nothing.
+// choice, unless it lists another line filter, whose widths are not the
+// built-in one's; a scope without one, or no -scope, changes nothing.
 func TestBuiltInFilter(t *testing.T) {
 	for key, s := range Scopes {
 		if s.Filter == "" {
@@ -219,7 +220,9 @@ func TestBuiltInFilter(t *testing.T) {
 	}{
 		{[]string{"-scope", "seestar-s50"}, "dual", seestar},
 		{[]string{"-scope", "seestar-s50", "-filter-nm", "7"}, "dual", [catalog.NumLines]float64{}},
-		{[]string{"-scope", "seestar-s50", "-filter", "ha,cls"}, "ha,cls", seestar},
+		{[]string{"-scope", "seestar-s50", "-filter", "Dual, cls"}, "dual,cls", seestar},
+		{[]string{"-scope", "seestar-s50", "-filter", "ha,cls"}, "ha,cls", [catalog.NumLines]float64{}},
+		{[]string{"-scope", "seestar-s50", "-filter", "dual,tri"}, "dual,tri", [catalog.NumLines]float64{}},
 		{[]string{"-scope", "origin"}, "", [catalog.NumLines]float64{}},
 		{nil, "", [catalog.NumLines]float64{}},
 	} {

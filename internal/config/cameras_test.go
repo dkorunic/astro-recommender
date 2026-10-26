@@ -251,3 +251,37 @@ func TestApertureSet(t *testing.T) {
 		}
 	}
 }
+
+// On -scope, -focal puts its camera behind other optics, and a -pixel
+// unlike its own another camera: SUBS needs what the scope's would
+// otherwise stand for, and the aperture is no longer the telescope's own.
+func TestScopeOtherCamera(t *testing.T) {
+	for _, tc := range []struct {
+		args        []string
+		needs       string
+		apertureSet bool
+	}{
+		{[]string{"-scope", "origin", "-focal", "600", "-pixel", "2"}, "-aperture", false},
+		{[]string{"-scope", "origin", "-focal", "600", "-sensor", "5x3", "-aperture", "100"}, "", true},
+		{[]string{"-scope", "origin", "-focal", "600", "-pixel", "3.76", "-aperture", "100"}, "-qe and -read-noise", true},
+		{[]string{"-scope", "origin", "-focal", "600", "-pixel", "3.76"}, "-aperture and -qe and -read-noise", false},
+		{[]string{"-scope", "origin", "-focal", "600", "-pixel", "3.76", "-aperture", "100", "-qe", "0.8", "-read-noise", "1.5"}, "", true},
+		{[]string{"-scope", "origin", "-fov", "1x0.5"}, "", true},
+	} {
+		cfg, err := mutParse(t, mutBase(tc.args...)...)
+		if err != nil || cfg.SubsNeeds != tc.needs || cfg.ApertureSet != tc.apertureSet || (cfg.QE == 0) != (tc.needs != "") {
+			t.Errorf("%v: SubsNeeds %q ApertureSet %v QE %v, want %q %v (%v)", tc.args, cfg.SubsNeeds, cfg.ApertureSet, cfg.QE, tc.needs, tc.apertureSet, err)
+		}
+	}
+	// The header names what is left of the scope.
+	for args, want := range map[string]string{
+		"-focal 600 -pixel 2":    "Celestron Origin Mark II's IMX678 behind other optics",
+		"-focal 600 -pixel 3.76": "Celestron Origin Mark II settings with another camera and optics",
+		"-fov 1x0.5":             "Celestron Origin Mark II (IMX678)",
+	} {
+		cfg, err := mutParse(t, mutBase(append([]string{"-scope", "origin"}, strings.Fields(args)...)...)...)
+		if err != nil || cfg.ScopeLabel() != want {
+			t.Errorf("%s: label %q, want %q (%v)", args, cfg.ScopeLabel(), want, err)
+		}
+	}
+}

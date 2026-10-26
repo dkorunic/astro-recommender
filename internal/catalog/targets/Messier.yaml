@@ -49,7 +49,7 @@
   type: Open Cluster
 - constellation: Scorpius
   dec: -34 49 0
-  description: "NGC 6475 Ptolemy\xB9s Cluster"
+  description: "NGC 6475 Ptolemy's Cluster"
   mag: 3.3
   name: M 7
   ra: 17 53 54
@@ -350,7 +350,7 @@
   type: Diffuse Nebula
 - constellation: Orion
   dec: -5 16 0
-  description: "NGC 1982 de Mairan\xB9s Nebula"
+  description: "NGC 1982 de Mairan's Nebula"
   mag: 9.0
   name: M 43
   ra: 5 35 36
@@ -694,7 +694,7 @@
   type: Globular Cluster
 - constellation: Ursa Major
   dec: +69 4 0
-  description: "NGC 3031 Bode\xB9s Galaxy"
+  description: "NGC 3031 Bode's Galaxy"
   mag: 6.9
   name: M 81
   ra: 9 55 36

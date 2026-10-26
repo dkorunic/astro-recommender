@@ -64,7 +64,7 @@ type Config struct {
 	SolarBasis     string   // what SolarFlux is: solar.Monthly, Recent or Predicted
 	Camera         string   // -camera's (or -scope's chip's) Cameras key, lower case; "" for a camera given by -sensor/-pixel
 	Scope          string   // -scope's Scopes key; "" without one
-	SubsNeeds      string   // framing without -scope: the flags SUBS lacks ("-aperture", "-camera", both), without which it would borrow the Origin's optics or sensor and is left out; "" when it has them
+	SubsNeeds      string   // the flags SUBS lacks, without which it would borrow another instrument's optics or sensor and is left out: without -scope "-aperture", "-camera" or both; with it "-aperture" after -focal, "-qe and -read-noise" after a -pixel unlike its own; "" when it has them
 	Mount          string   // -mount: MountAltAz, MountDerotated or MountEq; -scope's by default, else MountEq (with framing)
 	Types          []string // -type: catalog.Classes to keep, nil = all
 	Horizon        horizon.Horizon
@@ -113,6 +113,8 @@ type Config struct {
 	SensorTempSet  bool    // -sensor-temp given: the sensor is held there, else ambient + scoring's sensorWarm
 	MeanStack      bool    // -stack mean: subs averaged with equal weight (smart telescopes' live stacks), else weighted by SNR²
 	AltAz          bool    // Mount is MountAltAz: field rotation limits the observable minutes
+	OtherOptics    bool    // -scope with -focal: its camera behind other optics, whose aperture SUBS needs
+	OtherChip      bool    // -scope with a -pixel unlike its own: another camera too, whose QE and read noise SUBS needs
 	NoWeather      bool
 	NoGeocode      bool
 	NoSQM          bool
@@ -485,14 +487,21 @@ func (cfg *Config) FramePx() (float64, float64) {
 }
 
 // builtIn takes -scope's built-in filter (Scope.Filter) as -filter's
-// default, and its bands' widths unless -filter-nm gives one: a given
-// -filter is what the scope wears, built in or added, so the widths stay.
+// default, and its bands' widths unless -filter-nm gives one or -filter
+// lists another line filter: the widths are by line, and an added Hα or
+// tri-band filter's are not the built-in one's (broadband ones have their
+// own passbands).
 func (cfg *Config) builtIn(set map[string]bool, base Scope) {
 	if cfg.Scope == "" || base.Filter == "" {
 		return
 	}
 	if !set["filter"] {
 		cfg.Filter = base.Filter
+	}
+	for f := range strings.SplitSeq(strings.ToLower(cfg.Filter), ",") {
+		if f = strings.TrimSpace(f); Filters[f] != nil && f != base.Filter {
+			return
+		}
 	}
 	if !set["filter-nm"] {
 		cfg.BandNM = base.Bands
@@ -561,10 +570,14 @@ func (cfg *Config) framing(set map[string]bool, f frameFlags) (Scope, error) {
 	if err := cfg.frameSizes(set, f.minPx); err != nil {
 		return Scope{}, err
 	}
+	// -focal on a scope is other optics, and a -pixel unlike its own
+	// another camera (-sensor alone is a crop of its own).
+	cfg.OtherOptics = cfg.Scope != "" && set["focal"]
+	cfg.OtherChip = cfg.Scope != "" && set["pixel"] && f.pixel != base.Pixel
 	if err := cfg.camera(set, preset, base); err != nil {
 		return Scope{}, err
 	}
-	cfg.ApertureSet = cfg.Scope != "" || set["aperture"]
+	cfg.ApertureSet = set["aperture"] || cfg.Scope != "" && !cfg.OtherOptics
 
 	return base, nil
 }
@@ -684,26 +697,41 @@ func (cfg *Config) camera(set map[string]bool, preset *Variant, base Scope) erro
 	if err := cfg.losses(set, base); err != nil {
 		return err
 	}
-	// Framing without -scope describes another telescope: the base scope's
-	// aperture, obstruction and throughput, or its sensor's QE, read noise
-	// and colour response, would give its SUBS another instrument's counts,
-	// so without -aperture and -camera there are none (QE 0). A mono camera
-	// with -qe and -read-noise needs no -camera: it has no colour response
-	// to borrow.
+	if need := cfg.subsNeeds(set); len(need) > 0 {
+		cfg.SubsNeeds, cfg.QE = strings.Join(need, " and "), 0
+	}
+
+	return nil
+}
+
+// subsNeeds returns the flags SUBS lacks (Config.SubsNeeds). Framing
+// without -scope describes another telescope: the base scope's aperture,
+// obstruction and throughput, or its sensor's QE, read noise and colour
+// response, would give its SUBS another instrument's counts, so without
+// -aperture and -camera there are none (QE 0). A mono camera with -qe and
+// -read-noise needs no -camera: it has no colour response to borrow. With
+// -scope, OtherOptics lack an aperture and OtherChip a QE and read noise,
+// which the scope's would stand for.
+func (cfg *Config) subsNeeds(set map[string]bool) []string {
+	var need []string
 	if cfg.Scope == "" {
-		var need []string
 		if !set["aperture"] {
 			need = append(need, "-aperture")
 		}
 		if !set["camera"] && (!cfg.Mono || !set["qe"] || !set["read-noise"]) {
 			need = append(need, "-camera")
 		}
-		if len(need) > 0 {
-			cfg.SubsNeeds, cfg.QE = strings.Join(need, " and "), 0
-		}
+
+		return need
+	}
+	if cfg.OtherOptics && !set["aperture"] {
+		need = append(need, "-aperture")
+	}
+	if cfg.OtherChip && (!set["qe"] || !set["read-noise"]) {
+		need = append(need, "-qe", "-read-noise")
 	}
 
-	return nil
+	return need
 }
 
 // losses fills and checks what the sub-exposure estimate loses on the way:

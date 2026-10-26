@@ -562,9 +562,12 @@ func lineBands(ls []catalog.Line, width [catalog.NumLines]float64) [4][2]float64
 		for j := range ls {
 			ci, cj := catalog.LineNM[ls[i]], catalog.LineNM[ls[j]]
 			if ci < cj && bands[i][1] > bands[j][0] {
-				mid := (ci + cj) / 2
-				bands[i][1] = min(bands[i][1], mid)
-				bands[j][0] = max(bands[j][0], mid)
+				// The midpoint, kept within the overlap: of unequal widths
+				// (a built-in filter's) the narrow band can end short of it,
+				// and cutting the wide one there too would leave a gap
+				// whose sky no band charges.
+				cut := max(bands[j][0], min(bands[i][1], (ci+cj)/2))
+				bands[i][1], bands[j][0] = cut, cut
 			}
 		}
 	}

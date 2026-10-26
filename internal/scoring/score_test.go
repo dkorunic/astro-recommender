@@ -677,6 +677,13 @@ func TestLineBandsWidths(t *testing.T) {
 	if math.Abs(b[0][1]-b[0][0]-20) > 1e-9 || math.Abs(b[1][1]-b[1][0]-30) > 1e-9 {
 		t.Errorf("bands %v", b[:2])
 	}
+	// Of unequal widths overlapping bands meet within their overlap, so the
+	// merged passband is covered once, without a gap: a 7 nm Hβ band beside
+	// the 30 nm [O III] one.
+	tri := lineBands(config.Filters["tri"], cfg.BandWidths())
+	if hb, oiii := tri[1], tri[2]; hb[1] != oiii[0] || hb[0] != 486.1-3.5 || oiii[1] != 500.7+15 {
+		t.Errorf("tri bands %v, want Hβ's and [O III]'s meeting", tri[:3])
+	}
 	hii := catalog.Target{Type: "HII Region"}
 	if wide, narrow := passes(cfg, hii, "dual"), passes(&config.Config{FilterNM: 7}, hii, "dual"); wide.w-narrow.w < hii.Photons()[catalog.Hb]-1e-9 {
 		t.Errorf("30 nm [O III] passes %v of the light, 7 nm %v: Hβ %v missing", wide.w, narrow.w, hii.Photons()[catalog.Hb])

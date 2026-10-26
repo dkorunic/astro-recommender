@@ -29,14 +29,15 @@ type rotation struct {
 
 // newRotation returns the check for tg at declination dec (of date) on
 // cfg's alt-az mount: the trail is taken at the object's edge, its major
-// axis' half, which a frame's corner caps (a mosaic's panel's, each turning
+// axis' half (its core's, catalog.Target.FrameAxes), which a frame's corner caps (a mosaic's panel's, each turning
 // about its own centre). An object without a size is not checked: the
 // corner would judge it stricter than any object of known size.
 func newRotation(cfg *config.Config, s *Sky, tg catalog.Target, dec float64) rotation {
 	if !cfg.Framing || !cfg.AltAz || tg.Track != nil || !tg.HasSize() || cfg.Sub <= 0 || cfg.Scale <= 0 {
 		return rotation{}
 	}
-	radius := min(math.Hypot(cfg.FOVLong, cfg.FOVShort)/2, tg.Size/2) // arcminutes
+	major, _ := tg.FrameAxes()                                      // a core's, when the frame holds that
+	radius := min(math.Hypot(cfg.FOVLong, cfg.FOVShort)/2, major/2) // arcminutes
 	sinLat, cosLat := math.Sincos(cfg.Lat * deg)
 	sinDec, cosDec := math.Sincos(dec * deg)
 	// Without -aperture or -scope the aperture is the Origin's,

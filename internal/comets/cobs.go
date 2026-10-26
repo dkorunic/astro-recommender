@@ -92,6 +92,11 @@ func allPages(ctx context.Context, url string) ([]byte, error) {
 		}
 		if p == 1 {
 			pages = body.Info.Pages
+			// Without its page count an answer would be read as one page,
+			// silently losing the month's older records.
+			if pages < 1 && len(body.Objects) > 0 {
+				return nil, fmt.Errorf("%w: cobs answer without its page count", errComets)
+			}
 		}
 		objects = append(objects, body.Objects...)
 	}
@@ -123,9 +128,7 @@ func parseObserved(data []byte) (Observed, error) {
 		if o.Comet.MPCName == "" || err != nil || err2 != nil || !num.Finite(mag) || mag < minObsMag || mag > maxObsMag {
 			continue
 		}
-		// A fragment (73P-BT) is its own comet, keyed as comet.key spells
-		// it, not its parent's.
-		key := o.Comet.MPCName + strings.ToLower(strings.TrimSpace(o.Comet.Component))
+		key := cobsKey(o.Comet.MPCName, o.Comet.Component)
 		out[key] = append(out[key], obs{t, mag})
 	}
 
@@ -152,4 +155,18 @@ func (c *comet) offset(o Observed) (float64, bool) {
 	}
 
 	return d[len(d)/2], true
+}
+
+// cobsKey spells COBS's mpc_name and component as comet.key does: a fragment
+// is its own comet, not its parent's, a numbered one's letters after its
+// number (73P-BT, "73Pbt"), an unnumbered one's letter in the packed
+// designation's last column, as MPC packs it (P/2019 Y4-B, "K19Y04b"),
+// whether COBS writes that column as the letter or as 0.
+func cobsKey(name, component string) string {
+	c := strings.ToLower(strings.TrimSpace(component))
+	if len(name) == 7 && len(c) == 1 && name[0] >= 'A' && name[0] <= 'Z' {
+		return name[:6] + c
+	}
+
+	return name + c
 }
