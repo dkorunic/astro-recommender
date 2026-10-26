@@ -233,3 +233,21 @@ func TestMountDefaults(t *testing.T) {
 		}
 	}
 }
+
+// ApertureSet is the telescope's own aperture, -scope's or -aperture's, not
+// the Origin's stand-in that framing without either borrows.
+func TestApertureSet(t *testing.T) {
+	for _, tc := range []struct {
+		args []string
+		want bool
+	}{
+		{[]string{"-scope", "seestar-s50"}, true},
+		{[]string{"-fov", "2x1.5", "-scale", "2", "-aperture", "80"}, true},
+		{[]string{"-fov", "2x1.5", "-scale", "2"}, false},
+		{nil, false},
+	} {
+		if cfg, err := mutParse(t, mutBase(tc.args...)...); err != nil || cfg.ApertureSet != tc.want {
+			t.Errorf("%v: ApertureSet %v, want %v (%v)", tc.args, cfg.ApertureSet, tc.want, err)
+		}
+	}
+}

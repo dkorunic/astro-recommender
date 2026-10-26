@@ -1223,6 +1223,13 @@ func TestMutEclipseText(t *testing.T) {
 	if got := moonFloor(cfg, s); got != " (down to 13° through a filter, 6° in the eclipse)" {
 		t.Errorf("moonFloor at half light through a filter = %q", got)
 	}
+	// A grazing eclipse's 99.9% rounds to the filter's own 13°: not repeated.
+	for i := range s.Eclipse {
+		s.Eclipse[i].Light = max(0.999, s.Eclipse[i].Light)
+	}
+	if got := moonFloor(cfg, s); got != " (down to 13° through a filter)" {
+		t.Errorf("moonFloor in a grazing eclipse through a filter = %q", got)
+	}
 	cfg.Filter = ""
 	s.Eclipse = saved
 	e := eclipseJSON(s)

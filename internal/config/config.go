@@ -109,6 +109,7 @@ type Config struct {
 	Framing        bool    // -scope, -fov, -scale or -focal with -sensor/-pixel: fit and score objects against the frame
 	Rotate         bool    // -rotate: the camera turns to put an object's major axis along the frame's long side
 	Mono           bool    // -mono: a monochrome camera, every pixel sees every band
+	ApertureSet    bool    // the aperture is the telescope's own: -scope's or -aperture, not the Origin's stand-in
 	SensorTempSet  bool    // -sensor-temp given: the sensor is held there, else ambient + scoring's sensorWarm
 	MeanStack      bool    // -stack mean: subs averaged with equal weight (smart telescopes' live stacks), else weighted by SNR²
 	AltAz          bool    // Mount is MountAltAz: field rotation limits the observable minutes
@@ -526,6 +527,7 @@ func (cfg *Config) framing(set map[string]bool, f frameFlags) (Scope, error) {
 	if err := cfg.camera(set, preset, base); err != nil {
 		return Scope{}, err
 	}
+	cfg.ApertureSet = cfg.Scope != "" || set["aperture"]
 
 	return base, nil
 }

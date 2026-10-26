@@ -19,7 +19,7 @@ import (
 // X^0.6, 0.77" diffraction, 0.84" of pixel); at 80° (δ 55°) 5.76, 4.35 px
 // (5.35"), past it; south of the zenith (δ 15°) the same 60° as north.
 func TestRotationTrail(t *testing.T) {
-	cfg := &config.Config{Lat: 45, Framing: true, AltAz: true, Sub: 10, Scale: 1.23, FOVLong: 79, FOVShort: 45, Aperture: 152}
+	cfg := &config.Config{Lat: 45, Framing: true, AltAz: true, Sub: 10, Scale: 1.23, FOVLong: 79, FOVShort: 45, Aperture: 152, ApertureSet: true}
 	tg := catalog.Target{Name: "big", Size: 60}
 	s := &Sky{}
 	at := func(dec float64) bool {
@@ -63,7 +63,7 @@ func TestRotationTrail(t *testing.T) {
 		t.Errorf("optics² %v, want diffraction and pixels", r.optics2)
 	}
 	guess := *cfg
-	guess.SubsNeeds = "-aperture and -camera"
+	guess.ApertureSet = false
 	if r := newRotation(&guess, s, tg, 55); math.Abs(r.optics2-0.84*0.84) > 0.01 {
 		t.Errorf("optics² without -aperture %v, want the pixels' alone", r.optics2)
 	}

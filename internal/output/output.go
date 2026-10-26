@@ -518,12 +518,14 @@ func emptyText(cfg *config.Config, s *scoring.Sky) string {
 func moonFloor(cfg *config.Config, s *scoring.Sky) string {
 	var parts []string
 	k := scoring.LoosestMoonK(cfg)
-	if lo := math.Round(s.MoonSep * k); lo != math.Round(s.MoonSep) && lo != 0 {
-		parts = append(parts, fmt.Sprintf("%.0f° through a filter", lo))
+	filtered := math.Round(s.MoonSep * k)
+	if filtered != math.Round(s.MoonSep) && filtered != 0 {
+		parts = append(parts, fmt.Sprintf("%.0f° through a filter", filtered))
 	}
 	if len(s.Eclipse) > 0 {
+		// Only below the filter's floor: a grazing eclipse's would repeat it.
 		light := slices.MinFunc(s.Eclipse, func(a, b astro.Eclipse) int { return cmp.Compare(a.Light, b.Light) }).Light
-		if lo := math.Round(s.MoonSep * light * k); lo != math.Round(s.MoonSep) {
+		if lo := math.Round(s.MoonSep * light * k); lo < filtered {
 			parts = append(parts, fmt.Sprintf("%.0f° in the eclipse", lo))
 		}
 	}
