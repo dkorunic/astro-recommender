@@ -77,6 +77,32 @@ func TestGetJSONRetry(t *testing.T) {
 	}
 }
 
+// GetText retries a 503 once like GetJSON, and a 404 not at all.
+func TestGetTextRetry(t *testing.T) {
+	RetryDelay = 0
+	t.Cleanup(func() { RetryDelay = time.Second })
+	var calls, code int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		if calls++; calls == 1 {
+			w.WriteHeader(code)
+
+			return
+		}
+		_, _ = w.Write([]byte("elements"))
+	}))
+	defer srv.Close()
+	for _, tc := range []struct {
+		code, calls int
+		ok          bool
+	}{{http.StatusServiceUnavailable, 2, true}, {http.StatusNotFound, 1, false}} {
+		calls, code = 0, tc.code
+		data, err := GetText(context.Background(), srv.URL)
+		if calls != tc.calls || (err == nil) != tc.ok || tc.ok && string(data) != "elements" {
+			t.Errorf("%d: %d calls, %q, %v; want %d calls", tc.code, calls, data, err, tc.calls)
+		}
+	}
+}
+
 func TestRetryWait(t *testing.T) {
 	old := RetryDelay
 	RetryDelay = time.Second
@@ -321,7 +347,8 @@ func TestWriteCacheRenameFails(t *testing.T) {
 	}
 }
 
-// Prune removes only the matching files older than its age.
+// Prune removes only the matching files older than its age, and their
+// leftover temp files, not a write in progress or another cache's.
 func TestPrune(t *testing.T) {
 	tempCache(t)
 	base, _ := os.UserCacheDir()
@@ -330,7 +357,10 @@ func TestPrune(t *testing.T) {
 		t.Fatal(err)
 	}
 	old := time.Now().Add(-48 * time.Hour)
-	for name, mtime := range map[string]time.Time{"cobs-1.json": old, "cobs-2.json": time.Now(), "other.json": old} {
+	for name, mtime := range map[string]time.Time{
+		"cobs-1.json": old, "cobs-2.json": time.Now(), "other.json": old,
+		"cobs-1.json.123.tmp": old, "cobs-2.json.456.tmp": time.Now(), "other.json.789.tmp": old,
+	} {
 		path := filepath.Join(dir, name)
 		if err := os.WriteFile(path, []byte("{}"), 0o600); err != nil {
 			t.Fatal(err)
@@ -340,7 +370,10 @@ func TestPrune(t *testing.T) {
 		}
 	}
 	Prune("cobs-*.json", 24*time.Hour)
-	for name, want := range map[string]bool{"cobs-1.json": false, "cobs-2.json": true, "other.json": true} {
+	for name, want := range map[string]bool{
+		"cobs-1.json": false, "cobs-2.json": true, "other.json": true,
+		"cobs-1.json.123.tmp": false, "cobs-2.json.456.tmp": true, "other.json.789.tmp": true,
+	} {
 		if _, err := os.Stat(filepath.Join(dir, name)); (err == nil) != want {
 			t.Errorf("%s kept %v, want %v", name, err == nil, want)
 		}

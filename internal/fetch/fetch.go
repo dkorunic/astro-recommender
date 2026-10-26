@@ -146,8 +146,7 @@ func GetText(ctx context.Context, url string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	identify(req)
-	resp, err := httpClient.Do(req)
+	resp, err := send(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -198,6 +197,28 @@ func retryWait(after string) (time.Duration, bool) {
 	return max(wait, RetryDelay), true
 }
 
+// send identifies and sends req, and retries it once after a 429 or 5xx
+// (retryWait), for GetText and GetJSONHeader alike: a download falls back
+// to a stale cached copy, but a first run and the browser, which has no
+// cache, have none.
+func send(ctx context.Context, req *http.Request) (*http.Response, error) {
+	identify(req)
+	resp, err := httpClient.Do(req)
+	if err == nil && (resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= http.StatusInternalServerError) {
+		if wait, ok := retryWait(resp.Header.Get("Retry-After")); ok {
+			resp.Body.Close()
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(wait):
+			}
+			resp, err = httpClient.Do(req.Clone(ctx))
+		}
+	}
+
+	return resp, err
+}
+
 // GetJSONHeader is GetJSON with extra request headers (e.g. an API key).
 func GetJSONHeader(ctx context.Context, url string, hdr http.Header, v any) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
@@ -207,19 +228,7 @@ func GetJSONHeader(ctx context.Context, url string, hdr http.Header, v any) erro
 	for k, vals := range hdr {
 		req.Header[http.CanonicalHeaderKey(k)] = vals
 	}
-	identify(req)
-	resp, err := httpClient.Do(req)
-	if err == nil && (resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= http.StatusInternalServerError) {
-		if wait, ok := retryWait(resp.Header.Get("Retry-After")); ok {
-			resp.Body.Close()
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case <-time.After(wait):
-			}
-			resp, err = httpClient.Do(req.Clone(ctx))
-		}
-	}
+	resp, err := send(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -249,9 +258,10 @@ func writeCache(cache string, data []byte) {
 }
 
 // Prune removes the cache files whose names match pattern (filepath.Match)
-// and were last written more than age ago: a cache keyed by date (COBS's,
-// some 2.5 MB a night) otherwise keeps one file per day for good. Errors
-// only leave the files where they are.
+// and were last written more than age ago, with their leftover temp
+// files: a cache keyed by date (COBS's, some 2.5 MB a night) otherwise
+// keeps one file per day for good. Errors only leave the files where they
+// are.
 func Prune(pattern string, age time.Duration) {
 	dir, err := os.UserCacheDir()
 	if err != nil {
@@ -263,7 +273,10 @@ func Prune(pattern string, age time.Duration) {
 		return
 	}
 	for _, e := range entries {
-		if ok, _ := filepath.Match(pattern, e.Name()); !ok || e.IsDir() {
+		// Also writeCache's temp files of those caches, which a run killed
+		// mid-write leaves behind; a write in progress is younger than age.
+		ok, _ := filepath.Match(pattern, e.Name())
+		if tmp, _ := filepath.Match(pattern+".*.tmp", e.Name()); !ok && !tmp || e.IsDir() {
 			continue
 		}
 		if fi, err := e.Info(); err == nil && time.Since(fi.ModTime()) > age {

@@ -470,7 +470,7 @@ func TestMutBuildSky(t *testing.T) {
 		if s.MoonPos[i] != [2]float64{ra, dec} || s.MoonUnit[i] != astro.Unit(ra, dec) || s.MoonAlt[i] != astro.Altitude(ra, dec, s.Grid[i], cfg.Lat, cfg.Lon) {
 			t.Errorf("Moon at %d", i)
 		}
-		if s.Ext[i] != 0.2 || s.MoonLight[i] != atmos.MoonLight(0.2, s.ExtRayleigh[i], s.ExtAerosol[i], s.MoonAlt[i], s.MoonPhase, s.MoonDist) {
+		if s.Ext[i] != 0.2 || s.MoonLight[i] != atmos.MoonLight(0.2, s.ExtRayleigh[i], s.ExtAerosol[i], s.MoonAlt[i], astro.MoonPhaseAngle(s.Grid[i]), astro.MoonDistance(s.Grid[i])) {
 			t.Errorf("ext/moonlight at %d", i)
 		}
 	}

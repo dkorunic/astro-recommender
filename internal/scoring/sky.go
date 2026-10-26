@@ -46,8 +46,8 @@ type Sky struct {
 	AODElevation float64         // the ground AOD's column stands on, m (Forecast.AODElevation); NaN if unknown
 	SunLon       float64         // the Sun's ecliptic longitude at mid-window, degrees, for the zodiacal light
 	Illum        float64
-	MoonPhase    float64 // phase angle in degrees, 0 = full
-	MoonDist     float64 // geocentric distance in Earth radii
+	MoonPhase    float64 // phase angle in degrees at mid-window, 0 = full (MoonLight takes each minute's)
+	MoonDist     float64 // geocentric distance in Earth radii at mid-window (MoonLight takes each minute's)
 	MoonSep      float64 // uptonight: min separation in degrees = illumination %
 	ZenithNL     float64 // site's moonless zenith sky brightness, nanoLamberts, Airglow included
 	Airglow      float64 // nanoLamberts the solar cycle adds to the configured zenith (atmos.AirglowExcess); 0 when the flux is unknown
@@ -241,10 +241,15 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 	s.MoonAlt = make([]float64, len(s.Grid))
 	s.MoonUnit = make([][3]float64, len(s.Grid))
 	s.SinLST, s.CosLST = make([]float64, len(s.Grid)), make([]float64, len(s.Grid))
+	// The moonlight's phase angle and distance per minute: the phase moves
+	// 0.5°/h, which near full fades the opposition surge (1.35 at 0°, none
+	// at 7°) within a night; MoonPhase and MoonDist stay mid-window's, for
+	// the header and JSON.
+	phase, dist := make([]float64, len(s.Grid)), make([]float64, len(s.Grid))
 	for i, t := range s.Grid {
 		s.LST[i] = astro.LST(t, cfg.Lon)
 		s.SinLST[i], s.CosLST[i] = math.Sincos(s.LST[i] * deg)
-		s.MoonPos[i][0], s.MoonPos[i][1] = astro.MoonTopo(t, cfg.Lat, cfg.Lon)
+		s.MoonPos[i][0], s.MoonPos[i][1], phase[i], dist[i] = astro.MoonSky(t, cfg.Lat, cfg.Lon)
 		s.MoonUnit[i] = astro.Unit(s.MoonPos[i][0], s.MoonPos[i][1])
 		s.MoonAlt[i] = astro.Altitude(s.MoonPos[i][0], s.MoonPos[i][1], t, cfg.Lat, cfg.Lon)
 	}
@@ -262,7 +267,7 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 	for i, t := range s.Grid {
 		s.Ext[i] = s.ExtinctionAt(t, cfg.Extinction)
 		s.ExtRayleigh[i], s.ExtAerosol[i] = s.extinctionParts(t, cfg.Extinction)
-		s.MoonLight[i] = atmos.MoonLight(s.Ext[i], s.ExtRayleigh[i], s.ExtAerosol[i], s.MoonAlt[i], s.MoonPhase, s.MoonDist)
+		s.MoonLight[i] = atmos.MoonLight(s.Ext[i], s.ExtRayleigh[i], s.ExtAerosol[i], s.MoonAlt[i], phase[i], dist[i])
 		if s.Eclipse != nil {
 			s.MoonLight[i].NL *= s.Eclipse[i].Light
 		}

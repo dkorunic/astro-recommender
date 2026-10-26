@@ -32,7 +32,7 @@ func TestEclipseNight(t *testing.T) {
 	if e := s.Eclipse[peak]; e.Phase != astro.Total {
 		t.Errorf("at 11:33 %+v, want total", e)
 	}
-	lit := atmos.MoonLight(s.Ext[peak], s.ExtRayleigh[peak], s.ExtAerosol[peak], s.MoonAlt[peak], s.MoonPhase, s.MoonDist)
+	lit := atmos.MoonLight(s.Ext[peak], s.ExtRayleigh[peak], s.ExtAerosol[peak], s.MoonAlt[peak], astro.MoonPhaseAngle(s.Grid[peak]), astro.MoonDistance(s.Grid[peak]))
 	if got, want := s.MoonLight[peak].NL, lit.NL*s.Eclipse[peak].Light; math.Abs(got-want) > 1e-12*want || got > 1e-3*lit.NL {
 		t.Errorf("moonlight in totality %g, want %g", got, want)
 	}

@@ -166,7 +166,7 @@ The Moon's altitude and its separation from each target both use this topocentri
 \text{illuminated fraction} = \frac{1-\cos\psi}{2} ,\qquad \text{phase angle } \alpha_\text{phase} \approx 180^\circ - \psi \quad (0 = \text{full})
 ```
 
-The illumination, phase angle and distance are taken once, at the middle of the window, and drive both the Moon-distance rule and the moonlight model below. Against SOFA (`TestSOFA`) the phase angle is within 0.17° of the true angle at the Moon (the Sun's parallax seen from the Moon, which 180° − ψ leaves out) and the illumination within 0.14 percentage points of the true illuminated fraction (1 + cos i)/2.
+The illumination is taken once, at the middle of the window, for the Moon-distance rule (uptonight's); the moonlight model below takes each minute's phase angle and distance, since the phase moves 0.5°/h, which near full fades the opposition surge (35% at 0°, none at 7°) within a night, and the distance changes up to 3% (6% in flux). The header and JSON show the mid-window values. Against SOFA (`TestSOFA`) the phase angle is within 0.17° of the true angle at the Moon (the Sun's parallax seen from the Moon, which 180° − ψ leaves out) and the illumination within 0.14 percentage points of the true illuminated fraction (1 + cos i)/2.
 
 **Rise and set.** The header's "rises" and "sets" (and the JSON `moon.up` spans) are the minutes the Moon's topocentric centre crosses −50′: the upper limb on the refracted horizon, 34′ of refraction plus 16′ of semi-diameter, as the almanacs define moonrise and moonset ([USNO][usno-twilight]). The moonlight model and the Moon-distance rule keep the geometric horizon (centre above 0°); the few minutes between change nothing there.
 

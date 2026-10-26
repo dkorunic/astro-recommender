@@ -188,8 +188,14 @@ func ClipWindow(day time.Time, loc *time.Location, start, end time.Time, from, t
 
 // MoonPhaseAngle returns the Sun-Moon-Earth angle in degrees (0 = full, 180 = new).
 func MoonPhaseAngle(t time.Time) float64 {
-	sra, sdec := SunRADec(t)
 	mra, mdec := MoonRADec(t)
+
+	return phaseAngle(t, mra, mdec)
+}
+
+// phaseAngle is MoonPhaseAngle for the Moon's geocentric position at t.
+func phaseAngle(t time.Time, mra, mdec float64) float64 {
+	sra, sdec := SunRADec(t)
 
 	return 180 - Separation(sra, sdec, mra, mdec)
 }
@@ -331,6 +337,23 @@ func Altitude(ra, dec float64, t time.Time, lat, lon float64) float64 {
 // topocentric too.
 func MoonTopo(t time.Time, lat, lon float64) (float64, float64) {
 	ra, dec, dist := moon(t)
+
+	return topo(ra, dec, dist, t, lat, lon)
+}
+
+// MoonSky returns at once, from one run of the Moon's series, what the sky
+// model takes of it each minute: MoonTopo's position, MoonPhaseAngle and
+// MoonDistance.
+func MoonSky(t time.Time, lat, lon float64) (float64, float64, float64, float64) {
+	ra, dec, dist := moon(t)
+	tra, tdec := topo(ra, dec, dist, t, lat, lon)
+
+	return tra, tdec, phaseAngle(t, ra, dec), dist
+}
+
+// topo moves the Moon's geocentric ra, dec (degrees) at dist Earth radii to
+// the observer at lat, lon at t: MoonTopo.
+func topo(ra, dec, dist float64, t time.Time, lat, lon float64) (float64, float64) {
 	sinRA, cosRA := math.Sincos(ra * deg)
 	sinDec, cosDec := math.Sincos(dec * deg)
 	sinLST, cosLST := math.Sincos(LST(t, lon) * deg)
