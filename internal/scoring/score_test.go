@@ -150,6 +150,37 @@ func TestMaxFramed(t *testing.T) {
 	}
 }
 
+// An object no frame holds whole is scored at its core (catalog.Target.AtCore),
+// centred and framed there, its size kept; one a frame holds, or any without
+// framing, stays whole.
+func TestScoreCore(t *testing.T) {
+	tg := catalog.Target{Name: "NGC 7000", Type: "Emission Nebula", RADeg: 314.696, DecDeg: 44.33, Size: 120, Minor: 30}
+	for _, tc := range []struct {
+		framing     bool
+		long, short float64
+		core        bool
+	}{
+		{true, 80, 50, true},
+		{true, 150, 130, false},
+		{false, 80, 50, false},
+	} {
+		cfg := mutCfg()
+		cfg.Framing, cfg.FOVLong, cfg.FOVShort, cfg.Scale = tc.framing, tc.long, tc.short, 2
+		if tc.framing {
+			cfg.SizeMax = cfg.MaxFramed()
+		}
+		rs := Score(cfg, mutSky(400), []catalog.Target{tg}, false)
+		if len(rs) != 1 {
+			t.Fatalf("%v: %d results", tc, len(rs))
+		}
+		r := rs[0]
+		major, _ := r.FrameAxes()
+		if (r.Core != nil) != tc.core || r.Size != 120 || tc.core && (r.RADeg != r.Core.RADeg || major != 45) || !tc.core && r.RADeg != tg.RADeg {
+			t.Errorf("%v: core %v at %v, frame axis %v, size %v", tc, r.Core, r.RADeg, major, r.Size)
+		}
+	}
+}
+
 func TestEmissionLineKinds(t *testing.T) {
 	pn := catalog.Target{Type: "Planetary Nebula"}
 	gx := catalog.Target{Type: "Galaxy"}
@@ -512,11 +543,11 @@ func TestScoreFilterCamera(t *testing.T) {
 func TestLineBandsClip(t *testing.T) {
 	quad := config.Filters["quad"]
 	for i, l := range quad {
-		if b, nm := lineBands(quad, 7)[i], catalog.LineNM[l]; b[0] != nm-3.5 || b[1] != nm+3.5 {
+		if b, nm := lineBands(quad, flat(7))[i], catalog.LineNM[l]; b[0] != nm-3.5 || b[1] != nm+3.5 {
 			t.Errorf("7 nm band %d: %v, want λ ± 3.5", i, b)
 		}
 	}
-	bands := lineBands(quad, 30)
+	bands := lineBands(quad, flat(30))
 	var g, r, m float64
 	for i := range quad {
 		glow, ray, mie := atmos.BroadSky(bands[i][0], bands[i][1])
@@ -629,5 +660,25 @@ func TestLoosestMoonK(t *testing.T) {
 		if k := LoosestMoonK(&config.Config{Filter: filter, FilterNM: 7}); k < want[0] || k > want[1] {
 			t.Errorf("LoosestMoonK(%q) = %.3f, want %.2f-%.2f", filter, k, want[0], want[1])
 		}
+	}
+}
+
+// flat is every line filter band at width nm, -filter-nm's.
+func flat(nm float64) [catalog.NumLines]float64 {
+	return (&config.Config{FilterNM: nm}).BandWidths()
+}
+
+// A built-in filter's bands are each its own width (config.Config.BandNM):
+// the Seestar's 30 nm [O III] band reaches Hβ, so it passes more of an
+// H II region than a 7 nm one.
+func TestLineBandsWidths(t *testing.T) {
+	cfg := &config.Config{FilterNM: 7, BandNM: [catalog.NumLines]float64{catalog.Ha: 20, catalog.OIII: 30}}
+	b := lineBands(config.Filters["dual"], cfg.BandWidths())
+	if math.Abs(b[0][1]-b[0][0]-20) > 1e-9 || math.Abs(b[1][1]-b[1][0]-30) > 1e-9 {
+		t.Errorf("bands %v", b[:2])
+	}
+	hii := catalog.Target{Type: "HII Region"}
+	if wide, narrow := passes(cfg, hii, "dual"), passes(&config.Config{FilterNM: 7}, hii, "dual"); wide.w-narrow.w < hii.Photons()[catalog.Hb]-1e-9 {
+		t.Errorf("30 nm [O III] passes %v of the light, 7 nm %v: Hβ %v missing", wide.w, narrow.w, hii.Photons()[catalog.Hb])
 	}
 }

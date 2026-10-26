@@ -9,6 +9,8 @@ import (
 	"maps"
 	"slices"
 	"strings"
+
+	"github.com/dkorunic/astro-recommender/internal/catalog"
 )
 
 // Scope is a -scope preset, a smart telescope: its optics, the frames its
@@ -22,15 +24,34 @@ import (
 // Mirror marks a mirror at prime focus (the Origin's RASA, Unistellar's
 // Newtonians), the rest being refractors; it sets the throughput.
 type Scope struct {
-	Name, Sensor                 string // as shown; Sensor names a chip without a preset
-	Camera                       string
-	Mount                        string  // MountAltAz or MountDerotated: every preset is alt-az (several take a wedge: -mount eq)
+	Name, Sensor string // as shown; Sensor names a chip without a preset
+	Camera       string
+	Mount        string // MountAltAz or MountDerotated: every preset is alt-az (several take a wedge: -mount eq)
+	// Filter is the built-in nebula filter, a -filter choice, and Bands its
+	// bands' widths (FWHM, nm) by line; "" without one.
+	Filter                       string
+	Bands                        [catalog.NumLines]float64
 	Focal, Aperture, Obstruction float64 // mm
 	Pixel                        float64 // µm
 	Sub, ReadNoise               float64 // s, e⁻
 	PxLong, PxShort              int
 	NoSubs, Mirror               bool
 }
+
+// The built-in dual-band filters' bands (FWHM, nm): ZWO's for every
+// Seestar (Hα 20, [O III] 30), DwarfLab's quick-setup guide's for the DWARF
+// 3 (Hα 15, [O III] 30, ±3), unpublished for the mini, which reviews give
+// the same filter, and a retailer's for the Draco's standard edition (13 ±
+// 3 both; the SHO edition's second filter, [S II] + [O III], is not
+// modelled). An [O III] band of 30 nm also reaches Hβ, which scoring counts.
+var (
+	seestarDual = [catalog.NumLines]float64{catalog.Ha: 20, catalog.OIII: 30}
+	dwarfDual   = [catalog.NumLines]float64{catalog.Ha: 15, catalog.OIII: 30}
+	dracoDual   = [catalog.NumLines]float64{catalog.Ha: 13, catalog.OIII: 13}
+)
+
+// filterDual is the built-in filters' -filter choice.
+const filterDual = "dual"
 
 // The -mount kinds: an alt-az mount, whose field turns through each sub;
 // one with a field derotator (DwarfLab Draco's rotating sensor, the ORBIS
@@ -72,10 +93,10 @@ var Scopes = map[string]Scope{
 	},
 	// ZWO's refractors, saving portrait frames (here long x short); 10 s
 	// subs in alt-az.
-	"seestar-s50":     {Name: "ZWO Seestar S50", Mount: MountAltAz, Camera: chipIMX462, Focal: 250, Aperture: 50, Pixel: 2.9, PxLong: 1920, PxShort: 1080, Sub: 10},
-	"seestar-s30":     {Name: "ZWO Seestar S30", Mount: MountAltAz, Camera: chipIMX662, Focal: 150, Aperture: 30, Pixel: 2.9, PxLong: 1920, PxShort: 1080, Sub: 10},
-	"seestar-s30-pro": {Name: "ZWO Seestar S30 Pro", Mount: MountAltAz, Camera: chipIMX585, Focal: 160, Aperture: 30, Pixel: 2.9, PxLong: 3840, PxShort: 2160, Sub: 10},
-	"seestar-s50-pro": {Name: "ZWO Seestar S50 Pro", Mount: MountAltAz, Camera: chipOS08B10, Focal: 260, Aperture: 50, Pixel: 2.9, PxLong: 3840, PxShort: 2160, Sub: 10},
+	"seestar-s50":     {Name: "ZWO Seestar S50", Mount: MountAltAz, Camera: chipIMX462, Focal: 250, Aperture: 50, Pixel: 2.9, PxLong: 1920, PxShort: 1080, Sub: 10, Filter: filterDual, Bands: seestarDual},
+	"seestar-s30":     {Name: "ZWO Seestar S30", Mount: MountAltAz, Camera: chipIMX662, Focal: 150, Aperture: 30, Pixel: 2.9, PxLong: 1920, PxShort: 1080, Sub: 10, Filter: filterDual, Bands: seestarDual},
+	"seestar-s30-pro": {Name: "ZWO Seestar S30 Pro", Mount: MountAltAz, Camera: chipIMX585, Focal: 160, Aperture: 30, Pixel: 2.9, PxLong: 3840, PxShort: 2160, Sub: 10, Filter: filterDual, Bands: seestarDual},
+	"seestar-s50-pro": {Name: "ZWO Seestar S50 Pro", Mount: MountAltAz, Camera: chipOS08B10, Focal: 260, Aperture: 50, Pixel: 2.9, PxLong: 3840, PxShort: 2160, Sub: 10, Filter: filterDual, Bands: seestarDual},
 	// DwarfLab: 15 s, the auto mode's limit on the DWARF II and mini (the
 	// DWARF 3's is unpublished). The DWARF II's IMX415 and focal length are
 	// from reviews; its 1.45 µm the chip's, which matches their 3° field.
@@ -87,9 +108,9 @@ var Scopes = map[string]Scope{
 	// broadband subs reviewers suggest; -sub sets another. The others'
 	// sensors do not turn (their EQ mode tilts the base).
 	"dwarf-2":    {Name: "DwarfLab DWARF II", Mount: MountAltAz, Sensor: "IMX415", Focal: 100, Aperture: 24, Pixel: 1.45, PxLong: 3840, PxShort: 2160, Sub: 15},
-	"dwarf-3":    {Name: "DwarfLab DWARF 3", Mount: MountAltAz, Camera: chipIMX678, Focal: 150, Aperture: 35, Pixel: 2.0, PxLong: 3840, PxShort: 2160, Sub: 15},
-	"dwarf-mini": {Name: "DwarfLab DWARF mini", Mount: MountAltAz, Camera: chipIMX662, Focal: 150, Aperture: 30, Pixel: 2.9, PxLong: 1920, PxShort: 1080, Sub: 15},
-	"draco":      {Name: "DwarfLab Draco", Mount: MountDerotated, Sensor: "OmniVision OV50Q40", Focal: 340, Aperture: 90, Pixel: 2.394, PxLong: 4096, PxShort: 3072, Sub: 60, NoSubs: true},
+	"dwarf-3":    {Name: "DwarfLab DWARF 3", Mount: MountAltAz, Camera: chipIMX678, Focal: 150, Aperture: 35, Pixel: 2.0, PxLong: 3840, PxShort: 2160, Sub: 15, Filter: filterDual, Bands: dwarfDual},
+	"dwarf-mini": {Name: "DwarfLab DWARF mini", Mount: MountAltAz, Camera: chipIMX662, Focal: 150, Aperture: 30, Pixel: 2.9, PxLong: 1920, PxShort: 1080, Sub: 15, Filter: filterDual, Bands: dwarfDual},
+	"draco":      {Name: "DwarfLab Draco", Mount: MountDerotated, Sensor: "OmniVision OV50Q40", Focal: 340, Aperture: 90, Pixel: 2.394, PxLong: 4096, PxShort: 3072, Sub: 60, NoSubs: true, Filter: filterDual, Bands: dracoDual},
 	// Vaonis' refractors, 10 s subs. Stellina's chip is named by third
 	// parties only; its pixels are the maker's and the IMX178's.
 	"stellina":    {Name: "Vaonis Stellina", Mount: MountAltAz, Camera: chipIMX178, Focal: 400, Aperture: 80, Pixel: 2.4, PxLong: 3096, PxShort: 2080, Sub: 10},

@@ -8,6 +8,8 @@ import (
 	"math"
 	"strings"
 	"testing"
+
+	"github.com/dkorunic/astro-recommender/internal/catalog"
 )
 
 // Each scope's frame, worked out from its pixels and focal length, is the
@@ -188,5 +190,46 @@ func TestScopeMono(t *testing.T) {
 	}
 	if cfg, err := mutParse(t, mutBase("-fov", "2x1", "-mono")...); err != nil || !cfg.Mono {
 		t.Errorf("-fov -mono: %v", err)
+	}
+}
+
+// A scope's built-in filter is -filter's default and gives the bands their
+// widths; a given -filter-nm replaces the widths, a given -filter only the
+// choice, and a scope without one, or no -scope, changes nothing.
+func TestBuiltInFilter(t *testing.T) {
+	for key, s := range Scopes {
+		if s.Filter == "" {
+			if s.Bands != [catalog.NumLines]float64{} {
+				t.Errorf("%s: bands without a filter", key)
+			}
+
+			continue
+		}
+		for _, l := range Filters[s.Filter] {
+			if w := s.Bands[l]; w < 1 || w > 30 {
+				t.Errorf("%s: %s band %v nm, want 1-30", key, s.Filter, w)
+			}
+		}
+	}
+	seestar := [catalog.NumLines]float64{catalog.Ha: 20, catalog.OIII: 30}
+	for _, tc := range []struct {
+		args   []string
+		filter string
+		bands  [catalog.NumLines]float64
+	}{
+		{[]string{"-scope", "seestar-s50"}, "dual", seestar},
+		{[]string{"-scope", "seestar-s50", "-filter-nm", "7"}, "dual", [catalog.NumLines]float64{}},
+		{[]string{"-scope", "seestar-s50", "-filter", "ha,cls"}, "ha,cls", seestar},
+		{[]string{"-scope", "origin"}, "", [catalog.NumLines]float64{}},
+		{nil, "", [catalog.NumLines]float64{}},
+	} {
+		cfg, err := mutParse(t, mutBase(tc.args...)...)
+		if err != nil || cfg.Filter != tc.filter || cfg.BandNM != tc.bands {
+			t.Errorf("%v: filter %q bands %v, want %q %v (%v)", tc.args, cfg.Filter, cfg.BandNM, tc.filter, tc.bands, err)
+		}
+	}
+	cfg := Config{FilterNM: 7, BandNM: seestar}
+	if w := cfg.BandWidths(); w[catalog.Ha] != 20 || w[catalog.OIII] != 30 || w[catalog.SII] != 7 {
+		t.Errorf("BandWidths %v", w)
 	}
 }

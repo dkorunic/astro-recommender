@@ -118,6 +118,10 @@ type Config struct {
 	NoSQM          bool
 	NoComets       bool
 	NoSolar        bool
+
+	// BandNM is a -scope's built-in filter's band widths by line, without
+	// -filter-nm; 0 = FilterNM.
+	BandNM [catalog.NumLines]float64
 }
 
 func Parse() (Config, error) {
@@ -176,8 +180,8 @@ func Parse() (Config, error) {
 	flag.StringVar(&mount, "mount", "", "with framing, the mount: altaz (its field turns through each sub, so a minute whose rotation trails the object's edge by more than a star's width is not observable), derotated (alt-az with a field derotator, as Draco and the ORBIS 60EDX: none) or eq (equatorial, or on a wedge: none); -scope's by default, else eq")
 	flag.Float64Var(&cfg.Residual, "residual", 0.002, "with framing, what flats and gradient removal leave of the sky in the stack, a share 0-0.05, which caps its SNR however many subs (0 = none)")
 	flag.BoolVar(&cfg.Mono, "mono", false, "with framing, the camera is monochrome, so every pixel sees every filter band; not with -scope, whose cameras are colour")
-	flag.StringVar(&cfg.Filter, "filter", "", "filters you own, comma-separated: for emission-line targets dual (Ha + OIII at once), tri (+ Hb), quad (+ Hb and SII), ha, oiii, sii; broadband light pollution filters cls (Astronomik CLS) and lpro (Optolong L-Pro) for any target; each target is scored without and with each worn all night, and FILTER shows the one that gains it most (with framing, the one SUBS needs fewest subs through) (default none)")
-	flag.Float64Var(&cfg.FilterNM, "filter-nm", 7, "with -filter, the width of each line filter band in nm, 1-30")
+	flag.StringVar(&cfg.Filter, "filter", "", "filters you own, comma-separated: for emission-line targets dual (Ha + OIII at once), tri (+ Hb), quad (+ Hb and SII), ha, oiii, sii; broadband light pollution filters cls (Astronomik CLS) and lpro (Optolong L-Pro) for any target; each target is scored without and with each worn all night, and FILTER shows the one that gains it most (with framing, the one SUBS needs fewest subs through) (default none; with -scope its built-in filter: dual on the Seestars, the DWARF 3 and mini and the Draco)")
+	flag.Float64Var(&cfg.FilterNM, "filter-nm", 7, "with -filter, the width of each line filter band in nm, 1-30; without it a -scope's built-in filter has its own")
 	flag.BoolVar(&filterStd, "filter-std", false, "with -filter, the line filters are standard ones, whose bands shift blue in a fast beam: -scope's (the Origin's f/2.2), or -focal over -aperture (off: made for the beam)")
 	flag.IntVar(&cfg.Bortle, "bortle", 0, "Bortle class 1-9 of the site, sets the zenith sky brightness (0 = dark sky)")
 	flag.Float64Var(&cfg.SQM, "sqm", 0, "measured zenith sky brightness in mag/arcsec² (SQM meter or light pollution map); overrides -bortle; default: looked up on DarkSkySites when a key is available (CLI: $DARKSKYSITES_API_KEY; browser: always) and -bortle is not")
@@ -230,6 +234,7 @@ func Parse() (Config, error) {
 		return Config{}, err
 	}
 
+	cfg.builtIn(set, base)
 	if err := cfg.validateFlags(set); err != nil {
 		return Config{}, err
 	}
@@ -300,12 +305,12 @@ func loadSkip(file string) (map[string]bool, error) {
 // Filters are the -filter choices and the lines each passes; a multi-band
 // filter passes its lines at once, onto the same frame.
 var Filters = map[string][]catalog.Line{
-	"dual": {catalog.Ha, catalog.OIII},
-	"tri":  {catalog.Ha, catalog.Hb, catalog.OIII},
-	"quad": {catalog.Ha, catalog.Hb, catalog.OIII, catalog.SII},
-	"ha":   {catalog.Ha},
-	"oiii": {catalog.OIII},
-	"sii":  {catalog.SII},
+	filterDual: {catalog.Ha, catalog.OIII},
+	"tri":      {catalog.Ha, catalog.Hb, catalog.OIII},
+	"quad":     {catalog.Ha, catalog.Hb, catalog.OIII, catalog.SII},
+	"ha":       {catalog.Ha},
+	"oiii":     {catalog.OIII},
+	"sii":      {catalog.SII},
 }
 
 // Broadband are the broadband light-pollution -filter choices and their
@@ -326,6 +331,23 @@ var Broadband = map[string][][2]float64{
 func (cfg *Config) LineFilter() bool {
 	return slices.ContainsFunc(cfg.FilterNames(), func(f string) bool { return Filters[f] != nil })
 }
+
+// BandWidths returns each line filter band's width by line: BandNM's, else
+// FilterNM.
+func (cfg *Config) BandWidths() [catalog.NumLines]float64 {
+	w := cfg.BandNM
+	for l := range w {
+		if w[l] == 0 {
+			w[l] = cfg.FilterNM
+		}
+	}
+
+	return w
+}
+
+// BuiltInBands reports whether the line filter bands are a built-in
+// filter's (BandNM), not -filter-nm's alone.
+func (cfg *Config) BuiltInBands() bool { return cfg.BandNM != [catalog.NumLines]float64{} }
 
 // FilterNames returns the -filter choices in their order; nil for none.
 func (cfg *Config) FilterNames() []string {
@@ -460,6 +482,21 @@ func (cfg *Config) MaxFramed() float64 {
 // guarantees Scale > 0; a zero-value Config returns NaN (0/0).
 func (cfg *Config) FramePx() (float64, float64) {
 	return cfg.FOVLong * 60 / cfg.Scale, cfg.FOVShort * 60 / cfg.Scale
+}
+
+// builtIn takes -scope's built-in filter (Scope.Filter) as -filter's
+// default, and its bands' widths unless -filter-nm gives one: a given
+// -filter is what the scope wears, built in or added, so the widths stay.
+func (cfg *Config) builtIn(set map[string]bool, base Scope) {
+	if cfg.Scope == "" || base.Filter == "" {
+		return
+	}
+	if !set["filter"] {
+		cfg.Filter = base.Filter
+	}
+	if !set["filter-nm"] {
+		cfg.BandNM = base.Bands
+	}
 }
 
 // setTypes sets Types from -type and turns the comet fetch off when comets

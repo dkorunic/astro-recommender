@@ -86,9 +86,10 @@ type sky struct { // betteralign:ignore
 }
 
 type filter struct { // betteralign:ignore
-	Mode      string  `json:"mode"`                // the -filter list: dual, tri, quad, ha, oiii, sii, cls, lpro, comma-separated
-	Bandwidth float64 `json:"bandwidth,omitempty"` // nm, each line filter band; absent with only cls/lpro
-	FRatio    float64 `json:"fRatio,omitempty"`    // -filter-std: the beam whose angles shift standard line filters' bands; absent for filters made for it
+	Mode      string             `json:"mode"`                // the -filter list: dual, tri, quad, ha, oiii, sii, cls, lpro, comma-separated
+	Bandwidth float64            `json:"bandwidth,omitempty"` // nm, each line filter band; absent with only cls/lpro or a built-in filter
+	Bands     map[string]float64 `json:"bands,omitempty"`     // nm by line (ha, oiii, sii, hb): a -scope's built-in filter's bands, in place of bandwidth
+	FRatio    float64            `json:"fRatio,omitempty"`    // -filter-std: the beam whose angles shift standard line filters' bands; absent for filters made for it
 }
 
 type frame struct {
@@ -177,6 +178,13 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 		r.Sky.Filter = &filter{Mode: cfg.Filter}
 		if cfg.LineFilter() {
 			r.Sky.Filter.Bandwidth, r.Sky.Filter.FRatio = cfg.FilterNM, cfg.FRatio
+			if cfg.BuiltInBands() {
+				r.Sky.Filter.Bandwidth, r.Sky.Filter.Bands = 0, map[string]float64{}
+				widths := cfg.BandWidths()
+				for _, l := range filterLines(cfg) {
+					r.Sky.Filter.Bands[lineKeys[l]] = widths[l]
+				}
+			}
 		}
 	}
 	if cfg.Framing {
@@ -230,12 +238,14 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 			Observable: run{Runs: res.Runs, span: span{res.RunFrom, res.RunTo}},
 		}
 		if res.HasSize() {
-			tg.Size = &res.Size
-			if major, minor := res.Axes(); minor < major {
+			// What the frame holds: the object, or its core.
+			major, minor := res.FrameAxes()
+			tg.Size = &major
+			if minor < major {
 				tg.Minor = &minor
 			}
 			if cfg.Framing {
-				px := res.Size * 60 / cfg.Scale
+				px := major * 60 / cfg.Scale
 				tg.Px = &px
 			}
 		}

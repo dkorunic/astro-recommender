@@ -158,7 +158,7 @@ type channel struct {
 // ones' 0.77, the blue ones at 0.11. The object's gains are 0 when a line filter passes
 // none of its lines.
 // The channels overwrite dst's, so Score reuses each tally's across targets.
-func (c camera) channels(dst []channel, name string, width float64, lines [catalog.NumLines]float64, fp filterPass) []channel {
+func (c camera) channels(dst []channel, name string, width [catalog.NumLines]float64, lines [catalog.NumLines]float64, fp filterPass) []channel {
 	g := c.area * c.qe * c.omega * atmos.PhotonsV0 / atmos.NanoLamberts(0)
 	chans := dst[:0]
 	if c.mono {
@@ -413,7 +413,7 @@ func Subs(cfg *config.Config, s *Sky, r Result, planned []bool) Estimate {
 		obs = in
 	}
 	lines := r.Photons()
-	chans := c.channels(nil, r.Filter, cfg.FilterNM, lines, fp)
+	chans := c.channels(nil, r.Filter, cfg.BandWidths(), lines, fp)
 	if !slices.ContainsFunc(chans, func(ch channel) bool { return ch.obj > 0 }) {
 		return Estimate{}
 	}

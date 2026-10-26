@@ -65,13 +65,18 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 	}
 	active, choice := make([]*tally, 0, len(names)), make([]int, 0, len(names))
 	cam, camOK := newCamera(cfg, s)
+	widths := cfg.BandWidths()
 	for _, tg := range targets {
+		// An object no frame holds whole is framed at its usual core, if it
+		// has one that fits (catalog.Target.AtCore).
+		if cfg.Framing {
+			if c, ok := tg.AtCore(); ok && !framable(cfg, tg, mosaics) && framable(cfg, c, mosaics) {
+				tg = c
+			}
+		}
 		// Comet comae have no catalog size, so size limits do not apply.
 		// An unknown size counts as 0, so -size-min 0 keeps it.
-		size := 0.0
-		if tg.HasSize() {
-			size = tg.Size
-		}
+		size, _ := tg.FrameAxes()
 		if tg.Track == nil && (size < cfg.SizeMin || size > cfg.SizeMax) {
 			continue
 		}
@@ -109,7 +114,7 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 			}
 			tallies[c].reset(fp)
 			if camNL > 0 {
-				tallies[c].chans = cam.channels(tallies[c].chans, name, cfg.FilterNM, tg.Photons(), fp)
+				tallies[c].chans = cam.channels(tallies[c].chans, name, widths, tg.Photons(), fp)
 			}
 			active, choice = append(active, &tallies[c]), append(choice, c)
 		}
@@ -442,7 +447,7 @@ func where(s *Sky, tg catalog.Target) (float64, float64, float64) {
 // mosaic that gave it; 0 when none holds the object. The fewest panels win a
 // tie.
 func frame(tg catalog.Target, mosaics []config.Mosaic, rotate bool) (float64, config.Mosaic) {
-	major, minor := tg.Axes()
+	major, minor := tg.FrameAxes()
 	best, at := 0.0, config.Mosaic{}
 	for _, m := range mosaics {
 		// Without -rotate the position angle in the frame is unknown, so the
@@ -459,6 +464,21 @@ func frame(tg catalog.Target, mosaics []config.Mosaic, rotate bool) (float64, co
 	}
 
 	return best, at
+}
+
+// framable reports whether tg passes the size limits and some mosaic holds
+// it, as Score and scoreTarget judge it; a comet or an unknown size always.
+func framable(cfg *config.Config, tg catalog.Target, mosaics []config.Mosaic) bool {
+	if tg.Track != nil || !tg.HasSize() {
+		return true
+	}
+	size, _ := tg.FrameAxes()
+	if size < cfg.SizeMin || size > cfg.SizeMax {
+		return false
+	}
+	f, _ := frame(tg, mosaics, cfg.Rotate)
+
+	return f > 0
 }
 
 // frameFill scores how well an object filling fill (0..1) of the frame
@@ -499,7 +519,7 @@ func passes(cfg *config.Config, tg catalog.Target, name string) filterPass {
 	// were once shares of V's 88 nm, which charged them CameraBand times the
 	// sky per nm a broadband filter is charged against the same unfiltered sky.
 	ls := config.Filters[name]
-	all := lineBands(ls, cfg.FilterNM)
+	all := lineBands(ls, cfg.BandWidths())
 	bands := all[:len(ls)]
 	for _, b := range bands {
 		glow, rayleigh, mie := atmos.BroadSky(b[0], b[1])
@@ -525,17 +545,18 @@ func passes(cfg *config.Config, tg catalog.Target, name string) filterPass {
 	return fp
 }
 
-// lineBands returns each of ls's passbands, λ ± width/2 nm, clipped at the
+// lineBands returns each of ls's passbands, λ ± width/2 nm (width by line,
+// config.Config.BandWidths: a built-in filter's differ), clipped at the
 // midpoint between two lines whose bands would overlap (-filter-nm goes to
 // 30: Hβ meets [O III] past 14.6 nm, Hα meets [S II] past 16.1), so the
 // shared wavelengths charge the sky once, as a physical filter's merged
 // bands pass them once, each side at its own line's response. An array:
 // at most 4 lines (quad), and passes runs per target in Score's loop.
-func lineBands(ls []catalog.Line, width float64) [4][2]float64 {
+func lineBands(ls []catalog.Line, width [catalog.NumLines]float64) [4][2]float64 {
 	var bands [4][2]float64
 	for i, l := range ls {
 		nm := catalog.LineNM[l]
-		bands[i] = [2]float64{nm - width/2, nm + width/2}
+		bands[i] = [2]float64{nm - width[l]/2, nm + width[l]/2}
 	}
 	for i := range ls {
 		for j := range ls {

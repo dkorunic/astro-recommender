@@ -105,7 +105,7 @@ func altitudes(cfg *config.Config, s *scoring.Sky, results []scoring.Result) {
 		pra, pdec := output.J2000(s, res.Target)
 		size := 0.0
 		if res.HasSize() {
-			size = res.Size
+			size, _ = res.FrameAxes()
 		}
 		doc.Pos = append(doc.Pos, [3]float64{math.Round(pra*1e4) / 1e4, math.Round(pdec*1e4) / 1e4, size})
 		obs := res.Obs

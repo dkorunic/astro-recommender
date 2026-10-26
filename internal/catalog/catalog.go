@@ -54,6 +54,9 @@ import (
 // (list_js.go), so the page does not download every list up front.
 
 type Target struct {
+	// Core is set only by AtCore, for scoring.Score with framing, when the
+	// whole object cannot be framed; never from YAML.
+	Core          *Core  `yaml:"-"`
 	Name          string `yaml:"name"`
 	Description   string `yaml:"description"`
 	Type          string `yaml:"type"`
@@ -946,7 +949,10 @@ func NameKey(name string) string {
 // HasKey reports m[NameKey(name)] without building the key on the heap for
 // the short ASCII names the lists use (Score asks for every target); other
 // names go through NameKey.
-func HasKey(m map[string]bool, name string) bool {
+func HasKey(m map[string]bool, name string) bool { return byKey(m, name) }
+
+// byKey returns m[NameKey(name)] as HasKey does.
+func byKey[V any](m map[string]V, name string) V {
 	var buf [32]byte
 	b := buf[:0]
 	for i := range len(name) {

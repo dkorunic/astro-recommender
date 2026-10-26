@@ -74,11 +74,45 @@ func filterDesc(cfg *config.Config) string {
 		return desc
 	}
 	bands := fmt.Sprintf("%g nm line bands", cfg.FilterNM)
+	if cfg.BuiltInBands() {
+		widths := cfg.BandWidths()
+		var each []string
+		for _, l := range filterLines(cfg) {
+			each = append(each, fmt.Sprintf("%s %g", lineNames[l], widths[l]))
+		}
+		bands = "built-in, " + strings.Join(each, ", ") + " nm"
+	}
 	if cfg.FRatio > 0 {
 		bands += fmt.Sprintf("; standard, shifted in the f/%.1f beam", cfg.FRatio)
 	}
 
 	return desc + " (" + bands + ")"
+}
+
+// lineNames are the lines as the Filter line names them, lineKeys as JSON's
+// sky.filter.bands does.
+var (
+	lineNames = [catalog.NumLines]string{catalog.Ha: "Hα", catalog.OIII: "[O III]", catalog.SII: "[S II]", catalog.Hb: "Hβ"}
+	lineKeys  = [catalog.NumLines]string{catalog.Ha: "ha", catalog.OIII: "oiii", catalog.SII: "sii", catalog.Hb: "hb"}
+)
+
+// filterLines returns the lines the -filter choices' line filters are
+// built around, each once, in line order.
+func filterLines(cfg *config.Config) []catalog.Line {
+	var used [catalog.NumLines]bool
+	for _, f := range cfg.FilterNames() {
+		for _, l := range config.Filters[f] {
+			used[l] = true
+		}
+	}
+	var ls []catalog.Line
+	for l, u := range used {
+		if u {
+			ls = append(ls, catalog.Line(l))
+		}
+	}
+
+	return ls
 }
 
 // frameDesc is the header's Frame line: the instrument first, as it is
@@ -559,16 +593,18 @@ func resultsTable(cfg *config.Config, s *scoring.Sky, results []scoring.Result, 
 	types := varied(shown, func(r scoring.Result) string { return typeColor(r.Target) })
 	sky := varied(shown, func(r scoring.Result) string { return scale(r.SkyMag, 20.5, 19) })
 	for i, r := range shown {
+		// What the frame holds: the object, or its core (catalog.Target.AtCore).
+		major, minor := r.FrameAxes()
 		var px string
 		if cfg.Framing {
-			px = sizeText(r.Target, "%.0f", r.Size*60/cfg.Scale)
+			px = sizeText(r.Target, "%.0f", major*60/cfg.Scale)
 			if m := r.Mosaic; m.Panels() > 1 {
 				px += fmt.Sprintf(" %dx%d", m.Cols, m.Rows)
 			}
 		}
-		size := sizeText(r.Target, "%.0f'", r.Size)
+		size := sizeText(r.Target, "%.0f'", major)
 		// The minor axis only enters the frame fit with -rotate.
-		if major, minor := r.Axes(); cfg.Rotate && minor < major {
+		if cfg.Rotate && minor < major {
 			size = fmt.Sprintf("%.0fx%.0f'", major, minor)
 		}
 		ra, dec := position(r.Position())
