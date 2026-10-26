@@ -49,8 +49,12 @@ func TestRotationTrail(t *testing.T) {
 	if newRotation(&eq, s, tg, 55).k != 0 || newRotation(cfg, s, comet, 55).k != 0 {
 		t.Error("checked on an equatorial mount or for a comet")
 	}
-	// Without a size the edge is the frame's corner, 45.5'.
-	if r := newRotation(cfg, s, catalog.Target{Name: "unknown"}, 55); math.Abs(r.k/0.7546-45.46/30) > 1e-3 {
-		t.Errorf("k without a size %v, want the corner's", r.k)
+	// Without a size nothing is checked; past the frame's corner, 45.5', the
+	// corner is the edge.
+	if r := newRotation(cfg, s, catalog.Target{Name: "unknown"}, 55); r.k != 0 {
+		t.Errorf("k without a size %v, want 0", r.k)
+	}
+	if r := newRotation(cfg, s, catalog.Target{Name: "huge", Size: 300}, 55); math.Abs(r.k/0.7546-45.46/30) > 1e-3 {
+		t.Errorf("k past the corner %v, want the corner's", r.k)
 	}
 }

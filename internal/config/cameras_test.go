@@ -216,7 +216,7 @@ func TestMountDefaults(t *testing.T) {
 		{MountDerotated, []string{"-scope", "draco"}},
 		{MountAltAz, []string{"-scope", "draco", "-mount", "altaz"}},
 		{MountEq, []string{"-fov", "2x1.5", "-scale", "2"}},
-		{MountAltAz, []string{"-fov", "2x1.5", "-scale", "2", "-mount", "altaz"}},
+		{MountAltAz, []string{"-fov", "2x1.5", "-scale", "2", "-mount", "altaz", "-sub", "30"}},
 		{MountDerotated, []string{"-fov", "2x1.5", "-scale", "2", "-mount", "derotated"}},
 		{MountEq, nil},
 	} {
@@ -225,7 +225,9 @@ func TestMountDefaults(t *testing.T) {
 			t.Errorf("%v: mount %q (alt-az %v), want %q, %v", tc.args, cfg.Mount, cfg.AltAz, tc.mount, err)
 		}
 	}
-	for _, args := range [][]string{{"-scope", "origin", "-mount", "dobson"}, {"-mount", "altaz"}} {
+	// Without -scope, altaz needs -sub: the Origin's 10 s says nothing of
+	// another telescope's.
+	for _, args := range [][]string{{"-scope", "origin", "-mount", "dobson"}, {"-mount", "altaz"}, {"-fov", "2x1.5", "-scale", "2", "-mount", "altaz"}} {
 		if _, err := mutParse(t, mutBase(args...)...); err == nil {
 			t.Errorf("%v: no error", args)
 		}

@@ -134,17 +134,11 @@ type target struct { // betteralign:ignore
 	SkyMag        float64           `json:"skyMag"`
 	SB            *float64          `json:"surfaceBrightness,omitempty"`
 	SBEstimated   bool              `json:"surfaceBrightnessEstimated,omitempty"`
-	BrightStar    *starJSON         `json:"brightStar,omitempty"` // the STAR column's
+	BrightStar    *StarInfo         `json:"brightStar,omitempty"` // the STAR column's
 	Px            *float64          `json:"px,omitempty"`
 	Mosaic        *mosaic           `json:"mosaic,omitempty"` // more than one panel only
 	Filter        string            `json:"filter,omitempty"` // the -filter choice that scored best; none helped when absent
 	Subs          *scoring.Estimate `json:"subs,omitempty"`   // with framing: the sub-exposure estimate
-}
-
-type starJSON struct { // betteralign:ignore
-	Name       string  `json:"name"`
-	Mag        float64 `json:"mag"`
-	Separation float64 `json:"separation"` // arcminutes from the target's centre
 }
 
 type mosaic struct { // betteralign:ignore
@@ -194,18 +188,15 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 	r.Sky.WashoutReason = washoutReason(s)
 	r.Sky.Washout = r.Sky.WashoutReason != ""
 	for t := s.Start.Truncate(time.Hour); forecastFetched(s) && !t.After(s.LastHour()); t = t.Add(time.Hour) {
-		// An hour from End on, the text table's, has only what the window's
-		// last minutes read from it (see Weather): no extinction, wind, gust,
-		// rain or 7Timer seeing.
-		after := !t.Before(s.End)
+		own := ownHour(s, t)
 		hour := map[string]any{"hour": t.In(cfg.Loc)}
-		if !after {
+		if own {
 			hour["extinction"] = s.ExtinctionAt(t, cfg.Extinction)
 		}
 		if h, ok := s.Weather[t.Unix()]; ok {
 			hour["cloud"], hour["low"], hour["mid"], hour["high"] = h.Cloud, h.Low, h.Mid, h.High
 			hour["dewSpread"] = h.Temp - h.DewPoint
-			if !after {
+			if own {
 				hour["wind"] = h.Wind
 				gustRain(hour, h)
 			}
@@ -215,7 +206,7 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 		}
 		if a, ok := s.Astro[weather.AstroKey(t)]; ok {
 			hour["transparency"] = a.Transparency
-			if !after {
+			if own {
 				hour["seeing"] = weather.SeeingLabel(a.Seeing)
 			}
 		}
@@ -228,7 +219,9 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 		}
 		r.Plan = append(r.Plan, sl)
 	}
-	for i, res := range results[:min(cfg.Top, len(results))] {
+	shown := results[:min(cfg.Top, len(results))]
+	bright := BrightStars(cfg, s, shown)
+	for i, res := range shown {
 		ra, dec := J2000(s, res.Target) // a comet's listed position is of date
 		tg := target{
 			Rank: i + 1, Name: res.Name, Description: res.Description, Type: res.Type, Constellation: res.Constellation,
@@ -253,9 +246,7 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 			tg.BMag = &res.BMag
 		}
 		tg.Subs = res.Exposure
-		if st, sep, ok := brightStar(cfg, s, res); ok {
-			tg.BrightStar = &starJSON{Name: st.Name, Mag: st.Mag, Separation: math.Round(sep*600) / 10}
-		}
+		tg.BrightStar = bright[i]
 		if m := res.Mosaic; m.Panels() > 1 {
 			tg.Mosaic = &mosaic{Cols: m.Cols, Rows: m.Rows}
 		}

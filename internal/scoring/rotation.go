@@ -18,7 +18,8 @@ const earthRate = 7.2921150e-5
 // field turns about the frame's centre at earthRate cos φ cos A / cos h
 // (Meeus ch. 14's parallactic angle, differentiated), and with
 // cos h cos A = sin δ cos φ − cos δ sin φ cos H that needs no azimuth. The
-// zero value checks nothing (an equatorial mount, no framing, a comet).
+// zero value checks nothing (an equatorial mount, no framing, a comet, an
+// object without a size).
 type rotation struct {
 	seeing                         []float64 // Sky.Seeing; nil: typicalSeeing
 	k                              float64   // earthRate × cos φ × sub × the radius in px: the trail, px, per unit of rate's factor
@@ -29,15 +30,13 @@ type rotation struct {
 // newRotation returns the check for tg at declination dec (of date) on
 // cfg's alt-az mount: the trail is taken at the object's edge, its major
 // axis' half, which a frame's corner caps (a mosaic's panel's, each turning
-// about its own centre; without a size, the corner).
+// about its own centre). An object without a size is not checked: the
+// corner would judge it stricter than any object of known size.
 func newRotation(cfg *config.Config, s *Sky, tg catalog.Target, dec float64) rotation {
-	if !cfg.Framing || !cfg.AltAz || tg.Track != nil || cfg.Sub <= 0 || cfg.Scale <= 0 {
+	if !cfg.Framing || !cfg.AltAz || tg.Track != nil || !tg.HasSize() || cfg.Sub <= 0 || cfg.Scale <= 0 {
 		return rotation{}
 	}
-	radius := math.Hypot(cfg.FOVLong, cfg.FOVShort) / 2 // arcminutes
-	if tg.HasSize() {
-		radius = min(radius, tg.Size/2)
-	}
+	radius := min(math.Hypot(cfg.FOVLong, cfg.FOVShort)/2, tg.Size/2) // arcminutes
 	sinLat, cosLat := math.Sincos(cfg.Lat * deg)
 	sinDec, cosDec := math.Sincos(dec * deg)
 

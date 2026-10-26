@@ -88,3 +88,31 @@ func TestCovered(t *testing.T) {
 		}
 	}
 }
+
+// TestDeltaT pins deltaT to Astronomy Engine's DeltaT_EspenakMeeus (v2.1.19,
+// Python) in every range: the 1986-2005 polynomial alone, which the first
+// port used for all earlier years, read −919 s for 1960's 33.
+func TestDeltaT(t *testing.T) {
+	for _, c := range []struct{ year, want float64 }{
+		{-1000, 25427.68},
+		{0, 10583.6},
+		{1000, 1574.2},
+		{1650, 50.194016},
+		{1750, 13.370070},
+		{1850, 7.1069},
+		{1880, -5.008487},
+		{1910, 10.3884},
+		{1930, 24.1329},
+		{1950, 29.07},
+		{1960, 33.103434},
+		{1975, 45.45},
+		{1990, 56.894641},
+		{2026, 75.074584},
+		{2100, 202.74},
+		{2200, 442.08},
+	} {
+		if got := deltaT((c.year-2000)*365.24217 + 14); math.Abs(got-c.want) > 1e-6*max(1, math.Abs(c.want)) {
+			t.Errorf("deltaT(%v) = %v, want %v", c.year, got, c.want)
+		}
+	}
+}

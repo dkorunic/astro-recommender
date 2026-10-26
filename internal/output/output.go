@@ -127,7 +127,7 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 	headerLine("Window:  ", fmt.Sprintf("%s - %s (%s%s)", s.Start.Format("2006-01-02 "+layout), s.End.Format("2006-01-02 "+layout),
 		durText(s.End.Sub(s.Start)), night))
 	headerLine("Moon:    ", fmt.Sprintf("%s illuminated, targets kept at least %.0f° away%s, %s", paint(scale(s.Illum, 0.3, 0.7), fmt.Sprintf("%.0f%%", s.Illum*100)),
-		s.MoonSep, filterMoon(cfg, s), moonText(s)+eclipseText(s)))
+		s.MoonSep, moonFloor(cfg, s), moonText(s)+eclipseText(s)))
 	headerLine("Size:    ", fmt.Sprintf("%.1f' - %.1f'", cfg.SizeMin, cfg.SizeMax))
 	if cfg.MinRun > 0 {
 		headerLine("Min run: ", fmt.Sprintf("at least %s observable without a break", durText(cfg.MinRun)))
@@ -243,22 +243,15 @@ func Weather(cfg *config.Config, s *scoring.Sky) {
 	row(w, "01", names(weatherColumns)...)
 	na := paint("39", "-")
 	for t := s.Start.Truncate(time.Hour); !t.After(s.LastHour()); t = t.Add(time.Hour) {
-		cloud, layers, dew, wind, transp, seeing := na, na, na, na, na, na
-		// The value scoring used: hourly from the aerosols or the elevation alone, else the fixed one.
-		k := s.ExtinctionAt(t, cfg.Extinction)
-		ext := paint(scale(k, 0.25, 0.4), fmt.Sprintf("%.2f", k))
-		// An hour from End on is shown for the cloud, dew and upper-air seeing
-		// the window's last minutes read from it (the nearest hour); its
-		// extinction, wind, rain and 7Timer seeing they take from their own
-		// hour, so those stay "-". 7Timer's transparency is per 3-hour block,
-		// which those minutes share.
-		after := !t.Before(s.End)
-		if after {
-			ext = na
+		cloud, layers, dew, wind, transp, seeing, ext := na, na, na, na, na, na, na
+		own := ownHour(s, t)
+		if own { // the value scoring used: hourly from the aerosols or the elevation alone, else the fixed one
+			k := s.ExtinctionAt(t, cfg.Extinction)
+			ext = paint(scale(k, 0.25, 0.4), fmt.Sprintf("%.2f", k))
 		}
 		if h, ok := s.Weather[t.Unix()]; ok {
 			cloud = paint(scale(h.Cloud, 30, 70), fmt.Sprintf("%.0f%%", h.Cloud))
-			if h.Precip >= weather.RainGate/2 && !after { // the cell is painted once either way
+			if h.Precip >= weather.RainGate/2 && own { // the cell is painted once either way
 				cloud = paint("31", fmt.Sprintf("%.0f%% %.1fmm", h.Cloud, h.Precip))
 			}
 			layers = paint("39", fmt.Sprintf("%.0f/%.0f/%.0f%%", h.Low, h.Mid, h.High))
@@ -269,9 +262,8 @@ func Weather(cfg *config.Config, s *scoring.Sky) {
 			if g < h.Gust {
 				mark = "~"
 			}
-			wind = paint(scale(g, 20, 35), fmt.Sprintf("%.0f/%s%.0f km/h", h.Wind, mark, g))
-			if after {
-				wind = na
+			if own {
+				wind = paint(scale(g, 20, 35), fmt.Sprintf("%.0f/%s%.0f km/h", h.Wind, mark, g))
 			}
 			// The upper-air estimate, as scoring's blur; 7Timer's class stands in for hours without one.
 			if h.Seeing > 0 {
@@ -280,7 +272,7 @@ func Weather(cfg *config.Config, s *scoring.Sky) {
 		}
 		if a, ok := s.Astro[weather.AstroKey(t)]; ok {
 			transp = paint(scale(float64(a.Transparency), 3, 6), fmt.Sprintf("%d/8", a.Transparency))
-			if s.Weather[t.Unix()].Seeing == 0 && !after {
+			if s.Weather[t.Unix()].Seeing == 0 && own {
 				seeing = paint(scale(float64(a.Seeing), 6, 8), weather.SeeingLabel(a.Seeing))
 			}
 		}
@@ -289,6 +281,14 @@ func Weather(cfg *config.Config, s *scoring.Sky) {
 	w.Flush()
 	fmt.Println()
 }
+
+// ownHour reports that the minutes scored from forecast hour t's own values
+// lie in the window: from End on (Sky.LastHour), an hour is shown only for
+// the cloud, layers, dew and upper-air seeing the window's last minutes read
+// from it (the nearest hour) and 7Timer's transparency, a 3-hour block they
+// share; its extinction, wind, gust, rain and 7Timer seeing, which minutes
+// take from their own hour, are left out. Weather and JSON both ask it.
+func ownHour(s *scoring.Sky, t time.Time) bool { return t.Before(s.End) }
 
 func Plan(cfg *config.Config, s *scoring.Sky, slots []plan.Slot) {
 	if s.Washout() { // Results says why
@@ -429,10 +429,11 @@ func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) int {
 	if slices.ContainsFunc(results[:min(cfg.Top, len(results))], func(r scoring.Result) bool { return r.Mosaic.Panels() > 1 }) {
 		order = slices.DeleteFunc(slices.Clone(order), func(g []string) bool { return slices.Contains(g, pxColumn) })
 	}
+	planets := midPlanets(s)
 	var table string
 	var width int
 	table, width, dropped = fit(order, func(drop map[string]bool, desc int) (string, int, int) {
-		return resultsTable(cfg, s, results, drop, desc)
+		return resultsTable(cfg, s, results, planets, drop, desc)
 	})
 	fmt.Println(paint("01", "Targets, ranked by SCORE"))
 	fmt.Print(table)
@@ -499,23 +500,34 @@ func emptyText(cfg *config.Config, s *scoring.Sky) string {
 		limits, flags = append(limits, "an alt-az mount's field rotation"), append(flags, "-mount eq (with a wedge)")
 	}
 	if s.MoonSep >= 1 && slices.ContainsFunc(s.MoonAlt, func(a float64) bool { return a > 0 }) {
-		limits = append(limits, fmt.Sprintf("at least %.0f° from the Moon while it is up%s", s.MoonSep, filterMoon(cfg, s)))
+		limits = append(limits, fmt.Sprintf("at least %.0f° from the Moon while it is up%s", s.MoonSep, moonFloor(cfg, s)))
 	}
 
 	return fmt.Sprintf("No objects within the limits (%s). Loosen %s, or try another -list.", strings.Join(limits, ", "), strings.Join(flags, ", "))
 }
 
-// filterMoon qualifies the Moon distance s.MoonSep with -filter, whose
-// choices scale it (scoring's moonK) as far down as scoring.LoosestMoonK of
-// it; "" without one, when that loosens it by no whole degree, or to none
-// (a new Moon's 1°, which says nothing).
-func filterMoon(cfg *config.Config, s *scoring.Sky) string {
-	lo := math.Round(s.MoonSep * scoring.LoosestMoonK(cfg))
-	if lo == math.Round(s.MoonSep) || lo == 0 {
+// moonFloor qualifies the Moon distance s.MoonSep with what lowers it: a
+// -filter, whose choices scale it (scoring's moonK) as far down as
+// scoring.LoosestMoonK of it (nothing when that loosens it by no whole
+// degree, or to none: a new Moon's 1° says nothing), and a lunar eclipse,
+// which scales it by the least light the Earth's shadow leaves in the
+// window (scoring.Sky.tooClose), shown down to 0°; "" when neither does.
+func moonFloor(cfg *config.Config, s *scoring.Sky) string {
+	var parts []string
+	if lo := math.Round(s.MoonSep * scoring.LoosestMoonK(cfg)); lo != math.Round(s.MoonSep) && lo != 0 {
+		parts = append(parts, fmt.Sprintf("%.0f° through a filter", lo))
+	}
+	if len(s.Eclipse) > 0 {
+		light := slices.MinFunc(s.Eclipse, func(a, b astro.Eclipse) int { return cmp.Compare(a.Light, b.Light) }).Light
+		if lo := math.Round(s.MoonSep * light); lo != math.Round(s.MoonSep) {
+			parts = append(parts, fmt.Sprintf("%.0f° in the eclipse", lo))
+		}
+	}
+	if len(parts) == 0 {
 		return ""
 	}
 
-	return fmt.Sprintf(" (down to %.0f° through a filter)", lo)
+	return " (down to " + strings.Join(parts, ", ") + ")"
 }
 
 // wrapped splits text at TermWidth when that is set, else returns it whole.
@@ -530,7 +542,7 @@ func wrapped(text string) []string {
 // resultsTable renders the target table without the columns in drop, with
 // descriptions cut to desc runes, and returns it, its width in columns and
 // the widest description in it.
-func resultsTable(cfg *config.Config, s *scoring.Sky, results []scoring.Result, drop map[string]bool, desc int) (string, int, int) {
+func resultsTable(cfg *config.Config, s *scoring.Sky, results []scoring.Result, planets []stars.Star, drop map[string]bool, desc int) (string, int, int) {
 	var buf bytes.Buffer
 	widest := 0
 	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', 0)
@@ -558,8 +570,10 @@ func resultsTable(cfg *config.Config, s *scoring.Sky, results []scoring.Result, 
 		widest = max(widest, utf8.RuneCountInString(d))
 		code, subs := subsText(r.Exposure)
 		starCode, star := "39", "-"
-		if st, _, ok := brightStar(cfg, s, r); ok {
-			starCode, star = "33", fmt.Sprintf("%s %.1f", st.Name, st.Mag)
+		if !drop[starColumn] { // a dropped column looks nothing up
+			if st, _, ok := brightStar(cfg, s, r, planets); ok {
+				starCode, star = "33", fmt.Sprintf("%s %.1f", st.Name, st.Mag)
+			}
 		}
 		// Every column's cell, in resultColumns' order; cols picks those shown.
 		all := []string{
@@ -577,18 +591,53 @@ func resultsTable(cfg *config.Config, s *scoring.Sky, results []scoring.Result, 
 	return buf.String(), tableWidth(buf.String()), widest
 }
 
-// brightStar returns the brightest star (stars.Brightest) that can fall in
-// r's frame, centred on it at any angle: within the half-diagonal of its
-// mosaic's grid, else of cfg's frame, the Origin Mark II's without framing.
-// It also returns the separation in degrees.
-func brightStar(cfg *config.Config, s *scoring.Sky, r scoring.Result) (stars.Star, float64, bool) {
+// brightStar returns the brightest star or planet (stars.Brightest, with
+// planets, midPlanets') that can fall in r's frame, centred on it at any
+// angle: within the half-diagonal of its mosaic's grid, else of cfg's frame,
+// the Origin Mark II's without framing. It also returns the separation in
+// degrees.
+func brightStar(cfg *config.Config, s *scoring.Sky, r scoring.Result, planets []stars.Star) (stars.Star, float64, bool) {
 	w, h := cfg.FOVLong, cfg.FOVShort
 	if r.Mosaic.W > 0 {
 		w, h = r.Mosaic.W, r.Mosaic.H
 	}
 	ra, dec := J2000(s, r.Target)
 
-	return stars.Brightest(ra, dec, math.Hypot(w, h)/2/60, stars.Planets(s.Grid[len(s.Grid)/2]))
+	return stars.Brightest(ra, dec, math.Hypot(w, h)/2/60, planets)
+}
+
+// StarInfo is a result's STAR: the brightest star or planet that can fall
+// in its frame, for JSON's brightStar and the web page's card.
+type StarInfo struct { // betteralign:ignore
+	Name       string  `json:"name"`
+	Mag        float64 `json:"mag"`
+	Separation float64 `json:"separation"`       // arcminutes from the target's centre
+	Planet     bool    `json:"planet,omitempty"` // one of stars.Planets
+}
+
+// BrightStars returns each of results' StarInfo, nil where none can fall in
+// its frame, the planets taken once (midPlanets).
+func BrightStars(cfg *config.Config, s *scoring.Sky, results []scoring.Result) []*StarInfo {
+	planets := midPlanets(s)
+	out := make([]*StarInfo, len(results))
+	for i, r := range results {
+		if st, sep, ok := brightStar(cfg, s, r, planets); ok {
+			planet := slices.ContainsFunc(planets, func(p stars.Star) bool { return p.Name == st.Name })
+			out[i] = &StarInfo{Name: st.Name, Mag: st.Mag, Separation: math.Round(sep*600) / 10, Planet: planet}
+		}
+	}
+
+	return out
+}
+
+// midPlanets is stars.Planets at mid-window, which STAR takes once per
+// table rather than per row and render; none for an empty grid.
+func midPlanets(s *scoring.Sky) []stars.Star {
+	if len(s.Grid) == 0 {
+		return nil
+	}
+
+	return stars.Planets(s.Grid[len(s.Grid)/2])
 }
 
 // altText is the MAX ALT and PEAK cell: the altitude and when it is reached.
@@ -705,7 +754,7 @@ func eclipseText(s *scoring.Sky) string {
 		return ""
 	}
 
-	return "; lunar eclipse, " + strings.Join(phases, ", ") + " (its light and distance limit dim with it)"
+	return "; lunar eclipse, " + strings.Join(phases, ", ") + " (dimming its light)"
 }
 
 // descWidth caps the DESCRIPTION cell: tabwriter makes the column as wide as
@@ -1034,7 +1083,7 @@ var resultColumns = []column{
 	{"SKY", "sky brightness at the object, mag/arcsec² (higher is darker)"},
 	{"MAG", "integrated magnitude, V (B where only blue is known)"},
 	{"SB", "object surface brightness, mag/arcsec² (higher is fainter)"},
-	{starColumn, "brightest star to V 4 that can fall in the frame (without framing, the Origin's), and its magnitude: halos and reflections"},
+	{starColumn, "brightest star or planet to V 4 that can fall in the frame (without framing, the Origin's), and its magnitude: halos and reflections"},
 	{filterColumn, "the filter of yours that helps most, worn all night, or none"},
 	{pxColumn, "size in pixels (NxM: mosaic panels needed)"},
 	{subsColumn, "-sub second subs for a good image, per panel; N nights: more than tonight fits; never: past what flats leave of the sky"},

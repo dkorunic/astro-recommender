@@ -109,8 +109,10 @@ func covered(a, b, c float64) float64 {
 		return b * b / (a * a)
 	}
 	y := math.Sqrt(radicand)
-	lens1 := a*a*math.Acos(x/a) - x*y
-	lens2 := b*b*math.Acos((c-x)/b) - (c-x)*y
+	// The cosines are clamped: near tangency rounding can carry one a hair
+	// past ±1 while the radicand is still positive, and Acos would be NaN.
+	lens1 := a*a*math.Acos(max(-1, min(1, x/a))) - x*y
+	lens2 := b*b*math.Acos(max(-1, min(1, (c-x)/b))) - (c-x)*y
 
 	return (lens1 + lens2) / (math.Pi * a * a)
 }

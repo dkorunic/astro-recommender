@@ -61,7 +61,8 @@ const altStep = 5
 // computed as scoring does (catalogue positions precessed to mid-window,
 // comet tracks as they are), and the [from, to) Unix seconds of each
 // observable stretch, rescored per minute unless -plan already did; and
-// the forecast hours within the window, their cloud cover (%) and whether
+// each result's bright star (STAR's, output.BrightStars); the forecast
+// hours within the window, their cloud cover (%) and whether
 // it rains (from the weather table's threshold).
 func altitudes(cfg *config.Config, s *scoring.Sky, results []scoring.Result) {
 	if len(s.Grid) == 0 {
@@ -73,6 +74,7 @@ func altitudes(cfg *config.Config, s *scoring.Sky, results []scoring.Result) {
 		Pos   [][3]float64        `json:"pos"` // per result: J2000 RA and Dec (degrees), size (arcmin, 0 unknown)
 		Obs   [][][2]int64        `json:"obs"`
 		Subs  []*scoring.Estimate `json:"subs"` // per result, null without one
+		Star  []*output.StarInfo  `json:"star"` // per result, STAR's, null without one
 		Wx    []wxHour            `json:"wx"`
 		Start int64               `json:"start"`
 		Step  int64               `json:"step"`
@@ -85,7 +87,9 @@ func altitudes(cfg *config.Config, s *scoring.Sky, results []scoring.Result) {
 		}
 	}
 	mid := s.Grid[len(s.Grid)/2]
-	for _, res := range results[:min(cfg.Top, len(results))] {
+	shown := results[:min(cfg.Top, len(results))]
+	doc.Star = output.BrightStars(cfg, s, shown)
+	for _, res := range shown {
 		ra, dec := astro.Precess(res.RADeg, res.DecDeg, mid)
 		curve := make([]float64, 0, len(s.Grid)/altStep+1)
 		for i := 0; i < len(s.Grid); i += altStep {

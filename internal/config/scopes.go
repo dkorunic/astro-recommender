@@ -80,12 +80,16 @@ var Scopes = map[string]Scope{
 	// DWARF 3's is unpublished). The DWARF II's IMX415 and focal length are
 	// from reviews; its 1.45 µm the chip's, which matches their 3° field.
 	// Draco saves a 2x2 binned 50 MP frame and has a central obstruction of
-	// unpublished size; in alt-az its sensor turns against the field
-	// (subs to 300 s), the others' does not (their EQ mode tilts the base).
+	// unpublished size; in alt-az its sensor turns against the field, so
+	// its subs are not the others' 15 s: DwarfLab states only the 300 s
+	// maximum (stars "not guaranteed" round there) and no auto-mode default,
+	// so 60 s, the DWARF 3's EQ-mode limit and the middle of the 30-90 s
+	// broadband subs reviewers suggest; -sub sets another. The others'
+	// sensors do not turn (their EQ mode tilts the base).
 	"dwarf-2":    {Name: "DwarfLab DWARF II", Mount: MountAltAz, Sensor: "IMX415", Focal: 100, Aperture: 24, Pixel: 1.45, PxLong: 3840, PxShort: 2160, Sub: 15},
 	"dwarf-3":    {Name: "DwarfLab DWARF 3", Mount: MountAltAz, Camera: chipIMX678, Focal: 150, Aperture: 35, Pixel: 2.0, PxLong: 3840, PxShort: 2160, Sub: 15},
 	"dwarf-mini": {Name: "DwarfLab DWARF mini", Mount: MountAltAz, Camera: chipIMX662, Focal: 150, Aperture: 30, Pixel: 2.9, PxLong: 1920, PxShort: 1080, Sub: 15},
-	"draco":      {Name: "DwarfLab Draco", Mount: MountDerotated, Sensor: "OmniVision OV50Q40", Focal: 340, Aperture: 90, Pixel: 2.394, PxLong: 4096, PxShort: 3072, Sub: 15, NoSubs: true},
+	"draco":      {Name: "DwarfLab Draco", Mount: MountDerotated, Sensor: "OmniVision OV50Q40", Focal: 340, Aperture: 90, Pixel: 2.394, PxLong: 4096, PxShort: 3072, Sub: 60, NoSubs: true},
 	// Vaonis' refractors, 10 s subs. Stellina's chip is named by third
 	// parties only; its pixels are the maker's and the IMX178's.
 	"stellina":    {Name: "Vaonis Stellina", Mount: MountAltAz, Camera: chipIMX178, Focal: 400, Aperture: 80, Pixel: 2.4, PxLong: 3096, PxShort: 2080, Sub: 10},

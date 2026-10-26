@@ -158,6 +158,8 @@ pre#out a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; 
 #thumb[hidden] { display: none; }
 #alt { display: block; width: 240px; margin-top: 4px; }
 #alt[hidden] { display: none; }
+#star { padding: 6px 10px 0; font: 12px/17px system-ui, sans-serif; color: var(--c33); }
+#star[hidden] { display: none; }
 #subs { padding: 6px 10px 8px; border-top: 1px solid var(--line); font: 12px/17px system-ui, sans-serif; color: var(--fg); }
 #subs[hidden] { display: none; }
 #subs .lead { display: block; font-weight: 600; text-wrap: balance; }
@@ -221,6 +223,7 @@ footer a:hover { text-decoration: underline; }
     <div id="name"></div>
     <div id="shot"><span id="shotmsg"></span><img id="thumb" alt="" hidden></div>
     <canvas id="alt" width="240" height="96" hidden></canvas>
+    <div id="star" hidden></div>
     <div id="subs" hidden></div>
   </div>
   <footer>
@@ -401,6 +404,7 @@ function show(a) {
   $("shot").classList.remove("failed");
   $("shotmsg").textContent = "Loading DSS2 picture…";
   drawAlt(curves?.alt?.[a.dataset.rank - 1], curves?.obs?.[a.dataset.rank - 1] ?? []);
+  showStar(curves?.star?.[a.dataset.rank - 1]);
   showSubs(curves?.subs?.[a.dataset.rank - 1]);
   card.hidden = false;
   const r = a.getBoundingClientRect();
@@ -432,6 +436,15 @@ document.addEventListener("keydown", (e) => {
   touched = false;
   if (e.key === "Escape") show(null);
 });
+
+// showStar names the result's STAR on the card, a narrow table's first
+// column to go: the brightest star or planet that can fall in the frame
+// (main_js.go's output.BrightStars), null without one.
+function showStar(st) {
+  const box = $("star");
+  box.hidden = !st;
+  if (st) box.textContent = `Bright ${st.planet ? "planet" : "star"} in the frame: ${st.name} (V ${st.mag.toFixed(1)}), ${Math.round(st.separation)}′ from the centre`;
+}
 
 // showSubs fills the sub-exposure box under the curve: per level the subs
 // and their time, the levels past tonight's limit greyed; per panel for a

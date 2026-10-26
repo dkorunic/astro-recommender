@@ -7,6 +7,7 @@ package astro
 import (
 	"math"
 	"math/cmplx"
+	"slices"
 	"time"
 )
 
@@ -239,23 +240,56 @@ func moon(t time.Time) (float64, float64, float64) {
 }
 
 // deltaT is TT − UT in seconds n days from J2000: Espenak and Meeus'
-// polynomials (NASA's Five Millennium Canon), as Astronomy Engine's, from
-// 1986 on; earlier dates take the 1986-2005 one, 10 s off by 1960 (5″ of
-// the Moon).
+// polynomials (NASA's Five Millennium Canon of Solar Eclipses), every range
+// as Astronomy Engine has them.
 func deltaT(n float64) float64 {
 	y := 2000 + (n-14)/365.24217
-	switch u := y - 2000; {
+	switch {
+	case y < -500:
+		u := (y - 1820) / 100
+
+		return -20 + 32*u*u
+	case y < 500:
+		return poly(y/100, 10583.6, -1014.41, 33.78311, -5.952053, -0.1798452, 0.022174192, 0.0090316521)
+	case y < 1600:
+		return poly((y-1000)/100, 1574.2, -556.01, 71.23472, 0.319781, -0.8503463, -0.005050998, 0.0083572073)
+	case y < 1700:
+		return poly(y-1600, 120, -0.9808, -0.01532, 1/7129.0)
+	case y < 1800:
+		return poly(y-1700, 8.83, 0.1603, -0.0059285, 0.00013336, -1/1174000.0)
+	case y < 1860:
+		return poly(y-1800, 13.72, -0.332447, 0.0068612, 0.0041116, -0.00037436, 0.0000121272, -0.0000001699, 0.000000000875)
+	case y < 1900:
+		return poly(y-1860, 7.62, 0.5737, -0.251754, 0.01680668, -0.0004473624, 1/233174.0)
+	case y < 1920:
+		return poly(y-1900, -2.79, 1.494119, -0.0598939, 0.0061966, -0.000197)
+	case y < 1941:
+		return poly(y-1920, 21.20, 0.84493, -0.076100, 0.0020936)
+	case y < 1961:
+		return poly(y-1950, 29.07, 0.407, -1/233.0, 1/2547.0)
+	case y < 1986:
+		return poly(y-1975, 45.45, 1.067, -1/260.0, -1/718.0)
 	case y < 2005:
-		return 63.86 + 0.3345*u - 0.060374*u*u + 0.0017275*u*u*u + 0.000651814*u*u*u*u + 0.00002373599*u*u*u*u*u
+		return poly(y-2000, 63.86, 0.3345, -0.060374, 0.0017275, 0.000651814, 0.00002373599)
 	case y < 2050:
-		return 62.92 + 0.32217*u + 0.005589*u*u
+		return poly(y-2000, 62.92, 0.32217, 0.005589)
 	case y < 2150:
-		v := (y - 1820) / 100
+		u := (y - 1820) / 100
 
-		return -20 + 32*v*v - 0.5628*(2150-y)
+		return -20 + 32*u*u - 0.5628*(2150-y)
 	default:
-		v := (y - 1820) / 100
+		u := (y - 1820) / 100
 
-		return -20 + 32*v*v
+		return -20 + 32*u*u
 	}
+}
+
+// poly is c[0] + c[1]u + c[2]u² + ..., by Horner's rule.
+func poly(u float64, c ...float64) float64 {
+	v := 0.0
+	for _, v0 := range slices.Backward(c) {
+		v = v*u + v0
+	}
+
+	return v
 }

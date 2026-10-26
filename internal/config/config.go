@@ -236,7 +236,7 @@ func Parse() (Config, error) {
 	if stack != "" && stack != "mean" && stack != "weighted" {
 		return Config{}, fmt.Errorf("%w: -stack must be mean or weighted", errInvalidFlag)
 	}
-	if err := cfg.setMount(mount, base); err != nil {
+	if err := cfg.setMount(set, mount, base); err != nil {
 		return Config{}, err
 	}
 	if err := cfg.beam(set, filterStd, focal, base); err != nil {
@@ -562,8 +562,10 @@ func (cfg *Config) frameSizes(set map[string]bool, minPx float64) error {
 }
 
 // setMount sets Mount from -mount, else base's with -scope, else MountEq,
-// and AltAz from it.
-func (cfg *Config) setMount(mount string, base Scope) error {
+// and AltAz from it. -mount altaz without -scope needs -sub: the field
+// rotation grows with the sub, and the Origin's 10 s, which it would
+// otherwise take, says nothing of another telescope's.
+func (cfg *Config) setMount(set map[string]bool, mount string, base Scope) error {
 	switch {
 	case mount == "" && cfg.Scope != "":
 		mount = base.Mount
@@ -571,6 +573,8 @@ func (cfg *Config) setMount(mount string, base Scope) error {
 		mount = MountEq
 	case mount != MountAltAz && mount != MountDerotated && mount != MountEq:
 		return fmt.Errorf("%w: -mount must be %s, %s or %s", errInvalidFlag, MountAltAz, MountDerotated, MountEq)
+	case mount == MountAltAz && cfg.Scope == "" && !set["sub"]:
+		return fmt.Errorf("%w: -mount altaz without -scope needs -sub, the length its field rotation is judged over", errInvalidFlag)
 	}
 	cfg.Mount, cfg.AltAz = mount, mount == MountAltAz
 

@@ -1182,8 +1182,8 @@ func TestMutAfterHour(t *testing.T) {
 }
 
 func TestMutEclipseText(t *testing.T) {
-	_, s := mutSky(t)
-	if got := eclipseText(s); got != "" || eclipseJSON(s) != nil {
+	cfg, s := mutSky(t)
+	if got := eclipseText(s); got != "" || eclipseJSON(s) != nil || moonFloor(cfg, s) != "" {
 		t.Errorf("no eclipse: %q %v", got, eclipseJSON(s))
 	}
 	// Penumbral from 20:10, umbral 20:40-21:20 with totality 21:00-21:09,
@@ -1201,10 +1201,23 @@ func TestMutEclipseText(t *testing.T) {
 			s.Eclipse[i] = astro.Eclipse{Light: 1}
 		}
 	}
-	want := "; lunar eclipse, penumbral 20:10-22:00, umbral 20:40-21:20, total 21:00-21:10 (its light and distance limit dim with it)"
+	want := "; lunar eclipse, penumbral 20:10-22:00, umbral 20:40-21:20, total 21:00-21:10 (dimming its light)"
 	if got := eclipseText(s); got != want {
 		t.Errorf("eclipseText = %q, want %q", got, want)
 	}
+	// The Moon limit, 42°, falls with the least light left: none in totality
+	// (the zero Eclipses here), half of it in a shallow eclipse.
+	if got := moonFloor(cfg, s); got != " (down to 0° in the eclipse)" {
+		t.Errorf("moonFloor in totality = %q", got)
+	}
+	saved := slices.Clone(s.Eclipse)
+	for i := range s.Eclipse {
+		s.Eclipse[i].Light = max(0.5, s.Eclipse[i].Light)
+	}
+	if got := moonFloor(cfg, s); got != " (down to 21° in the eclipse)" {
+		t.Errorf("moonFloor at half light = %q", got)
+	}
+	s.Eclipse = saved
 	e := eclipseJSON(s)
 	if e == nil || !e.Penumbral.To.Equal(s.End) || !e.Umbral.From.Equal(s.Grid[40]) || !e.Total.To.Equal(s.Grid[70]) {
 		t.Errorf("eclipseJSON = %+v", e)
