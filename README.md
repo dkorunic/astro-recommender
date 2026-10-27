@@ -26,6 +26,7 @@ It started as a port of the deep sky part of [uptonight](https://github.com/mawi
 - [Features](#features)
 - [Install](#install)
 - [In the browser](#in-the-browser)
+- [In the terminal](#in-the-terminal)
 - [Usage](#usage)
   - [Examples](#examples)
   - [Flags](#flags)
@@ -58,6 +59,7 @@ It started as a port of the deep sky part of [uptonight](https://github.com/mawi
 - **Night plan** (`-plan 2h`): one target per time block, chosen by a greedy pass followed by a local search that swaps and moves targets between blocks.
 - **Thirty-four built-in target lists** (about 44,000 entries, some 32,000 distinct objects since the lists overlap: Gary Imm's selection and full Compendium, Messier, Caldwell, Herschel 400, Pensack 500, NGC, IC, LBN, LDN, Barnard, Sharpless, RCW, Gum, Cederblad, cometary globules, van den Bergh and van den Bergh & Herbst reflection nebulae, Arp, Hickson compact groups, Abell galaxy clusters, Arp-Madore southern peculiar galaxies, MWSC, Dias open clusters, Harris globular clusters, Melotte, Collinder, Magakian's reflection nebulae, Hartley's southern dark clouds, the Magellanic Clouds' Henize and DEM nebulae, Green's supernova remnants and two planetary nebula databases) or your own uptonight-format YAML, with every object's constellation computed from the IAU boundaries; a `-skip` file leaves out the ones you have already imaged.
 - **Location handling**: offline IANA time-zone lookup from the coordinates, reverse geocoding of the site name, coordinates rounded to about 1 km before any request, and a fully offline mode.
+- **Interactive terminal view**: on a terminal the same layout as the browser page (the night, the Moon and the forecast hours on the left, the targets as cards, the selected one's DSS2 picture and altitude curve), with keys for the nights before and after, sorting and search; `-no-tui` prints the tables instead.
 - **Terminal output**: aligned, colour-coded tables with a legend; honours `NO_COLOR`, `CLICOLOR_FORCE` and `TERM=dumb`. Text from the network or from target files is stripped of control characters so it cannot inject terminal escape sequences. `-json` prints the same report as one JSON document for scripts, and `-csv` the targets in the CSV format N.I.N.A. imports.
 - **In the browser** at [astrorecommender.org](https://astrorecommender.org/): the same program compiled to WebAssembly, every flag a form field, uploaded `-targets`/`-horizon`/`-skip` files, shareable links that fill and run the form, and each result linked to Aladin Lite, with a DSS2 thumbnail and the object's altitude curve on hover; light, dark and red night-vision themes.
 - **Bright stars and planets**: the STAR column names the brightest star or planet to V 4.0 that can fall in the frame, a warning of halos and reflections in a small telescope.
@@ -121,10 +123,34 @@ What does not:
 
 - caching: the comet elements are downloaded on every run instead of being kept for a day
 
+## In the terminal
+
+Run on a terminal (both its input and output), the program opens an interactive view laid out like the browser page, built with [Bubble Tea](https://github.com/charmbracelet/bubbletea), [Bubbles](https://github.com/charmbracelet/bubbles), [Lip Gloss](https://github.com/charmbracelet/lipgloss) and [ntcharts](https://github.com/NimbleMarkets/ntcharts):
+
+- on the left (from 110 columns): Tonight (the Moon's illumination and hours, a bar from dusk to dawn with the window and the Moon on it, the zenith brightness and the Moon limit), Weather (each forecast hour's clear share, rain in blue) and, with `-plan`, the Plan
+- the targets as cards in two lines each: rank, name, description, type and SCORE; size, magnitude, surface brightness, constellation, the observable stretch with the peak's time and altitude, and with framing the SUBS count
+- the selected target opened up: its DSS2 colour picture from CDS, in its own pixels where the terminal speaks the Kitty graphics protocol (Kitty, Ghostty, WezTerm: chosen by itself once the terminal answers), else as half-block characters, two pixels a cell, its altitude curve through the window with the observable stretches shaded and the `-alt-min`/`-alt-max` limits, the peak's altitude, compass point and time, UP, SKY, FILTER, the sub-exposure estimate and any bright star in the frame
+
+| Key | Does |
+|---|---|
+| `↑` `↓` (`k` `j`), PgUp PgDn | select a target |
+| `/` | find a target by name, description, type or constellation |
+| `s` | sort by score, peak time, altitude, size or name |
+| `←` `→` (`[` `]`) | the night before or after, computed afresh (forecasts included) |
+| `t` | back to the first night |
+| `o`, Enter | open the selected target in Aladin Lite, in the browser |
+| `i` | the picture as half-blocks or Kitty graphics (Kitty by default where the terminal supports it) |
+| `r` | red night vision |
+| `w` | the warnings (the forecasts' and lookups', shown here rather than over the screen, and printed again on exit) |
+| `?` | all the keys |
+| `q` | quit |
+
+`-no-tui` prints the tables instead, as do `-json`, `-csv`, a pipe or a redirect, and `TERM=dumb`.
+
 ## Usage
 
 ```sh
-astro-recommender -lat 45.815 -lon 15.982 -scope origin -filter dual -bortle 6 -n 5 -date 2026-10-15
+astro-recommender -lat 45.815 -lon 15.982 -scope origin -filter dual -bortle 6 -n 5 -date 2026-10-15 -no-tui
 ```
 
 ```
@@ -341,6 +367,7 @@ astro-recommender -lat 45.815 -lon 15.982 -no-weather -no-geocode -no-sqm -no-co
 | `-no-geocode` | off | Skip the reverse geocoding of the location |
 | `-no-sqm` | off | Skip the DarkSkySites sky brightness lookup |
 | `-no-solar` | off | Skip the NOAA solar flux lookup that scales the airglow with the solar cycle; never made with `-sqm` |
+| `-no-tui` | off | Print the tables on a terminal too, instead of the [interactive view](#in-the-terminal), which runs only when both input and output are a terminal |
 | `-version` | | Print the version, commit and build time, then exit |
 
 ### Filters

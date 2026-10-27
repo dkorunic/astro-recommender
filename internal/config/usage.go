@@ -40,7 +40,7 @@ var usageGroups = []usageGroup{
 	{"Camera and exposure", append(slices.Clone(cameraFlags), "mono")},
 	{"Sky and filters", []string{"extinction", "filter-nm", "filter-std"}},
 	{"Data sources", []string{"no-weather", "no-sqm", "no-geocode", "no-comets", "no-solar"}},
-	{"Output", []string{"csv", "json", "version"}},
+	{"Output", []string{"no-tui", "csv", "json", "version"}},
 }
 
 // usage prints -h: what the program does, an example, then the flags of fs

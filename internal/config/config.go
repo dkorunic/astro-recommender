@@ -120,6 +120,7 @@ type Config struct {
 	NoSQM          bool
 	NoComets       bool
 	NoSolar        bool
+	NoTUI          bool // -no-tui: the tables even on a terminal, not the interactive view
 
 	// BandNM is a -scope's built-in filter's band widths by line, without
 	// -filter-nm; 0 = FilterNM.
@@ -197,6 +198,7 @@ func Parse() (Config, error) {
 	flag.BoolVar(&cfg.NoComets, "no-comets", false, "skip comets (MPC orbital elements, cached for a day)")
 	flag.BoolVar(&cfg.NoSolar, "no-solar", false, "skip the NOAA solar flux lookup that scales the airglow with the solar cycle")
 	flag.Float64Var(&cfg.CometMag, "comet-mag", 12, "include comets brighter than this total visual magnitude")
+	flag.BoolVar(&cfg.NoTUI, "no-tui", false, "print the tables on a terminal too, instead of the interactive view (which runs only when both input and output are a terminal)")
 	version := flag.Bool("version", false, "print the version and exit")
 	setUsage()
 	flag.Parse()

@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"slices"
 	"sync"
 	"time"
 	_ "time/tzdata" // zone database for Windows and minimal containers, which lack one
@@ -44,18 +45,81 @@ func main() {
 		fatal(err.Error())
 	}
 	cfg.ListName = listName
+	if useTUI(&cfg) {
+		if err := runTUI(ctx, cfg, targets); err != nil {
+			fatal(err.Error())
+		}
 
+		return
+	}
+
+	n, err := compute(ctx, cfg, targets)
+	if err != nil {
+		fatal(err.Error())
+	}
+	if n.msg != "" {
+		nothing(&n.cfg, n.msg)
+
+		return
+	}
+	cfg, s := n.cfg, n.sky
+	if cfg.JSON {
+		if err := output.JSON(&cfg, &s, n.place, n.slots, n.results); err != nil {
+			fatal(err.Error())
+		}
+
+		return
+	}
+	if cfg.CSV {
+		if err := output.CSV(&cfg, &s, n.slots, n.results); err != nil {
+			fatal(err.Error())
+		}
+
+		return
+	}
+	output.UseColor = output.ColorTerminal()
+	output.TermWidth = output.TerminalWidth()
+	output.Header(&cfg, &s, n.place)
+	output.Weather(&cfg, &s)
+	if cfg.Plan > 0 {
+		output.Plan(&cfg, &s, n.slots)
+	}
+	output.Legend(&cfg, &s, output.Results(&cfg, &s, n.results))
+	altitudes(&cfg, &s, n.place, n.slots, n.results)
+}
+
+// night is one computed night, what every output shows: cfg with the
+// lookups applied (sky brightness, solar flux), the sky, the place name,
+// the ranked results and the -plan slots. day is the evening's date; msg,
+// when not empty, says there is nothing to plan, and only cfg and day are
+// set.
+type night struct {
+	day     time.Time
+	place   string
+	msg     string
+	results []scoring.Result
+	slots   []plan.Slot
+	sky     scoring.Sky
+	cfg     config.Config
+}
+
+// compute runs the pipeline for cfg's night over targets: the window (the
+// night in progress, or -date's), every network source at once, the sky,
+// the scores, the plan and the sub-exposure estimates. targets is not
+// modified, so the terminal UI computes other nights from the same list.
+func compute(ctx context.Context, cfg config.Config, targets []catalog.Target) (night, error) {
 	// Without -date, "tonight" between dusk and dawn is the night in progress,
 	// and only its remaining part is planned.
 	day, inProgress := cfg.Day, false
 	if !cfg.DateSet {
 		day, inProgress = astro.Tonight(cfg.Day, cfg.Lat, cfg.Lon, cfg.SunAlt())
 	}
+	n := night{cfg: cfg, day: day}
 	duskT, dawnT, ok := astro.Window(day, cfg.Lat, cfg.Lon, cfg.SunAlt())
 	if !ok {
-		nothing(&cfg, fmt.Sprintf("No %s night at this location tonight.", cfg.Twilight))
+		n.msg = fmt.Sprintf("No %s night at this location tonight.", cfg.Twilight)
 
-		return
+		return n, nil
 	}
 	now := cfg.Day.Truncate(time.Minute)
 	if inProgress {
@@ -64,13 +128,13 @@ func main() {
 	duskT, dawnT = duskT.In(cfg.Loc), dawnT.In(cfg.Loc) // all times display in -tz
 	start, end, err := astro.ClipWindow(day, cfg.Loc, duskT, dawnT, cfg.From, cfg.To)
 	if err != nil {
-		fatal(err.Error())
+		return n, err
 	}
 	if inProgress && now.After(start) {
 		if start = now; !start.Before(end) {
-			nothing(&cfg, "The requested part of tonight has already passed.")
+			n.msg = "The requested part of tonight has already passed."
 
-			return
+			return n, nil
 		}
 	}
 
@@ -80,7 +144,6 @@ func main() {
 	var (
 		wg         sync.WaitGroup
 		forecast   scoring.Forecast
-		place      string
 		cometEls   comets.Elements
 		cometErr   error
 		cometSeen  comets.Observed
@@ -102,7 +165,7 @@ func main() {
 	if !cfg.NoGeocode {
 		wg.Go(func() {
 			var err error
-			if place, err = geocode.Reverse(ctx, cfg.Lat, cfg.Lon); err != nil {
+			if n.place, err = geocode.Reverse(ctx, cfg.Lat, cfg.Lon); err != nil {
 				fmt.Fprintln(os.Stderr, "warning: no reverse geocoding:", err)
 			}
 		})
@@ -140,37 +203,15 @@ func main() {
 	s.Night = [2]time.Time{duskT, dawnT}
 	cometList := cometEls.Targets(s.Grid, cfg.CometMag, cometSeen)
 	s.Comets, s.CometsLost = len(cometList), cometErr != nil
-	targets = append(targets, cometList...)
-	results := scoring.Score(&cfg, &s, targets, cfg.Plan > 0)
-	var slots []plan.Slot
+	// A new slice: appending to targets could write into the caller's.
+	n.results = scoring.Score(&cfg, &s, slices.Concat(targets, cometList), cfg.Plan > 0)
 	if cfg.Plan > 0 {
-		slots = plan.Make(&s, results, cfg.Plan)
+		n.slots = plan.Make(&s, n.results, cfg.Plan)
 	}
-	exposures(&cfg, &s, slots, results)
+	exposures(&cfg, &s, n.slots, n.results)
+	n.cfg, n.sky = cfg, s
 
-	if cfg.JSON {
-		if err := output.JSON(&cfg, &s, place, slots, results); err != nil {
-			fatal(err.Error())
-		}
-
-		return
-	}
-	if cfg.CSV {
-		if err := output.CSV(&cfg, &s, slots, results); err != nil {
-			fatal(err.Error())
-		}
-
-		return
-	}
-	output.UseColor = output.ColorTerminal()
-	output.TermWidth = output.TerminalWidth()
-	output.Header(&cfg, &s, place)
-	output.Weather(&cfg, &s)
-	if cfg.Plan > 0 {
-		output.Plan(&cfg, &s, slots)
-	}
-	output.Legend(&cfg, &s, output.Results(&cfg, &s, results))
-	altitudes(&cfg, &s, place, results)
+	return n, nil
 }
 
 // nothing reports a night with nothing to plan: as text, or with -json or

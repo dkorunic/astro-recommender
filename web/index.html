@@ -351,7 +351,7 @@ const SITE_GROUP = "Where and when";
 // Examples where a required field has no default to show.
 const EXAMPLES = { lat: "e.g. 45.81", lon: "e.g. 15.98" };
 const FILES = ["targets", "horizon", "skip"];
-const HIDDEN = ["version"]; // nothing to show
+const HIDDEN = ["version", "no-tui"]; // nothing to show (the page is no terminal)
 // Readable names for the main fields; the flag stays beside them, since the
 // help text and the CLI speak in flags.
 const LABELS = {
@@ -437,6 +437,12 @@ async function runNow(args, argv0) {
   go.exit = (c) => { code = c; };
   const inst = await WebAssembly.instantiate(await modulePromise, go.importObject);
   await go.run(inst);
+  // The runtime's pending timers (an HTTP client's timeout, a retry's
+  // wait) outlive the exited program, and each would throw "Go program has
+  // already exited" when it fires. wasm_exec.js (copied from the toolchain
+  // by task web) keeps them in this map.
+  for (const t of go._scheduledTimeouts?.values() ?? []) clearTimeout(t);
+  go._scheduledTimeouts?.clear();
   sink = null;
   return { out: text[1] + dec[1].decode(), err: text[2] + dec[2].decode(), alt: text[ALT] + dec[ALT].decode(), code };
 }
