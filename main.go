@@ -170,7 +170,7 @@ func main() {
 		output.Plan(&cfg, &s, slots)
 	}
 	output.Legend(&cfg, &s, output.Results(&cfg, &s, results))
-	altitudes(&cfg, &s, results)
+	altitudes(&cfg, &s, place, results)
 }
 
 // nothing reports a night with nothing to plan: as text, or with -json or

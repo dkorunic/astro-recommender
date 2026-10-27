@@ -105,13 +105,15 @@ The same program runs at **https://astrorecommender.org/**, compiled to WebAssem
 
 What works there:
 
+- laid out after [Telescopius](https://telescopius.com/deep-sky-objects)' deep sky browser: the site, date and night (Moon, dusk and dawn, the forecast hours) on the left, the options as one tab per `-h` group in the middle, and the targets as cards on the right
 - every flag, built from the program's own `-h`; fields left empty keep their defaults
 - `-targets`, `-horizon` and `-skip` take an uploaded file
 - "Use my location" asks the browser for your position, and the location's time zone shows in the empty `-tz` field
 - the address bar carries the form after each run (files excepted), so the URL can be bookmarked or shared (the Copy link button copies it); opening such a link fills the form and runs it
 - weather, transparency and seeing, aerosols, geocoding and comets, as on the command line
 - the DarkSkySites sky-brightness lookup, without a key of your own (the page's key is shared; `-no-sqm` skips it)
-- every result's name links to [Aladin Lite](https://aladin.cds.unistra.fr/AladinLite/) at its position, and pointing at it shows a DSS2 colour thumbnail from CDS and, under it, the object's altitude through the window: the `-alt-min`–`-alt-max` band shaded, the curve bold where it lies within it, and its peak
+- each target is a card: its DSS2 colour picture from CDS (a link to [Aladin Lite](https://aladin.cds.unistra.fr/AladinLite/) at its position) with the name, type, size, magnitude, surface brightness, constellation, observable stretch and SCORE over it, and beside it the altitude through the window (the `-alt-min`–`-alt-max` limits dashed, the curve bold where it is observable, the peak labelled with its altitude, compass point and time), UP, SKY, FILTER, the sub-exposure estimate and any bright star in the frame; the cards sort by score, peak time, altitude, size or name
+- the text report (header, forecast, plan, table and legend) stays under Full report, opened by itself when there are no cards (a washed-out night, no target, `-json` or `-csv`); its result names link to Aladin Lite and show the picture and curve on hover
 - the form is remembered by the browser between visits, and the Reset button clears it back to the defaults
 - light or dark theme following the browser, with a Theme button to override it, which also offers a red night-vision theme (dim red on black, the colour codes turned into brightness) that keeps your eyes dark-adapted at the telescope (remembered by the browser)
 

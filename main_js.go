@@ -52,6 +52,53 @@ type wxHour struct {
 // altStep is the spacing of the page's altitude curves, in grid minutes.
 const altStep = 5
 
+// card is what a result card shows beyond its curve: the target table's
+// values as numbers (0 or "" unknown), times in Unix seconds, and the
+// azimuth at the peak for the curve's label.
+type card struct { // betteralign:ignore
+	Name     string  `json:"name"`
+	Desc     string  `json:"desc,omitempty"`
+	Type     string  `json:"type"`
+	Con      string  `json:"con,omitempty"`
+	Filter   string  `json:"filter,omitempty"`
+	Mosaic   string  `json:"mosaic,omitempty"` // "2x1" above one panel
+	Score    float64 `json:"score"`
+	Foto     float64 `json:"foto"`
+	Size     float64 `json:"size,omitempty"`  // arcmin, the frame's (a core's when framed at one)
+	Minor    float64 `json:"minor,omitempty"` // arcmin, when below Size
+	Mag      float64 `json:"mag,omitempty"`   // V
+	BMag     float64 `json:"bmag,omitempty"`  // B, when no V
+	SB       float64 `json:"sb,omitempty"`
+	SkyMag   float64 `json:"sky"`
+	MaxAlt   float64 `json:"maxAlt"`
+	MaxAz    float64 `json:"maxAz"`
+	MaxAt    int64   `json:"maxAt"`
+	RunFrom  int64   `json:"runFrom"`
+	RunTo    int64   `json:"runTo"`
+	Runs     int     `json:"runs"`
+	SBGuess  bool    `json:"sbGuess,omitempty"`
+	Emission bool    `json:"emission,omitempty"`
+	Comet    bool    `json:"comet,omitempty"`
+}
+
+// night is the sidebar's summary of the window: the place, the Moon and the
+// night's edges, in Unix seconds.
+type night struct { // betteralign:ignore
+	Place    string     `json:"place,omitempty"`
+	Lat      float64    `json:"lat"`
+	Lon      float64    `json:"lon"`
+	Twilight string     `json:"twilight"`
+	Dusk     int64      `json:"dusk"`
+	Dawn     int64      `json:"dawn"`
+	End      int64      `json:"end"`
+	Illum    float64    `json:"illum"`
+	MoonSep  float64    `json:"moonSep"`
+	MoonUp   [][2]int64 `json:"moonUp"`
+	Washout  bool       `json:"washout,omitempty"`
+	Targets  int        `json:"targets"` // results scored, before -n
+	Sky      float64    `json:"zenith"`  // zenith mag/arcsec² as configured
+}
+
 // altitudes hands web/index.html the altitude curve of each listed result in
 // /altitudes, a write-only file only the page's fs shim accepts (Go's js
 // syscalls know no fd it did not open): one JSON document with the
@@ -64,7 +111,7 @@ const altStep = 5
 // each result's bright star (STAR's, output.BrightStars); the forecast
 // hours within the window, their cloud cover (%) and whether
 // it rains (from the weather table's threshold).
-func altitudes(cfg *config.Config, s *scoring.Sky, results []scoring.Result) {
+func altitudes(cfg *config.Config, s *scoring.Sky, place string, results []scoring.Result) {
 	if len(s.Grid) == 0 {
 		return
 	}
@@ -76,6 +123,8 @@ func altitudes(cfg *config.Config, s *scoring.Sky, results []scoring.Result) {
 		Subs  []*scoring.Estimate `json:"subs"` // per result, null without one
 		Star  []*output.StarInfo  `json:"star"` // per result, STAR's, null without one
 		Wx    []wxHour            `json:"wx"`
+		Cards []card              `json:"cards"`
+		Night night               `json:"night"`
 		Start int64               `json:"start"`
 		Step  int64               `json:"step"`
 		Min   float64             `json:"min"`
@@ -84,6 +133,19 @@ func altitudes(cfg *config.Config, s *scoring.Sky, results []scoring.Result) {
 	for t := s.Start.Truncate(time.Hour); t.Before(s.End); t = t.Add(time.Hour) {
 		if h, ok := s.Weather[t.Unix()]; ok {
 			doc.Wx = append(doc.Wx, wxHour{T: t.Unix(), Cloud: math.Round(h.Cloud), Rain: h.Precip >= weather.RainGate/2})
+		}
+	}
+	doc.Night = night{
+		Place: place, Lat: cfg.Lat, Lon: cfg.Lon, Twilight: cfg.Twilight, Dusk: s.Night[0].Unix(), Dawn: s.Night[1].Unix(),
+		End: s.End.Unix(), Illum: s.Illum, MoonSep: s.MoonSep, MoonUp: [][2]int64{}, Washout: s.Washout(),
+		Targets: len(results), Sky: cfg.ZenithMag(),
+	}
+	for i, a := range s.MoonAlt {
+		switch up := a > astro.MoonHorizon; {
+		case up && (i == 0 || s.MoonAlt[i-1] <= astro.MoonHorizon):
+			doc.Night.MoonUp = append(doc.Night.MoonUp, [2]int64{s.Grid[i].Unix(), s.End.Unix()})
+		case !up && i > 0 && s.MoonAlt[i-1] > astro.MoonHorizon:
+			doc.Night.MoonUp[len(doc.Night.MoonUp)-1][1] = s.Grid[i].Unix()
 		}
 	}
 	mid := s.Grid[len(s.Grid)/2]
@@ -125,6 +187,10 @@ func altitudes(cfg *config.Config, s *scoring.Sky, results []scoring.Result) {
 		}
 		doc.Obs = append(doc.Obs, spans)
 		doc.Subs = append(doc.Subs, res.Exposure)
+		doc.Cards = append(doc.Cards, cardOf(cfg, s, res, ra, dec))
+	}
+	if doc.Cards == nil {
+		doc.Cards = []card{}
 	}
 	b, err := json.Marshal(doc)
 	if err != nil {
@@ -134,4 +200,38 @@ func altitudes(cfg *config.Config, s *scoring.Sky, results []scoring.Result) {
 		_, _ = f.Write(b)
 		_ = f.Close()
 	}
+}
+
+// cardOf fills res's card; ra and dec are its position of date, a comet's
+// at the last curve sample, so the peak's azimuth is taken from its track.
+func cardOf(cfg *config.Config, s *scoring.Sky, res scoring.Result, ra, dec float64) card {
+	c := card{
+		Name: res.Name, Desc: res.Description, Type: res.Type, Con: res.Constellation, Filter: res.Filter,
+		Score: res.Score, Foto: res.Foto, SkyMag: res.SkyMag, MaxAlt: res.MaxAlt, MaxAt: res.MaxAt.Unix(),
+		RunFrom: res.RunFrom.Unix(), RunTo: res.RunTo.Unix(), Runs: res.Runs,
+		Emission: catalog.EmissionLine(res.Target), Comet: res.Track != nil,
+	}
+	if m := res.Mosaic; m.Panels() > 1 {
+		c.Mosaic = strconv.Itoa(m.Cols) + "x" + strconv.Itoa(m.Rows)
+	}
+	if res.HasSize() {
+		c.Size, c.Minor = res.FrameAxes()
+		if c.Minor >= c.Size {
+			c.Minor = 0
+		}
+	}
+	switch {
+	case res.HasMag():
+		c.Mag = res.Mag
+	case res.BMag > 0:
+		c.BMag = res.BMag
+	}
+	c.SB, c.SBGuess = res.SurfaceBrightness()
+	if i := int(res.MaxAt.Sub(s.Grid[0]) / time.Minute); res.Track != nil && i >= 0 && i < len(res.Track) {
+		ra, dec = res.Track[i][0], res.Track[i][1]
+	}
+	_, c.MaxAz = astro.AltAz(ra, dec, res.MaxAt, cfg.Lat, cfg.Lon)
+	c.MaxAz = math.Round(c.MaxAz)
+
+	return c
 }

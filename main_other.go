@@ -11,4 +11,4 @@ import (
 )
 
 // altitudes feeds the browser page's altitude curves; the CLI has none.
-func altitudes(*config.Config, *scoring.Sky, []scoring.Result) {}
+func altitudes(*config.Config, *scoring.Sky, string, []scoring.Result) {}

@@ -24,8 +24,9 @@ type usageGroup struct {
 }
 
 // usageGroups sorts the flags by purpose for -h. web/index.html builds its
-// form from -h and reads these headings: the groups it names in MAIN_GROUPS
-// fill the main form, the rest All options. A flag in no group is listed
+// form from -h and reads these headings: its SITE_GROUP (Where and when)
+// fills the Observatory panel, every other group is a tab of the Options
+// panel. A flag in no group is listed
 // under "Other", so a new flag is never lost.
 var usageGroups = []usageGroup{
 	{"Where and when", []string{"lat", "lon", "date", "tz"}},

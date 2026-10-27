@@ -11,20 +11,22 @@
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "ad61ce0e23c04c83b7a0fa8a777f87e7"}'></script>
 <title>Astro Recommender</title>
 <style>
+/* Laid out after Telescopius' deep sky browser: near-black page, grey text,
+   one salmon accent; the site and night on the left, the options in a
+   tabbed panel, the targets as picture cards with their altitude curve. */
 :root {
   color-scheme: dark;
-  --bg: #0e1322; --panel: #171e30; --field: #0b101c; --fg: #e6eaf2; --muted: #8b94a7; --line: #2a3349;
-  --accent: #e9b44c; --accent-fg: #1a1203; --accent-soft: rgba(233, 180, 76, .14); --focus: #f3cf7a;
-  --c31: #ff7b72; --c32: #6fd28a; --c33: #e9b44c; --c34: #6cb4f5; --c35: #d89af0; --c36: #4fc8d6; --c90: #7f889b;
-  --dusk: linear-gradient(90deg, #22305e 0%, #4a4f8a 40%, #c0683a 75%, #e9b44c 100%);
-  --title: linear-gradient(90deg, #9db1f5 0%, #c9a6d8 45%, #e9b44c 100%);
+  --bg: #111; --panel: #1b1b1b; --head: #222; --field: #141414; --fg: #ccc; --strong: #eee; --muted: #8a8a8a; --line: #2c2c2c;
+  --accent: #e77; --accent-fg: #111; --accent-soft: rgba(238, 119, 119, .15); --focus: #f99;
+  --c31: #ff7b72; --c32: #6fd28a; --c33: #e9b44c; --c34: #6cb4f5; --c35: #d89af0; --c36: #7cc7d6; --c90: #7f7f7f;
+  --night: #0b1020; --day: #3a5683;
 }
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #f2f4f8; --panel: #fff; --field: #f7f8fb; --fg: #151b29; --muted: #5f6878; --line: #d6dbe6;
-  --accent: #a8690f; --accent-fg: #fff; --accent-soft: rgba(168, 105, 15, .12); --focus: #c98a1f;
-  --c31: #c0392b; --c32: #1f8a4c; --c33: #a8690f; --c34: #1f6fd0; --c35: #9b3fc4; --c36: #0f7f8c; --c90: #697184;
-  --title: linear-gradient(90deg, #22305e 0%, #4a4f8a 45%, #a8690f 100%);
+  --bg: #f1f1f1; --panel: #fff; --head: #f6f6f6; --field: #fafafa; --fg: #2a2a2a; --strong: #111; --muted: #6b6b6b; --line: #dedede;
+  --accent: #c94848; --accent-fg: #fff; --accent-soft: rgba(201, 72, 72, .12); --focus: #d96060;
+  --c31: #c0392b; --c32: #1f8a4c; --c33: #a8690f; --c34: #1f6fd0; --c35: #9b3fc4; --c36: #0f7f8c; --c90: #737373;
+  --night: #1d2540; --day: #9fb8de;
 }
 /* Night vision: dim pure red on black, nothing blue or white to spoil dark
    adaptation. The colour codes become brightness: good bright, fair medium,
@@ -32,122 +34,186 @@
    night every SCORE is poor. */
 :root[data-theme="night"] {
   color-scheme: dark;
-  --bg: #000; --panel: #0a0101; --field: #050000; --fg: #c8281d; --muted: #7a1810; --line: #2e0805;
+  --bg: #000; --panel: #0a0101; --head: #120202; --field: #050000; --fg: #c8281d; --strong: #e03a2c; --muted: #7a1810; --line: #2e0805;
   --accent: #d93225; --accent-fg: #000; --accent-soft: rgba(217, 50, 37, .16); --focus: #f04434;
   --c31: #ab281d; --c32: #ff4d3d; --c33: #d02e20; --c34: #a52418; --c35: #a52418; --c36: #e03a2c; --c90: #7a1810;
-  --dusk: linear-gradient(90deg, #200403 0%, #5c0f09 50%, #a52418 100%);
-  --title: linear-gradient(90deg, #7a1810 0%, #d93225 100%);
+  --night: #050000; --day: #3a0905;
 }
 /* Images and native widgets, tinted red. The WebKit-only date icon gets a
    rule of its own: an unknown selector (Firefox) drops its whole rule. */
-:root[data-theme="night"] :is(h1 .mark, #thumb, input[type=checkbox]) { filter: grayscale(1) sepia(1) saturate(10) hue-rotate(-40deg) brightness(.55); }
+:root[data-theme="night"] :is(.brand img, #thumb, .shot img, input[type=checkbox]) { filter: grayscale(1) sepia(1) saturate(10) hue-rotate(-40deg) brightness(.55); }
 :root[data-theme="night"] ::-webkit-calendar-picker-indicator { filter: grayscale(1) sepia(1) saturate(10) hue-rotate(-40deg) brightness(.55); }
 :root[data-theme="night"] * { scrollbar-color: var(--line) var(--bg); }
+:root[data-theme="night"] :is(.shot, .shot .t1, .shot .times) { color: var(--strong); }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { background: var(--bg); }
-body {
-  margin: 0; min-height: 100vh; background: var(--bg); color: var(--fg);
-  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
-  border-top: 4px solid transparent; border-image: var(--dusk) 1;
+body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--fg); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+.topbar {
+  position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 16px;
+  padding: 10px max(16px, calc((100vw - 1440px) / 2 + 16px)); background: var(--bg); border-bottom: 1px solid var(--line);
 }
-main { max-width: 1400px; margin: 0 auto; padding: 28px 20px 48px; }
-header { margin-bottom: 22px; }
-header .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.brand { display: flex; align-items: center; gap: 10px; margin: 0; font: 400 22px/1 Georgia, "Times New Roman", serif; letter-spacing: .08em; color: var(--accent); text-transform: uppercase; }
+.brand img { width: 26px; height: 26px; }
+.topbar .tag { color: var(--muted); font-size: 13px; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #theme { flex: none; padding: 6px 12px; font-size: 13px; white-space: nowrap; }
-h1 {
-  display: flex; align-items: center; gap: 12px; margin: 0 0 6px;
-  font-size: clamp(1.7rem, 1.2rem + 1.6vw, 2.4rem); font-weight: 750; letter-spacing: -.03em; line-height: 1.1;
+form.layout {
+  display: grid; grid-template-columns: 270px 380px minmax(0, 1fr); gap: 16px; align-items: start;
+  max-width: 1440px; margin: 0 auto; padding: 16px;
 }
-h1 .mark { flex: none; width: 1.15em; height: 1.15em; filter: drop-shadow(0 0 6px var(--accent-soft)); }
-h1 .word { background: var(--title); -webkit-background-clip: text; background-clip: text; color: transparent; padding-right: .05em; }
-header p { margin: 0; color: var(--muted); max-width: 72ch; }
-form { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
-/* The main fields in groups by purpose, each as wide as its fields need. */
-.groups { display: flex; flex-wrap: wrap; gap: 18px 28px; }
-.groups fieldset {
-  flex: var(--n) 1 calc(var(--n) * 160px); min-width: 0; margin: 0; padding: 0; border: 0;
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px 18px; align-content: start;
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.panel + .panel { margin-top: 16px; }
+.panel:not(.toolbar) > h2 {
+  display: flex; align-items: center; gap: 8px; margin: 0; padding: 9px 12px; background: var(--head); border-bottom: 1px solid var(--line);
+  font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--strong);
 }
-.groups legend { padding: 0; margin-bottom: 10px; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-:is(label, .chipfield) > span .req { font: 500 11px system-ui, sans-serif; color: var(--accent); margin-left: 6px; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px 18px; }
+.panel > h2 .ico { color: var(--accent); font-size: 14px; }
+.panel > .body { padding: 12px; }
+aside .fields { display: grid; gap: 12px; }
+aside .fields .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+#here { width: 100%; margin-top: 12px; }
+/* The night: the Moon, the dark between dusk and dawn with the window and
+   the Moon's hours on it, the forecast hours. */
+.moon { display: flex; align-items: center; gap: 12px; }
+.moon .disc { flex: none; width: 44px; height: 44px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #eee, #999 70%); position: relative; overflow: hidden; }
+.moon .disc i { position: absolute; inset: 0; background: rgba(0, 0, 0, .78); }
+.moon b { display: block; color: var(--accent); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+.moon span { font-size: 13px; color: var(--muted); }
+aside :is(label, .chipfield) > span:not(.flag) code { display: none; }
+.bar { position: relative; height: 22px; margin: 14px 0 4px; border-radius: 5px; background: var(--night); overflow: hidden; }
+.bar .win { position: absolute; top: 0; bottom: 0; background: var(--accent-soft); border-inline: 1px solid var(--accent); }
+.bar .moonup { position: absolute; bottom: 0; height: 5px; background: #ddd; opacity: .55; }
+.bar .label { position: absolute; left: 8px; top: 3px; font-size: 11px; font-weight: 700; letter-spacing: .06em; color: #aaa; text-transform: uppercase; }
+.times { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.facts { margin: 10px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 13px; }
+.facts dt { color: var(--muted); }
+.facts dd { margin: 0; color: var(--strong); font-variant-numeric: tabular-nums; }
+.wx { display: grid; grid-template-columns: 46px 1fr 34px; gap: 4px 8px; align-items: center; font-size: 12px; font-variant-numeric: tabular-nums; }
+.wx .h { color: var(--muted); }
+.wx .cl { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.wx .cl i { display: block; height: 100%; background: var(--c32); }
+.wx .cl i.mid { background: var(--c33); } .wx .cl i.bad { background: var(--c31); } .wx .cl i.rain { background: var(--c34); }
+.wx .pc { text-align: right; color: var(--muted); }
+/* The options: a tab per -h group beside one scrolling pane of them all. */
+.filters { position: sticky; top: 64px; display: flex; flex-direction: column; max-height: calc(100vh - 80px); }
+.filters .split { display: grid; grid-template-columns: 112px minmax(0, 1fr); min-height: 0; flex: 1; }
+#tabs { display: flex; flex-direction: column; border-right: 1px solid var(--line); overflow-y: auto; }
+#tabs button {
+  all: unset; box-sizing: border-box; padding: 9px 10px; font-size: 13px; line-height: 1.25; cursor: pointer; color: var(--fg);
+  border-bottom: 1px solid var(--line); border-left: 3px solid transparent;
+}
+#tabs button:hover { background: var(--accent-soft); }
+#tabs button[aria-current="true"] { border-left-color: var(--accent); background: var(--head); color: var(--strong); font-weight: 600; }
+#tabs button:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+#panes { overflow-y: auto; padding: 4px 12px 16px; scroll-behavior: smooth; }
+#panes section { padding-top: 12px; }
+#panes h3 { display: flex; align-items: center; gap: 6px; margin: 0 0 10px; font-size: 14px; color: var(--strong); }
+#panes h3::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+#panes .grid { display: grid; gap: 14px; }
+#panes section + section { margin-top: 10px; border-top: 1px solid var(--line); }
+.foot { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-top: 1px solid var(--line); background: var(--head); }
+.foot #run { flex: 1; }
 label, .chipfield { display: flex; flex-direction: column; gap: 4px; font-size: 13px; min-width: 0; }
-:is(label, .chipfield) > span { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+:is(label, .chipfield) > span { font-weight: 600; color: var(--strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 :is(label, .chipfield) > span code { font: 500 12px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); margin-left: 6px; }
-:is(label, .chipfield) > span.flag code { font-weight: 600; font-size: 13px; color: var(--fg); margin-left: 0; }
+:is(label, .chipfield) > span.flag code { font-weight: 600; font-size: 13px; color: var(--strong); margin-left: 0; }
+:is(label, .chipfield) > span .req { font: 500 11px system-ui, sans-serif; color: var(--accent); margin-left: 6px; }
 /* Two lines of help, all of it while the field has focus (and in its tooltip). */
 :is(label, .chipfield) small { font-size: 12px; color: var(--muted); line-height: 1.35; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 :is(label, .chipfield):focus-within small { -webkit-line-clamp: unset; }
-/* A checkbox sits where the other fields have their input, so help text
-   lines up along a row. */
-label.check .control { display: flex; align-items: center; min-height: 40px; }
+label.check { flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: 10px; }
+label.check > span:first-child { order: 2; }
+label.check .control { order: 1; display: flex; align-items: center; min-height: 24px; }
+label.check small { order: 3; flex-basis: 100%; }
 /* A multi-choice flag (-filter) as toggles, joined into its hidden field. */
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chips label {
-  flex-direction: row; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; cursor: pointer;
-  border: 1px solid var(--line); border-radius: 999px; background: var(--field); font-weight: 500;
-  transition: border-color .12s, background .12s;
+  flex-direction: row; align-items: center; gap: 6px; min-height: 32px; padding: 0 10px; cursor: pointer;
+  border: 1px solid var(--line); border-radius: 999px; background: var(--field); font-weight: 500; transition: border-color .12s, background .12s;
 }
-.chips label:has(:checked) { border-color: var(--accent); background: var(--accent-soft); }
-/* On a phone the toggles take the group's full width, one column. */
-@media (max-width: 600px) { .groups fieldset:has(.chipfield) { grid-template-columns: 1fr; } }
+.chips label:has(:checked) { border-color: var(--accent); background: var(--accent-soft); color: var(--strong); }
 .chips label:has(:focus-visible) { border-color: var(--focus); box-shadow: 0 0 0 3px var(--accent-soft); }
 input, select {
-  font: inherit; padding: 8px 10px; min-height: 40px; border: 1px solid var(--line); border-radius: 7px;
-  background: var(--field); color: var(--fg); width: 100%; transition: border-color .12s, box-shadow .12s;
+  font: inherit; font-size: 14px; padding: 6px 2px; min-height: 34px; border: 0; border-bottom: 1px solid var(--accent);
+  border-radius: 0; background: transparent; color: var(--strong); width: 100%; transition: border-color .12s, box-shadow .12s;
 }
+select { background: var(--panel); }
 input::placeholder { color: var(--muted); }
-input:focus-visible, select:focus-visible, button:focus-visible, summary:focus-visible {
-  outline: none; border-color: var(--focus); box-shadow: 0 0 0 3px var(--accent-soft);
+input:focus-visible, select:focus-visible, button:focus-visible, summary:focus-visible, select:focus-visible {
+  outline: none; border-color: var(--focus); box-shadow: 0 2px 0 0 var(--focus);
 }
 input[type=checkbox] { width: 18px; height: 18px; min-height: 0; margin: 0; accent-color: var(--accent); }
-input[type=file] { padding: 5px; }
+input[type=file] { padding: 5px 0; border-bottom-color: var(--line); font-size: 13px; }
 input[type=file]::file-selector-button {
-  font: inherit; font-size: 13px; padding: 3px 9px; margin-right: 8px; border: 1px solid var(--line);
-  border-radius: 5px; background: var(--panel); color: var(--fg); cursor: pointer;
+  font: inherit; font-size: 12px; padding: 3px 9px; margin-right: 8px; border: 1px solid var(--line);
+  border-radius: 5px; background: var(--head); color: var(--fg); cursor: pointer;
 }
-details { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 12px; }
-summary { cursor: pointer; color: var(--accent); font-weight: 500; width: max-content; border-radius: 5px; padding: 2px 4px; margin-left: -4px; }
-summary::marker { color: var(--muted); }
-details .groups { margin-top: 16px; }
-.bar { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; align-items: center; }
 button {
-  font: inherit; font-weight: 600; padding: 9px 18px; min-height: 40px; border-radius: 8px; cursor: pointer;
+  font: inherit; font-weight: 600; padding: 7px 16px; min-height: 36px; border-radius: 7px; cursor: pointer;
   border: 1px solid var(--accent); background: var(--accent); color: var(--accent-fg); transition: filter .12s, background .12s;
 }
 button:hover:not(:disabled) { filter: brightness(1.08); }
-/* Secondary actions step back: accent text on a quiet border, so Run leads. */
-button.ghost { background: transparent; color: var(--accent); font-weight: 500; border-color: var(--line); }
-button.ghost:hover:not(:disabled) { background: var(--accent-soft); border-color: var(--accent); filter: none; }
+/* Secondary actions step back: accent text without a fill, so Run leads. */
+button.ghost { background: transparent; color: var(--accent); font-weight: 600; border-color: transparent; padding-inline: 8px; }
+button.ghost:hover:not(:disabled) { background: var(--accent-soft); filter: none; }
 button:disabled { opacity: .5; cursor: default; }
-#status { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; margin-left: auto; }
-#warn { white-space: pre-wrap; color: var(--c33); font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; margin: 18px 0 0; }
-#warn:not(:empty) { padding: 10px 14px; border-left: 3px solid var(--c33); background: var(--panel); border-radius: 0 8px 8px 0; }
+/* The results: a toolbar, the warnings, the cards and the full report. */
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; min-height: 44px; padding: 6px 12px; margin-bottom: 12px; }
+.toolbar h2 { margin: 0 auto 0 0; font-size: 17px; font-weight: 600; color: var(--strong); }
+.toolbar label { flex-direction: row; align-items: center; gap: 6px; color: var(--muted); }
+.toolbar select { width: auto; min-height: 30px; padding: 2px 4px; }
+#status { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+#warn { white-space: pre-wrap; color: var(--c33); font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }
+#warn:not(:empty) { padding: 10px 14px; margin-bottom: 12px; border-left: 3px solid var(--c33); background: var(--panel); border-radius: 0 8px 8px 0; }
 #warn.error { color: var(--c31); border-left-color: var(--c31); }
-pre#out {
-  margin: 18px 0 0; padding: 16px 18px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
-  overflow-x: auto; font: 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; tab-size: 4;
+.intro { padding: 28px 24px; color: var(--muted); }
+.intro b { color: var(--strong); }
+#cards { display: grid; gap: 12px; }
+#cards:empty { display: none; }
+/* A card: the DSS2 picture with what the table says over it, and beside it
+   the altitude curve with the score, filter, subs and any bright star. */
+.tcard { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(220px, 1fr); background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.shot { position: relative; display: flex; flex-direction: column; min-height: 168px; padding: 10px 12px; color: #ddd; text-decoration: none; background: #0c0c0c; isolation: isolate; }
+.shot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
+.shot::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(rgba(0, 0, 0, .62), rgba(0, 0, 0, .05) 45%, rgba(0, 0, 0, .7)); }
+.shot:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.shot .t1 { font-weight: 700; font-size: 15px; color: #f2f2f2; text-shadow: 0 1px 3px #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 64px; }
+.shot .t1 .rank { color: var(--accent); margin-right: 6px; }
+.shot .stats { display: flex; flex-wrap: wrap; gap: 2px 14px; margin-top: 4px; font-size: 13px; font-weight: 600; text-shadow: 0 1px 3px #000; }
+.shot .stats span { white-space: nowrap; }
+.shot .stats .sym { opacity: .8; margin-right: 3px; font-weight: 400; }
+.shot .times { margin-top: auto; color: #ddd; font-size: 12px; font-weight: 600; text-shadow: 0 1px 3px #000; gap: 8px; }
+.shot .badge {
+  position: absolute; top: 10px; right: 10px; padding: 2px 8px; border-radius: 999px; font: 700 13px/20px system-ui, sans-serif;
+  background: rgba(0, 0, 0, .65); border: 1px solid currentColor; font-variant-numeric: tabular-nums;
 }
-pre#out:empty { display: none; }
-#out, #warn { scroll-margin-top: 16px; }
-.b { font-weight: 700; }
+.chart { display: flex; flex-direction: column; min-width: 0; border-left: 1px solid var(--line); }
+.chart canvas { display: block; width: 100%; height: 120px; }
+.chart .meta { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 8px 12px; border-top: 1px solid var(--line); background: var(--head); font-size: 12.5px; flex: 1; align-content: flex-start; }
+.chart .meta span { white-space: nowrap; }
+.chart .meta .k { color: var(--muted); margin-right: 4px; }
+.chart .meta .warn { color: var(--c33); white-space: normal; }
 .c31 { color: var(--c31); } .c32 { color: var(--c32); } .c33 { color: var(--c33); } .c34 { color: var(--c34); }
 .c35 { color: var(--c35); } .c36 { color: var(--c36); } .c90 { color: var(--c90); }
+.b { font-weight: 700; }
+details#report { margin-top: 12px; }
+details#report summary { cursor: pointer; padding: 9px 12px; background: var(--head); font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--strong); list-style-position: inside; }
+details#report[open] summary { border-bottom: 1px solid var(--line); }
+pre#out { margin: 0; padding: 14px 16px; overflow-x: auto; font: 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; tab-size: 4; }
+#report:has(pre#out:empty) { display: none; }
+#out, #warn, #results { scroll-margin-top: 70px; }
 pre#out a { color: inherit; text-decoration: underline dotted; text-underline-offset: 2px; }
 /* The theme's own ring, not the system's near-white one, which would be
    the brightest mark on the night theme's screen. */
 pre#out a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 2px; }
-/* One card beside the hovered or focused name: its name, the DSS2 picture
-   (its slot held while it loads), the altitude curve and the subs. */
+/* One card beside the hovered or focused name in the full report: its name,
+   the DSS2 picture (its slot held while it loads), the curve and the subs. */
 #card {
   position: fixed; z-index: 10; width: 242px; pointer-events: none; overflow: hidden;
-  border: 1px solid var(--line); border-radius: 10px; background: var(--field); box-shadow: 0 8px 28px rgba(0, 0, 0, .45);
+  border: 1px solid var(--line); border-radius: 10px; background: var(--field); box-shadow: 0 8px 28px rgba(0, 0, 0, .5);
 }
 #card[hidden] { display: none; }
-#name {
-  padding: 6px 10px; font: 600 13px/18px system-ui, sans-serif; color: var(--c36);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
+#name { padding: 6px 10px; font: 600 13px/18px system-ui, sans-serif; color: var(--strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #shot {
   display: grid; place-items: center; width: 240px; height: 240px; background: var(--panel); border-block: 1px solid var(--line);
   font: 12px system-ui, sans-serif; color: var(--muted);
@@ -156,7 +222,7 @@ pre#out a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; 
 #shot:has(#thumb:not([hidden])) #shotmsg { display: none; }
 #thumb { display: block; width: 240px; height: 240px; }
 #thumb[hidden] { display: none; }
-#alt { display: block; width: 240px; margin-top: 4px; }
+#alt { display: block; width: 240px; height: 110px; }
 #alt[hidden] { display: none; }
 #star { padding: 6px 10px 0; font: 12px/17px system-ui, sans-serif; color: var(--c33); }
 #star[hidden] { display: none; }
@@ -167,17 +233,28 @@ pre#out a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; 
 #subs .over { color: var(--c90); }
 footer {
   display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px;
-  margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted);
+  max-width: 1440px; margin: 8px auto 0; padding: 18px 16px 40px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted);
 }
 footer .privacy { flex-basis: 100%; margin: 0; }
 footer a { color: var(--accent); text-decoration: none; }
 footer a:hover { text-decoration: underline; }
-@media (max-width: 600px) {
-  main { padding: 20px 14px 40px; }
-  form { padding: 16px; border-radius: 10px; }
-  #status { margin-left: 0; flex-basis: 100%; }
+/* Narrower: the options under the site, the targets below both; a phone
+   stacks everything and the cards put the curve under the picture. */
+@media (max-width: 1180px) {
+  form.layout { grid-template-columns: 300px minmax(0, 1fr); }
+  #results { grid-column: 1 / -1; }
+  .filters { position: static; }
 }
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+@media (max-width: 760px) {
+  form.layout { grid-template-columns: minmax(0, 1fr); padding: 10px; }
+  .filters { max-height: none; }
+  .brand { font-size: 17px; letter-spacing: .05em; }
+  #panes { max-height: 60vh; }
+  .tcard { grid-template-columns: minmax(0, 1fr); }
+  .chart { border-left: 0; border-top: 1px solid var(--line); }
+  .topbar .tag { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } #panes { scroll-behavior: auto; } }
 </style>
 <script>
 // Theme before first paint: a stored override, else the browser's preference
@@ -197,49 +274,80 @@ footer a:hover { text-decoration: underline; }
 </script>
 </head>
 <body>
-<main>
-  <header>
-    <div class="top">
-      <h1><img class="mark" src="favicon.svg" alt=""><span class="word">Astro Recommender</span></h1>
-      <button type="button" class="ghost" id="theme" title="Switch between the browser's theme, light, dark and red night vision"></button>
+<header class="topbar">
+  <h1 class="brand"><img src="favicon.svg" alt="">Astro Recommender</h1>
+  <span class="tag">Deep sky objects ranked for tonight at your location</span>
+  <button type="button" class="ghost" id="theme" title="Switch between the browser's theme, light, dark and red night vision"></button>
+</header>
+<form id="form" class="layout">
+  <aside>
+    <section class="panel">
+      <h2><span class="ico">⌂</span>Observatory</h2>
+      <div class="body">
+        <div class="fields" id="site"></div>
+        <button type="button" class="ghost" id="here">⌖ Use my location</button>
+      </div>
+    </section>
+    <section class="panel" id="nightPanel" hidden>
+      <h2><span class="ico">☾</span>Tonight</h2>
+      <div class="body" id="night"></div>
+    </section>
+    <section class="panel" id="wxPanel" hidden>
+      <h2><span class="ico">☁</span>Weather</h2>
+      <div class="body"><div class="wx" id="wx"></div></div>
+    </section>
+  </aside>
+  <section class="panel filters">
+    <h2><span class="ico">⚲</span>Options</h2>
+    <div class="split">
+      <nav id="tabs" aria-label="Option groups"></nav>
+      <div id="panes"></div>
     </div>
-    <p>Ranks deep sky objects for tonight at your location. Enter your latitude and longitude, or use your location, and press Run; an empty field keeps its default. Point at or tap a result for its picture and altitude through the night.</p>
-  </header>
-  <form id="form">
-    <div class="groups" id="main"></div>
-    <details><summary>All options</summary><div class="groups" id="more"></div></details>
-    <div class="bar">
-      <button type="submit" id="run" disabled>Loading…</button>
-      <button type="button" class="ghost" id="here">Use my location</button>
-      <button type="button" class="ghost" id="link" title="Copy a link that fills this form and runs it">Copy link</button>
+    <div class="foot">
       <button type="button" class="ghost" id="clear">Reset</button>
+      <button type="submit" id="run" disabled>Loading…</button>
+    </div>
+  </section>
+  <section id="results">
+    <div class="panel toolbar">
+      <h2 id="count">Targets</h2>
+      <label id="sortbox" hidden>Sort <select id="sort">
+        <option value="rank">Score</option>
+        <option value="peak">Peak time</option>
+        <option value="alt">Altitude</option>
+        <option value="size">Size</option>
+        <option value="name">Name</option>
+      </select></label>
+      <button type="button" class="ghost" id="link" title="Copy a link that fills this form and runs it">Copy link</button>
       <button type="button" class="ghost" id="save" hidden>Download</button>
       <span id="status"></span>
     </div>
-  </form>
-  <div id="warn"></div>
-  <pre id="out"></pre>
-  <div id="card" role="tooltip" hidden>
-    <div id="name"></div>
-    <div id="shot"><span id="shotmsg"></span><img id="thumb" alt="" hidden></div>
-    <canvas id="alt" width="240" height="96" hidden></canvas>
-    <div id="star" hidden></div>
-    <div id="subs" hidden></div>
-  </div>
-  <footer>
-    <p class="privacy">Runs entirely in your browser. The only network requests go to the forecast, sky brightness, geocoding and comet services, to NOAA for the solar flux (no location sent), to CDS for the DSS2 thumbnail when you point at a result, and to Cloudflare Web Analytics, a cookieless visit counter that sees the page address (your form, after a run).</p>
-    <span>© 2026 Dinko Korunic</span>
-    <span>Code: <a rel="license" href="https://github.com/dkorunic/astro-recommender/blob/main/LICENSE">MIT</a> · <a href="https://github.com/dkorunic/astro-recommender/blob/main/README.md">README</a> · <a href="https://github.com/dkorunic/astro-recommender/">GitHub</a><span id="version"></span></span>
-  </footer>
-</main>
+    <div id="warn"></div>
+    <div class="panel intro" id="intro">Enter your <b>latitude</b> and <b>longitude</b>, or use your location, and press <b>Run</b>; an empty field keeps its default. Each target comes as a card with its picture, its altitude through the night and what it takes to image it.</div>
+    <div id="cards"></div>
+    <details class="panel" id="report"><summary>Full report</summary><pre id="out"></pre></details>
+  </section>
+</form>
+<div id="card" role="tooltip" hidden>
+  <div id="name"></div>
+  <div id="shot"><span id="shotmsg"></span><img id="thumb" alt="" hidden></div>
+  <canvas id="alt" width="240" height="110" hidden></canvas>
+  <div id="star" hidden></div>
+  <div id="subs" hidden></div>
+</div>
+<footer>
+  <p class="privacy">Runs entirely in your browser. The only network requests go to the forecast, sky brightness, geocoding and comet services, to NOAA for the solar flux (no location sent), to CDS for the DSS2 pictures of the results, and to Cloudflare Web Analytics, a cookieless visit counter that sees the page address (your form, after a run).</p>
+  <span>© 2026 Dinko Korunic</span>
+  <span>Code: <a rel="license" href="https://github.com/dkorunic/astro-recommender/blob/main/LICENSE">MIT</a> · <a href="https://github.com/dkorunic/astro-recommender/blob/main/README.md">README</a> · <a href="https://github.com/dkorunic/astro-recommender/">GitHub</a><span id="version"></span></span>
+</footer>
 <script src="wasm_exec.js"></script>
 <script>
 "use strict";
 // The Go program runs unchanged: argv comes from the form, stdout/stderr and
 // the -targets/-horizon/-skip files go through the fs shim that wasm_exec.js calls.
-// The groups of -h (config.usageGroups) whose flags fill the main form;
-// every other group goes under All options.
-const MAIN_GROUPS = ["Where and when", "What to list", "Equipment", "Sky"];
+// The group of -h (config.usageGroups) whose flags fill the Observatory
+// panel; every other group is a tab of the Options panel.
+const SITE_GROUP = "Where and when";
 // Examples where a required field has no default to show.
 const EXAMPLES = { lat: "e.g. 45.81", lon: "e.g. 15.98" };
 const FILES = ["targets", "horizon", "skip"];
@@ -260,9 +368,12 @@ const CHIPS = {
 };
 const KEY = "astro-recommender-form";
 const $ = (id) => document.getElementById(id);
+// el builds an element with a class and text (never HTML: names come from
+// the catalogues, MPC and uploaded files).
+const el = (tag, cls, text) => Object.assign(document.createElement(tag), cls ? { className: cls } : {}, text != null ? { textContent: text } : {});
 
 // fs shim: fd 1/2 to the current run's sinks, and so is ALT, the fd of the
-// write-only /altitudes, main_js.go's altitude curves; uploaded files
+// write-only /altitudes, main_js.go's curves and cards; uploaded files
 // read-only.
 // The Go runtime prints panics through writeSync, not write.
 const files = new Map(); // path -> Uint8Array
@@ -330,13 +441,14 @@ async function runNow(args, argv0) {
   return { out: text[1] + dec[1].decode(), err: text[2] + dec[2].decode(), alt: text[ALT] + dec[ALT].decode(), code };
 }
 
-// columns is the output panel's width in characters, which the target table
-// is fitted to (the descriptions give way first) and the legend wraps at.
+// columns is the results column's width in characters, which the full
+// report's table is fitted to (the descriptions give way first) and the
+// legend wraps at.
 function columns() {
   const cs = getComputedStyle($("out"));
   const g = document.createElement("canvas").getContext("2d");
   g.font = cs.font;
-  const w = $("form").clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const w = $("results").clientWidth - 34; // the pre's padding and border
   return String(Math.max(40, Math.floor(w / g.measureText("0").width)));
 }
 
@@ -353,23 +465,33 @@ function ansi(s) {
   return html + "</span>".repeat(depth);
 }
 
-// sky links each result's name to Aladin Lite at its position, with a
-// DSS2 thumbnail (CDS hips2fits) and the altitude curve of its rank shown
+// skyURLs returns a result's Aladin Lite link and a hips2fits DSS2 picture
+// of w x h pixels from main_js.go's pos (J2000 RA and Dec, size in arcmin):
+// the picture's short side half again the object, within 0.1-5°; unknown
+// sizes (comets) 0.5°. The alaskybis mirror answers in 0.4-1.5 s where the
+// primary took 14-17 s to first byte.
+const survey = "CDS%2FP%2FDSS2%2Fcolor";
+function skyURLs([ra, dec, size], w = 240, h = 240) {
+  const short = size ? Math.min(5, Math.max(0.1, size * 1.5 / 60)) : 0.5;
+  const fov = short * Math.max(w, h) / Math.min(w, h);
+  return {
+    href: `https://aladin.cds.unistra.fr/AladinLite/?target=${ra.toFixed(4)}%20${dec.toFixed(4)}&fov=${short.toFixed(2)}&survey=${survey}`,
+    thumb: `https://alaskybis.cds.unistra.fr/hips-image-services/hips2fits?hips=${survey}&width=${w}&height=${h}&projection=TAN` +
+      `&fov=${fov.toFixed(2)}&ra=${ra.toFixed(4)}&dec=${dec.toFixed(4)}&format=jpg`,
+  };
+}
+
+// sky links each result row of the full report to Aladin Lite at its
+// position, with a DSS2 thumbnail and the altitude curve of its rank shown
 // on hover. Result rows open with their rank, which indexes main_js.go's
 // curves.pos, so a narrow table may drop the RA and DEC columns.
-const survey = "CDS%2FP%2FDSS2%2Fcolor";
 function sky(html) {
   const links = new Map(); // escaped name -> its result row's anchor attributes
   const lines = html.split("\n").map((line) => {
     const rank = line.replace(/<[^>]+>/g, "").match(/^(\d+) +\S/)?.[1];
     const pos = rank && curves?.pos?.[rank - 1];
     if (!pos) return line;
-    const [ra, dec, size] = pos;
-    // Half again the object, within 0.1-5°; unknown sizes (comets) get 0.5°.
-    const fov = size ? Math.min(5, Math.max(0.1, size * 1.5 / 60)) : 0.5;
-    const href = `https://aladin.cds.unistra.fr/AladinLite/?target=${ra.toFixed(4)}%20${dec.toFixed(4)}&fov=${fov.toFixed(2)}&survey=${survey}`;
-    const thumb = `https://alaskybis.cds.unistra.fr/hips-image-services/hips2fits?hips=${survey}&width=240&height=240&projection=TAN` +
-      `&fov=${fov.toFixed(2)}&ra=${ra.toFixed(4)}&dec=${dec.toFixed(4)}&format=jpg`;
+    const { href, thumb } = skyURLs(pos);
     const attrs = `href="${href}" target="_blank" rel="noopener" data-thumb="${thumb}" data-rank="${rank}" aria-describedby="card"`;
     return line.replace(/<span class="c36">([^<]*)<\/span>/, (_, name) => {
       links.set(name, attrs);
@@ -392,21 +514,22 @@ const own = (e) => thumbFor && e.target.src === thumbFor.dataset.thumb;
 const failed = () => { $("shot").classList.add("failed"); $("shotmsg").textContent = "No picture: CDS unavailable"; };
 $("thumb").addEventListener("load", (e) => { if (own(e)) e.target.hidden = false; });
 $("thumb").addEventListener("error", (e) => { if (own(e)) failed(); });
-// show fills the card for the result link a and puts it beside a, clear of
-// the window's edges; a null hides it.
+// show fills the hover card for the report link a and puts it beside a,
+// clear of the window's edges; a null hides it.
 function show(a) {
   if (a === thumbFor) return;
   thumbFor = a;
   const card = $("card"), img = $("thumb");
   img.hidden = true;
   if (!a) { card.hidden = true; return; }
+  const i = a.dataset.rank - 1;
   $("name").textContent = a.textContent;
   $("shot").classList.remove("failed");
   $("shotmsg").textContent = "Loading DSS2 picture…";
-  drawAlt(curves?.alt?.[a.dataset.rank - 1], curves?.obs?.[a.dataset.rank - 1] ?? []);
-  showStar(curves?.star?.[a.dataset.rank - 1]);
-  showSubs(curves?.subs?.[a.dataset.rank - 1]);
   card.hidden = false;
+  drawAlt($("alt"), curves?.alt?.[i], curves?.obs?.[i] ?? [], curves?.cards?.[i], true);
+  showStar($("star"), curves?.star?.[i]);
+  showSubs($("subs"), curves?.subs?.[i]);
   const r = a.getBoundingClientRect();
   card.style.left = `${Math.max(8, Math.min(r.right + 12, innerWidth - card.offsetWidth - 8))}px`;
   // The picture level with the row where the window allows.
@@ -437,23 +560,26 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") show(null);
 });
 
-// showStar names the result's STAR on the card, a narrow table's first
-// column to go: the brightest star or planet that can fall in the frame
-// (main_js.go's output.BrightStars), null without one.
-function showStar(st) {
-  const box = $("star");
+// Clock times and compass points in the location's zone.
+const hm = (t) => new Date(t * 1000).toLocaleTimeString([], { timeZone: curves?.zone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+const compass = (az) => ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round(az / 45) % 8];
+// grade is the report's colour for a value: good, fair or poor.
+const grade = (v, ok, bad) => ok > bad ? (v >= ok ? "c32" : v <= bad ? "c31" : "c33") : (v <= ok ? "c32" : v >= bad ? "c31" : "c33");
+
+// showStar names the result's STAR: the brightest star or planet that can
+// fall in the frame (main_js.go's output.BrightStars), null without one.
+function showStar(box, st) {
   box.hidden = !st;
   if (st) box.textContent = `Bright ${st.planet ? "planet" : "star"} in the frame: ${st.name} (V ${st.mag.toFixed(1)}), ${Math.round(st.separation)}′ from the centre`;
 }
 
-// showSubs fills the sub-exposure box under the curve: per level the subs
-// and their time, the levels past tonight's limit greyed; per panel for a
-// mosaic. Past tonight's limit it leads with the nights a good image takes,
-// as SUBS does (output.nightsText). e is main_js.go's estimate for the result, null without one.
+// showSubs fills a sub-exposure box: per level the subs and their time, the
+// levels past tonight's limit greyed; per panel for a mosaic. Past tonight's
+// limit it leads with the nights a good image takes, as SUBS does
+// (output.nightsText). e is main_js.go's estimate, null without one.
 // The values are numbers from our own JSON, so innerHTML takes no
 // untrusted text.
-function showSubs(e) {
-  const box = $("subs");
+function showSubs(box, e) {
   if (!e) { box.hidden = true; return; }
   const dur = (n) => { const m = n * e.sub / 60; return m < 60 ? `${Math.max(1, Math.round(m))} min` : `${(m / 60).toFixed(1)} h`; };
   // Past snrLimit (-residual: what flats leave of the sky) no count reaches a level.
@@ -470,77 +596,84 @@ function showSubs(e) {
   box.hidden = false;
 }
 
-// drawAlt plots one altitude curve (degrees every curves.step seconds
-// from curves.start) from 0° to 90°, the -alt-min/-alt-max limits dashed,
-// the observable stretches (obs, [from, to) Unix seconds: the altitude,
-// Moon and horizon limits) shaded and the curve drawn bold within them,
-// a red line at the peak, with the window's ends and the peak in
-// curves.zone; with a forecast, a ribbon of its hours under the plot, grey
-// by cloud cover (the text colour), blue for rain; a key under it all.
-function drawAlt(alt, obs) {
-  const c = $("alt");
+// drawAlt plots one altitude curve on canvas c (degrees every curves.step
+// seconds from curves.start) from 0° to 90°, as Telescopius draws them: the
+// area under it tinted, the curve in the accent, bold within the observable
+// stretches (obs, [from, to) Unix seconds: the altitude, Moon and horizon
+// limits), which are shaded; the -alt-min/-alt-max limits dashed; the peak
+// dotted and labelled with its altitude, compass point (card, main_js.go's)
+// and time; the window's ends under it; with a forecast, a ribbon of its
+// hours along the bottom, by cloud cover, blue for rain; with key, a key row.
+function drawAlt(c, alt, obs, card, key) {
   c.hidden = true;
   if (!alt?.length) return;
+  c.hidden = false;
   const css = getComputedStyle(document.documentElement), v = (n) => css.getPropertyValue(n).trim();
   const wx = curves.wx ?? [];
-  // L: the key's row under the plot.
-  const dpr = devicePixelRatio || 1, W = 240, H = wx.length ? 108 : 96, P = 6, T = wx.length ? 28 : 16, L = 14;
+  const dpr = devicePixelRatio || 1, W = c.clientWidth || 240, L = key ? 14 : 0, H = c.clientHeight - L || 96;
+  const B = 16 + (wx.length ? 10 : 0), P = 6; // B: the time labels' and ribbon's strip
   c.width = W * dpr; c.height = (H + L) * dpr;
-  c.style.height = `${H + L}px`;
   const g = c.getContext("2d");
   g.scale(dpr, dpr);
   const x = (i) => P + (W - 2 * P) * i / Math.max(1, alt.length - 1);
-  const y = (d) => H - T - (H - T - P) * Math.max(0, Math.min(90, d)) / 90;
+  const y = (d) => H - B - (H - B - P) * Math.max(0, Math.min(90, d)) / 90;
   // Seconds to x; samples are curves.step apart, so a stretch's ends fall
   // between them.
   const xt = (t) => x((t - curves.start) / curves.step);
-  g.fillStyle = v("--accent-soft");
-  for (const [from, to] of obs) g.fillRect(xt(from), P, Math.max(1, xt(to) - xt(from)), H - T - P);
+  const path = () => { g.beginPath(); alt.forEach((d, i) => i ? g.lineTo(x(i), y(d)) : g.moveTo(x(i), y(d))); };
+  // The area under the curve, faint, and stronger within the stretches.
+  const area = () => { path(); g.lineTo(x(alt.length - 1), y(0)); g.lineTo(x(0), y(0)); g.closePath(); };
+  const clipObs = () => { g.beginPath(); for (const [from, to] of obs) g.rect(xt(from), 0, Math.max(1, xt(to) - xt(from)), H); g.clip(); };
+  g.fillStyle = v("--accent");
+  g.globalAlpha = .07; area(); g.fill();
+  g.save(); clipObs(); g.globalAlpha = .28; area(); g.fill(); g.restore();
+  g.globalAlpha = 1;
   g.strokeStyle = v("--line"); g.lineWidth = 1;
   g.beginPath(); g.moveTo(P, y(0)); g.lineTo(W - P, y(0)); g.stroke();
-  g.setLineDash([3, 3]);
+  g.setLineDash([3, 3]); g.strokeStyle = v("--c32"); g.globalAlpha = .55;
   g.beginPath();
   for (const d of [curves.min, curves.max]) { g.moveTo(P, y(d)); g.lineTo(W - P, y(d)); }
   g.stroke();
-  g.setLineDash([]);
+  g.setLineDash([]); g.globalAlpha = 1;
   for (const h of wx) {
     const a = Math.max(P, xt(h.t)), b = Math.min(W - P, xt(h.t + 3600));
     g.fillStyle = v(h.rain ? "--c34" : "--fg");
-    g.globalAlpha = h.rain ? 1 : 0.15 + 0.7 * h.cloud / 100;
-    g.fillRect(a, H - 26, b - a - 1, 8);
+    g.globalAlpha = h.rain ? 1 : 0.12 + 0.7 * h.cloud / 100;
+    g.fillRect(a, H - 9, b - a - 1, 6);
   }
   g.globalAlpha = 1;
+  g.strokeStyle = v("--accent"); g.lineWidth = 1.2; g.globalAlpha = .6;
+  path(); g.stroke(); g.globalAlpha = 1;
+  // Bold within each stretch, clipped to it.
+  g.save();
+  clipObs();
+  g.lineWidth = 2.5;
+  path(); g.stroke();
+  g.restore();
   // The middle of the top: near the meridian a high-declination object holds
   // its altitude to 0.1° for half an hour.
   const hi = Math.max(...alt), peak = Math.round((alt.indexOf(hi) + alt.lastIndexOf(hi)) / 2);
-  // The peak's time, under the curve.
-  g.strokeStyle = v("--c31");
-  g.beginPath(); g.moveTo(x(peak), P); g.lineTo(x(peak), y(0)); g.stroke();
-  g.strokeStyle = v("--muted");
-  g.beginPath();
-  alt.forEach((d, i) => i ? g.lineTo(x(i), y(d)) : g.moveTo(x(i), y(d)));
-  g.stroke();
-  // Bold within each stretch, clipped to it.
-  g.save();
-  g.beginPath();
-  for (const [from, to] of obs) g.rect(xt(from), 0, Math.max(1, xt(to) - xt(from)), H);
-  g.clip();
-  g.strokeStyle = v("--accent"); g.lineWidth = 2;
-  g.beginPath();
-  alt.forEach((d, i) => i ? g.lineTo(x(i), y(d)) : g.moveTo(x(i), y(d)));
-  g.stroke();
-  g.restore();
-  const clock = (i) => new Date((curves.start + i * curves.step) * 1000)
-    .toLocaleTimeString([], { timeZone: curves.zone, hour: "2-digit", minute: "2-digit", hour12: false });
+  const t = (i) => curves.start + i * curves.step;
+  g.fillStyle = v("--strong");
+  g.beginPath(); g.arc(x(peak), y(hi), 3.5, 0, 2 * Math.PI); g.fill();
+  g.strokeStyle = v("--accent"); g.lineWidth = 1.5; g.stroke();
+  g.font = "11px system-ui, sans-serif"; g.textBaseline = "middle";
+  const label = `alt ${Math.round(alt[peak])}°${card ? " · " + compass(card.maxAz) : ""} · ${hm(t(peak))}`;
+  const lw = g.measureText(label).width + 12, lh = 18;
+  const lx = Math.max(P, Math.min(W - P - lw, x(peak) - lw / 2));
+  const ly = y(hi) > P + lh + 8 ? y(hi) - lh - 6 : y(hi) + 8;
+  g.fillStyle = v("--panel"); g.strokeStyle = v("--line"); g.lineWidth = 1;
+  g.beginPath(); g.roundRect(lx, ly, lw, lh, 4); g.fill(); g.stroke();
+  g.fillStyle = v("--strong"); g.textAlign = "center"; g.fillText(label, lx + lw / 2, ly + lh / 2);
   g.fillStyle = v("--muted"); g.font = "10px ui-monospace, Menlo, monospace"; g.textBaseline = "alphabetic";
-  g.textAlign = "left"; g.fillText(clock(0), P, H - 4);
-  g.textAlign = "right"; g.fillText(clock(alt.length - 1), W - P, H - 4);
-  g.textAlign = "center"; g.fillText(`${Math.round(alt[peak])}° @ ${clock(peak)}`, W / 2, H - 4);
+  const ty = H - (wx.length ? 12 : 3);
+  g.textAlign = "left"; g.fillText(hm(t(0)), P, ty);
+  g.textAlign = "right"; g.fillText(hm(t(alt.length - 1)), W - P, ty);
+  if (!key) return;
   // The key: a swatch drawn like its mark, then its name.
   const keys = [
     ["observable", (k) => { g.fillStyle = v("--accent-soft"); g.fillRect(k, H + 2, 10, 8); g.strokeStyle = v("--accent"); g.lineWidth = 2; g.beginPath(); g.moveTo(k, H + 6); g.lineTo(k + 10, H + 6); g.stroke(); }],
-    ["limits", (k) => { g.strokeStyle = v("--line"); g.lineWidth = 1; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(k, H + 6); g.lineTo(k + 10, H + 6); g.stroke(); g.setLineDash([]); }],
-    ["peak", (k) => { g.strokeStyle = v("--c31"); g.lineWidth = 1; g.beginPath(); g.moveTo(k + 5, H + 1); g.lineTo(k + 5, H + 11); g.stroke(); }],
+    ["limits", (k) => { g.strokeStyle = v("--c32"); g.lineWidth = 1; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(k, H + 6); g.lineTo(k + 10, H + 6); g.stroke(); g.setLineDash([]); }],
   ];
   if (wx.length) keys.push(
     ["cloud", (k) => { g.fillStyle = v("--fg"); g.globalAlpha = 0.5; g.fillRect(k, H + 2, 10, 8); g.globalAlpha = 1; }],
@@ -552,7 +685,126 @@ function drawAlt(alt, obs) {
     g.fillStyle = v("--muted"); g.fillText(name, k + 13, H + 10);
     k += 13 + g.measureText(name).width + 8;
   }
-  c.hidden = false;
+}
+
+// cardOf builds result i's card from main_js.go's curves: the picture (a
+// link to Aladin) with the name, type, size, magnitudes, constellation and
+// the observable stretch over it and SCORE in a badge; beside it the curve
+// and the FILTER, sky, subs and bright star.
+function cardOf(c, i) {
+  const art = el("article", "tcard");
+  art.dataset.rank = i + 1;
+  const { href, thumb } = skyURLs(curves.pos[i], 480, 200);
+  const shot = Object.assign(el("a", "shot"), { href, target: "_blank", rel: "noopener", title: "Open in Aladin Lite" });
+  const img = Object.assign(el("img"), { src: thumb, alt: "", loading: "lazy", decoding: "async" });
+  img.addEventListener("error", () => img.remove()); // the dark slot stays
+  const t1 = el("div", "t1");
+  t1.append(el("span", "rank", `#${i + 1}`), [c.name, c.desc, c.type].filter(Boolean).join(" · "));
+  const stats = el("div", "stats");
+  const stat = (sym, text, title) => { if (!text) return; const s = el("span"); s.title = title; s.append(el("span", "sym", sym), text); stats.append(s); };
+  stat("⤢", c.size ? `${+c.size.toFixed(1)}${c.minor ? "×" + +c.minor.toFixed(1) : ""}′` : "", "size (arcminutes)");
+  stat("✦", c.mag ? c.mag.toFixed(1) : c.bmag ? c.bmag.toFixed(1) + "B" : "", "magnitude");
+  stat("◐", c.sb ? `${c.sbGuess ? "~" : ""}${c.sb.toFixed(1)}` : "", "surface brightness (mag/arcsec²)");
+  stat("✧", c.con, "constellation");
+  if (c.mosaic) stat("▦", c.mosaic, "mosaic panels");
+  const times = el("div", "times");
+  times.append(el("span", "", `▲ ${hm(c.runFrom)}`), el("span", "", `◎ ${hm(c.maxAt)}`), el("span", "", `▼ ${hm(c.runTo)}${c.runs > 1 ? " +" : ""}`));
+  times.title = "observable from · peak · until (+: more stretches)";
+  const badge = el("span", `badge ${grade(c.score, 0.66, 0.33)}`, c.score.toFixed(2));
+  badge.title = "SCORE: imaging quality 0-1, 1 = all night under a perfect dark sky";
+  shot.append(img, t1, stats, times, badge);
+  const chart = el("div", "chart");
+  const canvas = el("canvas");
+  canvas.setAttribute("role", "img");
+  canvas.setAttribute("aria-label", `${c.name}: altitude through the night, peak ${Math.round(c.maxAlt)}° at ${hm(c.maxAt)}`);
+  const meta = el("div", "meta");
+  const kv = (k, v, cls) => { const s = el("span", cls); s.append(el("span", "k", k), v); meta.append(s); };
+  kv("Up", `${Math.round(c.foto * 100)}%`);
+  kv("Sky", c.sky.toFixed(1), grade(c.sky, 20.5, 19));
+  if ($("form").elements.filter?.value || c.filter) kv("Filter", c.filter || "none");
+  const subs = el("div", "subsline");
+  showSubs(subs, curves.subs?.[i]);
+  if (!subs.hidden) { subs.style.flexBasis = "100%"; meta.append(subs); }
+  const st = curves.star?.[i];
+  if (st) meta.append(el("span", "warn", `☀ ${st.name} (V ${st.mag.toFixed(1)}) in the frame`));
+  chart.append(canvas, meta);
+  art.append(shot, chart);
+  art._draw = () => drawAlt(canvas, curves.alt[i], curves.obs[i] ?? [], c, false);
+  return art;
+}
+
+// showCards replaces the cards from curves, sorted as the toolbar says; the
+// curves are drawn once laid out, and again when the column changes width.
+function showCards() {
+  const box = $("cards");
+  box.replaceChildren(...(curves?.cards ?? []).map(cardOf));
+  sortCards();
+  requestAnimationFrame(redraw);
+}
+const redraw = () => { for (const a of $("cards").children) a._draw?.(); };
+new ResizeObserver(() => requestAnimationFrame(redraw)).observe($("cards"));
+function sortCards() {
+  const by = $("sort").value, cs = curves?.cards ?? [];
+  const key = {
+    rank: (i) => i, peak: (i) => cs[i].maxAt, alt: (i) => -cs[i].maxAlt, size: (i) => -(cs[i].size || 0), name: (i) => cs[i].name,
+  }[by];
+  const arts = [...$("cards").children];
+  arts.sort((a, b) => { const x = key(a.dataset.rank - 1), y = key(b.dataset.rank - 1); return x < y ? -1 : x > y ? 1 : a.dataset.rank - b.dataset.rank; });
+  $("cards").append(...arts);
+}
+$("sort").addEventListener("change", sortCards);
+
+// showNight fills the sidebar from curves.night and curves.wx: the Moon, the
+// night between dusk and dawn with the window and the Moon's hours on it,
+// and the forecast hours.
+function showNight() {
+  const n = curves?.night;
+  $("nightPanel").hidden = !n;
+  $("wxPanel").hidden = !curves?.wx?.length;
+  if (!n) return;
+  const box = $("night");
+  box.replaceChildren();
+  const moon = el("div", "moon");
+  const disc = el("div", "disc"), shade = el("i");
+  // The lit share as a shadow sliding off the disc: no phase direction, only how much.
+  shade.style.transform = `translateX(${Math.round(n.illum * 100)}%)`;
+  disc.append(shade);
+  const txt = el("div");
+  txt.append(el("b", "", `Moon ${Math.round(n.illum * 100)}% lit`),
+    el("span", "", n.moonUp.length ? "up " + n.moonUp.map(([a, b]) => `${hm(a)}–${hm(b)}`).join(", ") : "down all night"));
+  moon.append(disc, txt);
+  const span = n.dawn - n.dusk, pct = (t) => `${Math.max(0, Math.min(100, (t - n.dusk) / span * 100))}%`;
+  const bar = el("div", "bar");
+  bar.title = "the night (dusk to dawn), the window shaded, the Moon's hours as the light strip";
+  const win = el("i", "win");
+  win.style.left = pct(curves.start);
+  win.style.width = `calc(${pct(n.end)} - ${pct(curves.start)})`;
+  bar.append(win);
+  for (const [a, b] of n.moonUp) {
+    const m = el("i", "moonup");
+    m.style.left = pct(a);
+    m.style.width = `calc(${pct(b)} - ${pct(a)})`;
+    bar.append(m);
+  }
+  bar.append(el("span", "label", `${n.twilight} night`));
+  const ends = el("div", "times");
+  ends.append(el("span", "", `dusk ${hm(n.dusk)}`), el("span", "", `dawn ${hm(n.dawn)}`));
+  const facts = el("dl", "facts");
+  const fact = (k, v) => facts.append(el("dt", "", k), el("dd", "", v));
+  if (n.place) fact("Place", n.place.split(", ").slice(0, 2).join(", "));
+  fact("Window", `${hm(curves.start)}–${hm(n.end)}`);
+  fact("Zenith", `${n.zenith.toFixed(2)} mag/″²`);
+  fact("Moon limit", `${Math.round(n.moonSep)}° away`);
+  box.append(moon, bar, ends, facts);
+  const wx = $("wx");
+  wx.replaceChildren();
+  for (const h of curves.wx ?? []) {
+    const bar = el("span", "cl"), fill = el("i", h.rain ? "rain" : h.cloud >= 70 ? "bad" : h.cloud > 30 ? "mid" : "");
+    fill.style.width = `${Math.max(4, 100 - h.cloud)}%`;
+    bar.title = `${h.cloud}% cloud${h.rain ? ", rain" : ""}: the bar is the clear share`;
+    bar.append(fill);
+    wx.append(el("span", "h", hm(h.t)), bar, el("span", "pc", h.rain ? "rain" : `${h.cloud}%`));
+  }
 }
 
 // parseUsage reads the flag list from -h, so the form follows the program.
@@ -747,30 +999,54 @@ function zone() {
   }).catch((ex) => console.warn("time zone lookup:", ex));
 }
 
+// tabs builds the Options panel: one tab per -h group beside one pane that
+// scrolls through them all; a tab scrolls to its group, and scrolling marks
+// the tab of the group at the top.
+function tabs(groups) {
+  const nav = $("tabs"), panes = $("panes");
+  const pairs = [];
+  for (const [title, fs] of groups) {
+    const sec = el("section");
+    sec.append(el("h3", "", title));
+    const grid = el("div", "grid");
+    for (const f of fs) grid.append(field(f));
+    sec.append(grid);
+    panes.append(sec);
+    const b = el("button", "", title);
+    b.type = "button";
+    b.addEventListener("click", () => { panes.scrollTo({ top: sec.offsetTop - panes.offsetTop - 4 }); mark(b); });
+    nav.append(b);
+    pairs.push([b, sec]);
+  }
+  const mark = (b) => { for (const [t] of pairs) t.setAttribute("aria-current", String(t === b)); };
+  panes.addEventListener("scroll", () => {
+    const top = panes.scrollTop + panes.offsetTop + 8;
+    let cur = pairs[0][0];
+    for (const [b, sec] of pairs) if (sec.offsetTop <= top) cur = b;
+    if (panes.scrollTop + panes.clientHeight >= panes.scrollHeight - 2) cur = pairs.at(-1)[0];
+    mark(cur);
+  }, { passive: true });
+  mark(pairs[0][0]);
+}
+
 async function init() {
   const { err } = await run(["-h"]);
   const flags = parseUsage(err);
-  // -h's groups, in its order: MAIN_GROUPS fill the main form, the rest
-  // All options.
+  // -h's groups, in its order: SITE_GROUP fills the Observatory panel, the
+  // rest are the Options panel's tabs.
   const groups = Map.groupBy(flags, (f) => f.group);
-  const group = (box, title, fs) => {
-    const set = document.createElement("fieldset");
-    set.style.setProperty("--n", fs.length);
-    set.append(Object.assign(document.createElement("legend"), { textContent: title }));
-    for (const f of fs) set.append(field(f));
-    box.append(set);
-  };
-  for (const title of MAIN_GROUPS) {
-    if (!groups.has(title)) throw new Error(`-h has no "${title}" group`);
-    group($("main"), title, groups.get(title));
-  }
-  for (const [title, fs] of groups) if (!MAIN_GROUPS.includes(title)) group($("more"), title, fs);
+  if (!groups.has(SITE_GROUP)) throw new Error(`-h has no "${SITE_GROUP}" group`);
+  const site = $("site"), pair = el("div", "pair");
+  for (const f of groups.get(SITE_GROUP)) (f.name === "lat" || f.name === "lon" ? pair : site).append(field(f));
+  site.prepend(pair);
+  groups.delete(SITE_GROUP);
+  tabs(groups);
   restore();
   const shared = fromURL();
   syncChips();
-  const el = $("form").elements;
-  el.lat.addEventListener("change", zone);
-  el.lon.addEventListener("change", zone);
+  const el2 = $("form").elements;
+  el2.lat.addEventListener("change", zone);
+  el2.lon.addEventListener("change", zone);
   zone();
   $("run").disabled = false;
   $("run").textContent = "Run";
@@ -806,6 +1082,16 @@ $("form").addEventListener("submit", async (e) => {
     show(null);
     try { curves = alt ? JSON.parse(alt) : null; } catch { curves = null; }
     $("out").innerHTML = sky(ansi(out));
+    $("intro").hidden = true;
+    showNight();
+    // Washed out, empty, -json or -csv: no cards, and the report says why
+    // (or is the document), so it opens.
+    const n = curves?.night?.washout ? 0 : curves?.cards?.length ?? 0;
+    if (!n) curves = curves && { ...curves, cards: [] };
+    showCards();
+    $("report").open = !n && out.trim() !== "";
+    $("sortbox").hidden = n < 2;
+    $("count").textContent = !curves ? "Report" : n ? `${n} of ${curves.night.targets} targets` : "No targets";
     // -csv and -json are meant for other programs (N.I.N.A. imports the
     // CSV): offer the output as a file, not only as text to copy.
     const kind = code ? null : a.includes("-csv") ? "csv" : a.includes("-json") ? "json" : null;
@@ -815,9 +1101,9 @@ $("form").addEventListener("submit", async (e) => {
     $("warn").textContent = err.trim();
     $("warn").className = code ? "error" : "";
     $("status").textContent = code ? "Failed: see the message below" : `done in ${((performance.now() - t0) / 1000).toFixed(1)} s`;
-    // The answer leads: bring the report (or its warnings) up once the form
-    // has done its job, unless it is already in view.
-    const first = $("warn").textContent ? $("warn") : $("out");
+    // The answer leads: bring the results (or their warnings) up once the
+    // form has done its job, unless they are already in view.
+    const first = $("warn").textContent ? $("warn") : $("results");
     if (first.getBoundingClientRect().top > innerHeight * 0.6) {
       first.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
     }
@@ -854,8 +1140,9 @@ $("theme").addEventListener("click", () => {
   try { next ? localStorage.setItem(THEME, next) : localStorage.removeItem(THEME); } catch {}
   applyTheme();
   themeLabel();
+  redraw(); // the curves take the theme's colours when drawn
 });
-matchMedia("(prefers-color-scheme: light)").addEventListener("change", themeLabel);
+matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => { themeLabel(); redraw(); });
 themeLabel();
 
 // The link is of the form as it stands, run or not; uploaded files are left out.
@@ -873,6 +1160,7 @@ $("clear").addEventListener("click", () => {
   $("form").reset();
   // reset() leaves a hidden field's value, which is its default too.
   for (const h of $("form").querySelectorAll("input[type=hidden]")) h.value = "";
+  syncChips();
   try { localStorage.removeItem(KEY); } catch {}
   history.replaceState(null, "", location.pathname);
   zone();
