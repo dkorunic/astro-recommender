@@ -49,6 +49,9 @@ POSITION_TYPOS = {
     "LBN 437": (338.0500, 40.5800), "LBN 535": (330.3000, 72.9000),
 }
 CELL = re.compile(r'<c r="([A-Z]+)\d+"((?:(?!/>)[^>])*)(?:/>|>(.*?)</c>)', re.S)
+# A row as CELL reads a cell: an empty one is self-closed, and would
+# otherwise take the next row's cells as its own.
+ROW = re.compile(r'<row r="(\d+)"(?:(?!/>)[^>])*(?:/>|>(.*?)</row>)', re.S)
 
 
 def sheet_path(z, name):
@@ -70,7 +73,7 @@ def rows(path):
     strings = [html.unescape(re.sub(r"<[^>]+>", "", m))
                for m in re.findall(r"<si>(.*?)</si>", z.read("xl/sharedStrings.xml").decode(), re.S)]
     sheet = z.read(sheet_path(z, "Main")).decode()
-    for num, body in re.findall(r'<row r="(\d+)"[^>]*>(.*?)</row>', sheet, re.S):
+    for num, body in ROW.findall(sheet):
         if int(num) < 10:
             continue
         r = {}
@@ -192,5 +195,14 @@ def main():
         print(f"  type: {q(kind(r))}")
 
 
+def selftest():
+    sheet = '<row r="10"><c r="A10"><v>1</v></c></row><row r="11" spans="1:3"/><row r="12"><c r="A12"><v>2</v></c></row>'
+    assert ROW.findall(sheet) == [("10", '<c r="A10"><v>1</v></c>'), ("11", ""), ("12", '<c r="A12"><v>2</v></c>')]
+    print("selftest ok")
+
+
 if __name__ == "__main__":
-    main()
+    if sys.argv[1:] == ["--selftest"]:
+        selftest()
+    else:
+        main()

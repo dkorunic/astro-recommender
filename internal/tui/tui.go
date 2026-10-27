@@ -20,6 +20,7 @@ import (
 	"runtime"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"charm.land/bubbles/v2/help"
@@ -107,6 +108,12 @@ func Run(ctx context.Context, opt Options, compute Compute) error {
 	if err == nil {
 		err = m.snapErr
 	}
+	// A cancelled compute may still be warning: wait for it before the
+	// pipe goes, or its lines are lost and os.Stderr races.
+	m.gate.Lock()
+	m.closed = true
+	m.gate.Unlock()
+	m.computing.Wait()
 	os.Stderr = stderr
 	_ = w.Close()
 	for _, l := range <-done {
@@ -164,30 +171,33 @@ var keys = keyMap{
 }
 
 type model struct {
-	list     list.Model
-	theme    theme
-	ctx      context.Context //nolint:containedctx // the computes' context for the program's life
-	snapErr  error
-	compute  Compute
-	help     help.Model
-	pic      pictureurl.Model
-	picURL   string
-	reselect string // the target to select once a filter's refilter lands
-	now      func() time.Time
-	cancel   context.CancelFunc // the running compute's
-	want     time.Time          // the night ← and → last asked for, while it computes
-	order    []int              // card indices in the sort's order
-	warnings []string
-	spin     spinner.Model
-	opt      Options
-	night    Night
-	seq      int
-	sortBy   int
-	w, h     int
-	loading  bool
-	red      bool
-	picked   bool // the picture's mode was chosen (i, or Kitty once supported)
-	showWarn bool
+	list      list.Model
+	theme     theme
+	want      time.Time       // the night ← and → last asked for, while it computes
+	ctx       context.Context //nolint:containedctx // the computes' context for the program's life
+	snapErr   error
+	compute   Compute
+	now       func() time.Time
+	cancel    context.CancelFunc // the running compute's
+	help      help.Model
+	pic       pictureurl.Model
+	picURL    string
+	reselect  string // the target to select once a filter's refilter lands
+	order     []int  // card indices in the sort's order
+	warnings  []string
+	spin      spinner.Model
+	opt       Options
+	night     Night
+	computing sync.WaitGroup // the running computes, which Run waits for once closed
+	seq       int
+	sortBy    int
+	w, h      int
+	gate      sync.Mutex // orders computing's Add before Run's Wait
+	loading   bool
+	red       bool
+	picked    bool // the picture's mode was chosen (i, or Kitty once supported)
+	showWarn  bool
+	closed    bool // Run is past its program: no compute starts
 }
 
 func newModel(ctx context.Context, opt Options, compute Compute) *model {
@@ -310,7 +320,9 @@ func (m *model) key(msg tea.KeyPressMsg) (tea.Cmd, bool) {
 		// for hours.
 		day := m.opt.Day
 		if !m.opt.DateSet {
-			day = m.now()
+			// In -tz's zone, as the launch's: Window takes the date and
+			// local noon from day's zone, which time.Now's is not.
+			day = m.now().In(m.opt.Loc)
 		}
 		m.want = time.Time{}
 
@@ -368,7 +380,21 @@ func (m *model) load(day time.Time, dateSet bool) tea.Cmd {
 	ctx, cancel := context.WithCancel(m.ctx)
 	m.cancel = cancel
 
-	return func() tea.Msg { return nightMsg{night: m.compute(ctx, day, dateSet), seq: seq} }
+	return func() tea.Msg {
+		// Counted only while Run is not past its program, which then
+		// waits for every compute counted.
+		m.gate.Lock()
+		if m.closed {
+			m.gate.Unlock()
+
+			return nil
+		}
+		m.computing.Add(1)
+		m.gate.Unlock()
+		defer m.computing.Done()
+
+		return nightMsg{night: m.compute(ctx, day, dateSet), seq: seq}
+	}
 }
 
 // snapshotReady reports whether the snapshot frame can be taken: the night

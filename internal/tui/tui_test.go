@@ -376,15 +376,25 @@ func TestRedden(t *testing.T) {
 }
 
 // t asks for tonight as of now, not as of the launch: the view may have been
-// open for hours, and a night in progress is clipped at now.
+// open for hours, and a night in progress is clipped at now. Now is in -tz's
+// zone, not the machine's, since Window takes the date from it.
 func TestTonightIsNow(t *testing.T) {
 	var asked []time.Time
 	m := started(t, 160, 48, &asked)
-	later := m.opt.Day.Add(9 * time.Hour)
+	auckland, err := time.LoadLocation("Pacific/Auckland")
+	if err != nil {
+		t.Skip(err)
+	}
+	m.opt.Loc = auckland
+	later := m.opt.Day.Add(9 * time.Hour) // 21:00 UTC: Auckland's next day
 	m.now = func() time.Time { return later }
 	m.Update(press(m, "t")())
-	if got := asked[len(asked)-1]; !got.Equal(later) {
+	got := asked[len(asked)-1]
+	if !got.Equal(later) {
 		t.Errorf("t asked for %v, want now's %v", got, later)
+	}
+	if got.Location() != auckland {
+		t.Errorf("t asked in %v, want -tz's %v", got.Location(), auckland)
 	}
 }
 
@@ -577,5 +587,46 @@ func TestPictureRetried(t *testing.T) {
 	runPicture(m, m.selectPicture(), 0)
 	if m.pic.State() != pictureurl.StateLoaded {
 		t.Errorf("selected again: state %v, want loaded", m.pic.State())
+	}
+}
+
+// A compute still warning after the view quits (cancelled, its packages
+// unaware) is waited for: its lines reach the echo on exit, and os.Stderr is
+// not swapped back under it.
+func TestRunWaitsForCompute(t *testing.T) {
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	stderr := os.Stderr
+	os.Stderr = w
+	t.Cleanup(func() { os.Stderr = stderr })
+	echoed := make(chan []byte)
+	go func() { b, _ := io.ReadAll(r); echoed <- b }()
+	day := time.Date(2026, 10, 27, 12, 0, 0, 0, time.UTC)
+	ctx, cancel := context.WithCancel(context.Background())
+	started := make(chan struct{})
+	ran := make(chan error, 1)
+	go func() {
+		ran <- Run(ctx, Options{Day: day, Loc: time.UTC, Snapshot: t.TempDir() + "/frame", Width: 80, Height: 24},
+			func(ctx context.Context, _ time.Time, _ bool) Night {
+				close(started)
+				<-ctx.Done()
+				time.Sleep(100 * time.Millisecond)
+				fmt.Fprintln(os.Stderr, "warning: late")
+
+				return Night{Day: day, Err: ctx.Err()}
+			})
+		_ = w.Close()
+	}()
+	<-started
+	cancel() // the quit, while the compute runs
+	select {
+	case <-ran:
+	case <-time.After(20 * time.Second):
+		t.Fatal("Run blocked")
+	}
+	if out := <-echoed; !strings.Contains(string(out), "warning: late") {
+		t.Errorf("the cancelled compute's warning lost: %q", out)
 	}
 }
