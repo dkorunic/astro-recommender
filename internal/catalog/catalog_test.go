@@ -693,8 +693,8 @@ func TestGalaxyV(t *testing.T) {
 			if b <= 0 {
 				b = bmag[NameKey(tg.Name)]
 			}
-			if tg.kind() == kindGalaxy && tg.Mag > 0 && b > 0 && b-tg.Mag < minBV {
-				t.Errorf("%s: %s V %v, B %v: an aperture V (scripts/galaxyv.py)", name, tg.Name, tg.Mag, b)
+			if bv := b - tg.Mag; tg.kind() == kindGalaxy && tg.Mag > 0 && b > 0 && (bv < minBV || bv > maxBV) {
+				t.Errorf("%s: %s V %v, B %v: not the galaxy's total V (scripts/galaxyv.py)", name, tg.Name, tg.Mag, b)
 			}
 		}
 	}

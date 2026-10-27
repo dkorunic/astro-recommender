@@ -4,10 +4,17 @@
 package tui
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"image"
+	"image/jpeg"
+	"io"
+	"net/http"
 	"os"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -15,6 +22,7 @@ import (
 	"charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
 	"github.com/NimbleMarkets/ntcharts/v2/picture"
+	"github.com/NimbleMarkets/ntcharts/v2/picture/pictureurl"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/dkorunic/astro-recommender/internal/output"
 	"github.com/dkorunic/astro-recommender/internal/scoring"
@@ -247,5 +255,327 @@ func TestChartShadingContinuous(t *testing.T) {
 		if n := strings.Count(row, bg); n < plot-1 {
 			t.Errorf("width %d: %d of %d cells shaded", w, n, plot)
 		}
+	}
+}
+
+// manyNight is testNight with n copies of M 31, "T 0" to "T n-1", peaking
+// in reverse order, so the peak sort reverses the list.
+func manyNight(day time.Time, n int) Night {
+	night := testNight(day)
+	d := &night.Doc
+	one := *d
+	d.Alt, d.Pos, d.Obs, d.Subs, d.Star, d.Cards = nil, nil, nil, nil, nil, nil
+	for i := range n {
+		d.Alt = append(d.Alt, one.Alt[0])
+		d.Pos = append(d.Pos, one.Pos[0])
+		d.Obs = append(d.Obs, one.Obs[0])
+		d.Subs = append(d.Subs, nil)
+		d.Star = append(d.Star, nil)
+		c := one.Cards[0]
+		c.Name, c.MaxAt = fmt.Sprintf("T %d", i), d.Start+int64(n-i)*60
+		d.Cards = append(d.Cards, c)
+	}
+
+	return night
+}
+
+// A sort or a new night under a filter keeps the selected target among the
+// matches: Select takes an index into them, and the one in the whole list
+// put the cursor past their end, which panicked the next render.
+func TestFilterResortKeepsTarget(t *testing.T) {
+	day := time.Date(2026, 10, 27, 12, 0, 0, 0, time.UTC)
+	m := newModel(context.Background(), Options{Day: day, Loc: time.UTC},
+		func(_ context.Context, d time.Time, _ bool) Night { return manyNight(d, 40) })
+	m.Update(tea.WindowSizeMsg{Width: 160, Height: 48})
+	m.Update(m.load(day, false)())
+	m.list.SetFilterText("T 3")
+	vis := m.list.VisibleItems()
+	m.list.Select(len(vis) - 1)
+	want := vis[len(vis)-1].(item).c.Name //nolint:forcetypeassert // the list holds items only
+	for _, step := range []string{"sort", "night"} {
+		var cmd tea.Cmd
+		if step == "sort" {
+			cmd = press(m, "s")
+		} else {
+			_, cmd = m.Update(press(m, "]")()) // load's nightMsg
+		}
+		feedFilter(m, cmd)
+		_ = screen(m) // panicked
+		got, ok := m.list.SelectedItem().(item)
+		if !ok || got.c.Name != want {
+			t.Errorf("after the %s: %v selected, want %s", step, got.c, want)
+		}
+	}
+}
+
+// The sub line words what the counts cannot say, as the page's showSubs: a
+// night the forecast loses, a level past the stack's ceiling, no sub, many
+// nights; per panel of a mosaic and with a typical SB.
+func TestSubsText(t *testing.T) {
+	ok := scoring.Estimate{Modest: 10, Good: 40, Best: 160, Max: 100, Sub: 10, SNRPerSub: 1, Panels: 1}
+	for want, e := range map[string]scoring.Estimate{
+		"none tonight, the forecast loses them all":           {Modest: 1e9, Good: 1e9, Best: 1e9, Max: 2874, Sub: 10, Panels: 1},
+		"Good image: never, the stack stops at SNR 8.0":       {Modest: 50, Good: 1e9, Best: 1e9, Max: 2874, Sub: 10, SNRPerSub: 1, SNRLimit: 8, Panels: 1},
+		"Good image: no sub fits tonight":                     {Modest: 50, Good: 200, Best: 800, Sub: 10, SNRPerSub: 1, Panels: 1},
+		"Good image: over 99 nights like tonight":             {Modest: 50, Good: 1e6, Best: 4e6, Max: 100, Sub: 10, SNRPerSub: 1, Panels: 1},
+		"Good image: 2.5 nights like tonight":                 {Modest: 50, Good: 250, Best: 1000, Max: 100, Sub: 10, SNRPerSub: 1, Panels: 1},
+		"Subs of 10 s, per panel of 4, typical SB, 100 fit":   {Modest: 10, Good: 40, Best: 160, Max: 100, Sub: 10, SNRPerSub: 1, Panels: 4, Assumed: true},
+		"Subs of 10 s, 100 fit tonight: modest 10 (2 min) · ": ok,
+	} {
+		if got := subsText(&e); !strings.Contains(got, want) || strings.Contains(got, "1000000000") {
+			t.Errorf("%+v: %q, want %q in it", e, got, want)
+		}
+	}
+}
+
+// The card's SUBS is the table's cell, and a mosaic shows its grid.
+func TestCardSubsMosaic(t *testing.T) {
+	m := started(t, 160, 48, new([]time.Time))
+	m.night.Doc.Subs[0] = &scoring.Estimate{Modest: 1e9, Good: 1e9, Best: 1e9, Max: 2874, Sub: 10, Panels: 4}
+	m.night.Doc.Cards[0].Mosaic = "2x2"
+	m.resort()
+	s := screen(m)
+	if !strings.Contains(s, "SUBS >99 nights") || strings.Contains(s, "347947") || !strings.Contains(s, "▦ 2x2") {
+		t.Errorf("card without SUBS >99 nights or ▦ 2x2:\n%s", s)
+	}
+}
+
+// Night vision paints everything red: the filter prompt and cursor, the
+// help footer, the pagination dots and the spinner, not bubbles' yellow,
+// pink and greys; every truecolor on the screen has red ahead of green and
+// blue, and no 256-colour code is left.
+func TestNightThemeAllRed(t *testing.T) {
+	m := started(t, 160, 30, new([]time.Time))
+	m.Update(tea.WindowSizeMsg{Width: 160, Height: 30})
+	m.night = manyNight(m.night.Day, 40) // paginated: the dots show
+	m.resort()
+	press(m, "r")
+	press(m, "?")
+	press(m, "/")
+	m.loading = true // the spinner
+	s := m.render()
+	if strings.Contains(s, "\x1b[38;5;") || strings.Contains(s, "\x1b[48;5;") {
+		t.Error("a 256-colour code under the night theme")
+	}
+	for _, c := range truecolor.FindAllStringSubmatch(s, -1) {
+		r, _ := strconv.Atoi(c[2])
+		g, _ := strconv.Atoi(c[3])
+		b, _ := strconv.Atoi(c[4])
+		if 2*g > r || 2*b > r {
+			t.Errorf("colour %d,%d,%d under the night theme", r, g, b)
+		}
+	}
+}
+
+// redden keeps each half-block cell's brightness as a dim red.
+func TestRedden(t *testing.T) {
+	got := redden("\x1b[38;2;255;255;255;48;2;0;0;255m▀\x1b[48;2;0;0;0m")
+	if want := "\x1b[38;2;140;16;0;48;2;10;1;0m▀\x1b[48;2;0;0;0m"; got != want {
+		t.Errorf("%q, want %q", got, want)
+	}
+}
+
+// t asks for tonight as of now, not as of the launch: the view may have been
+// open for hours, and a night in progress is clipped at now.
+func TestTonightIsNow(t *testing.T) {
+	var asked []time.Time
+	m := started(t, 160, 48, &asked)
+	later := m.opt.Day.Add(9 * time.Hour)
+	m.now = func() time.Time { return later }
+	m.Update(press(m, "t")())
+	if got := asked[len(asked)-1]; !got.Equal(later) {
+		t.Errorf("t asked for %v, want now's %v", got, later)
+	}
+}
+
+// → pressed while a night computes adds up from the night last asked for,
+// and each new compute cancels the one it supersedes, whose warnings
+// (its fetches failing as cancelled) are dropped.
+func TestStepsAddUp(t *testing.T) {
+	var ctxs []context.Context
+	var asked []time.Time
+	day := time.Date(2026, 10, 27, 12, 0, 0, 0, time.UTC)
+	m := newModel(context.Background(), Options{Day: day, Loc: time.UTC},
+		func(ctx context.Context, d time.Time, _ bool) Night {
+			ctxs, asked = append(ctxs, ctx), append(asked, d)
+
+			return testNight(d)
+		})
+	m.Update(tea.WindowSizeMsg{Width: 160, Height: 48})
+	m.Update(m.load(day, false)())
+	var cmds []tea.Cmd
+	for range 3 {
+		cmds = append(cmds, press(m, "]"))
+	}
+	for _, c := range cmds {
+		m.Update(c())
+	}
+	if want := day.AddDate(0, 0, 3); !m.night.Day.Equal(want) || !asked[len(asked)-1].Equal(want) {
+		t.Errorf("three → shown %v, asked %v, want %v", m.night.Day, asked, want)
+	}
+	for i, ctx := range ctxs[1 : len(ctxs)-1] {
+		if ctx.Err() == nil {
+			t.Errorf("superseded compute %d not cancelled", i+1)
+		}
+	}
+	m.Update(warnMsg("warning: no comets: Get \"https://minorplanetcenter.net\": context canceled"))
+	if len(m.warnings) != 0 {
+		t.Errorf("a cancelled compute's warning shown: %q", m.warnings)
+	}
+}
+
+// A night with nothing to show still names its date in the header.
+func TestHeaderDateWithoutNight(t *testing.T) {
+	m := started(t, 160, 48, new([]time.Time))
+	day := time.Date(2026, 6, 21, 12, 0, 0, 0, time.UTC)
+	m.night = Night{Day: day, Msg: "No astronomical night at this location tonight."}
+	if s := screen(m); !strings.Contains(s, "Sun 21 Jun 2026") {
+		t.Errorf("no date in the header:\n%s", s)
+	}
+}
+
+// The frame never runs past the window, help open or not.
+func TestFrameFitsWindow(t *testing.T) {
+	for _, wh := range [][2]int{{110, 14}, {110, 20}, {109, 12}, {120, 16}, {60, 10}, {200, 24}} {
+		m := started(t, wh[0], wh[1], new([]time.Time))
+		for _, k := range []string{"", "?"} {
+			if k != "" {
+				press(m, k)
+			}
+			lines := strings.Split(screen(m), "\n")
+			wide := 0
+			for _, l := range lines {
+				wide = max(wide, ansi.StringWidth(l))
+			}
+			if len(lines) > wh[1] || wide > wh[0] {
+				t.Errorf("%dx%d (%q): %d lines, %d columns", wh[0], wh[1], k, len(lines), wide)
+			}
+			// The panes give way, not the keys' help at the bottom.
+			if !strings.Contains(strings.Join(lines[max(0, len(lines)-5):], "\n"), "select") {
+				t.Errorf("%dx%d (%q): the help is cut off", wh[0], wh[1], k)
+			}
+		}
+	}
+}
+
+// i before the Kitty probe answers toggles nothing, so it is no choice: the
+// switch to Kitty on the probe's answer still comes.
+func TestPictureKeyBeforeProbe(t *testing.T) {
+	if picture.KittySupported() == picture.KittyCapabilitySupported {
+		t.Skip("Kitty already confirmed")
+	}
+	m := started(t, 160, 48, new([]time.Time))
+	press(m, "i")
+	if m.picked {
+		t.Error("i before the probe counted as a choice")
+	}
+}
+
+// A filter's matches from an older night (its command run late) are not
+// shown against this night's cards, whose slices their indices would overrun.
+func TestStaleFilterMatches(t *testing.T) {
+	day := time.Date(2026, 10, 27, 12, 0, 0, 0, time.UTC)
+	m := newModel(context.Background(), Options{Day: day, Loc: time.UTC},
+		func(_ context.Context, d time.Time, _ bool) Night { return manyNight(d, 40) })
+	m.Update(tea.WindowSizeMsg{Width: 160, Height: 48})
+	m.Update(m.load(day, false)())
+	m.list.SetFilterText("T 3")
+	old := m.resort() // the 40-card night's refilter, run only later
+	m.compute = func(_ context.Context, d time.Time, _ bool) Night { return testNight(d) }
+	_, cmd := m.Update(press(m, "]")())
+	feedFilter(m, cmd)
+	feedFilter(m, old)
+	_ = screen(m) // overran the two cards' slices
+	cards := m.night.Doc.Cards
+	for _, v := range m.list.VisibleItems() {
+		if it := v.(item); it.i >= len(cards) || it.c != &cards[it.i] { //nolint:forcetypeassert // the list holds items only
+			t.Errorf("an older night's item shown: %+v", it.c)
+		}
+	}
+}
+
+// A stderr line past bufio.Scanner's 64 KiB neither stops the warnings nor
+// blocks the compute writing them.
+func TestRunLongStderrLine(t *testing.T) {
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	stderr := os.Stderr
+	os.Stderr = w
+	t.Cleanup(func() { os.Stderr = stderr })
+	echoed := make(chan []byte)
+	go func() { b, _ := io.ReadAll(r); echoed <- b }() // Run echoes the lines on exit
+	day := time.Date(2026, 10, 27, 12, 0, 0, 0, time.UTC)
+	ran := make(chan error, 1)
+	go func() {
+		ran <- Run(context.Background(), Options{Day: day, Loc: time.UTC, Snapshot: t.TempDir() + "/frame", Width: 80, Height: 24},
+			func(context.Context, time.Time, bool) Night {
+				fmt.Fprintln(os.Stderr, strings.Repeat("x", 200<<10))
+				fmt.Fprintln(os.Stderr, "warning: after")
+
+				return Night{Day: day, Msg: "nothing"}
+			})
+		_ = w.Close()
+	}()
+	select {
+	case err := <-ran:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(20 * time.Second):
+		t.Fatal("Run blocked")
+	}
+	if out := <-echoed; !strings.Contains(string(out), "warning: after") {
+		t.Errorf("the line after the long one lost: %d bytes echoed", len(out))
+	}
+}
+
+// flaky fails its first request and answers a JPEG after.
+type flaky struct{ n int }
+
+func (f *flaky) RoundTrip(req *http.Request) (*http.Response, error) {
+	if f.n++; f.n == 1 {
+		return nil, errors.New("CDS down")
+	}
+	var b bytes.Buffer
+	_ = jpeg.Encode(&b, image.NewGray(image.Rect(0, 0, 4, 4)), nil)
+
+	return &http.Response{StatusCode: http.StatusOK, Header: http.Header{"Content-Type": {"image/jpeg"}}, Body: io.NopCloser(&b), Request: req}, nil
+}
+
+// runPicture runs cmd and the picture's messages it leads to.
+func runPicture(m *model, cmd tea.Cmd, depth int) {
+	if cmd == nil || depth > 8 {
+		return
+	}
+	switch msg := cmd().(type) {
+	case tea.BatchMsg:
+		for _, c := range msg {
+			runPicture(m, c, depth+1)
+		}
+	default:
+		if pictureurl.IsPictureMsg(msg) {
+			runPicture(m, m.pic.Update(msg), depth+1)
+		}
+	}
+}
+
+// A picture that failed is fetched again when its target is selected again,
+// not shown as "No picture" for the rest of the session.
+func TestPictureRetried(t *testing.T) {
+	m := started(t, 160, 48, new([]time.Time))
+	m.pic = pictureurl.NewWithConfig(pictureurl.Config{HTTPClient: &http.Client{Transport: &flaky{}}, Fit: picture.FitContain})
+	m.picURL = ""
+	runPicture(m, m.selectPicture(), 0)
+	if m.pic.State() != pictureurl.StateError {
+		t.Fatalf("first fetch: state %v, want an error", m.pic.State())
+	}
+	m.list.Select(1)
+	runPicture(m, m.selectPicture(), 0)
+	m.list.Select(0)
+	runPicture(m, m.selectPicture(), 0)
+	if m.pic.State() != pictureurl.StateLoaded {
+		t.Errorf("selected again: state %v, want loaded", m.pic.State())
 	}
 }

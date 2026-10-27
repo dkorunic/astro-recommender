@@ -4,8 +4,14 @@
 package tui
 
 import (
+	"fmt"
 	"image/color"
+	"regexp"
+	"strconv"
 
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/list"
+	"charm.land/bubbles/v2/textinput"
 	"charm.land/lipgloss/v2"
 )
 
@@ -59,4 +65,48 @@ func (t theme) panel(title, body string, w, h int) string {
 
 	return lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(t.line).Padding(0, 1).
 		Width(w).Height(h).MaxHeight(h).Render(head + "\n" + body)
+}
+
+// applyTheme styles what the palette does not reach by itself, bubbles'
+// defaults otherwise: the list's filter prompt (yellow), cursor (pink),
+// text, matches, pagination dots and empty line, the help footer's greys and
+// the spinner. The list copies its filter input's and dots' styles when made,
+// so they are set on those too.
+func (m *model) applyTheme() {
+	t := m.theme
+	s := list.DefaultStyles(true)
+	field := textinput.StyleState{Text: t.style(t.fg), Placeholder: t.style(t.muted), Suggestion: t.style(t.muted), Prompt: t.style(t.accent)}
+	s.Filter.Focused, s.Filter.Blurred = field, field
+	s.Filter.Cursor.Color = t.accent
+	s.DefaultFilterCharacterMatch = t.style(t.strong).Underline(true)
+	s.StatusBar, s.StatusEmpty, s.StatusBarActiveFilter = t.style(t.muted), t.style(t.muted), t.style(t.fg)
+	s.StatusBarFilterCount, s.NoItems, s.ArabicPagination = t.style(t.muted), t.style(t.muted), t.style(t.muted)
+	s.Spinner = t.style(t.muted)
+	s.ActivePaginationDot = s.ActivePaginationDot.Foreground(t.fg)
+	s.InactivePaginationDot = s.InactivePaginationDot.Foreground(t.line)
+	s.DividerDot = s.DividerDot.Foreground(t.line)
+	m.list.Styles = s
+	m.list.FilterInput.SetStyles(s.Filter)
+	m.list.Paginator.ActiveDot, m.list.Paginator.InactiveDot = s.ActivePaginationDot.String(), s.InactivePaginationDot.String()
+	key, desc, sep := t.style(t.fg), t.style(t.muted), t.style(t.line)
+	m.help.Styles = help.Styles{Ellipsis: sep, ShortKey: key, ShortDesc: desc, ShortSeparator: sep, FullKey: key, FullDesc: desc, FullSeparator: sep}
+	m.spin.Style = t.style(t.accent)
+}
+
+// truecolor matches an SGR truecolor colour, foreground (38) or background
+// (48), as the half-block picture paints each cell.
+var truecolor = regexp.MustCompile(`([34])8;2;(\d+);(\d+);(\d+)`)
+
+// redden turns a half-block picture's colours into dim reds by luminance, as
+// the page's night filter does its picture (grayscale, sepia, red, darker).
+func redden(s string) string {
+	return truecolor.ReplaceAllStringFunc(s, func(c string) string {
+		p := truecolor.FindStringSubmatch(c)
+		r, _ := strconv.Atoi(p[2])
+		g, _ := strconv.Atoi(p[3])
+		b, _ := strconv.Atoi(p[4])
+		l := (0.2126*float64(r) + 0.7152*float64(g) + 0.0722*float64(b)) * 0.55
+
+		return fmt.Sprintf("%s8;2;%d;%d;0", p[1], int(l), int(l*0.12))
+	})
 }

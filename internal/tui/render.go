@@ -16,7 +16,9 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/NimbleMarkets/ntcharts/v2/canvas/runes"
 	"github.com/NimbleMarkets/ntcharts/v2/linechart/timeserieslinechart"
+	"github.com/NimbleMarkets/ntcharts/v2/picture"
 	"github.com/charmbracelet/x/ansi"
+	"github.com/dkorunic/astro-recommender/internal/output"
 	"github.com/dkorunic/astro-recommender/internal/scoring"
 	"github.com/dkorunic/astro-recommender/internal/view"
 )
@@ -107,7 +109,11 @@ func (m *model) render() string {
 		}
 	}
 
-	return lipgloss.JoinVertical(lipgloss.Left, m.header(), body, m.footer())
+	// The panes keep to the body's height (the Tonight panel and the full
+	// help do not shrink), and the frame to the window's.
+	body = lipgloss.NewStyle().MaxHeight(g.body).Render(body)
+
+	return lipgloss.NewStyle().MaxHeight(m.h).MaxWidth(m.w).Render(lipgloss.JoinVertical(lipgloss.Left, m.header(), body, m.footer()))
 }
 
 func (m *model) centre(g geometry, s string) string {
@@ -120,12 +126,13 @@ func (m *model) header() string {
 	t := m.theme
 	brand := t.style(t.accent).Bold(true).Render("✦ ASTRO RECOMMENDER")
 	parts := []string{}
-	if d := m.night.Doc; d.Start != 0 {
-		// The date first: a narrow terminal cuts the end.
+	// The date first: a narrow terminal cuts the end. Also without a night
+	// (none at the site, an error), so ← and → say where they are.
+	if !m.night.Day.IsZero() {
 		parts = append(parts, m.night.Day.Format("Mon 2 Jan 2006"))
-		if d.Night.Place != "" {
-			parts = append(parts, firstParts(d.Night.Place, 2))
-		}
+	}
+	if d := m.night.Doc; d.Start != 0 && d.Night.Place != "" {
+		parts = append(parts, firstParts(d.Night.Place, 2))
 	}
 	if m.opt.Setup != "" {
 		parts = append(parts, m.opt.Setup)
@@ -182,8 +189,8 @@ func (m *model) leftPane(g geometry) string {
 	fact := func(k, v string) { fmt.Fprintf(&b, "%s %s\n", muted.Render(fmt.Sprintf("%-8s", k)), strong.Render(v)) }
 	fact("Window", m.clock(d.Start)+"–"+m.clock(d.Night.End))
 	fact("Zenith", fmt.Sprintf("%.2f mag/″²", d.Night.Sky))
-	fact("Moon ≥", fmt.Sprintf("%.0f° away", d.Night.MoonSep))
-	tonight := t.panel("TONIGHT", strings.TrimRight(b.String(), "\n"), leftW, 11)
+	fact("Moon ≥", fmt.Sprintf("%.0f° away%s", d.Night.MoonSep, d.Night.MoonLow))
+	tonight := t.panel("TONIGHT", strings.TrimRight(b.String(), "\n"), leftW, min(11, g.body))
 	rest := g.body - lipgloss.Height(tonight)
 	panes := []string{tonight}
 	planH := 0
@@ -319,10 +326,17 @@ func (m *model) detailPane(g geometry) string {
 	return t.panel(title, graph+"\n"+m.meta(i, g.right-4), g.right, g.detail)
 }
 
-// picture is the DSS2 picture, or what stands in its slot.
+// picture is the DSS2 picture, or what stands in its slot. Under the night
+// theme half-blocks are reddened, and Kitty's pixels, which no escape here
+// can tint, are left out (only their placeholders would draw them).
 func (m *model) picture() string {
-	if m.pic.Err() != nil {
+	switch {
+	case m.pic.Err() != nil:
 		return m.theme.style(m.theme.muted).Render("No picture:\nCDS unavailable")
+	case m.red && m.pic.Mode() == picture.PictureKitty:
+		return m.theme.style(m.theme.muted).Render("Picture hidden\nin night vision;\ni: blocks")
+	case m.red:
+		return redden(m.pic.View().Content)
 	}
 
 	return m.pic.View().Content
@@ -362,9 +376,14 @@ func (m *model) meta(i, w int) string {
 	return strings.Join(lines[:min(metaLines, len(lines))], "\n")
 }
 
-// subsText is the page's sub-exposure line: the subs per level and their
-// time, or the nights a good image takes past tonight's limit.
+// subsText is the page's sub-exposure line (showSubs): the subs per level
+// and their time, per panel of a mosaic, led by the nights a good image takes
+// past tonight's limit, or never past the stack's ceiling.
 func subsText(e *scoring.Estimate) string {
+	// SNRPerSub 0: the forecast loses every sub, and the counts are a cap.
+	if e.SNRPerSub == 0 {
+		return fmt.Sprintf("Subs of %g s: none tonight, the forecast loses them all", e.Sub)
+	}
 	dur := func(n int) string {
 		m := float64(n) * e.Sub / 60
 		if m < 60 {
@@ -380,13 +399,32 @@ func subsText(e *scoring.Estimate) string {
 
 		return fmt.Sprintf("%s %d (%s)", name, n, dur(n))
 	}
-	s := fmt.Sprintf("Subs of %g s, %d fit tonight: %s · %s · %s", e.Sub, e.Max,
-		lvl("modest", e.Modest, scoring.Levels[0]), lvl("good", e.Good, scoring.Levels[1]), lvl("best", e.Best, scoring.Levels[2]))
-	if e.Good > e.Max && e.Max > 0 && !e.Unreachable(scoring.Levels[1]) {
-		s = fmt.Sprintf("Good image: %.1f nights like tonight. ", float64(e.Good)/float64(e.Max)) + s
+	var lead string
+	switch {
+	case e.Unreachable(scoring.Levels[1]):
+		lead = fmt.Sprintf("Good image: never, the stack stops at SNR %.1f. ", e.SNRLimit)
+	case e.Good > e.Max && e.Max <= 0:
+		lead = "Good image: no sub fits tonight. "
+	case e.Good > e.Max:
+		switch n := float64(e.Good) / float64(e.Max); {
+		case n < 9.95:
+			lead = fmt.Sprintf("Good image: %.1f nights like tonight. ", n)
+		case n < 99.5:
+			lead = fmt.Sprintf("Good image: %.0f nights like tonight. ", n)
+		default:
+			lead = "Good image: over 99 nights like tonight. "
+		}
+	}
+	var qual string
+	if e.Panels > 1 {
+		qual += fmt.Sprintf(", per panel of %d", e.Panels)
+	}
+	if e.Assumed {
+		qual += ", typical SB"
 	}
 
-	return s
+	return fmt.Sprintf("%sSubs of %g s%s, %d fit tonight: %s · %s · %s", lead, e.Sub, qual, e.Max,
+		lvl("modest", e.Modest, scoring.Levels[0]), lvl("good", e.Good, scoring.Levels[1]), lvl("best", e.Best, scoring.Levels[2]))
 }
 
 // chart is the altitude curve as the page draws it: 0-90°, the observable
@@ -559,11 +597,9 @@ func (d delegate) Render(w io.Writer, lm list.Model, index int, li list.Item) {
 	sym("▲", m.clock(c.RunFrom))
 	sym("◎", m.clock(c.MaxAt)+fmt.Sprintf(" %.0f°", c.MaxAlt))
 	sym("▼", m.clock(c.RunTo)+more)
+	sym("▦", c.Mosaic)
 	if e := m.night.Doc.Subs[it.i]; m.opt.Framing && e != nil {
-		good := strconv.Itoa(e.Good)
-		if e.Good > e.Max {
-			good = fmt.Sprintf("%.1f nights", float64(e.Good)/float64(max(1, e.Max)))
-		}
+		_, good := output.SubsText(e)
 		sym("SUBS", good)
 	}
 	line2 := ansi.Truncate("  "+strings.Repeat(" ", 4)+strings.Join(stats, "  "), width, "…")

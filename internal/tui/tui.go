@@ -10,6 +10,7 @@ package tui
 
 import (
 	"bufio"
+	"cmp"
 	"context"
 	"encoding/json"
 	_ "image/jpeg" // hips2fits answers JPEG
@@ -73,6 +74,9 @@ func Run(ctx context.Context, opt Options, compute Compute) error {
 	}
 	stderr := os.Stderr
 	os.Stderr = w
+	// Quitting cancels the computes still running.
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	m := newModel(ctx, opt, compute)
 	popts := []tea.ProgramOption{tea.WithContext(ctx)}
 	if opt.Snapshot != "" {
@@ -82,15 +86,24 @@ func Run(ctx context.Context, opt Options, compute Compute) error {
 	p := tea.NewProgram(m, popts...)
 	done := make(chan []string)
 	go func() {
+		// A Reader, not a Scanner: a Scanner stops at a line past 64 KiB, and
+		// the pipe, undrained, would then block every later warning's writer.
 		var all []string
-		sc := bufio.NewScanner(r)
-		for sc.Scan() {
-			all = append(all, sc.Text())
-			p.Send(warnMsg(sc.Text()))
+		br := bufio.NewReader(r)
+		for {
+			l, err := br.ReadString('\n')
+			if l = strings.TrimSuffix(l, "\n"); l != "" || err == nil {
+				all = append(all, l)
+				p.Send(warnMsg(l))
+			}
+			if err != nil {
+				break
+			}
 		}
 		done <- all
 	}()
 	_, err = p.Run()
+	cancel()
 	if err == nil {
 		err = m.snapErr
 	}
@@ -159,7 +172,11 @@ type model struct {
 	help     help.Model
 	pic      pictureurl.Model
 	picURL   string
-	order    []int // card indices in the sort's order
+	reselect string // the target to select once a filter's refilter lands
+	now      func() time.Time
+	cancel   context.CancelFunc // the running compute's
+	want     time.Time          // the night ← and → last asked for, while it computes
+	order    []int              // card indices in the sort's order
 	warnings []string
 	spin     spinner.Model
 	opt      Options
@@ -174,7 +191,7 @@ type model struct {
 }
 
 func newModel(ctx context.Context, opt Options, compute Compute) *model {
-	m := &model{ctx: ctx, compute: compute, opt: opt, theme: darkTheme, help: help.New()}
+	m := &model{ctx: ctx, compute: compute, opt: opt, theme: darkTheme, help: help.New(), now: time.Now}
 	m.spin = spinner.New(spinner.WithSpinner(spinner.Dot))
 	m.list = list.New(nil, delegate{m}, 0, 0)
 	m.list.SetShowTitle(false)
@@ -185,22 +202,19 @@ func newModel(ctx context.Context, opt Options, compute Compute) *model {
 	m.list.KeyMap.NextPage = key.NewBinding(key.WithKeys("pgdown"))
 	m.list.KeyMap.PrevPage = key.NewBinding(key.WithKeys("pgup"))
 	m.list.KeyMap.Quit = key.NewBinding(key.WithKeys("q"))
+	m.applyTheme()
 	m.pic = pictureurl.NewWithConfig(pictureurl.Config{UserAgent: "astro-recommender (+https://github.com/dkorunic/astro-recommender)", Fit: picture.FitContain})
 
 	return m
 }
 
 func (m *model) Init() tea.Cmd {
-	cmds := []tea.Cmd{m.spin.Tick, m.pic.Init(), m.load(m.opt.Day, m.opt.DateSet)}
-	if m.opt.Snapshot != "" {
-		// A picture CDS never sends must not hold the demo up for good.
-		cmds = append(cmds, tea.Tick(snapshotWait, func(time.Time) tea.Msg { return snapshotMsg{} }))
-	}
-
-	return tea.Batch(cmds...)
+	return tea.Batch(m.spin.Tick, m.pic.Init(), m.load(m.opt.Day, m.opt.DateSet))
 }
 
-// snapshotWait is how long a snapshot waits for the picture once asked.
+// snapshotWait is how long a snapshot waits for the picture once asked: from
+// the first night shown, which asks for it, so a slow compute does not eat
+// into it.
 const snapshotWait = 90 * time.Second
 
 // snapshotMsg is the snapshot's deadline.
@@ -234,80 +248,127 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) { //nolint:ireturn // t
 		if msg.seq != m.seq {
 			return m, tea.Batch(cmds...)
 		}
-		m.night, m.loading = msg.night, false
+		first := m.night.Day.IsZero()
+		m.night, m.loading, m.want = msg.night, false, time.Time{}
 		cmds = append(cmds, m.resort(), m.layout())
+		if first && m.opt.Snapshot != "" {
+			// A picture CDS never sends must not hold the demo up for good.
+			cmds = append(cmds, tea.Tick(snapshotWait, func(time.Time) tea.Msg { return snapshotMsg{} }))
+		}
 	case warnMsg:
-		m.warnings = append(m.warnings, strings.TrimPrefix(string(msg), "warning: "))
+		// A superseded compute's fetches fail as it is cancelled: not this
+		// night's news.
+		if !strings.Contains(string(msg), context.Canceled.Error()) {
+			m.warnings = append(m.warnings, strings.TrimPrefix(string(msg), "warning: "))
+		}
 	case spinner.TickMsg:
 		var cmd tea.Cmd
 		m.spin, cmd = m.spin.Update(msg)
 		cmds = append(cmds, cmd)
 	case tea.KeyPressMsg:
-		if m.list.SettingFilter() {
-			break // the list's filter takes the keys
-		}
-		switch {
-		case key.Matches(msg, keys.Quit):
-			return m, tea.Quit
-		case key.Matches(msg, keys.Prev), key.Matches(msg, keys.Next):
-			if !m.night.Day.IsZero() {
-				d := 1
-				if key.Matches(msg, keys.Prev) {
-					d = -1
-				}
-
-				return m, m.load(m.night.Day.AddDate(0, 0, d), true)
-			}
-		case key.Matches(msg, keys.Tonight):
-			return m, m.load(m.opt.Day, m.opt.DateSet)
-		case key.Matches(msg, keys.Sort):
-			m.sortBy = (m.sortBy + 1) % len(sorts)
-			cmd := m.resort()
-
-			return m, tea.Batch(cmd, m.selectPicture())
-		case key.Matches(msg, keys.Open):
-			if i, ok := m.selected(); ok {
-				openURL(m.ctx, aladin(m.night.Doc.Pos[i]))
-			}
-
-			return m, nil
-		case key.Matches(msg, keys.Picture):
-			m.picked = true
-
-			return m, m.pic.Toggle()
-		case key.Matches(msg, keys.Night):
-			m.red = !m.red
-			m.theme = darkTheme
-			if m.red {
-				m.theme = nightTheme
-			}
-
-			return m, nil
-		case key.Matches(msg, keys.Warn):
-			m.showWarn = !m.showWarn
-
-			return m, nil
-		case key.Matches(msg, keys.Help):
-			m.help.ShowAll = !m.help.ShowAll
-
-			return m, m.layout()
+		if cmd, done := m.key(msg); done {
+			return m, cmd
 		}
 	}
 	var cmd tea.Cmd
 	m.list, cmd = m.list.Update(msg)
+	if _, ok := msg.(list.FilterMatchesMsg); ok {
+		if m.staleMatches() {
+			// An older night's items: refilter this night's.
+			cmds = append(cmds, m.resort())
+		} else {
+			m.reselectMatch()
+		}
+	}
 	cmds = append(cmds, cmd, m.selectPicture())
 
 	return m, tea.Batch(cmds...)
 }
 
+// key handles the view's own keys; false leaves the key to the list.
+func (m *model) key(msg tea.KeyPressMsg) (tea.Cmd, bool) {
+	if m.list.SettingFilter() {
+		return nil, false // the list's filter takes the keys
+	}
+	switch {
+	case key.Matches(msg, keys.Quit):
+		return tea.Quit, true
+	case key.Matches(msg, keys.Prev), key.Matches(msg, keys.Next):
+		// From the night last asked for while it computes, so presses
+		// add up.
+		if base := cmp.Or(m.want, m.night.Day); !base.IsZero() {
+			d := 1
+			if key.Matches(msg, keys.Prev) {
+				d = -1
+			}
+			m.want = base.AddDate(0, 0, d)
+
+			return m.load(m.want, true), true
+		}
+	case key.Matches(msg, keys.Tonight):
+		// Tonight is now's, not the launch's: the view may have been open
+		// for hours.
+		day := m.opt.Day
+		if !m.opt.DateSet {
+			day = m.now()
+		}
+		m.want = time.Time{}
+
+		return m.load(day, m.opt.DateSet), true
+	case key.Matches(msg, keys.Sort):
+		m.sortBy = (m.sortBy + 1) % len(sorts)
+		cmd := m.resort()
+
+		return tea.Batch(cmd, m.selectPicture()), true
+	case key.Matches(msg, keys.Open):
+		if i, ok := m.selected(); ok {
+			openURL(m.ctx, aladin(m.night.Doc.Pos[i]))
+		}
+
+		return nil, true
+	case key.Matches(msg, keys.Picture):
+		// Before the Kitty probe answers, Toggle does nothing: no choice
+		// made, so the switch on its answer still comes.
+		before := m.pic.Mode()
+		cmd := m.pic.Toggle()
+		m.picked = m.picked || m.pic.Mode() != before
+
+		return cmd, true
+	case key.Matches(msg, keys.Night):
+		m.red = !m.red
+		m.theme = darkTheme
+		if m.red {
+			m.theme = nightTheme
+		}
+		m.applyTheme()
+
+		return nil, true
+	case key.Matches(msg, keys.Warn):
+		m.showWarn = !m.showWarn
+
+		return nil, true
+	case key.Matches(msg, keys.Help):
+		m.help.ShowAll = !m.help.ShowAll
+
+		return m.layout(), true
+	}
+
+	return nil, false
+}
+
 // load computes the night of day in the background; only the latest one
-// asked for is shown.
+// asked for is shown, and the one it supersedes is cancelled.
 func (m *model) load(day time.Time, dateSet bool) tea.Cmd {
 	m.seq++
 	seq := m.seq
 	m.loading, m.warnings = true, nil
+	if m.cancel != nil {
+		m.cancel()
+	}
+	ctx, cancel := context.WithCancel(m.ctx)
+	m.cancel = cancel
 
-	return func() tea.Msg { return nightMsg{night: m.compute(m.ctx, day, dateSet), seq: seq} }
+	return func() tea.Msg { return nightMsg{night: m.compute(ctx, day, dateSet), seq: seq} }
 }
 
 // snapshotReady reports whether the snapshot frame can be taken: the night
@@ -350,12 +411,17 @@ func (m *model) snapshot() {
 	m.snapErr = err
 }
 
-// resort fills the list in the sort's order, keeping the selected target.
-// The command is SetItems': with a filter set, the list refilters through it
-// and stays empty until it runs.
+// resort fills the list in the sort's order, keeping the selected target by
+// name (a new night's cards are others). The command is SetItems': with a
+// filter set, the list refilters through it and stays empty until it runs,
+// so the target is selected then, among the matches (Select takes an index
+// into them, which the unfiltered one overruns).
 func (m *model) resort() tea.Cmd {
 	cards := m.night.Doc.Cards
-	keep, kept := m.selected()
+	var keep string
+	if it, ok := m.list.SelectedItem().(item); ok {
+		keep = it.c.Name
+	}
 	m.order = make([]int, len(cards))
 	for i := range m.order {
 		m.order[i] = i
@@ -373,14 +439,43 @@ func (m *model) resort() tea.Cmd {
 	sel := 0
 	for j, i := range m.order {
 		items[j] = item{i: i, c: &cards[i]}
-		if kept && i == keep {
+		if cards[i].Name == keep {
 			sel = j
 		}
 	}
 	cmd := m.list.SetItems(items)
-	m.list.Select(sel)
+	if m.list.FilterState() == list.Unfiltered {
+		m.list.Select(sel)
+	} else {
+		m.list.ResetSelected()
+		m.reselect = keep
+	}
 
 	return cmd
+}
+
+// staleMatches reports whether the filter's matches are an older night's
+// items, whose indices would read this night's slices.
+func (m *model) staleMatches() bool {
+	cards := m.night.Doc.Cards
+
+	return slices.ContainsFunc(m.list.VisibleItems(), func(v list.Item) bool {
+		it, ok := v.(item)
+
+		return !ok || it.i >= len(cards) || it.c != &cards[it.i]
+	})
+}
+
+// reselectMatch selects resort's kept target among a filter's matches once
+// they land.
+func (m *model) reselectMatch() {
+	if m.reselect == "" {
+		return
+	}
+	if j := slices.IndexFunc(m.list.VisibleItems(), func(v list.Item) bool { return v.(item).c.Name == m.reselect }); j >= 0 { //nolint:forcetypeassert // the list holds items only
+		m.list.Select(j)
+	}
+	m.reselect = ""
 }
 
 func cmpF(a, b float64) int {
@@ -415,8 +510,14 @@ func (m *model) selectPicture() tea.Cmd {
 		return nil
 	}
 	m.picURL = u
+	cmd := m.pic.SetURL(u)
+	// SetURL never refetches a picture that failed: selecting its target
+	// again retries it.
+	if m.pic.State() == pictureurl.StateError {
+		return m.pic.Reload()
+	}
 
-	return m.pic.SetURL(u)
+	return cmd
 }
 
 // openURL opens u in the system's browser; a failure is not worth a word.
@@ -430,5 +531,7 @@ func openURL(ctx context.Context, u string) {
 	default:
 		cmd = exec.CommandContext(ctx, "xdg-open", u)
 	}
-	_ = cmd.Start()
+	if cmd.Start() == nil {
+		go func() { _ = cmd.Wait() }() // reaped, not left a zombie until exit
+	}
 }

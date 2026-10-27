@@ -66,7 +66,13 @@ func (r *rotation) trailed(i int, a, sinAlt, cosHA float64) bool {
 
 // trail is trailed's check, kept out of line so that trailed inlines.
 func (r *rotation) trail(i int, a, sinAlt, cosHA float64) bool {
-	trail := r.k * (r.sinDec*r.cosLat - r.cosDec*r.sinLat*cosHA) / (1 - sinAlt*sinAlt)
+	// At the zenith the rotation is unbounded: there 0/0 would be NaN, which
+	// compares false and passed the minute.
+	cos2 := 1 - sinAlt*sinAlt
+	if cos2 <= 0 {
+		return true
+	}
+	trail := r.k * (r.sinDec*r.cosLat - r.cosDec*r.sinLat*cosHA) / cos2
 	see := typicalSeeing
 	if r.seeing != nil {
 		see = r.seeing[i]

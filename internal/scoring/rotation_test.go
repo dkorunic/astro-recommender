@@ -74,3 +74,13 @@ func TestRotationTrail(t *testing.T) {
 		t.Errorf("optics² without -aperture %v, want the pixels' alone", r.optics2)
 	}
 }
+
+// Exactly at the zenith (-alt-max 90, the object's declination the
+// latitude) the rotation is unbounded: trailed, not 0/0's NaN, which
+// compared false and kept the minute.
+func TestRotationZenith(t *testing.T) {
+	r := rotation{k: 1, sinDec: 0.5, cosDec: math.Sqrt(0.75), sinLat: 0.5, cosLat: math.Sqrt(0.75)}
+	if !r.trailed(0, 90, 1, 1) {
+		t.Error("the zenith's minute is not trailed")
+	}
+}

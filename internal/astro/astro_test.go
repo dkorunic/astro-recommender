@@ -308,3 +308,40 @@ func TestEcliptic(t *testing.T) {
 		t.Errorf("the celestial pole at ecliptic latitude %v", lat)
 	}
 }
+
+// A polar night runs noon to noon: -to 12:00 is its end, the next day's
+// noon, not the empty window ending where it starts; on a night of hours a
+// -to before dusk is still empty.
+func TestClipWindowPolar(t *testing.T) {
+	day := time.Date(2026, 12, 21, 12, 0, 0, 0, time.UTC)
+	start, end, ok := Window(day, 89, 0, Astronomical)
+	if !ok || end.Sub(start) < 23*time.Hour {
+		t.Fatalf("no polar night: %v-%v", start, end)
+	}
+	for _, to := range []string{"12:00", "11:00", "06:00"} {
+		s, e, err := ClipWindow(day, time.UTC, start, end, "", to)
+		if want := time.Date(2026, 12, 22, 0, 0, 0, 0, time.UTC).Add(clockOf(to)); err != nil || !s.Equal(start) || !e.Equal(earlier(end, want)) {
+			t.Errorf("-to %s: %v-%v (%v), want %v-%v", to, s, e, err, start, earlier(end, want))
+		}
+	}
+	zg, _ := time.LoadLocation("Europe/Zagreb")
+	day = time.Date(2026, 10, 5, 12, 0, 0, 0, zg)
+	start, end, _ = Window(day, 45.8, 16, Astronomical)
+	if _, _, err := ClipWindow(day, zg, start, end, "", "17:00"); err == nil {
+		t.Error("-to 17:00, before dusk: accepted")
+	}
+}
+
+func clockOf(s string) time.Duration {
+	c, _ := time.Parse("15:04", s)
+
+	return time.Duration(c.Hour())*time.Hour + time.Duration(c.Minute())*time.Minute
+}
+
+func earlier(a, b time.Time) time.Time {
+	if a.Before(b) {
+		return a
+	}
+
+	return b
+}

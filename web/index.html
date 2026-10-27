@@ -804,7 +804,7 @@ function showNight() {
   if (n.place) fact("Place", n.place.split(", ").slice(0, 2).join(", "));
   fact("Window", `${hm(curves.start)}–${hm(n.end)}`);
   fact("Zenith", `${n.zenith.toFixed(2)} mag/″²`);
-  fact("Moon limit", `${Math.round(n.moonSep)}° away`);
+  fact("Moon limit", `${Math.round(n.moonSep)}° away${n.moonFloor ?? ""}`);
   box.append(moon, bar, ends, facts);
   const wx = $("wx");
   wx.replaceChildren();

@@ -46,3 +46,17 @@ func TestCores(t *testing.T) {
 		t.Errorf("description %q", c.Description)
 	}
 }
+
+// An entry that is the core already (GaryImm's IC 1396, the Elephant's
+// Trunk itself) stays as it is: no "Elephant's Trunk region, in Elephant's
+// Trunk".
+func TestCoreIsEntry(t *testing.T) {
+	trunk := Target{Name: "IC 1396", Description: "Elephant's Trunk", Size: 60, RADeg: 324.7, DecDeg: 57.5}
+	if got, ok := trunk.AtCore(); ok || got.Description != trunk.Description {
+		t.Errorf("the Trunk moved to its own core: %q", got.Description)
+	}
+	whole := Target{Name: "Sh2-131", Description: "IC 1396, Elephant's Trunk Nebula", Size: 170}
+	if got, ok := whole.AtCore(); !ok || got.Description != "Elephant's Trunk region, in IC 1396, Elephant's Trunk Nebula" {
+		t.Errorf("the whole IC 1396: %q, %v", got.Description, ok)
+	}
+}

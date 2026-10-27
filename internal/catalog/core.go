@@ -3,6 +3,8 @@
 
 package catalog
 
+import "strings"
+
 // Core is the part of an object too large to frame whole that is imaged in
 // its place: its axes in arc minutes, its J2000 centre in degrees and what
 // it is.
@@ -48,11 +50,11 @@ var cores = func() map[string]*Core {
 // AtCore returns t moved to its core: centred on it, framed by its axes
 // (FrameAxes) and described as it; false when t has none or its core is not
 // smaller than the listed size (a cluster's entry, or one that is the part
-// itself). The size, magnitude and surface brightness stay the whole
+// itself), or its description names the region (isCore). The size, magnitude and surface brightness stay the whole
 // object's.
 func (t Target) AtCore() (Target, bool) {
 	c := byKey(cores, t.Name)
-	if c == nil || !t.HasSize() || c.Major >= t.Size {
+	if c == nil || !t.HasSize() || c.Major >= t.Size || t.isCore(c) {
 		return t, false
 	}
 	t.Core, t.RADeg, t.DecDeg = c, c.RADeg, c.DecDeg
@@ -73,4 +75,15 @@ func (t Target) FrameAxes() (float64, float64) {
 	}
 
 	return t.Axes()
+}
+
+// isCore reports whether t is the core already: about its size (under twice
+// its major axis) and described as its region (GaryImm's 60′ IC 1396 is the
+// Elephant's Trunk), which "Elephant's Trunk region, in Elephant's Trunk"
+// would only repeat. The whole complex may name it too (Sharpless' 170′
+// Sh2-131: "IC 1396, Elephant's Trunk Nebula"), hence the size.
+func (t Target) isCore(c *Core) bool {
+	region := strings.ToLower(strings.TrimSuffix(c.Region, " region"))
+
+	return t.Size < 2*c.Major && strings.Contains(strings.ToLower(t.Description), region)
 }

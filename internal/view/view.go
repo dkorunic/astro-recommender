@@ -92,6 +92,7 @@ type Night struct { // betteralign:ignore
 	End      int64      `json:"end"`
 	Illum    float64    `json:"illum"`
 	MoonSep  float64    `json:"moonSep"`
+	MoonLow  string     `json:"moonFloor,omitempty"` // output.MoonFloor: " (down to 30° through a filter)"
 	MoonUp   [][2]int64 `json:"moonUp"`
 	Washout  bool       `json:"washout,omitempty"`
 	Targets  int        `json:"targets"` // results scored, before -n
@@ -125,16 +126,8 @@ func Build(cfg *config.Config, s *scoring.Sky, place string, results []scoring.R
 	}
 	doc.Night = Night{
 		Place: place, Lat: cfg.Lat, Lon: cfg.Lon, Twilight: cfg.Twilight, Dusk: s.Night[0].Unix(), Dawn: s.Night[1].Unix(),
-		End: s.End.Unix(), Illum: s.Illum, MoonSep: s.MoonSep, MoonUp: [][2]int64{}, Washout: s.Washout(),
-		Targets: len(results), Sky: cfg.ZenithMag(),
-	}
-	for i, a := range s.MoonAlt {
-		switch up := a > astro.MoonHorizon; {
-		case up && (i == 0 || s.MoonAlt[i-1] <= astro.MoonHorizon):
-			doc.Night.MoonUp = append(doc.Night.MoonUp, [2]int64{s.Grid[i].Unix(), s.End.Unix()})
-		case !up && i > 0 && s.MoonAlt[i-1] > astro.MoonHorizon:
-			doc.Night.MoonUp[len(doc.Night.MoonUp)-1][1] = s.Grid[i].Unix()
-		}
+		End: s.End.Unix(), Illum: s.Illum, MoonSep: s.MoonSep, MoonLow: output.MoonFloor(cfg, s),
+		MoonUp: moonUp(cfg, s.Night[0], s.Night[1]), Washout: s.Washout(), Targets: len(results), Sky: cfg.ZenithMag(),
 	}
 	mid := s.Grid[len(s.Grid)/2]
 	shown := results[:min(cfg.Top, len(results))]
@@ -191,6 +184,27 @@ func zone(loc *time.Location) string {
 	default:
 		return name
 	}
+}
+
+// moonUp returns the Moon's spans above astro.MoonHorizon from dusk to dawn,
+// minute by minute, which the bars span: the grid's s.MoonAlt holds only the
+// window -from/-to clip.
+func moonUp(cfg *config.Config, dusk, dawn time.Time) [][2]int64 {
+	spans := [][2]int64{}
+	was := false
+	for t := dusk; t.Before(dawn); t = t.Add(time.Minute) {
+		ra, dec := astro.MoonTopo(t, cfg.Lat, cfg.Lon)
+		up := astro.Altitude(ra, dec, t, cfg.Lat, cfg.Lon) > astro.MoonHorizon
+		switch {
+		case up && !was:
+			spans = append(spans, [2]int64{t.Unix(), dawn.Unix()})
+		case !up && was:
+			spans[len(spans)-1][1] = t.Unix()
+		}
+		was = up
+	}
+
+	return spans
 }
 
 func observable(cfg *config.Config, s *scoring.Sky, res scoring.Result) []bool {

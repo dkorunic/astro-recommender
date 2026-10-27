@@ -732,15 +732,17 @@ const minMoonK = 0.3
 var moonKTypes = []string{"HII Region", "Planetary Nebula", "Supernova Remnant", "Wolf-Rayet Nebula"}
 
 // LoosestMoonK returns the least moonK any -filter choice gives an
-// emission-line target, of any type's line ratios: how far down the filters
-// can scale the Moon separation limit (the header's Moon line). Anything else
-// a filter dims as much as the moonlight, so its moonK is 1. 1 without
-// -filter.
+// emission-line target -type keeps, of any type's line ratios: how far down
+// the filters can scale the Moon separation limit (the header's Moon line).
+// Anything else a filter dims as much as the moonlight, so its moonK is 1
+// (comets are never filtered). 1 without -filter.
 func LoosestMoonK(cfg *config.Config) float64 {
 	k := 1.0
 	for _, name := range cfg.FilterNames() {
 		for _, typ := range moonKTypes {
-			k = min(k, passes(cfg, catalog.Target{Type: typ}, name).moonK())
+			if tg := (catalog.Target{Type: typ}); cfg.Wanted(tg) {
+				k = min(k, passes(cfg, tg, name).moonK())
+			}
 		}
 	}
 

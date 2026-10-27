@@ -113,8 +113,8 @@ type Config struct {
 	SensorTempSet  bool    // -sensor-temp given: the sensor is held there, else ambient + scoring's sensorWarm
 	MeanStack      bool    // -stack mean: subs averaged with equal weight (smart telescopes' live stacks), else weighted by SNR²
 	AltAz          bool    // Mount is MountAltAz: field rotation limits the observable minutes
-	OtherOptics    bool    // -scope with -focal: its camera behind other optics, whose aperture SUBS needs
-	OtherChip      bool    // -scope with a -pixel unlike its own: another camera too, whose QE and read noise SUBS needs
+	OtherOptics    bool    // -scope with -focal (or another rig's -scale or -fov): its camera behind other optics, whose aperture SUBS needs
+	OtherChip      bool    // -scope with a -pixel unlike its own (or another rig's -scale or -fov): another camera too, whose QE and read noise SUBS needs
 	NoWeather      bool
 	NoGeocode      bool
 	NoSQM          bool
@@ -182,10 +182,10 @@ func Parse() (Config, error) {
 	flag.StringVar(&stack, "stack", "", "with framing, how the subs are stacked: mean (equal weights, as smart telescopes' live stacks; the default with -scope) or weighted (by each sub's SNR², as PixInsight or Siril can; the default otherwise)")
 	flag.StringVar(&mount, "mount", "", "with framing, the mount: altaz (its field turns through each sub, so a minute whose rotation trails the object's edge by more than a star's width is not observable), derotated (alt-az with a field derotator, as Draco and the ORBIS 60EDX: none) or eq (equatorial, or on a wedge: none); -scope's by default, else eq")
 	flag.Float64Var(&cfg.Residual, "residual", 0.002, "with framing, what flats and gradient removal leave of the sky in the stack, a share 0-0.05, which caps its SNR however many subs (0 = none)")
-	flag.BoolVar(&cfg.Mono, "mono", false, "with framing, the camera is monochrome, so every pixel sees every filter band; not with -scope, whose cameras are colour")
+	flag.BoolVar(&cfg.Mono, "mono", false, "with framing, the camera is monochrome, so every pixel sees every filter band; with -scope only for another camera (its -pixel or -scale), as its own is colour")
 	flag.StringVar(&cfg.Filter, "filter", "", "filters you own, comma-separated: for emission-line targets dual (Ha + OIII at once), tri (+ Hb), quad (+ Hb and SII), ha, oiii, sii; broadband light pollution filters cls (Astronomik CLS) and lpro (Optolong L-Pro) for any target; each target is scored without and with each worn all night, and FILTER shows the one that gains it most (with framing, the one SUBS needs fewest subs through) (default none; with -scope its built-in filter: dual on the Seestars, the DWARF 3 and mini and the Draco)")
 	flag.Float64Var(&cfg.FilterNM, "filter-nm", 7, "with -filter, the width of each line filter band in nm, 1-30; without it a -scope's built-in filter has its own")
-	flag.BoolVar(&filterStd, "filter-std", false, "with -filter, the line filters are standard ones, whose bands shift blue in a fast beam: -scope's (the Origin's f/2.2), or -focal over -aperture (off: made for the beam)")
+	flag.BoolVar(&filterStd, "filter-std", false, "with -filter, the line filters are standard ones, whose bands shift blue in a fast beam: -scope's (the Origin's f/2.2 without framing), or -focal over -aperture, which another telescope's frame needs (off: made for the beam)")
 	flag.IntVar(&cfg.Bortle, "bortle", 0, "Bortle class 1-9 of the site, sets the zenith sky brightness (0 = dark sky)")
 	flag.Float64Var(&cfg.SQM, "sqm", 0, "measured zenith sky brightness in mag/arcsec² (SQM meter or light pollution map); overrides -bortle; default: looked up on DarkSkySites when a key is available (CLI: $DARKSKYSITES_API_KEY; browser: always) and -bortle is not")
 	flag.Float64Var(&cfg.Extinction, "extinction", 0.2, "atmospheric extinction in mag per airmass; default: estimated per hour from elevation and CAMS aerosols, this value if unavailable")
@@ -494,7 +494,8 @@ func (cfg *Config) FramePx() (float64, float64) {
 // tri-band filter's are not the built-in one's (broadband ones have their
 // own passbands).
 func (cfg *Config) builtIn(set map[string]bool, base Scope) {
-	if cfg.Scope == "" || base.Filter == "" {
+	// Another camera and optics (OtherChip) are not behind the scope's filter.
+	if cfg.Scope == "" || base.Filter == "" || cfg.OtherChip {
 		return
 	}
 	if !set["filter"] {
@@ -573,13 +574,21 @@ func (cfg *Config) framing(set map[string]bool, f frameFlags) (Scope, error) {
 		return Scope{}, err
 	}
 	// -focal on a scope is other optics, and a -pixel unlike its own
-	// another camera (-sensor alone is a crop of its own).
+	// another camera (-sensor or -fov within its frame is a crop of its own).
+	// A -scale unlike its own, or a -fov wider than its frame, fits neither,
+	// so both are another rig's.
 	cfg.OtherOptics = cfg.Scope != "" && set["focal"]
 	cfg.OtherChip = cfg.Scope != "" && set["pixel"] && f.pixel != base.Pixel
-	if cfg.OtherChip {
+	if cfg.Scope != "" && cfg.otherRig(set, base) {
+		cfg.OtherOptics, cfg.OtherChip = true, true
+	}
+	switch {
+	case cfg.OtherChip:
 		// Not the scope's chip: its dark current, response and label would
 		// describe the wrong sensor.
 		cfg.Camera = ""
+	case cfg.Scope != "" && cfg.Mono:
+		return Scope{}, fmt.Errorf("%w: %s's camera is colour; -mono is for another camera (-pixel or -scale with -scope, or -camera, -fov, -scale or -focal)", errInvalidFlag, base.Name)
 	}
 	if err := cfg.camera(set, preset, base); err != nil {
 		return Scope{}, err
@@ -588,6 +597,20 @@ func (cfg *Config) framing(set map[string]bool, f frameFlags) (Scope, error) {
 
 	return base, nil
 }
+
+// otherRig reports whether -scale or -fov describe a frame the base scope
+// cannot take: a scale more than rigSlack off its own, or a field wider than
+// its frame by more than that (a typed 1.23 for the Origin's 1.2347 is its own).
+func (cfg *Config) otherRig(set map[string]bool, base Scope) bool {
+	long, short := base.fov()
+
+	return set["scale"] && math.Abs(cfg.Scale/base.scale()-1) > rigSlack ||
+		set["fov"] && (cfg.FOVLong > long*(1+rigSlack) || cfg.FOVShort > short*(1+rigSlack))
+}
+
+// rigSlack is the share by which -scale or -fov may miss -scope's own and
+// still describe it: the two decimals of a value read off its help.
+const rigSlack = 0.01
 
 // frameSizes checks -mosaic and -rotate, and with framing replaces the size
 // defaults by -min-px up to the largest object a mosaic holds; explicit
@@ -704,7 +727,7 @@ func (cfg *Config) camera(set map[string]bool, preset *Variant, base Scope) erro
 	if err := cfg.losses(set, base); err != nil {
 		return err
 	}
-	if need := cfg.subsNeeds(set); len(need) > 0 {
+	if need := cfg.subsNeeds(set, base); len(need) > 0 {
 		cfg.SubsNeeds, cfg.QE = strings.Join(need, " and "), 0
 	}
 
@@ -719,13 +742,26 @@ func (cfg *Config) camera(set map[string]bool, preset *Variant, base Scope) erro
 // -read-noise needs no -camera: it has no colour response to borrow. With
 // -scope, OtherOptics lack an aperture and OtherChip a QE and read noise,
 // which the scope's would stand for.
-func (cfg *Config) subsNeeds(set map[string]bool) []string {
+func (cfg *Config) subsNeeds(set map[string]bool, base Scope) []string {
 	var need []string
+	// A mono camera has no colour response to borrow: -qe and -read-noise
+	// stand in for -camera, so whichever is missing is what it needs.
+	chip := func() {
+		for _, f := range []string{"-qe", "-read-noise"} {
+			if !set[f[1:]] {
+				need = append(need, f)
+			}
+		}
+	}
 	if cfg.Scope == "" {
 		if !set["aperture"] {
 			need = append(need, "-aperture")
 		}
-		if !set["camera"] && (!cfg.Mono || !set["qe"] || !set["read-noise"]) {
+		switch {
+		case set["camera"]:
+		case cfg.Mono:
+			chip()
+		default:
 			need = append(need, "-camera")
 		}
 
@@ -734,8 +770,14 @@ func (cfg *Config) subsNeeds(set map[string]bool) []string {
 	if cfg.OtherOptics && !set["aperture"] {
 		need = append(need, "-aperture")
 	}
-	if cfg.OtherChip && (!set["qe"] || !set["read-noise"]) {
-		need = append(need, "-qe", "-read-noise")
+	// Another camera, or a scope without a camera model (no preset, or
+	// NoSubs), takes its QE and read noise from the flags, and NoSubs its
+	// obstruction too (or another telescope's, -aperture).
+	if cfg.OtherChip || base.variant() == nil {
+		chip()
+	}
+	if base.NoSubs && !cfg.OtherOptics && !set["obstruction"] && !set["aperture"] {
+		need = append(need, "-obstruction")
 	}
 
 	return need
@@ -834,6 +876,10 @@ func (cfg *Config) beam(set map[string]bool, filterStd bool, focal float64, base
 		return fmt.Errorf("%w: -filter-std takes the beam from -focal and -aperture together, or with neither from the %s's f/%.1f", errInvalidFlag, base.Name, base.Focal/base.Aperture)
 	case set["focal"]:
 		cfg.FRatio, cfg.Obstructed = focal/cfg.Aperture, cfg.Obstruction/cfg.Aperture
+	case cfg.Framing && (cfg.Scope == "" || cfg.OtherOptics):
+		// The frame is another telescope's, whose beam the base scope's
+		// would only guess (as SUBS will not borrow its optics).
+		return fmt.Errorf("%w: -filter-std on another telescope takes its beam from -focal and -aperture", errInvalidFlag)
 	case base.NoSubs && !set["obstruction"]:
 		// A ring of the beam's steepest rays is missing; none would be guessed.
 		return fmt.Errorf("%w: the %s's central obstruction is unpublished; give -obstruction (mm) with -filter-std", errInvalidFlag, base.Name)

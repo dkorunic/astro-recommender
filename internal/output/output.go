@@ -161,7 +161,7 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 	headerLine("Window:  ", fmt.Sprintf("%s - %s (%s%s)", s.Start.Format("2006-01-02 "+layout), s.End.Format("2006-01-02 "+layout),
 		durText(s.End.Sub(s.Start)), night))
 	headerLine("Moon:    ", fmt.Sprintf("%s illuminated, targets kept at least %.0f° away%s, %s", paint(scale(s.Illum, 0.3, 0.7), fmt.Sprintf("%.0f%%", s.Illum*100)),
-		s.MoonSep, moonFloor(cfg, s), moonText(s)+eclipseText(s)))
+		s.MoonSep, MoonFloor(cfg, s), moonText(s)+eclipseText(s)))
 	headerLine("Size:    ", fmt.Sprintf("%.1f' - %.1f'", cfg.SizeMin, cfg.SizeMax))
 	if cfg.MinRun > 0 {
 		headerLine("Min run: ", fmt.Sprintf("at least %s observable without a break", durText(cfg.MinRun)))
@@ -536,20 +536,21 @@ func emptyText(cfg *config.Config, s *scoring.Sky) string {
 		limits, flags = append(limits, "an alt-az mount's field rotation"), append(flags, "-mount eq (with a wedge)")
 	}
 	if s.MoonSep >= 1 && slices.ContainsFunc(s.MoonAlt, func(a float64) bool { return a > 0 }) {
-		limits = append(limits, fmt.Sprintf("at least %.0f° from the Moon while it is up%s", s.MoonSep, moonFloor(cfg, s)))
+		limits = append(limits, fmt.Sprintf("at least %.0f° from the Moon while it is up%s", s.MoonSep, MoonFloor(cfg, s)))
 	}
 
 	return fmt.Sprintf("No objects within the limits (%s). Loosen %s, or try another -list.", strings.Join(limits, ", "), strings.Join(flags, ", "))
 }
 
-// moonFloor qualifies the Moon distance s.MoonSep with what lowers it: a
+// MoonFloor qualifies the Moon distance s.MoonSep with what lowers it (the
+// header's, the page's and the terminal view's Moon limit): a
 // -filter, whose choices scale it (scoring's moonK) as far down as
 // scoring.LoosestMoonK of it (nothing when that loosens it by no whole
 // degree, or to none: a new Moon's 1° says nothing), and a lunar eclipse,
 // which scales it by the least light the Earth's shadow leaves in the
 // window (scoring.Sky.tooClose), shown down to 0°, and with a filter
 // scales that too, as both apply at once; "" when neither does.
-func moonFloor(cfg *config.Config, s *scoring.Sky) string {
+func MoonFloor(cfg *config.Config, s *scoring.Sky) string {
 	var parts []string
 	k := scoring.LoosestMoonK(cfg)
 	filtered := math.Round(s.MoonSep * k)
@@ -610,7 +611,7 @@ func resultsTable(cfg *config.Config, s *scoring.Sky, results []scoring.Result, 
 		ra, dec := position(r.Position())
 		d := shortDesc(r.Description, desc)
 		widest = max(widest, utf8.RuneCountInString(d))
-		code, subs := subsText(r.Exposure)
+		code, subs := SubsText(r.Exposure)
 		starCode, star := "39", "-"
 		if !drop[starColumn] { // a dropped column looks nothing up
 			if st, _, ok := brightStar(cfg, s, r, planets); ok {
@@ -866,10 +867,11 @@ func shortDesc(s string, width int) string {
 // when no filter beat going without, a recommendation like any other.
 func filterText(r scoring.Result) string { return cmp.Or(r.Filter, "none") }
 
-// subsText is the SUBS cell and its colour: the subs for a good image,
-// ~ when the surface brightness is its class's typical one, >N (yellow) when
-// more than the N tonight allows, - for none.
-func subsText(e *scoring.Estimate) (string, string) {
+// SubsText is the SUBS cell and its colour (the terminal view's card takes
+// its text): the subs for a good image, ~ when the surface brightness is its
+// class's typical one, past tonight's limit (yellow) the nights like tonight
+// it takes, never past the stack's ceiling, - for none.
+func SubsText(e *scoring.Estimate) (string, string) {
 	if e == nil {
 		return "39", "-"
 	}

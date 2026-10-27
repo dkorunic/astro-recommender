@@ -304,6 +304,38 @@ func TestScopeOtherChipCamera(t *testing.T) {
 	}
 }
 
+// A -scale unlike -scope's own, or a -fov wider than its frame, is another
+// rig's: SUBS needs its aperture, QE and read noise, and the label and
+// camera are no longer the scope's. Its own scale to two decimals, or a crop
+// of its field, is still the scope.
+func TestScopeOtherRig(t *testing.T) {
+	for _, tc := range []struct {
+		args  []string
+		other bool
+	}{
+		{[]string{"-scale", "0.5"}, true},
+		{[]string{"-fov", "2x1"}, true},
+		{[]string{"-scale", "0.5", "-aperture", "100", "-qe", "0.8", "-read-noise", "1"}, true},
+		{[]string{"-scale", "2.39"}, false},
+		{[]string{"-fov", "1x0.5"}, false},
+		{[]string{"-fov", "1.27x0.72"}, false},
+	} {
+		cfg, err := mutParse(t, mutBase(append([]string{"-scope", "seestar-s50"}, tc.args...)...)...)
+		if err != nil {
+			t.Fatalf("%v: %v", tc.args, err)
+		}
+		if cfg.OtherOptics != tc.other || cfg.OtherChip != tc.other || (cfg.Camera == "") != tc.other {
+			t.Errorf("%v: OtherOptics %v OtherChip %v camera %q, want other %v", tc.args, cfg.OtherOptics, cfg.OtherChip, cfg.Camera, tc.other)
+		}
+		if tc.other && len(tc.args) == 2 && (cfg.QE != 0 || cfg.SubsNeeds != "-aperture and -qe and -read-noise") {
+			t.Errorf("%v: QE %g, SubsNeeds %q; want none until given", tc.args, cfg.QE, cfg.SubsNeeds)
+		}
+		if want := "ZWO Seestar S50 settings with another camera and optics"; tc.other && cfg.ScopeLabel() != want {
+			t.Errorf("%v: label %q, want %q", tc.args, cfg.ScopeLabel(), want)
+		}
+	}
+}
+
 // -qe's and -read-noise's help give the values the Origin actually takes.
 func TestOriginHelpValues(t *testing.T) {
 	cfg, err := mutParse(t, mutBase("-scope", "origin")...)
@@ -313,6 +345,51 @@ func TestOriginHelpValues(t *testing.T) {
 	for name, v := range map[string]float64{"qe": cfg.QE, "read-noise": cfg.ReadNoise} {
 		if u := flag.CommandLine.Lookup(name).Usage; !strings.HasSuffix(u, " "+strconv.FormatFloat(v, 'g', -1, 64)) {
 			t.Errorf("-%s help %q does not end in the Origin's %g", name, u, v)
+		}
+	}
+}
+
+// Another camera and optics on a scope are not behind its built-in filter,
+// and its own camera stays colour: -mono only describes another camera.
+func TestScopeOtherChipFilterMono(t *testing.T) {
+	cfg, err := mutParse(t, mutBase("-scope", "seestar-s50", "-focal", "500", "-pixel", "3.76", "-aperture", "100", "-qe", "0.8", "-read-noise", "1")...)
+	if err != nil || cfg.Filter != "" || cfg.BuiltInBands() {
+		t.Errorf("another rig: filter %q built-in %v, want none (%v)", cfg.Filter, cfg.BuiltInBands(), err)
+	}
+	if cfg, err := mutParse(t, mutBase("-scope", "seestar-s50", "-focal", "500", "-sensor", "5x3")...); err != nil || cfg.Filter != filterDual {
+		t.Errorf("its camera behind other optics: filter %q, want the built-in %s (%v)", cfg.Filter, filterDual, err)
+	}
+	if _, err := mutParse(t, mutBase("-scope", "seestar-s50", "-mono")...); err == nil || !strings.Contains(err.Error(), "colour") {
+		t.Errorf("-mono on the scope's own camera: %v, want the colour error", err)
+	}
+	cfg, err = mutParse(t, mutBase("-scope", "seestar-s50", "-scale", "0.5", "-aperture", "100", "-qe", "0.8", "-read-noise", "1", "-mono")...)
+	if err != nil || !cfg.Mono || cfg.MonoResponse() != &sonyMono || cfg.QE != 0.8 {
+		t.Errorf("-mono on another camera: mono %v QE %g (%v)", cfg.Mono, cfg.QE, err)
+	}
+}
+
+// -filter-std takes the beam from the telescope the frame describes: the
+// scope's, or -focal and -aperture; another telescope's frame without them
+// (-fov alone, another rig on a scope) would borrow the Origin's or the
+// scope's f-ratio.
+func TestFilterStdBeam(t *testing.T) {
+	for _, tc := range []struct {
+		args []string
+		f    float64 // 0: an error
+	}{
+		{[]string{"-filter", "ha", "-filter-std"}, 335.0 / 152},
+		{[]string{"-scope", "seestar-s50", "-filter", "ha", "-filter-std"}, 5},
+		{[]string{"-fov", "2x1", "-filter", "ha", "-filter-std"}, 0},
+		{[]string{"-scope", "seestar-s50", "-scale", "0.5", "-filter", "ha", "-filter-std"}, 0},
+		{[]string{"-fov", "2x1", "-focal", "400", "-aperture", "80", "-filter", "ha", "-filter-std"}, 0}, // -fov with -focal: frameFOV's error
+		{[]string{"-focal", "400", "-pixel", "3.76", "-aperture", "80", "-filter", "ha", "-filter-std"}, 5},
+	} {
+		cfg, err := mutParse(t, mutBase(tc.args...)...)
+		switch {
+		case tc.f == 0 && err == nil:
+			t.Errorf("%v: f/%g accepted, want an error", tc.args, cfg.FRatio)
+		case tc.f != 0 && (err != nil || math.Abs(cfg.FRatio-tc.f) > 0.01):
+			t.Errorf("%v: f/%g (%v), want f/%g", tc.args, cfg.FRatio, err, tc.f)
 		}
 	}
 }

@@ -103,6 +103,14 @@ type night struct {
 	cfg     config.Config
 }
 
+// warn prints a warning unless ctx is done: a cancelled compute's fetches
+// fail by design, which is no news.
+func warn(ctx context.Context, a ...any) {
+	if ctx.Err() == nil {
+		fmt.Fprintln(os.Stderr, a...)
+	}
+}
+
 // compute runs the pipeline for cfg's night over targets: the window (the
 // night in progress, or -date's), every network source at once, the sky,
 // the scores, the plan and the sub-exposure estimates. targets is not
@@ -158,7 +166,7 @@ func compute(ctx context.Context, cfg config.Config, targets []catalog.Target) (
 		wg.Go(func() {
 			var err error
 			if sqmVal, sqmSource, err = sqm.Lookup(ctx, key, cfg.Lat, cfg.Lon); err != nil {
-				fmt.Fprintln(os.Stderr, "warning: no sky brightness lookup, assuming a dark sky:", err)
+				warn(ctx, "warning: no sky brightness lookup, assuming a dark sky:", err)
 			}
 		})
 	}
@@ -166,20 +174,20 @@ func compute(ctx context.Context, cfg config.Config, targets []catalog.Target) (
 		wg.Go(func() {
 			var err error
 			if n.place, err = geocode.Reverse(ctx, cfg.Lat, cfg.Lon); err != nil {
-				fmt.Fprintln(os.Stderr, "warning: no reverse geocoding:", err)
+				warn(ctx, "warning: no reverse geocoding:", err)
 			}
 		})
 	}
 	if !cfg.NoComets {
 		wg.Go(func() {
 			if cometEls, cometErr = comets.Fetch(ctx); cometErr != nil {
-				fmt.Fprintln(os.Stderr, "warning: no comets:", cometErr)
+				warn(ctx, "warning: no comets:", cometErr)
 			}
 		})
 		wg.Go(func() {
 			var err error
 			if cometSeen, err = comets.FetchObserved(ctx, start); err != nil {
-				fmt.Fprintln(os.Stderr, "warning: comet magnitudes from MPC's elements, not observations:", err)
+				warn(ctx, "warning: comet magnitudes from MPC's elements, not observations:", err)
 			}
 		})
 	}
@@ -189,11 +197,16 @@ func compute(ctx context.Context, cfg config.Config, targets []catalog.Target) (
 		wg.Go(func() {
 			var err error
 			if solarSFU, solarBasis, err = solar.Flux(ctx, start); err != nil {
-				fmt.Fprintln(os.Stderr, "warning: sky not scaled for the solar cycle:", err)
+				warn(ctx, "warning: sky not scaled for the solar cycle:", err)
 			}
 		})
 	}
 	wg.Wait()
+	// A superseded night (the terminal view's ← and →) stops here: its
+	// fetches failed as it was cancelled, and its scores would be dropped.
+	if err := ctx.Err(); err != nil {
+		return n, err
+	}
 	if sqmSource != "" {
 		cfg.SQM, cfg.SQMSource = sqmVal, sqmSource
 	}

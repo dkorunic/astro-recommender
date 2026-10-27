@@ -2090,13 +2090,14 @@
 - constellation: Hydra
   dec: -32 49
   description: Frame Galaxy
-  mag: 8.5
+  mag: -9999
   name: NGC 3621
   ra: 11 18.3
   size: 9.8
   surfbr: 23.19
   bsurfbr: 23.03
   minor: 4.03
+  bmag: 10.10
   type: Galaxy
 - constellation: Hydra
   dec: -26 45

@@ -736,11 +736,12 @@
 - constellation: ""
   dec: "+15 20 00.0"
   description: "NGC 3799, NGC 3800"
-  mag: 12.7
+  mag: -9999
   name: "Arp 83"
   ra: "11 40 13.0"
   size: 2.0
   surfbr: 21.59
+  bmag: 14.47
   type: "Galaxy"
 - constellation: ""
   dec: "+37 25 30.0"
@@ -763,11 +764,12 @@
 - constellation: ""
   dec: "+29 29 00.0"
   description: "NGC 7752, NGC 7753"
-  mag: 12.0
+  mag: -9999
   name: "Arp 86"
   ra: "23 47 04.0"
   size: 3.3
   surfbr: 22.89
+  bmag: 14.88
   type: "Galaxy"
 - constellation: ""
   dec: "+22 25 00.0"
@@ -836,11 +838,12 @@
 - constellation: ""
   dec: "+19 51 54.0"
   description: "NGC 3226, NGC 3227"
-  mag: 10.3
+  mag: -9999
   name: "Arp 94"
   ra: "10 23 31.0"
   size: 4.0
   surfbr: 22.29
+  bmag: 12.36
   type: "Galaxy"
 - constellation: ""
   dec: "+26 29 00.0"
@@ -1034,11 +1037,12 @@
 - constellation: ""
   dec: "+17 44 00.0"
   description: "IC 982, IC 983"
-  mag: 11.7
+  mag: -9999
   name: "Arp 117"
   ra: "14 10 04.0"
   size: 4.0
   surfbr: 23.99
+  bmag: 14.53
   type: "Galaxy"
 - constellation: ""
   dec: "+00 10 00.0"
@@ -1800,12 +1804,13 @@
 - constellation: ""
   dec: "+28 34 00.0"
   description: "NGC 3712"
-  mag: 13.3
+  mag: -9999
   name: "Arp 203"
   ra: "11 31 09.0"
   size: 1.1
   surfbr: 22.09
   minor: 0.39
+  bmag: 15.63
   type: "Galaxy"
 - constellation: ""
   dec: "+84 30 00.0"
@@ -2354,12 +2359,13 @@
 - constellation: ""
   dec: "+36 05 00.0"
   description: "IC 3862"
-  mag: 14.5
+  mag: -9999
   name: "Arp 265"
   ra: "12 53 53.0"
   size: 1.1
   surfbr: 22.99
   minor: 0.53
+  bmag: 16.45
   type: "Galaxy"
 - constellation: ""
   dec: "+34 51 00.0"

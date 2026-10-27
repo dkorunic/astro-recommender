@@ -3006,12 +3006,13 @@
 - constellation: "UMa"
   dec: "+28 34 00.0"
   description: "NGC 3712"
-  mag: 13.3
+  mag: -9999
   name: "Arp 203"
   ra: "11 31 09.0"
   rating: 2
   size: 1.1
   surfbr: 22.09
+  bmag: 15.63
   type: "Galaxy"
 - constellation: "Cam"
   dec: "+84 30 00.0"
@@ -3603,12 +3604,13 @@
 - constellation: "CVn"
   dec: "+36 05 00.0"
   description: "IC 3862"
-  mag: 14.5
+  mag: -9999
   name: "Arp 265"
   ra: "12 53 53.0"
   rating: 2
   size: 1.1
   surfbr: 22.99
+  bmag: 16.45
   type: "Galaxy"
 - constellation: "CVn"
   dec: "+34 51 00.0"
@@ -9949,12 +9951,13 @@
 - constellation: "Tri"
   dec: "+28 12 32.0"
   description: ""
-  mag: 14.2
+  mag: -9999
   name: "IC 226"
   ra: "02 27 46.0"
   rating: 2
   size: 2.2
   surfbr: 23.89
+  bmag: 16.00
   type: "Galaxy"
 - constellation: "Tri"
   dec: "+28 10 31.0"
@@ -10000,12 +10003,13 @@
 - constellation: "Per"
   dec: "+40 00 13.0"
   description: ""
-  mag: 14.1
+  mag: -9999
   name: "IC 311"
   ra: "03 16 47.0"
   rating: 3
   size: 1.5
   surfbr: 22.19
+  bmag: 15.65
   type: "Galaxy"
 - constellation: "Cam"
   dec: "+76 38 15.0"
@@ -14906,12 +14910,13 @@
 - constellation: "Eri"
   dec: "-11 59 31.0"
   description: ""
-  mag: 12.0
+  mag: -9999
   name: "NGC 1200"
   ra: "03 03 55.0"
   rating: 2
   size: 3.8
   surfbr: 22.79
+  bmag: 13.80
   type: "Galaxy"
 - constellation: "Eri"
   dec: "-26 04 00.0"
@@ -15062,12 +15067,13 @@
 - constellation: "Per"
   dec: "+41 49 54.0"
   description: ""
-  mag: 13.2
+  mag: -9999
   name: "NGC 1334"
   ra: "03 30 02.0"
   rating: 2
   size: 1.5
   surfbr: 21.99
+  bmag: 14.73
   type: "Galaxy"
 - constellation: "Eri"
   dec: "-08 23 22.0"
@@ -15251,12 +15257,13 @@
 - constellation: "For"
   dec: "-35 27 01.0"
   description: ""
-  mag: 8.8
+  mag: -9999
   name: "NGC 1399"
   ra: "03 38 29.0"
   rating: 1
   size: 8.0
   surfbr: 22.59
+  bmag: 10.42
   type: "Galaxy"
 - constellation: "Eri"
   dec: "-18 41 17.0"
@@ -16856,12 +16863,13 @@
 - constellation: "Lyn"
   dec: "+36 15 16.0"
   description: ""
-  mag: 11.0
+  mag: -9999
   name: "NGC 2543"
   ra: "08 12 58.0"
   rating: 3
   size: 3.0
   surfbr: 21.79
+  bmag: 13.08
   type: "Galaxy"
 - constellation: "Pup"
   dec: "-37 35 42.0"
@@ -17943,12 +17951,13 @@
 - constellation: "Leo"
   dec: "+10 08 53.0"
   description: ""
-  mag: 11.6
+  mag: -9999
   name: "NGC 3433"
   ra: "10 52 04.0"
   rating: 2
   size: 3.5
   surfbr: 22.89
+  bmag: 13.30
   type: "Galaxy"
 - constellation: "Leo"
   dec: "+16 46 20.0"
@@ -19214,12 +19223,13 @@
 - constellation: "Dra"
   dec: "+75 19 19.0"
   description: ""
-  mag: 10.5
+  mag: -9999
   name: "NGC 4319"
   ra: "12 21 44.0"
   rating: 2
   size: 3.0
   surfbr: 22.69
+  bmag: 12.88
   type: "Galaxy"
 - constellation: "Vir"
   dec: "+11 22 04.0"
@@ -20293,12 +20303,13 @@
 - constellation: "Hya"
   dec: "-24 26 25.0"
   description: ""
-  mag: 11.0
+  mag: -9999
   name: "NGC 5085"
   ra: "13 20 18.0"
   rating: 2
   size: 3.0
   surfbr: 22.99
+  bmag: 13.47
   type: "Galaxy"
 - constellation: "Cen"
   dec: "-43 42 17.0"
@@ -20551,12 +20562,13 @@
 - constellation: "Vir"
   dec: "+03 57 02.0"
   description: ""
-  mag: 11.4
+  mag: -9999
   name: "NGC 5300"
   ra: "13 48 16.0"
   rating: 2
   size: 3.8
   surfbr: 22.69
+  bmag: 13.17
   type: "Galaxy"
 - constellation: "CVn"
   dec: "+39 59 08.0"
@@ -20601,12 +20613,13 @@
 - constellation: "Vir"
   dec: "-01 06 53.0"
   description: ""
-  mag: 11.3
+  mag: -9999
   name: "NGC 5334"
   ra: "13 52 55.0"
   rating: 2
   size: 3.8
   surfbr: 22.79
+  bmag: 13.02
   type: "Galaxy"
 - constellation: "Vir"
   dec: "+05 13 00.0"
@@ -20929,12 +20942,13 @@
 - constellation: "Boo"
   dec: "+50 30 07.0"
   description: ""
-  mag: 11.4
+  mag: -9999
   name: "NGC 5602"
   ra: "14 22 19.0"
   rating: 2
   size: 1.7
   surfbr: 21.59
+  bmag: 13.37
   type: "Galaxy"
 - constellation: "Cent"
   dec: "-60 43 12.0"
@@ -21322,12 +21336,13 @@
 - constellation: "Dra"
   dec: "+55 31 02.0"
   description: ""
-  mag: 11.7
+  mag: -9999
   name: "NGC 5905"
   ra: "15 15 23.0"
   rating: 2
   size: 3.8
   surfbr: 22.99
+  bmag: 13.30
   type: "Galaxy"
 - constellation: "Dra"
   dec: "+56 19 45.0"
@@ -21403,12 +21418,13 @@
 - constellation: "Ser"
   dec: "+05 58 26.0"
   description: ""
-  mag: 11.9
+  mag: -9999
   name: "NGC 5964"
   ra: "15 37 36.0"
   rating: 2
   size: 5.0
   surfbr: 23.49
+  bmag: 13.61
   type: "Galaxy"
 - constellation: "Dra"
   dec: "+56 41 09.0"
@@ -21638,12 +21654,13 @@
 - constellation: "Her"
   dec: "+07 24 41.0"
   description: ""
-  mag: 11.0
+  mag: -9999
   name: "NGC 6106"
   ra: "16 18 47.0"
   rating: 2
   size: 2.5
   surfbr: 22.29
+  bmag: 12.79
   type: "Galaxy"
 - constellation: "Ser"
   dec: "-02 17 02.0"
@@ -23223,12 +23240,13 @@
 - constellation: "Cyg"
   dec: "+58 20 36.0"
   description: ""
-  mag: 13.5
+  mag: -9999
   name: "NGC 6916"
   ra: "20 23 33.0"
   rating: 2
   size: 1.6
   surfbr: 22.99
+  bmag: 15.21
   type: "Galaxy"
 - constellation: "Aql"
   dec: "-02 11 29.0"
@@ -23925,12 +23943,13 @@
 - constellation: "Lac"
   dec: "+40 18 55.0"
   description: ""
-  mag: 13.7
+  mag: -9999
   name: "NGC 7282"
   ra: "22 25 54.0"
   rating: 2
   size: 3.0
   surfbr: 23.39
+  bmag: 15.27
   type: "Galaxy"
 - constellation: "Peg"
   dec: "+30 17 31.0"
@@ -24123,12 +24142,13 @@
 - constellation: "Peg"
   dec: "+14 18 30.0"
   description: ""
-  mag: 12.0
+  mag: -9999
   name: "NGC 7437"
   ra: "22 58 10.0"
   rating: 2
   size: 1.3
   surfbr: 23.29
+  bmag: 13.95
   type: "Galaxy"
 - constellation: "Peg"
   dec: "+30 08 41.0"

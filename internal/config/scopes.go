@@ -218,8 +218,8 @@ func (s Scope) variant() *Variant {
 // applyScope resolves -scope and
 // returns the scope whose values unset frame and camera flags take: it, or
 // the Origin without one. A scope's camera is fixed: -camera is an error
-// with it, and so is -mono: a smart telescope's camera is colour, and a mono
-// camera is another telescope's (-camera, -fov, -scale or -focal).
+// with it (framing rejects -mono unless the frame is another camera's: a
+// smart telescope's camera is colour).
 func (cfg *Config) applyScope(set map[string]bool, name string) (Scope, error) {
 	key := strings.ToLower(strings.TrimSpace(name))
 	if key == "" && !set["scope"] {
@@ -231,8 +231,6 @@ func (cfg *Config) applyScope(set map[string]bool, name string) (Scope, error) {
 		return Scope{}, fmt.Errorf("%w: -scope must be one of %s", errInvalidFlag, strings.Join(ScopeNames(), ", "))
 	case set["camera"]:
 		return Scope{}, fmt.Errorf("%w: -scope fixes its camera; -camera is for another telescope, with -focal", errInvalidFlag)
-	case cfg.Mono:
-		return Scope{}, fmt.Errorf("%w: %s's camera is colour; -mono is for another telescope's camera (-camera, -fov, -scale or -focal)", errInvalidFlag, s.Name)
 	}
 	cfg.Scope, cfg.Camera = key, s.Camera
 
@@ -250,7 +248,7 @@ func (cfg *Config) ScopeLabel() string {
 
 	chip := cmp.Or(s.Sensor, strings.ToUpper(s.Camera))
 	switch {
-	case cfg.OtherChip: // -focal and -pixel: only its mount and settings remain
+	case cfg.OtherChip: // -focal and -pixel, or another rig's -scale or -fov: only its mount and settings remain
 		return s.Name + " settings with another camera and optics"
 	case cfg.OtherOptics:
 		return s.Name + "'s " + chip + " behind other optics"

@@ -117,8 +117,9 @@ class Map:
 def measure(hmap, ra, dec, size):
     """Mean Hα over the disc of the major axis less the ring's median, R:
     calibrate_lines' SkyView geometry, a PIXELS-square gnomonic grid over
-    twice the size; None where the map has no finite value or the ring's
-    median is RING_MAX of the disc's mean or more."""
+    twice the size; None where the map has no finite value, the disc's mean
+    is not positive (noise: no flux to take a log of) or the ring's median
+    is RING_MAX of the disc's mean or more."""
     side, c = 2 * size / 60, (PIXELS - 1) / 2
     d0, a0 = math.radians(dec), math.radians(ra)
     disc, ring = [], []
@@ -136,7 +137,7 @@ def measure(hmap, ra, dec, size):
             elif 1.25 <= r <= 2:
                 ring.append(v)
     mean, background = statistics.mean(disc), statistics.median(ring)
-    if background >= RING_MAX * mean:
+    if mean <= 0 or background >= RING_MAX * mean:
         return None
     return mean - background
 
@@ -159,10 +160,24 @@ def sample():
             yield lst, name, ra_s, dec_s, float(ra), float(dec), float(major), float(minor)
 
 
+def selftest():
+    """measure on flat maps, offline: a negative disc (the noise floor) is
+    None, never a non-positive difference for flux's log."""
+    assert measure(lambda ra, dec: -0.5, 10, 10, 30) is None
+    assert measure(lambda ra, dec: float("nan"), 10, 10, 30) is None
+    assert measure(lambda ra, dec: 5.0, 10, 10, 30) is None  # the ring equals the disc
+    bump = measure(lambda ra, dec: 10.0 if abs(dec - 10) < 0.2 and abs(ra - 10) < 0.2 else 1.0, 10, 10, 30)
+    assert bump is not None and bump > 0 and math.isfinite(flux(bump, 30, 30)), bump
+    print("selftest ok")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--cache", default=os.path.expanduser("~/.cache/astro-recommender/hamap"))
+    ap.add_argument("--selftest", action="store_true", help="check measure offline and exit")
     args = ap.parse_args()
+    if args.selftest:
+        return selftest()
     os.makedirs(args.cache, exist_ok=True)
     hmap = Map(args.cache)
     found, cache = {}, {}

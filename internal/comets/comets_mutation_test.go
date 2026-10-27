@@ -352,4 +352,11 @@ func TestMutObservedPages(t *testing.T) {
 	if seen, err := FetchObserved(context.Background(), day.AddDate(0, 0, 1)); err == nil {
 		t.Errorf("a failed page accepted: %v", seen)
 	}
+	// More pages than are read would be part of the month too, not silently
+	// its newest records.
+	ct = &cobsTransport{pages: cobsMaxPages + 1}
+	http.DefaultTransport = ct
+	if seen, err := FetchObserved(context.Background(), day.AddDate(0, 0, 3)); err == nil || len(ct.reqs) != 1 {
+		t.Errorf("%d pages: %v, %d requests, want an error after the first", cobsMaxPages+1, seen, len(ct.reqs))
+	}
 }

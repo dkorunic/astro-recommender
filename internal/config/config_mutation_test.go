@@ -424,12 +424,20 @@ func TestMutSubsNeeds(t *testing.T) {
 		{[]string{"-focal", "400", "-sensor", "23.5x15.6", "-pixel", "3.76", "-aperture", "80"}, "-camera"},
 		{[]string{"-focal", "400", "-sensor", "23.5x15.6", "-pixel", "3.76", "-aperture", "80", "-qe", "0.8", "-read-noise", "1.5"}, "-camera"},
 		{[]string{"-focal", "400", "-sensor", "23.5x15.6", "-pixel", "3.76", "-aperture", "80", "-qe", "0.8", "-read-noise", "1.5", "-mono"}, ""},
-		{[]string{"-focal", "400", "-sensor", "23.5x15.6", "-pixel", "3.76", "-aperture", "80", "-qe", "0.8", "-mono"}, "-camera"},
+		{[]string{"-focal", "400", "-sensor", "23.5x15.6", "-pixel", "3.76", "-aperture", "80", "-qe", "0.8", "-mono"}, "-read-noise"},
+		{[]string{"-focal", "400", "-sensor", "23.5x15.6", "-pixel", "3.76", "-aperture", "80", "-mono"}, "-qe and -read-noise"},
+		{[]string{"-scope", "dwarf-2"}, "-qe and -read-noise"},
+		{[]string{"-scope", "evscope"}, "-qe and -read-noise and -obstruction"},
+		{[]string{"-scope", "draco"}, "-qe and -read-noise and -obstruction"},
+		{[]string{"-scope", "evscope", "-qe", "0.8", "-read-noise", "1", "-obstruction", "40"}, ""},
+		{[]string{"-scope", "dwarf-2", "-qe", "0.8", "-read-noise", "1"}, ""},
+		{[]string{"-scope", "origin", "-focal", "500", "-pixel", "3.76", "-aperture", "100", "-qe", "0.8", "-read-noise", "1", "-mono"}, ""},
 		{[]string{"-camera", "imx571", "-focal", "400"}, "-aperture"},
 		{[]string{"-fov", "60x40"}, "-aperture and -camera"},
 		{[]string{"-camera", "imx571", "-focal", "400", "-aperture", "80"}, ""},
 		{[]string{"-scope", "origin"}, ""},
-		{[]string{"-scope", "seestar-s50", "-fov", "60x40"}, ""},
+		{[]string{"-scope", "seestar-s50", "-fov", "1x0.5"}, ""},
+		{[]string{"-scope", "seestar-s50", "-fov", "60x40"}, "-aperture and -qe and -read-noise"},
 	} {
 		cfg, err := mutParse(t, mutBase(c.args...)...)
 		if err != nil {

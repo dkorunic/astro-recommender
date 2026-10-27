@@ -702,7 +702,7 @@ func TestMutSubsText(t *testing.T) {
 		{&scoring.Estimate{Good: 1_000_000_000, Max: 400, SNRLimit: 10}, "33", "never"},
 		{&scoring.Estimate{Good: 300, Max: 400, SNRLimit: 14}, "39", "300"},
 	} {
-		if code, text := subsText(c.e); code != c.code || text != c.text {
+		if code, text := SubsText(c.e); code != c.code || text != c.text {
 			t.Errorf("%+v: %q %q, want %q %q", c.e, code, text, c.code, c.text)
 		}
 	}
@@ -958,7 +958,13 @@ func TestMutEmptyState(t *testing.T) {
 	if !strings.Contains(out, "at least 42° from the Moon while it is up)") {
 		t.Errorf("empty state lacks the Moon limit: %q", out)
 	}
+	// A filter loosens nothing for -type galaxy: no emission-line target to
+	// pass it.
 	cfg.Filter, cfg.FilterNM = "ha", 7
+	if out := mutCapture(t, func() { Results(cfg, s, nil) }); strings.Contains(out, "through a filter") {
+		t.Errorf("empty state names a filter's Moon limit for galaxies: %q", out)
+	}
+	cfg.Types = nil
 	if out := mutCapture(t, func() { Results(cfg, s, nil) }); !strings.Contains(out, "while it is up (down to 13° through a filter)") {
 		t.Errorf("empty state lacks the filter's Moon limit: %q", out)
 	}
@@ -967,7 +973,7 @@ func TestMutEmptyState(t *testing.T) {
 	if out := mutCapture(t, func() { Results(cfg, s, nil) }); !strings.Contains(out, "while it is up (down to 34° through a filter)") {
 		t.Errorf("empty state misstates lpro's Moon limit: %q", out)
 	}
-	cfg.Filter = ""
+	cfg.Filter, cfg.Types = "", []string{"galaxy"}
 	cfg.Horizon, cfg.Skip = horizon.Horizon{{0, 10}}, map[string]bool{"m31": true}
 	out = mutCapture(t, func() { Results(cfg, s, nil) })
 	for _, want := range []string{"the local horizon", "1 skipped", "-horizon", "-skip"} {
@@ -1183,7 +1189,7 @@ func TestMutAfterHour(t *testing.T) {
 
 func TestMutEclipseText(t *testing.T) {
 	cfg, s := mutSky(t)
-	if got := eclipseText(s); got != "" || eclipseJSON(s) != nil || moonFloor(cfg, s) != "" {
+	if got := eclipseText(s); got != "" || eclipseJSON(s) != nil || MoonFloor(cfg, s) != "" {
 		t.Errorf("no eclipse: %q %v", got, eclipseJSON(s))
 	}
 	// Penumbral from 20:10, umbral 20:40-21:20 with totality 21:00-21:09,
@@ -1207,27 +1213,27 @@ func TestMutEclipseText(t *testing.T) {
 	}
 	// The Moon limit, 42°, falls with the least light left: none in totality
 	// (the zero Eclipses here), half of it in a shallow eclipse.
-	if got := moonFloor(cfg, s); got != " (down to 0° in the eclipse)" {
+	if got := MoonFloor(cfg, s); got != " (down to 0° in the eclipse)" {
 		t.Errorf("moonFloor in totality = %q", got)
 	}
 	saved := slices.Clone(s.Eclipse)
 	for i := range s.Eclipse {
 		s.Eclipse[i].Light = max(0.5, s.Eclipse[i].Light)
 	}
-	if got := moonFloor(cfg, s); got != " (down to 21° in the eclipse)" {
+	if got := MoonFloor(cfg, s); got != " (down to 21° in the eclipse)" {
 		t.Errorf("moonFloor at half light = %q", got)
 	}
 	// A filter's 0.3 (minMoonK, Hα on an H II region) applies in the
 	// eclipse too: 42° × 0.5 × 0.3.
 	cfg.Filter, cfg.FilterNM = "ha", 7
-	if got := moonFloor(cfg, s); got != " (down to 13° through a filter, 6° in the eclipse)" {
+	if got := MoonFloor(cfg, s); got != " (down to 13° through a filter, 6° in the eclipse)" {
 		t.Errorf("moonFloor at half light through a filter = %q", got)
 	}
 	// A grazing eclipse's 99.9% rounds to the filter's own 13°: not repeated.
 	for i := range s.Eclipse {
 		s.Eclipse[i].Light = max(0.999, s.Eclipse[i].Light)
 	}
-	if got := moonFloor(cfg, s); got != " (down to 13° through a filter)" {
+	if got := MoonFloor(cfg, s); got != " (down to 13° through a filter)" {
 		t.Errorf("moonFloor in a grazing eclipse through a filter = %q", got)
 	}
 	cfg.Filter = ""

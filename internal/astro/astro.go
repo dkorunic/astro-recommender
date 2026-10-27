@@ -126,7 +126,8 @@ func ContinuePolar(day, dawn, now time.Time, lat, lon, sunAlt float64) time.Time
 
 // ClipWindow narrows the night [start, end) to the local clock times from and
 // to ("HH:MM", empty = no limit). Times before noon mean the morning after day,
-// so -from 22:00 -to 02:00 spans midnight. The night is never extended. A
+// so -from 22:00 -to 02:00 spans midnight; a polar night's -to at or before
+// its start, the next day's. The night is never extended. A
 // clock the zone skips (the spring-forward hour) is an error; one it repeats
 // (the fall-back hour) is read as the widest window, from at its first
 // occurrence and to at its second, so the window then spans the change and
@@ -174,6 +175,12 @@ func ClipWindow(day time.Time, loc *time.Location, start, end time.Time, from, t
 		t, err := clock(to, true)
 		if err != nil {
 			return start, end, err
+		}
+		// A polar window runs noon to noon: -to 12:00 (or any clock at or
+		// before its start) is the same clock a day on, while the window
+		// holds it. A night of hours never does, so -to 17:00 stays empty.
+		if next := t.AddDate(0, 0, 1); !t.After(start) && !next.After(end) {
+			t = next
 		}
 		if t.Before(end) {
 			end = t

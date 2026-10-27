@@ -64,7 +64,8 @@ func FetchObserved(ctx context.Context, day time.Time) (Observed, error) {
 	return fetch.CachedGet(ctx, get, "cobs-"+to.Format(time.DateOnly)+"-all.json", cobsCacheAge, parseObserved)
 }
 
-// allPages downloads every page of COBS's answer at url, up to cobsMaxPages,
+// allPages downloads every page of COBS's answer at url, an error past
+// cobsMaxPages,
 // as one document of its shape, which is cached as one: the pages run
 // newest first, so as reports arrive records move onto the next page, and
 // pages fetched hours apart would repeat or skip those at their boundaries.
@@ -96,6 +97,11 @@ func allPages(ctx context.Context, url string) ([]byte, error) {
 			// silently losing the month's older records.
 			if pages < 1 && len(body.Objects) > 0 {
 				return nil, fmt.Errorf("%w: cobs answer without its page count", errComets)
+			}
+			// More than are followed would be part of the month, as a
+			// failed page would.
+			if pages > cobsMaxPages {
+				return nil, fmt.Errorf("%w: cobs answer of %d pages, more than the %d read", errComets, pages, cobsMaxPages)
 			}
 		}
 		objects = append(objects, body.Objects...)
