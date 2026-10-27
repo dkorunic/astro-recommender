@@ -721,7 +721,7 @@ function cardOf(c, i) {
   const kv = (k, v, cls) => { const s = el("span", cls); s.append(el("span", "k", k), v); meta.append(s); };
   kv("Up", `${Math.round(c.foto * 100)}%`);
   kv("Sky", c.sky.toFixed(1), grade(c.sky, 20.5, 19));
-  if ($("form").elements.filter?.value || c.filter) kv("Filter", c.filter || "none");
+  if (filtered) kv("Filter", c.filter || "none");
   const subs = el("div", "subsline");
   showSubs(subs, curves.subs?.[i]);
   if (!subs.hidden) { subs.style.flexBasis = "100%"; meta.append(subs); }
@@ -732,6 +732,10 @@ function cardOf(c, i) {
   art._draw = () => drawAlt(canvas, curves.alt[i], curves.obs[i] ?? [], c, false);
   return art;
 }
+
+// filtered is whether the last run chose among filters (-filter given, or a
+// -scope's built-in one picked by some card): FILTER then shows, none too.
+let filtered = false;
 
 // showCards replaces the cards from curves, sorted as the toolbar says; the
 // curves are drawn once laid out, and again when the column changes width.
@@ -1087,11 +1091,12 @@ $("form").addEventListener("submit", async (e) => {
     // Washed out, empty, -json or -csv: no cards, and the report says why
     // (or is the document), so it opens.
     const n = curves?.night?.washout ? 0 : curves?.cards?.length ?? 0;
+    filtered = a.includes("-filter") || (curves?.cards ?? []).some((c) => c.filter);
     if (!n) curves = curves && { ...curves, cards: [] };
     showCards();
     $("report").open = !n && out.trim() !== "";
     $("sortbox").hidden = n < 2;
-    $("count").textContent = !curves ? "Report" : n ? `${n} of ${curves.night.targets} targets` : "No targets";
+    $("count").textContent = !curves ? (code ? "Targets" : "Report") : n ? `${n} of ${curves.night.targets} targets` : "No targets";
     // -csv and -json are meant for other programs (N.I.N.A. imports the
     // CSV): offer the output as a file, not only as text to copy.
     const kind = code ? null : a.includes("-csv") ? "csv" : a.includes("-json") ? "json" : null;
@@ -1161,6 +1166,7 @@ $("clear").addEventListener("click", () => {
   // reset() leaves a hidden field's value, which is its default too.
   for (const h of $("form").querySelectorAll("input[type=hidden]")) h.value = "";
   syncChips();
+  sortCards(); // reset() put Sort back to Score
   try { localStorage.removeItem(KEY); } catch {}
   history.replaceState(null, "", location.pathname);
   zone();
