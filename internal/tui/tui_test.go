@@ -5,11 +5,14 @@ package tui
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 	"time"
 
+	"charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
 	"github.com/NimbleMarkets/ntcharts/v2/picture"
 	"github.com/charmbracelet/x/ansi"
@@ -178,5 +181,71 @@ func TestKittyAuto(t *testing.T) {
 	press(m, "j")
 	if m.pic.Mode() != picture.PictureGlyph {
 		t.Errorf("mode %v after i, want half-blocks kept", m.pic.Mode())
+	}
+}
+
+// A filter survives a re-sort and a new night: SetItems drops the filtered
+// items and refilters through the command resort returns, which the list
+// must receive, else it shows no target until the filter text changes.
+func TestFilterSurvivesResort(t *testing.T) {
+	m := started(t, 160, 48, new([]time.Time))
+	m.list.SetFilterText("M 31")
+	if n := len(m.list.VisibleItems()); n != 1 {
+		t.Fatalf("%d targets match M 31, want 1", n)
+	}
+	for _, step := range []string{"sort", "night"} {
+		var cmd tea.Cmd
+		if step == "sort" {
+			m.sortBy = (m.sortBy + 1) % len(sorts)
+			cmd = m.resort()
+		} else {
+			m.seq++
+			_, cmd = m.Update(nightMsg{night: testNight(m.night.Day.AddDate(0, 0, 1)), seq: m.seq})
+		}
+		feedFilter(m, cmd)
+		if n := len(m.list.VisibleItems()); n != 1 {
+			t.Errorf("after the %s: %d targets shown, want 1", step, n)
+		}
+	}
+}
+
+// feedFilter runs cmd and its batches and passes the list's filter results
+// back, leaving the other commands (pictures, spinners) unrun.
+func feedFilter(m *model, cmd tea.Cmd) {
+	if cmd == nil {
+		return
+	}
+	switch msg := cmd().(type) {
+	case tea.BatchMsg:
+		for _, c := range msg {
+			feedFilter(m, c)
+		}
+	case list.FilterMatchesMsg:
+		m.Update(msg)
+	}
+}
+
+// The observable stretch is shaded in every column of a wide chart, not in
+// one column per sample.
+func TestChartShadingContinuous(t *testing.T) {
+	m := started(t, 200, 50, new([]time.Time))
+	r, g, b, _ := m.theme.soft.RGBA()
+	bg := fmt.Sprintf("48;2;%d;%d;%d", r>>8, g>>8, b>>8)
+	for _, w := range []int{60, 120, 200} {
+		// M 31 is observable the whole night: every plot cell of a row
+		// above its curve is shaded, the axis and the last instant aside.
+		var row string
+		for l := range strings.SplitSeq(m.chart(0, w, 8), "\n") {
+			if strings.Contains(l, "│") {
+				row = l
+
+				break
+			}
+		}
+		axis := []rune(ansi.Strip(row))
+		plot := len(axis) - slices.Index(axis, '│') - 1
+		if n := strings.Count(row, bg); n < plot-1 {
+			t.Errorf("width %d: %d of %d cells shaded", w, n, plot)
+		}
 	}
 }

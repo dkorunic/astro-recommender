@@ -567,7 +567,7 @@ document.addEventListener("keydown", (e) => {
 });
 
 // Clock times and compass points in the location's zone.
-const hm = (t) => new Date(t * 1000).toLocaleTimeString([], { timeZone: curves?.zone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+const hm = (t) => new Date(t * 1000).toLocaleTimeString([], { timeZone: curves?.zone || undefined, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
 const compass = (az) => ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round(az / 45) % 8];
 // grade is the report's colour for a value: good, fair or poor.
 const grade = (v, ok, bad) => ok > bad ? (v >= ok ? "c32" : v <= bad ? "c31" : "c33") : (v <= ok ? "c32" : v >= bad ? "c31" : "c33");

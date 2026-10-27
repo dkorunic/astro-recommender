@@ -430,8 +430,12 @@ func (m *model) chart(i, w, h int) string {
 	}
 	ch.DrawAll()
 	shade := lipgloss.NewStyle().Background(t.soft)
+	// A column spans (last-first)/plot width; the plot is narrower than w, so
+	// stepping by the w-th part reaches every column, where d.Step skipped
+	// columns once they outnumbered the samples.
+	step := max(1, (last.Unix()-first.Unix())/int64(w))
 	for _, s := range d.Obs[i] {
-		for x := s[0]; x < s[1]; x += d.Step {
+		for x := s[0]; x < s[1]; x += step {
 			ch.SetColumnBackgroundStyle(time.Unix(x, 0), shade)
 		}
 	}

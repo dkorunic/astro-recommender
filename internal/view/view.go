@@ -27,7 +27,7 @@ const Step = 5
 // Doc is one night as the front ends show it; the JSON names are the web
 // page's. Per-result slices are in rank order, one entry per listed result.
 type Doc struct { // betteralign:ignore
-	Zone  string              `json:"zone"`
+	Zone  string              `json:"zone"` // IANA, "" for the viewer's own
 	Alt   [][]float64         `json:"alt"`  // altitude to 0.1° every Step minutes from Start
 	Pos   [][3]float64        `json:"pos"`  // J2000 RA and Dec (degrees), size (arcmin, 0 unknown)
 	Obs   [][][2]int64        `json:"obs"`  // observable stretches, [from, to) Unix seconds
@@ -113,7 +113,7 @@ type Slot struct { // betteralign:ignore
 // the -plan slots and the geocoded place. A result without per-minute data
 // is rescored once for its observable stretches.
 func Build(cfg *config.Config, s *scoring.Sky, place string, results []scoring.Result, slots []plan.Slot) Doc {
-	doc := Doc{Zone: cfg.Loc.String(), Step: Step * 60, Min: cfg.AltMin, Max: cfg.AltMax, Cards: []Card{}}
+	doc := Doc{Zone: zone(cfg.Loc), Step: Step * 60, Min: cfg.AltMin, Max: cfg.AltMax, Cards: []Card{}}
 	if len(s.Grid) == 0 {
 		return doc
 	}
@@ -180,6 +180,19 @@ func Build(cfg *config.Config, s *scoring.Sky, place string, results []scoring.R
 
 // observable is res's per-minute observability: its own when scored with
 // perMinute (-plan, or main's exposures()), else rescored.
+// zone names loc for Intl, which rejects Go's "Local" and "Factory": the
+// first is the browser's own zone under js ("" there), the second UTC.
+func zone(loc *time.Location) string {
+	switch name := loc.String(); name {
+	case "Local":
+		return ""
+	case "Factory":
+		return "UTC"
+	default:
+		return name
+	}
+}
+
 func observable(cfg *config.Config, s *scoring.Sky, res scoring.Result) []bool {
 	if res.Obs != nil {
 		return res.Obs

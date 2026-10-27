@@ -174,7 +174,7 @@ func Parse() (Config, error) {
 	flag.Float64Var(&cfg.Obstruction, "obstruction", 0, "with framing, the central obstruction's diameter in mm; Origin Mark II 77, -scope's, otherwise 0 when -aperture is given")
 	flag.Float64Var(&cfg.Sub, "sub", 0, "with framing, the sub-exposure length in seconds, 0.001-3600; Origin 10, -scope's")
 	flag.Float64Var(&cfg.QE, "qe", 0, "with framing, the camera's peak quantum efficiency, above 0 and at most 1; Origin (IMX678) 0.83")
-	flag.Float64Var(&cfg.ReadNoise, "read-noise", 0, "with framing, the camera's read noise in electrons, 0 or more; Origin (IMX678) 1.1")
+	flag.Float64Var(&cfg.ReadNoise, "read-noise", 0, "with framing, the camera's read noise in electrons, 0 or more; Origin 0.97")
 	flag.Float64Var(&cfg.Throughput, "throughput", 0, "with framing, the share of the light the telescope's optics pass, above 0 and at most 1; a refractor 0.88, a prime-focus mirror (Origin) 0.81, another telescope (-aperture) 0.85")
 	flag.Float64Var(&cfg.Dark, "dark", 0, "with framing, the camera's dark current in e⁻/s per pixel at a sensor temperature of 25 °C, doubling every 5 °C; the -camera or -scope chip's from its maker's chart, else 0.16")
 	flag.Float64Var(&cfg.SensorTemp, "sensor-temp", 0, "with framing, a cooled camera's sensor temperature in °C, -60 to 60; without it the sensor is uncooled, 10 °C above the forecast air")
@@ -576,6 +576,11 @@ func (cfg *Config) framing(set map[string]bool, f frameFlags) (Scope, error) {
 	// another camera (-sensor alone is a crop of its own).
 	cfg.OtherOptics = cfg.Scope != "" && set["focal"]
 	cfg.OtherChip = cfg.Scope != "" && set["pixel"] && f.pixel != base.Pixel
+	if cfg.OtherChip {
+		// Not the scope's chip: its dark current, response and label would
+		// describe the wrong sensor.
+		cfg.Camera = ""
+	}
 	if err := cfg.camera(set, preset, base); err != nil {
 		return Scope{}, err
 	}

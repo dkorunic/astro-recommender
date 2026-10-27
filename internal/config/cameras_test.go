@@ -4,8 +4,10 @@
 package config
 
 import (
+	"flag"
 	"math"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -282,6 +284,35 @@ func TestScopeOtherCamera(t *testing.T) {
 		cfg, err := mutParse(t, mutBase(append([]string{"-scope", "origin"}, strings.Fields(args)...)...)...)
 		if err != nil || cfg.ScopeLabel() != want {
 			t.Errorf("%s: label %q, want %q (%v)", args, cfg.ScopeLabel(), want, err)
+		}
+	}
+}
+
+// Another camera on -scope is not the scope's chip: its dark current,
+// response and label are not the chip's (the original Origin's IMX178 has
+// 0.95 e⁻/s, six times typicalDark).
+func TestScopeOtherChipCamera(t *testing.T) {
+	cfg, err := mutParse(t, mutBase("-scope", "origin-mk1", "-focal", "500", "-pixel", "3.76", "-aperture", "100", "-qe", "0.8", "-read-noise", "1")...)
+	if err != nil || !cfg.OtherChip {
+		t.Fatalf("OtherChip %v (%v)", cfg.OtherChip, err)
+	}
+	if cfg.Camera != "" || cfg.CameraLabel() != "" || cfg.Dark != typicalDark {
+		t.Errorf("camera %q label %q dark %g, want none and %g", cfg.Camera, cfg.CameraLabel(), cfg.Dark, typicalDark)
+	}
+	if got, want := cfg.ColourResponse(), &imx678; got != want {
+		t.Errorf("response %+v, want the default IMX678's %+v", got, want)
+	}
+}
+
+// -qe's and -read-noise's help give the values the Origin actually takes.
+func TestOriginHelpValues(t *testing.T) {
+	cfg, err := mutParse(t, mutBase("-scope", "origin")...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, v := range map[string]float64{"qe": cfg.QE, "read-noise": cfg.ReadNoise} {
+		if u := flag.CommandLine.Lookup(name).Usage; !strings.HasSuffix(u, " "+strconv.FormatFloat(v, 'g', -1, 64)) {
+			t.Errorf("-%s help %q does not end in the Origin's %g", name, u, v)
 		}
 	}
 }

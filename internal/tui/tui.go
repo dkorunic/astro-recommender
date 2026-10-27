@@ -235,8 +235,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) { //nolint:ireturn // t
 			return m, tea.Batch(cmds...)
 		}
 		m.night, m.loading = msg.night, false
-		m.resort()
-		cmds = append(cmds, m.layout())
+		cmds = append(cmds, m.resort(), m.layout())
 	case warnMsg:
 		m.warnings = append(m.warnings, strings.TrimPrefix(string(msg), "warning: "))
 	case spinner.TickMsg:
@@ -263,9 +262,9 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) { //nolint:ireturn // t
 			return m, m.load(m.opt.Day, m.opt.DateSet)
 		case key.Matches(msg, keys.Sort):
 			m.sortBy = (m.sortBy + 1) % len(sorts)
-			m.resort()
+			cmd := m.resort()
 
-			return m, m.selectPicture()
+			return m, tea.Batch(cmd, m.selectPicture())
 		case key.Matches(msg, keys.Open):
 			if i, ok := m.selected(); ok {
 				openURL(m.ctx, aladin(m.night.Doc.Pos[i]))
@@ -352,7 +351,9 @@ func (m *model) snapshot() {
 }
 
 // resort fills the list in the sort's order, keeping the selected target.
-func (m *model) resort() {
+// The command is SetItems': with a filter set, the list refilters through it
+// and stays empty until it runs.
+func (m *model) resort() tea.Cmd {
 	cards := m.night.Doc.Cards
 	keep, kept := m.selected()
 	m.order = make([]int, len(cards))
@@ -376,8 +377,10 @@ func (m *model) resort() {
 			sel = j
 		}
 	}
-	m.list.SetItems(items)
+	cmd := m.list.SetItems(items)
 	m.list.Select(sel)
+
+	return cmd
 }
 
 func cmpF(a, b float64) int {
