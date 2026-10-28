@@ -141,11 +141,11 @@ type (
 var sorts = []string{"score", "peak", "altitude", "size", "name"}
 
 type keyMap struct {
-	Prev, Next, Tonight, Sort, Open, Picture, Night, Warn, Help, Quit, Up, Down, Filter key.Binding
+	Prev, Next, Tonight, Sort, Open, Picture, Night, Warn, Help, Quit, Select, Up, Down, Filter key.Binding
 }
 
 func (k keyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Up, k.Prev, k.Next, k.Sort, k.Filter, k.Open, k.Help, k.Quit}
+	return []key.Binding{k.Select, k.Prev, k.Next, k.Sort, k.Filter, k.Open, k.Help, k.Quit}
 }
 
 func (k keyMap) FullHelp() [][]key.Binding {
@@ -158,7 +158,8 @@ func (k keyMap) FullHelp() [][]key.Binding {
 }
 
 var keys = keyMap{
-	Up:      key.NewBinding(key.WithKeys("up", "k"), key.WithHelp("↑/↓", "select")),
+	Select:  key.NewBinding(key.WithKeys("up", "down"), key.WithHelp("↑/↓", "select")), // the short help's Up and Down
+	Up:      key.NewBinding(key.WithKeys("up", "k"), key.WithHelp("↑/k", "previous target")),
 	Down:    key.NewBinding(key.WithKeys("down", "j"), key.WithHelp("↓/j", "next target")),
 	Filter:  key.NewBinding(key.WithKeys("/"), key.WithHelp("/", "find")),
 	Sort:    key.NewBinding(key.WithKeys("s"), key.WithHelp("s", "sort")),
@@ -176,7 +177,7 @@ var keys = keyMap{
 type model struct {
 	list      list.Model
 	theme     theme
-	want      time.Time       // the night ← and → last asked for, while it computes
+	want      time.Time       // the date of the night computing, zero when Tonight picks it
 	ctx       context.Context //nolint:containedctx // the computes' context for the program's life
 	snapErr   error
 	compute   Compute
@@ -303,8 +304,9 @@ func (m *model) key(msg tea.KeyPressMsg) (tea.Cmd, bool) {
 	case key.Matches(msg, keys.Quit):
 		return tea.Quit, true
 	case key.Matches(msg, keys.Prev), key.Matches(msg, keys.Next):
-		// While t's night computes its date is unknown (Tonight picks
-		// it): a step from the night shown would land elsewhere.
+		// While tonight computes its date is unknown (Tonight picks it): a
+		// step from the night shown would land elsewhere. A -date night's
+		// is known (load sets want).
 		if m.loading && m.want.IsZero() {
 			return nil, true
 		}
@@ -315,9 +317,8 @@ func (m *model) key(msg tea.KeyPressMsg) (tea.Cmd, bool) {
 			if key.Matches(msg, keys.Prev) {
 				d = -1
 			}
-			m.want = base.AddDate(0, 0, d)
 
-			return m.load(m.want, true), true
+			return m.load(base.AddDate(0, 0, d), true), true
 		}
 	case key.Matches(msg, keys.Tonight):
 		// Tonight is now's, not the launch's: the view may have been open
@@ -328,7 +329,6 @@ func (m *model) key(msg tea.KeyPressMsg) (tea.Cmd, bool) {
 			// local noon from day's zone, which time.Now's is not.
 			day = m.now().In(m.opt.Loc)
 		}
-		m.want = time.Time{}
 
 		return m.load(day, m.opt.DateSet), true
 	case key.Matches(msg, keys.Sort):
@@ -373,11 +373,16 @@ func (m *model) key(msg tea.KeyPressMsg) (tea.Cmd, bool) {
 }
 
 // load computes the night of day in the background; only the latest one
-// asked for is shown, and the one it supersedes is cancelled.
+// asked for is shown, and the one it supersedes is cancelled. A night of a
+// date given is the one ← and → step from while it computes; tonight's
+// date is Tonight's to pick, so they wait for it.
 func (m *model) load(day time.Time, dateSet bool) tea.Cmd {
 	m.seq++
 	seq := m.seq
-	m.loading, m.warnings = true, nil
+	m.loading, m.warnings, m.want = true, nil, time.Time{}
+	if dateSet {
+		m.want = day
+	}
 	if m.cancel != nil {
 		m.cancel()
 	}

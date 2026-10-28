@@ -429,6 +429,37 @@ func TestStepsAddUp(t *testing.T) {
 	}
 }
 
+// With -date the night's date is known while it computes, at launch and
+// after t: ← and → step from it rather than wait.
+func TestStepWhileDateLoads(t *testing.T) {
+	var asked []time.Time
+	day := time.Date(2026, 10, 27, 12, 0, 0, 0, time.UTC)
+	m := newModel(context.Background(), Options{Day: day, Loc: time.UTC, DateSet: true},
+		func(_ context.Context, d time.Time, _ bool) Night {
+			asked = append(asked, d)
+
+			return testNight(d)
+		})
+	m.Update(tea.WindowSizeMsg{Width: 160, Height: 48})
+	m.load(day, true) // the launch's, still computing
+	cmd := press(m, "[")
+	if cmd == nil {
+		t.Fatal("← while the -date night computes did nothing")
+	}
+	m.Update(cmd())
+	m.Update(press(m, "]")()) // back on the given date
+	m.Update(press(m, "]")())
+	press(m, "t") // the given date again, computing
+	if cmd = press(m, "]"); cmd == nil {
+		t.Fatal("→ while t's -date night computes did nothing")
+	}
+	cmd()
+	want := []time.Time{day.AddDate(0, 0, -1), day, day.AddDate(0, 0, 1), day.AddDate(0, 0, 1)}
+	if !slices.EqualFunc(asked, want, time.Time.Equal) {
+		t.Errorf("asked %v, want %v", asked, want)
+	}
+}
+
 // While t's night computes, ← and → wait: its date is Tonight's to pick, and
 // a step from the night shown would land elsewhere.
 func TestStepAfterTonight(t *testing.T) {
@@ -475,7 +506,7 @@ func TestFrameFitsWindow(t *testing.T) {
 				t.Errorf("%dx%d (%q): %d lines, %d columns", wh[0], wh[1], k, len(lines), wide)
 			}
 			// The panes give way, not the keys' help at the bottom.
-			if !strings.Contains(strings.Join(lines[max(0, len(lines)-5):], "\n"), "select") {
+			if !strings.Contains(strings.Join(lines[max(0, len(lines)-5):], "\n"), "↑/") { // both helps lead with ↑
 				t.Errorf("%dx%d (%q): the help is cut off", wh[0], wh[1], k)
 			}
 		}
