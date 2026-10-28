@@ -171,8 +171,6 @@ func Build(cfg *config.Config, s *scoring.Sky, place string, results []scoring.R
 	return doc
 }
 
-// observable is res's per-minute observability: its own when scored with
-// perMinute (-plan, or main's exposures()), else rescored.
 // zone names loc for Intl, which rejects Go's "Local" and "Factory": the
 // first is the browser's own zone under js ("" there), the second UTC.
 func zone(loc *time.Location) string {
@@ -207,6 +205,8 @@ func moonUp(cfg *config.Config, dusk, dawn time.Time) [][2]int64 {
 	return spans
 }
 
+// observable is res's per-minute observability: its own when scored with
+// perMinute (-plan, or main's exposures()), else rescored.
 func observable(cfg *config.Config, s *scoring.Sky, res scoring.Result) []bool {
 	if res.Obs != nil {
 		return res.Obs
