@@ -93,7 +93,10 @@ func Run(ctx context.Context, opt Options, compute Compute) error {
 		br := bufio.NewReader(r)
 		for {
 			l, err := br.ReadString('\n')
-			if l = strings.TrimSuffix(l, "\n"); l != "" || err == nil {
+			// A superseded or quit compute's fetches fail as it is
+			// cancelled (fetch's stale-cache fallback warns without a
+			// context): no news, in the view or on exit.
+			if l = strings.TrimSuffix(l, "\n"); (l != "" || err == nil) && !strings.Contains(l, context.Canceled.Error()) {
 				all = append(all, l)
 				p.Send(warnMsg(l))
 			}
@@ -266,11 +269,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) { //nolint:ireturn // t
 			cmds = append(cmds, tea.Tick(snapshotWait, func(time.Time) tea.Msg { return snapshotMsg{} }))
 		}
 	case warnMsg:
-		// A superseded compute's fetches fail as it is cancelled: not this
-		// night's news.
-		if !strings.Contains(string(msg), context.Canceled.Error()) {
-			m.warnings = append(m.warnings, strings.TrimPrefix(string(msg), "warning: "))
-		}
+		m.warnings = append(m.warnings, strings.TrimPrefix(string(msg), "warning: "))
 	case spinner.TickMsg:
 		var cmd tea.Cmd
 		m.spin, cmd = m.spin.Update(msg)
@@ -304,6 +303,11 @@ func (m *model) key(msg tea.KeyPressMsg) (tea.Cmd, bool) {
 	case key.Matches(msg, keys.Quit):
 		return tea.Quit, true
 	case key.Matches(msg, keys.Prev), key.Matches(msg, keys.Next):
+		// While t's night computes its date is unknown (Tonight picks
+		// it): a step from the night shown would land elsewhere.
+		if m.loading && m.want.IsZero() {
+			return nil, true
+		}
 		// From the night last asked for while it computes, so presses
 		// add up.
 		if base := cmp.Or(m.want, m.night.Day); !base.IsZero() {

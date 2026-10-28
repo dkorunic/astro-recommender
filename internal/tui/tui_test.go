@@ -399,8 +399,7 @@ func TestTonightIsNow(t *testing.T) {
 }
 
 // → pressed while a night computes adds up from the night last asked for,
-// and each new compute cancels the one it supersedes, whose warnings
-// (its fetches failing as cancelled) are dropped.
+// and each new compute cancels the one it supersedes.
 func TestStepsAddUp(t *testing.T) {
 	var ctxs []context.Context
 	var asked []time.Time
@@ -428,9 +427,24 @@ func TestStepsAddUp(t *testing.T) {
 			t.Errorf("superseded compute %d not cancelled", i+1)
 		}
 	}
-	m.Update(warnMsg("warning: no comets: Get \"https://minorplanetcenter.net\": context canceled"))
-	if len(m.warnings) != 0 {
-		t.Errorf("a cancelled compute's warning shown: %q", m.warnings)
+}
+
+// While t's night computes, ← and → wait: its date is Tonight's to pick, and
+// a step from the night shown would land elsewhere.
+func TestStepAfterTonight(t *testing.T) {
+	var asked []time.Time
+	m := started(t, 160, 48, &asked)
+	m.Update(press(m, "]")())
+	m.Update(press(m, "]")())
+	tonight := press(m, "t")
+	if cmd := press(m, "]"); cmd != nil {
+		t.Fatal("→ while t computes stepped from the night shown")
+	}
+	m.Update(tonight())
+	want := m.night.Day.AddDate(0, 0, 1)
+	m.Update(press(m, "]")())
+	if !asked[len(asked)-1].Equal(want) {
+		t.Errorf("→ after t asked %v, want %v", asked[len(asked)-1], want)
 	}
 }
 
@@ -613,6 +627,7 @@ func TestRunWaitsForCompute(t *testing.T) {
 				close(started)
 				<-ctx.Done()
 				time.Sleep(100 * time.Millisecond)
+				fmt.Fprintln(os.Stderr, "warning: using cached CometEls.txt: context canceled")
 				fmt.Fprintln(os.Stderr, "warning: late")
 
 				return Night{Day: day, Err: ctx.Err()}
@@ -628,5 +643,7 @@ func TestRunWaitsForCompute(t *testing.T) {
 	}
 	if out := <-echoed; !strings.Contains(string(out), "warning: late") {
 		t.Errorf("the cancelled compute's warning lost: %q", out)
+	} else if strings.Contains(string(out), "context canceled") {
+		t.Errorf("a cancelled fetch's warning echoed: %q", out)
 	}
 }
