@@ -341,6 +341,18 @@ func TestMutObservedPages(t *testing.T) {
 	if seen, err := FetchObserved(context.Background(), day); err != nil || len(seen["9Z"]) != 3 || len(ct.reqs) != 0 {
 		t.Errorf("cached pages: %v %v, requests %v", seen, err, ct.reqs)
 	}
+	// The nights to come share today's answer: none of theirs exists yet.
+	oldNow := now
+	t.Cleanup(func() { now = oldNow })
+	now = func() time.Time { return day.Add(12 * time.Hour) }
+	ct = &cobsTransport{pages: 3}
+	http.DefaultTransport = ct
+	for d := 1; d <= 3; d++ {
+		if _, err := FetchObserved(context.Background(), day.AddDate(0, 0, d)); err != nil || len(ct.reqs) != 0 {
+			t.Errorf("night %d ahead: %v, requests %v, want today's cached answer", d, err, ct.reqs)
+		}
+	}
+	now = oldNow
 	// An answer without its page count would be read as one page.
 	ct = &cobsTransport{pages: 0}
 	http.DefaultTransport = ct

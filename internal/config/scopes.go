@@ -239,7 +239,8 @@ func (cfg *Config) applyScope(set map[string]bool, name string) (Scope, error) {
 
 // ScopeLabel names -scope's preset as the header and JSON show it, e.g.
 // "ZWO Seestar S50 (IMX462)", or what is left of it with OtherOptics
-// ("ZWO Seestar S50's IMX462 behind other optics") or OtherChip; "" without one.
+// ("ZWO Seestar S50's IMX462 behind other optics") or OtherChip ("ZWO
+// Seestar S50's optics with another camera"), or both; "" without one.
 func (cfg *Config) ScopeLabel() string {
 	s, ok := Scopes[cfg.Scope]
 	if !ok {
@@ -248,8 +249,10 @@ func (cfg *Config) ScopeLabel() string {
 
 	chip := cmp.Or(s.Sensor, strings.ToUpper(s.Camera))
 	switch {
-	case cfg.OtherChip: // -focal and -pixel, or another rig's -scale or -fov: only its mount and settings remain
+	case cfg.OtherChip && cfg.OtherOptics: // another rig's -focal and -pixel, -scale or -fov: only its mount and settings remain
 		return s.Name + " settings with another camera and optics"
+	case cfg.OtherChip: // its own -focal with another -pixel or a larger -sensor
+		return s.Name + "'s optics with another camera"
 	case cfg.OtherOptics:
 		return s.Name + "'s " + chip + " behind other optics"
 	}

@@ -4,6 +4,7 @@
 package view
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -57,5 +58,37 @@ func TestMoonFloor(t *testing.T) {
 	s.Night = [2]time.Time{s.Start, s.End}
 	if n := Build(cfg, &s, "", nil, nil).Night; !strings.Contains(n.MoonLow, "through a filter") {
 		t.Errorf("Moon limit %.0f° with floor %q, want a filter's", n.MoonSep, n.MoonLow)
+	}
+}
+
+// moonUp samples every Step minutes and bisects the crossings: the spans of
+// the minute-by-minute scan, over a month of nights at three latitudes.
+func TestMoonUp(t *testing.T) {
+	minutes := func(cfg *config.Config, dusk, dawn time.Time) [][2]int64 {
+		spans := [][2]int64{}
+		was := false
+		for t := dusk; t.Before(dawn); t = t.Add(time.Minute) {
+			ra, dec := astro.MoonTopo(t, cfg.Lat, cfg.Lon)
+			up := astro.Altitude(ra, dec, t, cfg.Lat, cfg.Lon) > astro.MoonHorizon
+			switch {
+			case up && !was:
+				spans = append(spans, [2]int64{t.Unix(), dawn.Unix()})
+			case !up && was:
+				spans[len(spans)-1][1] = t.Unix()
+			}
+			was = up
+		}
+
+		return spans
+	}
+	for _, lat := range []float64{45.8, -33.9, 78.2} {
+		cfg := &config.Config{Lat: lat, Lon: 16}
+		for d := range 30 {
+			dusk := time.Date(2026, 11, 1+d, 17, 3, 20, 0, time.UTC)
+			dawn := dusk.Add(13*time.Hour + 41*time.Minute + 30*time.Second)
+			if got, want := moonUp(cfg, dusk, dawn), minutes(cfg, dusk, dawn); fmt.Sprint(got) != fmt.Sprint(want) {
+				t.Errorf("lat %g, %s: %v, want %v", lat, dusk.Format(time.DateOnly), got, want)
+			}
+		}
 	}
 }

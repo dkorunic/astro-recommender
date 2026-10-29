@@ -728,8 +728,9 @@ func (fp filterPass) gain(objNL, objRef, glow, rayleigh, mie float64) float64 {
 const minMoonK = 0.3
 
 // moonKTypes are one type per line ratio catalog.Target.Lines knows (H II
-// regions, the default, then its lineRatios), for LoosestMoonK.
-var moonKTypes = []string{"HII Region", "Planetary Nebula", "Supernova Remnant", "Wolf-Rayet Nebula"}
+// regions, the default, then its lineRatios), for LoosestMoonK, and an
+// emission cluster with nebulosity, H II's ratios, which -type cluster keeps.
+var moonKTypes = []string{"HII Region", "Planetary Nebula", "Supernova Remnant", "Wolf-Rayet Nebula", "Cl+N Emission Nebula"}
 
 // LoosestMoonK returns the least moonK any -filter choice gives an
 // emission-line target -type keeps, of any type's line ratios: how far down

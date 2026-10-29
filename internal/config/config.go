@@ -113,8 +113,8 @@ type Config struct {
 	SensorTempSet  bool    // -sensor-temp given: the sensor is held there, else ambient + scoring's sensorWarm
 	MeanStack      bool    // -stack mean: subs averaged with equal weight (smart telescopes' live stacks), else weighted by SNR²
 	AltAz          bool    // Mount is MountAltAz: field rotation limits the observable minutes
-	OtherOptics    bool    // -scope with -focal (or another rig's -scale or -fov): its camera behind other optics, whose aperture SUBS needs
-	OtherChip      bool    // -scope with a -pixel unlike its own (or another rig's -scale or -fov): another camera too, whose QE and read noise SUBS needs
+	OtherOptics    bool    // -scope with a -focal unlike its own (or another rig's -scale or -fov): its camera behind other optics, whose aperture SUBS needs
+	OtherChip      bool    // -scope with a -pixel unlike its own or a -sensor larger than its chip (or another rig's -scale or -fov): another camera, whose QE and read noise SUBS needs
 	NoWeather      bool
 	NoGeocode      bool
 	NoSQM          bool
@@ -573,12 +573,16 @@ func (cfg *Config) framing(set map[string]bool, f frameFlags) (Scope, error) {
 	if err := cfg.frameSizes(set, f.minPx); err != nil {
 		return Scope{}, err
 	}
-	// -focal on a scope is other optics, and a -pixel unlike its own
-	// another camera (-sensor or -fov within its frame is a crop of its own).
-	// A -scale unlike its own, or a -fov wider than its frame, fits neither,
-	// so both are another rig's.
-	cfg.OtherOptics = cfg.Scope != "" && set["focal"]
-	cfg.OtherChip = cfg.Scope != "" && set["pixel"] && f.pixel != base.Pixel
+	// A -focal unlike a scope's own is other optics, and a -pixel unlike its
+	// own another camera (-sensor or -fov within its frame is a crop of its
+	// own). A -scale unlike its own, or a -fov wider than its frame, fits
+	// neither, so both are another rig's; a -sensor larger than its chip is
+	// another camera.
+	cfg.OtherOptics = cfg.Scope != "" && set["focal"] && off(f.focal, base.Focal)
+	cfg.OtherChip = cfg.Scope != "" && set["pixel"] && off(f.pixel, base.Pixel)
+	if cfg.Scope != "" && set["sensor"] && largerChip(f.sensor, base) {
+		cfg.OtherChip = true
+	}
 	if cfg.Scope != "" && cfg.otherRig(set, base) {
 		cfg.OtherOptics, cfg.OtherChip = true, true
 	}
@@ -600,13 +604,27 @@ func (cfg *Config) framing(set map[string]bool, f frameFlags) (Scope, error) {
 
 // otherRig reports whether -scale or -fov describe a frame the base scope
 // cannot take: a scale more than rigSlack off its own, or a field wider than
-// its frame by more than that (a typed 1.23 for the Origin's 1.2347 is its own).
+// its frame by more than that (a typed 1.23 for the Origin's 1.2347 is its
+// own, as a -focal or -pixel within that of its own is).
 func (cfg *Config) otherRig(set map[string]bool, base Scope) bool {
 	long, short := base.fov()
 
-	return set["scale"] && math.Abs(cfg.Scale/base.scale()-1) > rigSlack ||
+	return set["scale"] && off(cfg.Scale, base.scale()) ||
 		set["fov"] && (cfg.FOVLong > long*(1+rigSlack) || cfg.FOVShort > short*(1+rigSlack))
 }
+
+// largerChip reports whether -sensor (mm) is larger than the base scope's
+// chip by more than rigSlack: not a crop of it.
+func largerChip(sensor string, base Scope) bool {
+	long, short, err := parseWxH("sensor", "mm", "23.5x15.6", sensor)
+
+	return err == nil && (long > float64(base.PxLong)*base.Pixel/1000*(1+rigSlack) ||
+		short > float64(base.PxShort)*base.Pixel/1000*(1+rigSlack))
+}
+
+// off reports whether v misses the base scope's own value by more than
+// rigSlack.
+func off(v, own float64) bool { return math.Abs(v/own-1) > rigSlack }
 
 // rigSlack is the share by which -scale or -fov may miss -scope's own and
 // still describe it: the two decimals of a value read off its help.

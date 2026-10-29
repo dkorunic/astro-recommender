@@ -46,8 +46,12 @@ type obs struct {
 // "K22E020").
 type Observed map[string][]obs
 
+// now is the clock FetchObserved clamps a night to come by.
+var now = time.Now
+
 // FetchObserved returns the COBS observations of the cobsDays up to day
-// (UTC), cached for cobsCacheAge; none in the browser, since COBS sends no
+// (UTC), or up to today for a night to come, which has none of its own yet,
+// so the nights ahead share one answer, cached for cobsCacheAge; none in the browser, since COBS sends no
 // CORS headers (checked at run time, like fetch's identify). COBS answers
 // 2500 records a page, newest first, so every page is read (allPages):
 // page 1 alone would drop a busy month's oldest observations.
@@ -56,6 +60,9 @@ func FetchObserved(ctx context.Context, day time.Time) (Observed, error) {
 		return Observed{}, nil
 	}
 	to := day.UTC()
+	if t := now().UTC(); t.Before(to) {
+		to = t
+	}
 	from := to.AddDate(0, 0, -cobsDays)
 	url := fmt.Sprintf(cobsURL, from.Format(time.DateOnly), to.Format(time.DateOnly))
 	get := func(ctx context.Context) ([]byte, error) { return allPages(ctx, url) }

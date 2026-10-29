@@ -318,7 +318,7 @@ func TestSubsText(t *testing.T) {
 		"none tonight, the forecast loses them all":           {Modest: 1e9, Good: 1e9, Best: 1e9, Max: 2874, Sub: 10, Panels: 1},
 		"Good image: never, the stack stops at SNR 8.0":       {Modest: 50, Good: 1e9, Best: 1e9, Max: 2874, Sub: 10, SNRPerSub: 1, SNRLimit: 8, Panels: 1},
 		"Good image: no sub fits tonight":                     {Modest: 50, Good: 200, Best: 800, Sub: 10, SNRPerSub: 1, Panels: 1},
-		"Good image: over 99 nights like tonight":             {Modest: 50, Good: 1e6, Best: 4e6, Max: 100, Sub: 10, SNRPerSub: 1, Panels: 1},
+		"Good image: >99 nights like tonight":                 {Modest: 50, Good: 1e6, Best: 4e6, Max: 100, Sub: 10, SNRPerSub: 1, Panels: 1},
 		"Good image: 2.5 nights like tonight":                 {Modest: 50, Good: 250, Best: 1000, Max: 100, Sub: 10, SNRPerSub: 1, Panels: 1},
 		"Subs of 10 s, per panel of 4, typical SB, 100 fit":   {Modest: 10, Good: 40, Best: 160, Max: 100, Sub: 10, SNRPerSub: 1, Panels: 4, Assumed: true},
 		"Subs of 10 s, 100 fit tonight: modest 10 (2 min) · ": ok,
@@ -729,5 +729,51 @@ func TestRunWaitsForCompute(t *testing.T) {
 		t.Errorf("the cancelled compute's warning lost: %q", out)
 	} else if strings.Contains(string(out), "context canceled") {
 		t.Errorf("a cancelled fetch's warning echoed: %q", out)
+	}
+}
+
+// An empty list names the limits output.EmptyText found in force, not a
+// fixed few.
+func TestEmptyNamesLimits(t *testing.T) {
+	day := time.Date(2026, 10, 27, 12, 0, 0, 0, time.UTC)
+	m := newModel(context.Background(), Options{Day: day, Loc: time.UTC}, func(_ context.Context, d time.Time, _ bool) Night {
+		n := manyNight(d, 0)
+		n.Doc.Night.Empty = "No objects within the limits (runs of 2h). Loosen -min-run, or try another -list."
+
+		return n
+	})
+	m.Update(tea.WindowSizeMsg{Width: 160, Height: 48})
+	m.Update(m.load(day, false)())
+	if got := screen(m); !strings.Contains(got, "-min-run") {
+		t.Errorf("empty list does not name -min-run:\n%s", got)
+	}
+}
+
+// Both services down are probed again before the next picture once a minute
+// has passed, not before, and a picture follows once one answers.
+func TestPictureReprobe(t *testing.T) {
+	m := started(t, 160, 48, new([]time.Time))
+	tr := &flaky{down: map[string]bool{cdsHost: true, skyHost: true}}
+	m.client = &http.Client{Transport: tr}
+	withServices(m, tr, servicesMsg{})
+	clock := m.probedAt
+	m.now = func() time.Time { return clock }
+	m.list.Select(1)
+	if cmd := m.selectPicture(); cmd != nil {
+		t.Fatal("probed again within the minute")
+	}
+	clock = clock.Add(reprobeAfter)
+	delete(tr.down, skyHost)
+	cmd := m.selectPicture()
+	if cmd == nil || !m.probing {
+		t.Fatal("not probed again after a minute")
+	}
+	if m.selectPicture() != nil {
+		t.Error("a second probe while one is out")
+	}
+	_, cmd = m.Update(cmd())
+	runPicture(m, cmd, 0)
+	if m.pic.State() != pictureurl.StateLoaded || !strings.Contains(m.pic.CurrentURL(), skyHost) {
+		t.Errorf("state %v from %s, want loaded from SkyView", m.pic.State(), m.pic.CurrentURL())
 	}
 }

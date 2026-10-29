@@ -179,11 +179,13 @@ type model struct {
 	list      list.Model
 	theme     theme
 	want      time.Time       // the date of the night computing, zero when Tonight picks it
+	probedAt  time.Time       // when up was last probed
 	ctx       context.Context //nolint:containedctx // the computes' context for the program's life
 	snapErr   error
 	compute   Compute
 	now       func() time.Time
 	cancel    context.CancelFunc // the running compute's
+	client    *http.Client       // the probes'
 	help      help.Model
 	pic       pictureurl.Model
 	picURL    string // the selected target's picture, "" with no service up
@@ -205,10 +207,11 @@ type model struct {
 	showWarn  bool
 	closed    bool // Run is past its program: no compute starts
 	probed    bool // up is known: no picture is asked for before
+	probing   bool // a probe is out
 }
 
 func newModel(ctx context.Context, opt Options, compute Compute) *model {
-	m := &model{ctx: ctx, compute: compute, opt: opt, theme: darkTheme, help: help.New(), now: time.Now}
+	m := &model{ctx: ctx, compute: compute, opt: opt, theme: darkTheme, help: help.New(), now: time.Now, client: http.DefaultClient}
 	m.spin = spinner.New(spinner.WithSpinner(spinner.Dot))
 	m.list = list.New(nil, delegate{m}, 0, 0)
 	m.list.SetShowTitle(false)
@@ -226,7 +229,7 @@ func newModel(ctx context.Context, opt Options, compute Compute) *model {
 }
 
 func (m *model) Init() tea.Cmd {
-	return tea.Batch(m.spin.Tick, m.pic.Init(), m.load(m.opt.Day, m.opt.DateSet), probe(m.ctx, http.DefaultClient))
+	return tea.Batch(m.spin.Tick, m.pic.Init(), m.load(m.opt.Day, m.opt.DateSet), m.reprobe())
 }
 
 // snapshotWait is how long a snapshot waits for the picture once asked: from
@@ -273,7 +276,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) { //nolint:ireturn // t
 			cmds = append(cmds, tea.Tick(snapshotWait, func(time.Time) tea.Msg { return snapshotMsg{} }))
 		}
 	case servicesMsg:
-		m.up, m.probed = msg, true
+		m.up, m.probed, m.probing, m.probedAt = msg, true, false, m.now()
 	case warnMsg:
 		m.warnings = append(m.warnings, strings.TrimPrefix(string(msg), "warning: "))
 	case spinner.TickMsg:
@@ -549,6 +552,11 @@ func (m *model) selectPicture() tea.Cmd {
 	if !ok || m.picCols() == 0 || !m.probed {
 		return nil
 	}
+	// Both down: probed again before the next picture, at most once a
+	// minute.
+	if !m.up.cds && !m.up.sky && !m.probing && m.now().Sub(m.probedAt) >= reprobeAfter {
+		return m.reprobe()
+	}
 	var u string
 	switch pos := m.night.Doc.Pos[i]; {
 	case m.up.cds:
@@ -580,6 +588,16 @@ func (m *model) pictureMsg(msg tea.Msg) tea.Cmd {
 
 	return tea.Batch(cmd, m.selectPicture())
 }
+
+// reprobe sends probe, marking it out.
+func (m *model) reprobe() tea.Cmd {
+	m.probing = true
+
+	return probe(m.ctx, m.client)
+}
+
+// reprobeAfter is how long both services marked down stay so.
+const reprobeAfter = time.Minute
 
 // servicesMsg is which picture services answered.
 type servicesMsg struct{ cds, sky bool }

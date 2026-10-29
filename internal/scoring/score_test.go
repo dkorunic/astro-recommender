@@ -661,6 +661,13 @@ func TestLoosestMoonK(t *testing.T) {
 			t.Errorf("LoosestMoonK(%q) = %.3f, want %.2f-%.2f", filter, k, want[0], want[1])
 		}
 	}
+	// -type keeps the emission-line targets of its classes: a cluster with
+	// emission nebulosity too.
+	for typ, want := range map[string]float64{"cluster": minMoonK, "nebula": minMoonK, "emission": minMoonK, "galaxy": 1, "comet": 1} {
+		if k := LoosestMoonK(&config.Config{Filter: "ha", FilterNM: 7, Types: []string{typ}}); k != want {
+			t.Errorf("LoosestMoonK(-type %s) = %.3f, want %.2f", typ, k, want)
+		}
+	}
 }
 
 // flat is every line filter band at width nm, -filter-nm's.

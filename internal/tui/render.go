@@ -289,7 +289,7 @@ func (m *model) listPane(g geometry) string {
 	body := m.list.View()
 	switch {
 	case len(d.Cards) == 0:
-		body = t.style(t.muted).Render("No objects within the limits: loosen -size-min/-size-max, -alt-min/-alt-max\nor -type, or try another -list.")
+		body = t.style(t.muted).Width(g.right - 4).Render(d.Night.Empty)
 	case d.Night.Washout:
 		body = t.style(t.fair).Render("Washed out: no usable hour tonight (cloud or seeing); listed for reference.") + "\n" + body
 	}
@@ -408,14 +408,7 @@ func subsText(e *scoring.Estimate) string {
 	case e.Good > e.Max && e.Max <= 0:
 		lead = "Good image: no sub fits tonight. "
 	case e.Good > e.Max:
-		switch n := float64(e.Good) / float64(e.Max); {
-		case n < 9.95:
-			lead = fmt.Sprintf("Good image: %.1f nights like tonight. ", n)
-		case n < 99.5:
-			lead = fmt.Sprintf("Good image: %.0f nights like tonight. ", n)
-		default:
-			lead = "Good image: over 99 nights like tonight. "
-		}
+		lead = "Good image: " + output.NightsText(e.Good, e.Max) + " like tonight. "
 	}
 	var qual string
 	if e.Panels > 1 {

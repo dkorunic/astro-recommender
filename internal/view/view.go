@@ -95,8 +95,9 @@ type Night struct { // betteralign:ignore
 	MoonLow  string     `json:"moonFloor,omitempty"` // output.MoonFloor: " (down to 30° through a filter)"
 	MoonUp   [][2]int64 `json:"moonUp"`
 	Washout  bool       `json:"washout,omitempty"`
-	Targets  int        `json:"targets"` // results scored, before -n
-	Sky      float64    `json:"zenith"`  // zenith mag/arcsec² as configured
+	Empty    string     `json:"empty,omitempty"` // output.EmptyText with no result: the limits to loosen
+	Targets  int        `json:"targets"`         // results scored, before -n
+	Sky      float64    `json:"zenith"`          // zenith mag/arcsec² as configured
 }
 
 // Slot is one -plan block: its target's name and rank among the listed
@@ -128,6 +129,9 @@ func Build(cfg *config.Config, s *scoring.Sky, place string, results []scoring.R
 		Place: place, Lat: cfg.Lat, Lon: cfg.Lon, Twilight: cfg.Twilight, Dusk: s.Night[0].Unix(), Dawn: s.Night[1].Unix(),
 		End: s.End.Unix(), Illum: s.Illum, MoonSep: s.MoonSep, MoonLow: output.MoonFloor(cfg, s),
 		MoonUp: moonUp(cfg, s.Night[0], s.Night[1]), Washout: s.Washout(), Targets: len(results), Sky: cfg.ZenithMag(),
+	}
+	if len(results) == 0 {
+		doc.Night.Empty = output.EmptyText(cfg, s)
 	}
 	mid := s.Grid[len(s.Grid)/2]
 	shown := results[:min(cfg.Top, len(results))]
@@ -184,22 +188,47 @@ func zone(loc *time.Location) string {
 	}
 }
 
-// moonUp returns the Moon's spans above astro.MoonHorizon from dusk to dawn,
-// minute by minute, which the bars span: the grid's s.MoonAlt holds only the
-// window -from/-to clip.
+// moonUp returns the Moon's spans above astro.MoonHorizon from dusk to dawn
+// to the minute, which the bars span: the grid's s.MoonAlt holds only the
+// window -from/-to clip. It samples every Step minutes and bisects to the
+// minute where the Moon crossed.
+// ponytail: a rise and set within one Step (a Moon grazing the horizon) is
+// missed; sample every minute if that matters.
 func moonUp(cfg *config.Config, dusk, dawn time.Time) [][2]int64 {
+	at := func(k int) time.Time { return dusk.Add(time.Duration(k) * time.Minute) }
+	upAt := func(k int) bool {
+		ra, dec := astro.MoonTopo(at(k), cfg.Lat, cfg.Lon)
+
+		return astro.Altitude(ra, dec, at(k), cfg.Lat, cfg.Lon) > astro.MoonHorizon
+	}
 	spans := [][2]int64{}
-	was := false
-	for t := dusk; t.Before(dawn); t = t.Add(time.Minute) {
-		ra, dec := astro.MoonTopo(t, cfg.Lat, cfg.Lon)
-		up := astro.Altitude(ra, dec, t, cfg.Lat, cfg.Lon) > astro.MoonHorizon
-		switch {
-		case up && !was:
-			spans = append(spans, [2]int64{t.Unix(), dawn.Unix()})
-		case !up && was:
-			spans[len(spans)-1][1] = t.Unix()
+	n := int((dawn.Sub(dusk) + time.Minute - 1) / time.Minute) // the minutes before dawn
+	if n <= 0 {
+		return spans
+	}
+	was := upAt(0)
+	if was {
+		spans = append(spans, [2]int64{dusk.Unix(), dawn.Unix()})
+	}
+	for k := 0; k < n-1; {
+		next := min(k+Step, n-1)
+		if up := upAt(next); up != was {
+			lo, hi := k, next // lo as was, hi as up: hi ends as the first minute changed
+			for hi-lo > 1 {
+				if mid := (lo + hi) / 2; upAt(mid) == was {
+					lo = mid
+				} else {
+					hi = mid
+				}
+			}
+			if up {
+				spans = append(spans, [2]int64{at(hi).Unix(), dawn.Unix()})
+			} else {
+				spans[len(spans)-1][1] = at(hi).Unix()
+			}
+			was = up
 		}
-		was = up
+		k = next
 	}
 
 	return spans

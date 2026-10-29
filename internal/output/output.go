@@ -451,7 +451,7 @@ func Results(cfg *config.Config, s *scoring.Sky, results []scoring.Result) int {
 	}
 	noTargets = len(results) == 0
 	if noTargets {
-		for _, l := range wrapped(emptyText(cfg, s)) {
+		for _, l := range wrapped(EmptyText(cfg, s)) {
 			fmt.Println(l)
 		}
 
@@ -509,12 +509,12 @@ func washoutReason(s *scoring.Sky) string {
 	}
 }
 
-// emptyText says that no target passed and which limits to loosen: the
+// EmptyText says that no target passed and which limits to loosen: the
 // size and altitude always apply, the others only when set; the Moon's
 // distance while it is up (scoring's geometric rule, which only a -filter
 // loosens) is named, since under a bright Moon it is often what emptied
 // the list.
-func emptyText(cfg *config.Config, s *scoring.Sky) string {
+func EmptyText(cfg *config.Config, s *scoring.Sky) string {
 	limits := []string{fmt.Sprintf("size %.1f'-%.1f'", cfg.SizeMin, cfg.SizeMax), fmt.Sprintf("altitude %.0f-%.0f°", cfg.AltMin, cfg.AltMax)}
 	flags := []string{"-size-min/-size-max", "-alt-min/-alt-max"}
 	if cfg.Types != nil {
@@ -884,7 +884,7 @@ func SubsText(e *scoring.Estimate) (string, string) {
 	// count is tonight's limit, which no assumed surface brightness enters,
 	// so it takes no ~.
 	if e.Good > e.Max {
-		return "33", nightsText(e.Good, e.Max)
+		return "33", NightsText(e.Good, e.Max)
 	}
 	if e.Assumed {
 		return "39", "~" + strconv.Itoa(e.Good)
@@ -893,10 +893,11 @@ func SubsText(e *scoring.Estimate) (string, string) {
 	return "39", strconv.Itoa(e.Good)
 }
 
-// nightsText is good subs over the max that fit a night: one decimal under
+// NightsText is good subs over the max that fit a night: one decimal under
 // ten nights, whole ones to 99, past it (a night the forecast loses whole)
-// >99; >N without a night's subs to divide by.
-func nightsText(good, perNight int) string {
+// >99; >N without a night's subs to divide by. The terminal view's sub line
+// shares it.
+func NightsText(good, perNight int) string {
 	if perNight <= 0 {
 		return ">" + strconv.Itoa(perNight)
 	}

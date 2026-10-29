@@ -16,6 +16,7 @@ import (
 
 	"github.com/dkorunic/astro-recommender/internal/catalog"
 	"github.com/dkorunic/astro-recommender/internal/config"
+	"github.com/dkorunic/astro-recommender/internal/geocode"
 	"github.com/dkorunic/astro-recommender/internal/plan"
 	"github.com/dkorunic/astro-recommender/internal/scoring"
 	"github.com/dkorunic/astro-recommender/internal/tui"
@@ -61,18 +62,25 @@ func runTUI(ctx context.Context, cfg config.Config, targets []catalog.Target) er
 	}
 
 	var pc placeCache
+	geo := func() string {
+		if cfg.NoGeocode {
+			return ""
+		}
+		place, err := geocode.Reverse(ctx, cfg.Lat, cfg.Lon)
+		if err != nil {
+			warn(ctx, "warning: no reverse geocoding:", err)
+		}
 
-	return tui.Run(ctx, opt, func(ctx context.Context, day time.Time, dateSet bool) tui.Night {
+		return place
+	}
+
+	return tui.Run(ctx, opt, func(nctx context.Context, day time.Time, dateSet bool) tui.Night {
 		c := cfg
-		c.Day, c.DateSet = day, dateSet
-		lookup := pc.claim()
-		c.NoGeocode = c.NoGeocode || !lookup
-		n, err := compute(ctx, c, targets)
-		// Only a compute past its early exits, uncancelled, has asked.
-		n.place = pc.settle(lookup, n.place, err == nil && n.msg == "" && ctx.Err() == nil)
+		c.Day, c.DateSet, c.NoGeocode = day, dateSet, true
+		n, err := compute(nctx, c, targets)
 		out := tui.Night{Day: n.day, Msg: n.msg, Err: err}
 		if err == nil && n.msg == "" {
-			out.Doc = view.Build(&n.cfg, &n.sky, n.place, n.results, n.slots)
+			out.Doc = view.Build(&n.cfg, &n.sky, pc.get(nctx, geo), n.results, n.slots)
 		}
 
 		return out
@@ -81,43 +89,33 @@ func runTUI(ctx context.Context, cfg config.Config, targets []catalog.Target) er
 
 // placeCache geocodes the terminal view's site once: it never moves, and
 // Nominatim allows one request a second, which holding ← or → would exceed.
-// Once asked, not once named: a site at sea, offline or a 429 would
-// otherwise ask again every night. A lookup in flight is not repeated by the
-// computes started meanwhile (each ← or → cancels the one before), and one
-// that never asked (an early exit: no night, the part passed) or was
-// cancelled without a name leaves the next night to ask.
+// The lookup runs on the program's context, not a night's, since ← and →
+// cancel the night computing, and every night waits for its one answer
+// (named or not: at sea, offline or a 429 is not asked again). The first
+// night past its early exits starts it, once the view holds stderr for its
+// warning.
 type placeCache struct {
-	place    string
-	mu       sync.Mutex
-	inFlight bool
-	done     bool
+	done  chan struct{}
+	place string
+	once  sync.Once
 }
 
-// claim reports whether this compute is to look the place up.
-func (p *placeCache) claim() bool {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if p.done || p.inFlight {
-		return false
+// get starts lookup on its first call and returns its place once known, or
+// "" when ctx (the night's) ends first.
+func (p *placeCache) get(ctx context.Context, lookup func() string) string {
+	p.once.Do(func() {
+		p.done = make(chan struct{})
+		go func() {
+			defer close(p.done)
+			p.place = lookup()
+		}()
+	})
+	select {
+	case <-p.done:
+		return p.place
+	case <-ctx.Done():
+		return ""
 	}
-	p.inFlight = true
-
-	return true
-}
-
-// settle records a claimed lookup's place (asked: the lookup ran to its
-// end) and returns the place to show: its own, else the one known by now.
-func (p *placeCache) settle(lookup bool, place string, asked bool) string {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if lookup {
-		p.inFlight = false
-		if place != "" || asked {
-			p.place, p.done = place, true
-		}
-	}
-
-	return p.place
 }
 
 // envInt is the positive integer in environment variable name, else def.

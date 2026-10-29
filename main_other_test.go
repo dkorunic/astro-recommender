@@ -5,55 +5,45 @@
 
 package main
 
-import "testing"
+import (
+	"context"
+	"sync/atomic"
+	"testing"
+)
 
-// TestPlaceCache: the terminal view geocodes once, but not on a night that
-// never asked (an early exit) or was cancelled without a name, and not again
-// while a lookup is in flight.
+// TestPlaceCache: the terminal view geocodes once, and a night cancelled
+// while the lookup runs (← or → pressed) neither stops it nor keeps the
+// nights after it from its answer.
 func TestPlaceCache(t *testing.T) {
 	var p placeCache
+	var asked atomic.Int32
+	release := make(chan struct{})
+	lookup := func() string {
+		asked.Add(1)
+		<-release
 
-	// No night at the site: compute exits before any lookup.
-	if !p.claim() {
-		t.Fatal("first night does not look up")
-	}
-	if got := p.settle(true, "", false); got != "" {
-		t.Errorf("early exit place %q", got)
-	}
-
-	// ← and → while a lookup is in flight: no second request.
-	if !p.claim() {
-		t.Fatal("night after an early exit does not look up")
-	}
-	if p.claim() {
-		t.Error("lookup repeated while one is in flight")
+		return "Zagreb"
 	}
 
-	// The claimant, cancelled after its lookup named the place, keeps it,
-	// and the night computed meanwhile shows it.
-	if got := p.settle(true, "Zagreb", false); got != "Zagreb" {
-		t.Errorf("cancelled claimant place %q", got)
+	// The first night, cancelled while its lookup runs: no place, the
+	// lookup carries on.
+	ctx, cancel := context.WithCancel(context.Background())
+	got := make(chan string)
+	go func() { got <- p.get(ctx, lookup) }()
+	for asked.Load() == 0 {
 	}
-	if got := p.settle(false, "", true); got != "Zagreb" {
-		t.Errorf("concurrent night place %q", got)
-	}
-	if p.claim() {
-		t.Error("lookup repeated once named")
-	}
-
-	// Asked without a name (at sea, offline): not asked again.
-	var q placeCache
-	q.claim()
-	q.settle(true, "", true)
-	if q.claim() {
-		t.Error("lookup repeated after a nameless answer")
+	cancel()
+	if place := <-got; place != "" {
+		t.Errorf("cancelled night place %q", place)
 	}
 
-	// Cancelled without a name: the next night asks.
-	var r placeCache
-	r.claim()
-	r.settle(true, "", false)
-	if !r.claim() {
-		t.Error("cancelled nameless lookup not retried")
+	// The night after waits for the same lookup's answer.
+	go func() { got <- p.get(context.Background(), lookup) }()
+	close(release)
+	if place := <-got; place != "Zagreb" {
+		t.Errorf("next night place %q", place)
+	}
+	if p.get(context.Background(), lookup); asked.Load() != 1 {
+		t.Errorf("looked up %d times, want once", asked.Load())
 	}
 }

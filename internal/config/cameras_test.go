@@ -269,6 +269,11 @@ func TestScopeOtherCamera(t *testing.T) {
 		{[]string{"-scope", "origin", "-focal", "600", "-pixel", "3.76"}, "-aperture and -qe and -read-noise", false},
 		{[]string{"-scope", "origin", "-focal", "600", "-pixel", "3.76", "-aperture", "100", "-qe", "0.8", "-read-noise", "1.5"}, "", true},
 		{[]string{"-scope", "origin", "-fov", "1x0.5"}, "", true},
+		// Its own focal length is its own optics: a crop of its chip, or
+		// another camera behind them.
+		{[]string{"-scope", "origin", "-focal", "335", "-sensor", "5x3"}, "", true},
+		{[]string{"-scope", "origin", "-focal", "335", "-pixel", "3.76"}, "-qe and -read-noise", true},
+		{[]string{"-scope", "origin", "-focal", "335", "-sensor", "36x24"}, "-qe and -read-noise", true},
 	} {
 		cfg, err := mutParse(t, mutBase(tc.args...)...)
 		if err != nil || cfg.SubsNeeds != tc.needs || cfg.ApertureSet != tc.apertureSet || (cfg.QE == 0) != (tc.needs != "") {
@@ -277,9 +282,13 @@ func TestScopeOtherCamera(t *testing.T) {
 	}
 	// The header names what is left of the scope.
 	for args, want := range map[string]string{
-		"-focal 600 -pixel 2":    "Celestron Origin Mark II's IMX678 behind other optics",
-		"-focal 600 -pixel 3.76": "Celestron Origin Mark II settings with another camera and optics",
-		"-fov 1x0.5":             "Celestron Origin Mark II (IMX678)",
+		"-focal 600 -pixel 2":      "Celestron Origin Mark II's IMX678 behind other optics",
+		"-focal 600 -pixel 3.76":   "Celestron Origin Mark II settings with another camera and optics",
+		"-fov 1x0.5":               "Celestron Origin Mark II (IMX678)",
+		"-focal 335 -pixel 2":      "Celestron Origin Mark II (IMX678)",
+		"-focal 335 -sensor 5x3":   "Celestron Origin Mark II (IMX678)",
+		"-focal 335 -pixel 3.76":   "Celestron Origin Mark II's optics with another camera",
+		"-focal 335 -sensor 36x24": "Celestron Origin Mark II's optics with another camera",
 	} {
 		cfg, err := mutParse(t, mutBase(append([]string{"-scope", "origin"}, strings.Fields(args)...)...)...)
 		if err != nil || cfg.ScopeLabel() != want {

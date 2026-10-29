@@ -519,11 +519,13 @@ function sky(html) {
 // the slot says it is loading; with neither CDS nor SkyView up it shrinks to
 // a line saying so, and the curve moves up.
 let thumbFor = null, curves = null;
-// up is which picture services answered a one-cell probe at load (probed),
-// so a service that is down costs one wait, not one a picture; a picture
-// that fails marks its service down for the page's life.
+// up is which picture services answered a one-cell probe at load (ready()
+// waits for it), so a service that is down costs one wait, not one a
+// picture; a picture that fails marks its service down. Once both are down
+// they are probed again before the next picture, at most once a minute.
 const up = { cds: true, sky: true };
-const probed = (() => {
+let probing = null, probedAt = 0;
+function probe() {
   const ask = (src) => new Promise((ok) => {
     const i = new Image();
     i.onload = () => ok(true);
@@ -532,30 +534,43 @@ const probed = (() => {
     i.src = src;
   });
   const { thumb, alt } = skyURLs([0, 0, 0], 16, 16);
-  return Promise.all([ask(thumb), ask(alt)]).then(([cds, sky]) => Object.assign(up, { cds, sky }));
-})();
+  return Promise.all([ask(thumb), ask(alt)]).then(([cds, sky]) => {
+    Object.assign(up, { cds, sky });
+    probedAt = Date.now();
+    probing = null;
+  });
+}
+probing = probe();
+function ready() {
+  if (!probing && !up.cds && !up.sky && Date.now() - probedAt >= 60000) probing = probe();
+  return probing ?? Promise.resolve();
+}
 // pick is the picture of urls ({thumb, alt}) from a service up, else "";
 // down marks the service of the failed src down.
 const pick = ({ thumb, alt }) => up.cds ? thumb : up.sky ? alt : "";
 const down = (src, urls) => { if (src === urls.thumb) up.cds = false; else up.sky = false; };
 const own = (e) => thumbFor && [thumbFor.dataset.thumb, thumbFor.dataset.alt].includes(e.target.getAttribute("src"));
 const failed = () => { $("shot").classList.add("failed"); $("shotmsg").textContent = "No picture: CDS and SkyView unreachable"; };
-// load puts the hover card's picture in img from a service up.
-function load(img, urls) {
-  const src = pick(urls);
-  if (!src) { failed(); return; }
-  img.src = src;
-  // Back on the same name the src does not change and no event fires.
-  if (img.complete) {
-    if (img.naturalWidth) img.hidden = false;
-    else { down(src, urls); load(img, urls); }
-  }
+// load puts the hover card's picture for link a from a service up, once
+// ready.
+function load(a) {
+  ready().then(() => {
+    if (thumbFor !== a) return;
+    const img = $("thumb"), src = pick(a.dataset);
+    if (!src) { failed(); return; }
+    img.src = src;
+    // Back on the same name the src does not change and no event fires.
+    if (img.complete) {
+      if (img.naturalWidth) img.hidden = false;
+      else { down(src, a.dataset); load(a); }
+    }
+  });
 }
 $("thumb").addEventListener("load", (e) => { if (own(e)) e.target.hidden = false; });
 $("thumb").addEventListener("error", (e) => {
   if (!own(e)) return;
   down(e.target.getAttribute("src"), thumbFor.dataset);
-  load(e.target, thumbFor.dataset);
+  load(thumbFor);
 });
 // show fills the hover card for the report link a and puts it beside a,
 // clear of the window's edges; a null hides it.
@@ -577,7 +592,7 @@ function show(a) {
   card.style.left = `${Math.max(8, Math.min(r.right + 12, innerWidth - card.offsetWidth - 8))}px`;
   // The picture level with the row where the window allows.
   card.style.top = `${Math.max(8, Math.min(r.top - 130, innerHeight - card.offsetHeight - 8))}px`;
-  probed.then(() => { if (thumbFor === a) load(img, a.dataset); });
+  load(a);
 }
 const link = (el) => el?.closest?.("#out a[data-thumb]") ?? null;
 // Pointer, keyboard and touch all reach the card. A touch also fires
@@ -739,9 +754,9 @@ function cardOf(c, i) {
   const shot = Object.assign(el("a", "shot"), { href, target: "_blank", rel: "noopener", title: "Open in Aladin Lite" });
   const img = Object.assign(el("img"), { alt: "", loading: "lazy", decoding: "async" });
   // A service failing, the other; neither, the dark slot stays.
-  const urls = { thumb, alt }, next = () => { const src = pick(urls); if (src) img.src = src; else img.remove(); };
+  const urls = { thumb, alt }, next = () => ready().then(() => { const src = pick(urls); if (src) img.src = src; else img.remove(); });
   img.addEventListener("error", () => { down(img.getAttribute("src"), urls); next(); });
-  probed.then(next);
+  next();
   const t1 = el("div", "t1");
   t1.append(el("span", "rank", `#${i + 1}`), [c.name, c.desc, c.type].filter(Boolean).join(" · "));
   const stats = el("div", "stats");
