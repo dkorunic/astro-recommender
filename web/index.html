@@ -475,7 +475,8 @@ function ansi(s) {
 // of w x h pixels from main_js.go's pos (J2000 RA and Dec, size in arcmin):
 // the picture's short side half again the object, within 0.1-5°; unknown
 // sizes (comets) 0.5°. The alaskybis mirror answers in 0.4-1.5 s where the
-// primary took 14-17 s to first byte.
+// primary took 14-17 s to first byte. alt is the same field from NASA
+// SkyView's DSS2 Red, grey, for when CDS fails.
 const survey = "CDS%2FP%2FDSS2%2Fcolor";
 function skyURLs([ra, dec, size], w = 240, h = 240) {
   const short = size ? Math.min(5, Math.max(0.1, size * 1.5 / 60)) : 0.5;
@@ -484,6 +485,8 @@ function skyURLs([ra, dec, size], w = 240, h = 240) {
     href: `https://aladin.cds.unistra.fr/AladinLite/?target=${ra.toFixed(4)}%20${dec.toFixed(4)}&fov=${short.toFixed(2)}&survey=${survey}`,
     thumb: `https://alaskybis.cds.unistra.fr/hips-image-services/hips2fits?hips=${survey}&width=${w}&height=${h}&projection=TAN` +
       `&fov=${fov.toFixed(2)}&ra=${ra.toFixed(4)}&dec=${dec.toFixed(4)}&format=jpg`,
+    alt: `https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=DSS2+Red&Position=${ra.toFixed(4)},${dec.toFixed(4)}` +
+      `&Size=${(fov * w / Math.max(w, h)).toFixed(3)},${(fov * h / Math.max(w, h)).toFixed(3)}&Pixels=${w},${h}&Projection=Tan&Scaling=Linear&Return=JPEG`,
   };
 }
 
@@ -497,8 +500,8 @@ function sky(html) {
     const rank = line.replace(/<[^>]+>/g, "").match(/^(\d+) +\S/)?.[1];
     const pos = rank && curves?.pos?.[rank - 1];
     if (!pos) return line;
-    const { href, thumb } = skyURLs(pos);
-    const attrs = `href="${href}" target="_blank" rel="noopener" data-thumb="${thumb}" data-rank="${rank}" aria-describedby="card"`;
+    const { href, thumb, alt } = skyURLs(pos);
+    const attrs = `href="${href}" target="_blank" rel="noopener" data-thumb="${thumb}" data-alt="${alt}" data-rank="${rank}" aria-describedby="card"`;
     return line.replace(/<span class="c36">([^<]*)<\/span>/, (_, name) => {
       links.set(name, attrs);
       return `<span class="c36"><a ${attrs}>${name}</a></span>`;
@@ -513,13 +516,47 @@ function sky(html) {
 // The thumbnail shows once its own image has loaded, never the previous
 // name's image or an empty box: a load event the previous image queued before
 // the pointer moved on would otherwise show it under the new name. Until then
-// the slot says it is loading; if CDS fails it shrinks to a line saying so,
-// and the curve moves up.
+// the slot says it is loading; with neither CDS nor SkyView up it shrinks to
+// a line saying so, and the curve moves up.
 let thumbFor = null, curves = null;
-const own = (e) => thumbFor && e.target.src === thumbFor.dataset.thumb;
-const failed = () => { $("shot").classList.add("failed"); $("shotmsg").textContent = "No picture: CDS unavailable"; };
+// up is which picture services answered a one-cell probe at load (probed),
+// so a service that is down costs one wait, not one a picture; a picture
+// that fails marks its service down for the page's life.
+const up = { cds: true, sky: true };
+const probed = (() => {
+  const ask = (src) => new Promise((ok) => {
+    const i = new Image();
+    i.onload = () => ok(true);
+    i.onerror = () => ok(false);
+    setTimeout(() => ok(false), 8000);
+    i.src = src;
+  });
+  const { thumb, alt } = skyURLs([0, 0, 0], 16, 16);
+  return Promise.all([ask(thumb), ask(alt)]).then(([cds, sky]) => Object.assign(up, { cds, sky }));
+})();
+// pick is the picture of urls ({thumb, alt}) from a service up, else "";
+// down marks the service of the failed src down.
+const pick = ({ thumb, alt }) => up.cds ? thumb : up.sky ? alt : "";
+const down = (src, urls) => { if (src === urls.thumb) up.cds = false; else up.sky = false; };
+const own = (e) => thumbFor && [thumbFor.dataset.thumb, thumbFor.dataset.alt].includes(e.target.getAttribute("src"));
+const failed = () => { $("shot").classList.add("failed"); $("shotmsg").textContent = "No picture: CDS and SkyView unreachable"; };
+// load puts the hover card's picture in img from a service up.
+function load(img, urls) {
+  const src = pick(urls);
+  if (!src) { failed(); return; }
+  img.src = src;
+  // Back on the same name the src does not change and no event fires.
+  if (img.complete) {
+    if (img.naturalWidth) img.hidden = false;
+    else { down(src, urls); load(img, urls); }
+  }
+}
 $("thumb").addEventListener("load", (e) => { if (own(e)) e.target.hidden = false; });
-$("thumb").addEventListener("error", (e) => { if (own(e)) failed(); });
+$("thumb").addEventListener("error", (e) => {
+  if (!own(e)) return;
+  down(e.target.getAttribute("src"), thumbFor.dataset);
+  load(e.target, thumbFor.dataset);
+});
 // show fills the hover card for the report link a and puts it beside a,
 // clear of the window's edges; a null hides it.
 function show(a) {
@@ -540,9 +577,7 @@ function show(a) {
   card.style.left = `${Math.max(8, Math.min(r.right + 12, innerWidth - card.offsetWidth - 8))}px`;
   // The picture level with the row where the window allows.
   card.style.top = `${Math.max(8, Math.min(r.top - 130, innerHeight - card.offsetHeight - 8))}px`;
-  img.src = a.dataset.thumb;
-  // Back on the same name the src does not change and no event fires.
-  if (img.complete) { if (img.naturalWidth) img.hidden = false; else failed(); }
+  probed.then(() => { if (thumbFor === a) load(img, a.dataset); });
 }
 const link = (el) => el?.closest?.("#out a[data-thumb]") ?? null;
 // Pointer, keyboard and touch all reach the card. A touch also fires
@@ -700,10 +735,13 @@ function drawAlt(c, alt, obs, card, key) {
 function cardOf(c, i) {
   const art = el("article", "tcard");
   art.dataset.rank = i + 1;
-  const { href, thumb } = skyURLs(curves.pos[i], 480, 200);
+  const { href, thumb, alt } = skyURLs(curves.pos[i], 480, 200);
   const shot = Object.assign(el("a", "shot"), { href, target: "_blank", rel: "noopener", title: "Open in Aladin Lite" });
-  const img = Object.assign(el("img"), { src: thumb, alt: "", loading: "lazy", decoding: "async" });
-  img.addEventListener("error", () => img.remove()); // the dark slot stays
+  const img = Object.assign(el("img"), { alt: "", loading: "lazy", decoding: "async" });
+  // A service failing, the other; neither, the dark slot stays.
+  const urls = { thumb, alt }, next = () => { const src = pick(urls); if (src) img.src = src; else img.remove(); };
+  img.addEventListener("error", () => { down(img.getAttribute("src"), urls); next(); });
+  probed.then(next);
   const t1 = el("div", "t1");
   t1.append(el("span", "rank", `#${i + 1}`), [c.name, c.desc, c.type].filter(Boolean).join(" · "));
   const stats = el("div", "stats");

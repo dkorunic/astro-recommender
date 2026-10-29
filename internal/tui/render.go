@@ -331,8 +331,10 @@ func (m *model) detailPane(g geometry) string {
 // can tint, are left out (only their placeholders would draw them).
 func (m *model) picture() string {
 	switch {
-	case m.pic.Err() != nil:
-		return m.theme.style(m.theme.muted).Render("No picture:\nCDS unavailable")
+	case m.probed && m.picURL == "":
+		return m.theme.style(m.theme.muted).Render("No picture:\nCDS and SkyView\nunreachable")
+	case !m.probed:
+		return m.theme.style(m.theme.muted).Render("Checking CDS\nand SkyView…")
 	case m.red && m.pic.Mode() == picture.PictureKitty:
 		return m.theme.style(m.theme.muted).Render("Picture hidden\nin night vision;\ni: blocks")
 	case m.red:
@@ -518,12 +520,27 @@ func aladin(pos [3]float64) string {
 
 const cellW, cellH = 16, 32
 
+const (
+	cdsURL    = "https://alaskybis.cds.unistra.fr/"
+	userAgent = "astro-recommender (+https://github.com/dkorunic/astro-recommender)"
+)
+
 func thumb(pos [3]float64, cols, rows int) string {
 	w, h := cols*cellW, rows*cellH
 	f := fov(pos[2]) * float64(max(w, h)) / float64(min(w, h))
 
-	return fmt.Sprintf("https://alaskybis.cds.unistra.fr/hips-image-services/hips2fits?hips=%s&width=%d&height=%d&projection=TAN&fov=%.2f&ra=%.4f&dec=%.4f&format=jpg",
+	return fmt.Sprintf(cdsURL+"hips-image-services/hips2fits?hips=%s&width=%d&height=%d&projection=TAN&fov=%.2f&ra=%.4f&dec=%.4f&format=jpg",
 		survey, w, h, f, pos[0], pos[1])
+}
+
+// skyview is thumb's field from NASA SkyView's DSS2 Red, for when CDS fails:
+// another operator, resampled to the pixels asked like hips2fits, but grey.
+func skyview(pos [3]float64, cols, rows int) string {
+	w, h := cols*cellW, rows*cellH
+	px := fov(pos[2]) / float64(min(w, h)) // degrees a pixel
+
+	return fmt.Sprintf("https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=DSS2+Red&Position=%.4f,%.4f&Size=%.3f,%.3f&Pixels=%d,%d&Projection=Tan&Scaling=Linear&Return=JPEG",
+		pos[0], pos[1], px*float64(w), px*float64(h), w, h)
 }
 
 // item is one card in the list: its index into the view.Doc's slices.

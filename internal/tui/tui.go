@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	_ "image/jpeg" // hips2fits answers JPEG
 	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"runtime"
@@ -185,7 +186,7 @@ type model struct {
 	cancel    context.CancelFunc // the running compute's
 	help      help.Model
 	pic       pictureurl.Model
-	picURL    string
+	picURL    string // the selected target's picture, "" with no service up
 	reselect  string // the target to select once a filter's refilter lands
 	order     []int  // card indices in the sort's order
 	warnings  []string
@@ -196,12 +197,14 @@ type model struct {
 	seq       int
 	sortBy    int
 	w, h      int
-	gate      sync.Mutex // orders computing's Add before Run's Wait
+	gate      sync.Mutex  // orders computing's Add before Run's Wait
+	up        servicesMsg // the picture services that answer
 	loading   bool
 	red       bool
 	picked    bool // the picture's mode was chosen (i, or Kitty once supported)
 	showWarn  bool
 	closed    bool // Run is past its program: no compute starts
+	probed    bool // up is known: no picture is asked for before
 }
 
 func newModel(ctx context.Context, opt Options, compute Compute) *model {
@@ -217,13 +220,13 @@ func newModel(ctx context.Context, opt Options, compute Compute) *model {
 	m.list.KeyMap.PrevPage = key.NewBinding(key.WithKeys("pgup"))
 	m.list.KeyMap.Quit = key.NewBinding(key.WithKeys("q"))
 	m.applyTheme()
-	m.pic = pictureurl.NewWithConfig(pictureurl.Config{UserAgent: "astro-recommender (+https://github.com/dkorunic/astro-recommender)", Fit: picture.FitContain})
+	m.pic = pictureurl.NewWithConfig(pictureurl.Config{UserAgent: userAgent, Fit: picture.FitContain})
 
 	return m
 }
 
 func (m *model) Init() tea.Cmd {
-	return tea.Batch(m.spin.Tick, m.pic.Init(), m.load(m.opt.Day, m.opt.DateSet))
+	return tea.Batch(m.spin.Tick, m.pic.Init(), m.load(m.opt.Day, m.opt.DateSet), probe(m.ctx, http.DefaultClient))
 }
 
 // snapshotWait is how long a snapshot waits for the picture once asked: from
@@ -237,7 +240,7 @@ type snapshotMsg struct{}
 func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) { //nolint:ireturn // tea.Model's signature
 	var cmds []tea.Cmd
 	if pictureurl.IsPictureMsg(msg) {
-		cmds = append(cmds, m.pic.Update(msg))
+		cmds = append(cmds, m.pictureMsg(msg))
 	}
 	// Kitty graphics show the picture's own pixels where half-blocks show two
 	// a cell: switch once the terminal says it speaks them, unless i chose.
@@ -269,6 +272,8 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) { //nolint:ireturn // t
 			// A picture CDS never sends must not hold the demo up for good.
 			cmds = append(cmds, tea.Tick(snapshotWait, func(time.Time) tea.Msg { return snapshotMsg{} }))
 		}
+	case servicesMsg:
+		m.up, m.probed = msg, true
 	case warnMsg:
 		m.warnings = append(m.warnings, strings.TrimPrefix(string(msg), "warning: "))
 	case spinner.TickMsg:
@@ -415,9 +420,12 @@ func (m *model) snapshotReady() bool {
 	if _, ok := m.selected(); !ok || m.picCols() == 0 {
 		return true
 	}
+	if !m.probed {
+		return false
+	}
 	st := m.pic.State()
 
-	return m.picURL != "" && (st == pictureurl.StateLoaded || st == pictureurl.StateError)
+	return m.picURL == "" || st == pictureurl.StateLoaded || st == pictureurl.StateError
 }
 
 // snapshot writes the frame and its picture's rectangle (snapshotRect).
@@ -534,25 +542,82 @@ func (m *model) selected() (int, bool) {
 	return 0, false
 }
 
-// selectPicture points the picture at the selected target's DSS2 image.
+// selectPicture points the picture at the selected target's DSS2 image,
+// from CDS while it answers, else SkyView, else none.
 func (m *model) selectPicture() tea.Cmd {
 	i, ok := m.selected()
-	if !ok || m.picCols() == 0 {
+	if !ok || m.picCols() == 0 || !m.probed {
 		return nil
 	}
-	u := thumb(m.night.Doc.Pos[i], m.picCols(), m.picRows())
+	var u string
+	switch pos := m.night.Doc.Pos[i]; {
+	case m.up.cds:
+		u = thumb(pos, m.picCols(), m.picRows())
+	case m.up.sky:
+		u = skyview(pos, m.picCols(), m.picRows())
+	}
 	if u == m.picURL {
 		return nil
 	}
 	m.picURL = u
-	cmd := m.pic.SetURL(u)
-	// SetURL never refetches a picture that failed: selecting its target
-	// again retries it.
-	if m.pic.State() == pictureurl.StateError {
-		return m.pic.Reload()
-	}
 
-	return cmd
+	return m.pic.SetURL(u)
+}
+
+// pictureMsg hands msg to the picture. A failed picture marks its service
+// down for the session, and the selected target is asked of the other.
+func (m *model) pictureMsg(msg tea.Msg) tea.Cmd {
+	cmd := m.pic.Update(msg)
+	if m.picURL == "" || m.pic.CurrentURL() != m.picURL || m.pic.State() != pictureurl.StateError {
+		return cmd
+	}
+	if strings.HasPrefix(m.picURL, cdsURL) {
+		m.up.cds = false
+	} else {
+		m.up.sky = false
+	}
+	m.picURL = ""
+
+	return tea.Batch(cmd, m.selectPicture())
+}
+
+// servicesMsg is which picture services answered.
+type servicesMsg struct{ cds, sky bool }
+
+// probeTimeout is how long probe waits for each service.
+const probeTimeout = 8 * time.Second
+
+// probe asks CDS and SkyView for a one-cell picture each, at once: a service
+// that is down then costs one wait at start, not one a target.
+func probe(ctx context.Context, client *http.Client) tea.Cmd {
+	return func() tea.Msg {
+		var up servicesMsg
+		var wg sync.WaitGroup
+		wg.Go(func() { up.cds = answers(ctx, client, thumb([3]float64{}, 1, 1)) })
+		wg.Go(func() { up.sky = answers(ctx, client, skyview([3]float64{}, 1, 1)) })
+		wg.Wait()
+
+		return up
+	}
+}
+
+// answers reports whether u answers with a picture within probeTimeout.
+func answers(ctx context.Context, client *http.Client, u string) bool {
+	ctx, cancel := context.WithTimeout(ctx, probeTimeout)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	if err != nil {
+		return false
+	}
+	req.Header.Set("User-Agent", userAgent)
+	resp, err := client.Do(req)
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+	_, _ = io.Copy(io.Discard, resp.Body)
+
+	return resp.StatusCode == http.StatusOK && strings.HasPrefix(resp.Header.Get("Content-Type"), "image/")
 }
 
 // openURL opens u in the system's browser; a failure is not worth a word.
