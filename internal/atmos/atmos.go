@@ -352,10 +352,13 @@ const CameraBand = (CameraHi - CameraLo) / VWidth
 func BroadSky(lo, hi float64) (float64, float64, float64) {
 	f := (hi - lo) / (CameraHi - CameraLo)
 	r, m := BandMean(lo, hi)
-	cr, cm := BandMean(CameraLo, CameraHi)
 
-	return f, f * r / cr, f * m / cm
+	return f, f * r / cameraRay, f * m / cameraMie
 }
+
+// cameraRay and cameraMie are BandMean over the camera band, BroadSky's
+// reference, computed once.
+var cameraRay, cameraMie = BandMean(CameraLo, CameraHi)
 
 // BandMean returns the means of BandScale's Rayleigh and Mie factors over
 // [lo, hi] nm.

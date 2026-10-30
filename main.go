@@ -20,6 +20,7 @@ import (
 	"github.com/dkorunic/astro-recommender/internal/catalog"
 	"github.com/dkorunic/astro-recommender/internal/comets"
 	"github.com/dkorunic/astro-recommender/internal/config"
+	"github.com/dkorunic/astro-recommender/internal/fetch"
 	"github.com/dkorunic/astro-recommender/internal/geocode"
 	"github.com/dkorunic/astro-recommender/internal/output"
 	"github.com/dkorunic/astro-recommender/internal/plan"
@@ -53,7 +54,7 @@ func main() {
 		return
 	}
 
-	n, err := compute(ctx, cfg, targets)
+	n, err := compute(ctx, cfg, targets, session{})
 	if err != nil {
 		fatal(err.Error())
 	}
@@ -111,11 +112,30 @@ func warn(ctx context.Context, a ...any) {
 	}
 }
 
+// session holds what compute's network sources know of the site alone, for
+// the terminal view's nights to share (newSession); its zero value, a single
+// run's, asks every time.
+type session struct {
+	sqm  *fetch.Memo[sqmAnswer]
+	site scoring.Site
+}
+
+// sqmAnswer is sqm.Lookup's answer.
+type sqmAnswer struct {
+	source string
+	mag    float64
+}
+
+// newSession returns a session that remembers the site's sources: the
+// DarkSkySites map is monthly, and its quota counts every ← and →.
+func newSession() session { return session{sqm: fetch.NewMemo[sqmAnswer](), site: scoring.NewSite()} }
+
 // compute runs the pipeline for cfg's night over targets: the window (the
 // night in progress, or -date's), every network source at once, the sky,
 // the scores, the plan and the sub-exposure estimates. targets is not
-// modified, so the terminal UI computes other nights from the same list.
-func compute(ctx context.Context, cfg config.Config, targets []catalog.Target) (night, error) {
+// modified, so the terminal UI computes other nights from the same list,
+// through one ses.
+func compute(ctx context.Context, cfg config.Config, targets []catalog.Target, ses session) (night, error) {
 	// Without -date, "tonight" between dusk and dawn is the night in progress,
 	// and only its remaining part is planned.
 	day, inProgress := cfg.Day, false
@@ -160,12 +180,16 @@ func compute(ctx context.Context, cfg config.Config, targets []catalog.Target) (
 		solarSFU   float64
 		solarBasis string
 	)
-	wg.Go(func() { forecast = scoring.FetchForecast(ctx, &cfg, start, end) })
+	wg.Go(func() { forecast = scoring.FetchForecast(ctx, &cfg, start, end, ses.site) })
 	// An explicit -sqm or -bortle (even 0) wins; the lookup needs a key.
 	if key := sqm.Key(); key != "" && !cfg.NoSQM && !cfg.SkySet {
 		wg.Go(func() {
-			var err error
-			if sqmVal, sqmSource, err = sqm.Lookup(ctx, key, cfg.Lat, cfg.Lon); err != nil {
+			a, err := ses.sqm.Get(ctx, 0, func(ctx context.Context) (sqmAnswer, error) {
+				mag, source, err := sqm.Lookup(ctx, key, cfg.Lat, cfg.Lon)
+
+				return sqmAnswer{source, mag}, err
+			})
+			if sqmVal, sqmSource = a.mag, a.source; err != nil {
 				warn(ctx, "warning: no sky brightness lookup, assuming a dark sky:", err)
 			}
 		})

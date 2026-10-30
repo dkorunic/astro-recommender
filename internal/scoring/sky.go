@@ -15,6 +15,7 @@ import (
 	"github.com/dkorunic/astro-recommender/internal/astro"
 	"github.com/dkorunic/astro-recommender/internal/atmos"
 	"github.com/dkorunic/astro-recommender/internal/config"
+	"github.com/dkorunic/astro-recommender/internal/fetch"
 	"github.com/dkorunic/astro-recommender/internal/weather"
 )
 
@@ -71,10 +72,29 @@ type Forecast struct {
 // NoForecast is a Forecast with nothing fetched: perfect sky, fixed extinction.
 func NoForecast() Forecast { return Forecast{Elevation: math.NaN(), AODElevation: math.NaN()} }
 
+// Site holds the forecast sources that depend on the site alone, for a
+// session computing several nights (the terminal view's ← and →): 7Timer,
+// which has no date, kept an hour, and the IFS grid cell's elevation. Its
+// zero value asks every time, as a single run does.
+type Site struct {
+	Astro     *fetch.Memo[map[int64]weather.AstroBlock]
+	Elevation *fetch.Memo[float64]
+}
+
+// NewSite returns a Site that remembers its sources.
+func NewSite() Site {
+	return Site{Astro: fetch.NewMemo[map[int64]weather.AstroBlock](), Elevation: fetch.NewMemo[float64]()}
+}
+
+// astroTTL is how long Site keeps 7Timer's forecast: its runs are 6-hourly,
+// and the browser's proxy caches an hour too.
+const astroTTL = time.Hour
+
 // FetchForecast downloads the weather, upper-air profile, transparency and
 // aerosol forecasts for [start, end) concurrently, as -no-weather and
-// -extinction allow. A failed source is a stderr warning and stays empty.
-func FetchForecast(ctx context.Context, cfg *config.Config, start, end time.Time) Forecast {
+// -extinction allow, the site's own through site. A failed source is a
+// stderr warning and stays empty.
+func FetchForecast(ctx context.Context, cfg *config.Config, start, end time.Time, site Site) Forecast {
 	f := NoForecast()
 	if cfg.NoWeather {
 		return f
@@ -94,7 +114,10 @@ func FetchForecast(ctx context.Context, cfg *config.Config, start, end time.Time
 	})
 	wg.Go(func() {
 		var err error
-		if f.Astro, err = weather.AstroForecast(ctx, cfg.Lat, cfg.Lon); err != nil {
+		f.Astro, err = site.Astro.Get(ctx, astroTTL, func(ctx context.Context) (map[int64]weather.AstroBlock, error) {
+			return weather.AstroForecast(ctx, cfg.Lat, cfg.Lon)
+		})
+		if err != nil {
 			fmt.Fprintln(os.Stderr, "warning: no transparency forecast:", err)
 		}
 	})
@@ -107,7 +130,10 @@ func FetchForecast(ctx context.Context, cfg *config.Config, start, end time.Time
 		})
 		wg.Go(func() {
 			var err error
-			if f.AODElevation, err = weather.GridElevation(ctx, cfg.Lat, cfg.Lon); err != nil {
+			f.AODElevation, err = site.Elevation.Get(ctx, 0, func(ctx context.Context) (float64, error) {
+				return weather.GridElevation(ctx, cfg.Lat, cfg.Lon)
+			})
+			if err != nil {
 				fmt.Fprintln(os.Stderr, "warning: aerosols not moved to the site's elevation:", err)
 			}
 		})

@@ -77,9 +77,16 @@ func (r *rotation) trail(i int, a, sinAlt, cosHA float64) bool {
 	if r.seeing != nil {
 		see = r.seeing[i]
 	}
+	// X^0.6 is at least 1 and only widens the star, so a trail within the
+	// zenith's width needs no airmass: most minutes, where the Pow and the
+	// Airmass were 14% of a framed alt-az run.
+	t2 := trail * trail * r.scale2
+	if t2 <= see*see+r.optics2 {
+		return false
+	}
 	see *= math.Pow(atmos.Airmass(a), 0.6)
 
-	return trail*trail*r.scale2 > see*see+r.optics2
+	return t2 > see*see+r.optics2
 }
 
 // opticsFWHM2 is cfg's optics' and pixels' blur, FWHM² in arcsec²: the

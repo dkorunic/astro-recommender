@@ -62,6 +62,7 @@ func runTUI(ctx context.Context, cfg config.Config, targets []catalog.Target) er
 	}
 
 	var pc placeCache
+	ses := newSession()
 	geo := func() string {
 		if cfg.NoGeocode {
 			return ""
@@ -77,7 +78,7 @@ func runTUI(ctx context.Context, cfg config.Config, targets []catalog.Target) er
 	return tui.Run(ctx, opt, func(nctx context.Context, day time.Time, dateSet bool) tui.Night {
 		c := cfg
 		c.Day, c.DateSet, c.NoGeocode = day, dateSet, true
-		n, err := compute(nctx, c, targets)
+		n, err := compute(nctx, c, targets, ses)
 		out := tui.Night{Day: n.day, Msg: n.msg, Err: err}
 		if err == nil && n.msg == "" {
 			out.Doc = view.Build(&n.cfg, &n.sky, pc.get(nctx, geo), n.results, n.slots)

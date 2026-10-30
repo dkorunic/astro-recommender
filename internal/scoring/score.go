@@ -66,6 +66,10 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 	active, choice := make([]*tally, 0, len(names)), make([]int, 0, len(names))
 	cam, camOK := newCamera(cfg, s)
 	widths := cfg.BandWidths()
+	filters := make([]filterBands, len(names)) // filters[0], no filter, unused
+	for c, name := range names[1:] {
+		filters[c+1] = filterOf(cfg, name)
+	}
 	for _, tg := range targets {
 		// An object no frame holds whole is framed at its usual core, if it
 		// has one that fits (catalog.Target.AtCore).
@@ -107,14 +111,17 @@ func Score(cfg *config.Config, s *Sky, targets []catalog.Target, perMinute bool)
 			}
 		}
 		active, choice = active[:0], choice[:0]
+		emission, photons := catalog.EmissionLine(tg), tg.Photons()
 		for c, name := range names {
-			fp := passes(cfg, tg, name)
-			if c > 0 && fp.w == 0 {
-				continue
+			var fp filterPass
+			if c > 0 {
+				if fp = filters[c].pass(emission, photons); fp.w == 0 {
+					continue
+				}
 			}
 			tallies[c].reset(fp)
 			if camNL > 0 {
-				tallies[c].chans = cam.channels(tallies[c].chans, name, widths, tg.Photons(), fp)
+				tallies[c].chans = cam.channels(tallies[c].chans, name, widths, photons, fp)
 			}
 			active, choice = append(active, &tallies[c]), append(choice, c)
 		}
@@ -189,9 +196,10 @@ func (t *tally) reset(fp filterPass) {
 	*t = tally{chans: t.chans[:0], weight: weight, obs: obs, fp: fp, prev: -2} // chans: channels' buffer
 }
 
-// add counts minute i, observable at altitude a under a sky of sb with
+// add counts minute i, observable at altitude a under a sky of mag
+// (atmos.MagFromNL, which scoreTarget shares among the filters) with
 // weight w (raw uncapped).
-func (t *tally) add(i int, a, w, raw, sb float64) {
+func (t *tally) add(i int, a, w, raw, mag float64) {
 	if i != t.prev+1 {
 		t.runStart = i
 		t.runs++
@@ -202,7 +210,7 @@ func (t *tally) add(i int, a, w, raw, sb float64) {
 	}
 	t.good++
 	t.altSum += a
-	t.skySum += atmos.MagFromNL(sb)
+	t.skySum += mag
 	t.weight[i] = w
 	if t.obs != nil {
 		t.obs[i] = true
@@ -292,7 +300,7 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, ts []*tally, mos
 	emission := catalog.EmissionLine(tg)
 	if emission {
 		objNL /= atmos.CameraBand
-		all := broadPasses(tg, tg.Photons(), cameraBand)
+		all := cameraPass.pass(true, tg.Photons())
 		lineRay, lineAer = all.ray-1, all.aer-1
 	}
 	objRef := objNL + s.RefNL // the same object under a pristine sky
@@ -361,6 +369,7 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, ts []*tally, mos
 		extraNL := extra * atmos.Absolute(air, s.Ext[i])
 		var glow, rayleigh, mie float64
 		parts, blur := false, -1.0
+		partsMag := math.NaN() // MagFromNL of the parts' sum, once a filter needs it
 		for _, t := range ts {
 			if s.tooClose(i, c, t.cosMoon, t.fp.moonK()) {
 				continue
@@ -373,14 +382,15 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, ts []*tally, mos
 			// kb is the object's band's extinction coefficient, for the
 			// camera; trans keeps its own inline expression, which the
 			// compiler may fuse (FMA), so the score stays bit for bit.
-			var sb, trans, gain, kb float64
+			var mag, trans, gain, kb float64
 			if t.fp.w > 0 {
-				sb = glow + rayleigh + mie
+				mag = onceMag(&partsMag, glow+rayleigh+mie)
 				trans = atmos.Transmission(air, s.ExtRayleigh[i]*t.fp.ray+s.ozone(i)+s.ExtAerosol[i]*t.fp.aer)
 				kb = s.ExtRayleigh[i]*t.fp.ray + s.ozone(i) + s.ExtAerosol[i]*t.fp.aer
 				gain = t.fp.gain(objNL, objRef, glow, rayleigh, mie)
 			} else {
-				sb = atmos.SkyBrightnessLit(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i]) + extraNL
+				sb := atmos.SkyBrightnessLit(s.ZenithNL, s.Ext[i], a, rho, s.MoonLight[i]) + extraNL
+				mag = atmos.MagFromNL(sb)
 				trans, kb = ext, s.Ext[i]
 				if emission {
 					trans = atmos.Transmission(air, s.Ext[i]+s.ExtRayleigh[i]*lineRay+s.ExtAerosol[i]*lineAer)
@@ -396,12 +406,24 @@ func scoreTarget(cfg *config.Config, s *Sky, tg catalog.Target, ts []*tally, mos
 				// atmosphere, so the zenith's extinction dims it too.
 				cam.add(&t.st, t.chans, i, s.Quality[i], camNL*atmos.Absolute(air, kb)*blur, glow, rayleigh, mie)
 			}
-			t.add(i, a, s.Quality[i]*trans*min(1, gain), s.Quality[i]*trans*gain, sb)
+			// The conversions round the weights before add, now inlined, sums
+			// them: fused into its sums (FMA) they would move SCORE's last bits.
+			t.add(i, a, float64(s.Quality[i]*trans*min(1, gain)), float64(s.Quality[i]*trans*gain), mag)
 		}
 	}
 	r.MaxAlt, r.MaxAt = math.Asin(maxSin)/deg, s.Grid[maxAt]
 
 	return r, true
+}
+
+// onceMag is atmos.MagFromNL(sb) through *mag, which holds it once known
+// (NaN until then): the filters share one sky in a minute.
+func onceMag(mag *float64, sb float64) float64 {
+	if math.IsNaN(*mag) {
+		*mag = atmos.MagFromNL(sb)
+	}
+
+	return *mag
 }
 
 // tooClose reports whether minute i's Moon separation, of cosine c, is
@@ -507,35 +529,67 @@ type filterPass struct{ w, glow, rayleigh, mie, ray, aer float64 }
 // passes returns what the -filter choice name passes for tg; nothing for ""
 // (no filter).
 func passes(cfg *config.Config, tg catalog.Target, name string) filterPass {
-	var fp filterPass
 	if name == "" {
-		return fp
+		return filterPass{}
 	}
-	lines := tg.Photons()
+	f := filterOf(cfg, name)
+
+	return f.pass(catalog.EmissionLine(tg), tg.Photons())
+}
+
+// filterBands is what a -filter choice passes of any target, which Score
+// works out once rather than per target (BroadSky's and BandScale's Pow):
+// its bands' sky shares, what it passes of each line and that line's
+// extinction scaling, and for a broadband filter its continuum's pass.
+type filterBands struct {
+	t, ray, aer         [catalog.NumLines]float64 // each line's share passed (0: none) and its BandScale
+	cont                filterPass                // a broadband filter's pass of a continuum target
+	glow, rayleigh, mie float64
+	broad               bool
+}
+
+// filterOf returns the -filter choice name's filterBands under cfg.
+func filterOf(cfg *config.Config, name string) filterBands {
 	if bands := config.Broadband[name]; bands != nil {
-		return broadPasses(tg, lines, bands)
+		return broadBands(bands)
 	}
 	// Against the camera band, as a broadband filter: a line filter's bands
 	// were once shares of V's 88 nm, which charged them CameraBand times the
 	// sky per nm a broadband filter is charged against the same unfiltered sky.
+	var f filterBands
 	ls := config.Filters[name]
 	all := lineBands(ls, cfg.BandWidths())
 	bands := all[:len(ls)]
 	for _, b := range bands {
 		glow, rayleigh, mie := atmos.BroadSky(b[0], b[1])
-		fp.glow += glow
-		fp.rayleigh += rayleigh
-		fp.mie += mie
+		f.glow += glow
+		f.rayleigh += rayleigh
+		f.mie += mie
 	}
 	// Every line a band reaches, the filter's own and the others in it
 	// ([N II] in Hα's), each once, as much of it as the beam lets through.
 	bm := beamOf(cfg)
 	for l, nm := range catalog.LineNM {
-		if t := bm.passed(nm, bands); t > 0 {
-			ray, aer := atmos.BandScale(nm)
+		if f.t[l] = bm.passed(nm, bands); f.t[l] > 0 {
+			f.ray[l], f.aer[l] = atmos.BandScale(nm)
+		}
+	}
+
+	return f
+}
+
+// pass is what f passes of a target whose light is lines (photon shares,
+// catalog.Target.Photons), an emission-line one or not.
+func (f *filterBands) pass(emission bool, lines [catalog.NumLines]float64) filterPass {
+	if f.broad && !emission {
+		return f.cont
+	}
+	fp := filterPass{glow: f.glow, rayleigh: f.rayleigh, mie: f.mie}
+	for l, t := range f.t {
+		if t > 0 {
 			fp.w += lines[l] * t
-			fp.ray += lines[l] * t * ray
-			fp.aer += lines[l] * t * aer
+			fp.ray += lines[l] * t * f.ray[l]
+			fp.aer += lines[l] * t * f.aer[l]
 		}
 	}
 	if fp.w > 0 {
@@ -677,38 +731,43 @@ var cameraBand = [][2]float64{{atmos.CameraLo, atmos.CameraHi}}
 // line is 1, as unfiltered), anything else's its continuum's, taken flat per
 // nm.
 func broadPasses(tg catalog.Target, lines [catalog.NumLines]float64, bands [][2]float64) filterPass {
-	var fp filterPass
-	emission := catalog.EmissionLine(tg)
+	f := broadBands(bands)
+
+	return f.pass(catalog.EmissionLine(tg), lines)
+}
+
+// broadBands is broadPasses' filterBands: a line passes whole (t 1) where
+// inBands (the channels' test too) finds it, so it counts once however many
+// passbands reach it, and a continuum by the passbands' glow share.
+func broadBands(bands [][2]float64) filterBands {
+	f := filterBands{broad: true}
 	for _, b := range bands {
 		glow, rayleigh, mie := atmos.BroadSky(b[0], b[1])
-		fp.glow += glow
-		fp.rayleigh += rayleigh
-		fp.mie += mie
-		if !emission {
-			ray, aer := atmos.BandMean(b[0], b[1])
-			fp.w += glow
-			fp.ray += glow * ray
-			fp.aer += glow * aer
-		}
+		f.glow += glow
+		f.rayleigh += rayleigh
+		f.mie += mie
+		ray, aer := atmos.BandMean(b[0], b[1])
+		f.cont.w += glow
+		f.cont.ray += glow * ray
+		f.cont.aer += glow * aer
 	}
-	if emission {
-		// inBands (the channels' test too), so a line counts once however
-		// many passbands reach it.
-		for l, nm := range catalog.LineNM {
-			if inBands(nm, bands) {
-				ray, aer := atmos.BandScale(nm)
-				fp.w += lines[l]
-				fp.ray += lines[l] * ray
-				fp.aer += lines[l] * aer
-			}
-		}
+	f.cont.glow, f.cont.rayleigh, f.cont.mie = f.glow, f.rayleigh, f.mie
+	if f.cont.w > 0 {
+		f.cont.ray, f.cont.aer = f.cont.ray/f.cont.w, f.cont.aer/f.cont.w
 	}
-	if fp.w > 0 {
-		fp.ray, fp.aer = fp.ray/fp.w, fp.aer/fp.w
+	for l, nm := range catalog.LineNM {
+		if inBands(nm, bands) {
+			f.t[l] = 1
+			f.ray[l], f.aer[l] = atmos.BandScale(nm)
+		}
 	}
 
-	return fp
+	return f
 }
+
+// cameraPass is the unfiltered camera band's filterBands, which
+// scoreTarget and Subs move an emission-line target's extinction by.
+var cameraPass = broadBands(cameraBand)
 
 // gain is the filter's SNR against the same object unfiltered under a
 // pristine sky, uncapped: the target's signal is w of it, the sky the bands'

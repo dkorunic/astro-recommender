@@ -421,7 +421,7 @@ func Subs(cfg *config.Config, s *Sky, r Result, planned []bool) Estimate {
 	// wavelengths, as scoreTarget dims them (0, 0: V's, for a continuum).
 	var lineRay, lineAer float64
 	if catalog.EmissionLine(r.Target) {
-		all := broadPasses(r.Target, lines, cameraBand)
+		all := cameraPass.pass(true, lines)
 		lineRay, lineAer = all.ray-1, all.aer-1
 	}
 	objNL := lightNL(r.Target, sb)

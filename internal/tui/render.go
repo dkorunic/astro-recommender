@@ -427,12 +427,36 @@ func subsText(e *scoring.Estimate) string {
 // box-drawing arcs, a solid line every monospaced font holds, where braille
 // dots come from fallback fonts of other widths (and freeze's demo shifts).
 func (m *model) chart(i, w, h int) string {
-	d := &m.night.Doc
-	t := m.theme
-	alt := d.Alt[i]
+	alt := m.night.Doc.Alt[i]
 	if len(alt) < 2 || w < 10 || h < 3 {
 		return ""
 	}
+	// View runs on every message, the spinner's ticks and key repeats
+	// included, and building and drawing the chart was 40% of a frame's
+	// allocations: drawn again only for another curve, size or theme.
+	key := chartKey{alt: &alt[0], w: w, h: h, red: m.red}
+	if key == m.chartKey {
+		return m.chartView
+	}
+	m.chartKey = key
+	m.chartView = m.drawChart(i, w, h)
+
+	return m.chartView
+}
+
+// chartKey is what chart's drawing depends on: the curve (its own array, a
+// new night's being a new one), the size and the theme.
+type chartKey struct {
+	alt  *float64
+	w, h int
+	red  bool
+}
+
+// drawChart is chart's drawing.
+func (m *model) drawChart(i, w, h int) string {
+	d := &m.night.Doc
+	t := m.theme
+	alt := d.Alt[i]
 	at := func(k int) time.Time { return time.Unix(d.Start+int64(k)*d.Step, 0) }
 	first, last := at(0), at(len(alt)-1)
 	ch := timeserieslinechart.New(w, h,

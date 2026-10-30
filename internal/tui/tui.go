@@ -193,6 +193,8 @@ type model struct {
 	order     []int  // card indices in the sort's order
 	warnings  []string
 	spin      spinner.Model
+	chartView string // chart's last drawing, of chartKey
+	chartKey  chartKey
 	opt       Options
 	night     Night
 	computing sync.WaitGroup // the running computes, which Run waits for once closed

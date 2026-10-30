@@ -777,3 +777,64 @@ func TestPictureReprobe(t *testing.T) {
 		t.Errorf("state %v from %s, want loaded from SkyView", m.pic.State(), m.pic.CurrentURL())
 	}
 }
+
+// The chart is drawn once per curve, size and theme, and again when any of
+// them changes: the next card, the night theme, a resize, a new night.
+func TestChartCache(t *testing.T) {
+	var asked []time.Time
+	m := started(t, 180, 50, &asked)
+	m.render()
+	first := m.chartKey
+	if first.alt == nil {
+		t.Fatal("no chart drawn")
+	}
+	m.chartView = "cached"
+	if !strings.Contains(m.render(), "cached") {
+		t.Fatal("unchanged chart drawn again")
+	}
+	m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+	if m.render(); m.chartKey.alt == first.alt {
+		t.Error("the next card kept the first's chart")
+	}
+	press(m, "r")
+	if m.render(); !m.chartKey.red {
+		t.Error("the night theme kept the dark chart")
+	}
+	m.Update(tea.WindowSizeMsg{Width: 160, Height: 50})
+	if m.render(); m.chartKey.w == first.w {
+		t.Error("a resize kept the chart's width")
+	}
+	before := m.chartKey.alt
+	m.Update(m.load(time.Date(2026, 10, 28, 12, 0, 0, 0, time.UTC), true)())
+	if m.render(); m.chartKey.alt == before {
+		t.Error("a new night kept the old night's chart")
+	}
+}
+
+// Whatever was pressed, a frame with the chart cached is the frame drawn
+// afresh.
+func TestChartCacheFrames(t *testing.T) {
+	var asked []time.Time
+	m := started(t, 180, 50, &asked)
+	m.night = manyNight(m.night.Day, 12)
+	steps := []func(){
+		func() {},
+		func() { m.Update(tea.KeyPressMsg{Code: tea.KeyDown}) },
+		func() { press(m, "s") },
+		func() { press(m, "r") },
+		func() { m.Update(tea.KeyPressMsg{Code: tea.KeyDown}) },
+		func() { m.Update(tea.WindowSizeMsg{Width: 120, Height: 40}) },
+		func() { press(m, "r") },
+		func() { m.Update(tea.KeyPressMsg{Code: tea.KeyUp}) },
+		func() { m.Update(tea.WindowSizeMsg{Width: 200, Height: 60}) },
+	}
+	for i, step := range steps {
+		step()
+		m.render() // fills the cache
+		cached := m.render()
+		m.chartKey = chartKey{}
+		if fresh := m.render(); cached != fresh {
+			t.Errorf("step %d: the cached frame differs from one drawn afresh", i)
+		}
+	}
+}

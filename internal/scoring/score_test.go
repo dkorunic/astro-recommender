@@ -231,6 +231,29 @@ func BenchmarkPipelineMoon(b *testing.B) {
 	}
 }
 
+// BenchmarkPipelineCamera is BenchmarkPipeline framed as the Origin on an
+// alt-az mount through every -filter choice: the field rotation, the
+// camera's channels and the fewest-subs filter choice, which the other two
+// never reach; task pgo profiles all three.
+func BenchmarkPipelineCamera(b *testing.B) {
+	targets, _, err := catalog.Load("GaryImmFull", "")
+	if err != nil {
+		b.Fatal(err)
+	}
+	cfg := &config.Config{
+		Lat: 45.8, Lon: 16, AltMin: 30, AltMax: 80, SizeMin: 5, SizeMax: 45, NoWeather: true,
+		ExtinctionSet: true, Extinction: 0.2, Filter: "dual,ha,oiii,sii,tri,quad,cls,lpro", FilterNM: 7,
+		Framing: true, Scale: 1.2314, FOVLong: 79.2, FOVShort: 45, AltAz: true,
+		Aperture: 152, Obstruction: 63, Sub: 10, QE: 0.83, ReadNoise: 2.15, Dark: 0.16, Reject: 0.15, Residual: 0.002,
+	}
+	start := time.Date(2026, 10, 5, 18, 8, 0, 0, time.UTC)
+	end := start.Add(9*time.Hour + 14*time.Minute)
+	for b.Loop() {
+		s := BuildSky(cfg, NoForecast(), start, end)
+		Score(cfg, &s, targets, false)
+	}
+}
+
 func TestScoreSurfaceBrightness(t *testing.T) {
 	// Under a Bortle 8 sky the sky-glow weight depends on the object's own
 	// surface brightness: a bright-surface object loses little, a faint one a
@@ -694,5 +717,64 @@ func TestLineBandsWidths(t *testing.T) {
 	hii := catalog.Target{Type: "HII Region"}
 	if wide, narrow := passes(cfg, hii, "dual"), passes(&config.Config{FilterNM: 7}, hii, "dual"); wide.w-narrow.w < hii.Photons()[catalog.Hb]-1e-9 {
 		t.Errorf("30 nm [O III] passes %v of the light, 7 nm %v: Hβ %v missing", wide.w, narrow.w, hii.Photons()[catalog.Hb])
+	}
+}
+
+// A broadband filter passes a continuum target its passbands' share of the
+// camera band, w, with the extinction's Rayleigh and aerosol scaling (ray,
+// aer) the passbands' means weighted by that share: worked out here from
+// atmos directly, against filterBands' precomputed continuum pass.
+func TestBroadbandContinuumPass(t *testing.T) {
+	galaxy := catalog.Target{Name: "G", Type: "Spiral Galaxy"}
+	for _, name := range []string{"cls", "lpro"} {
+		var w, ray, aer float64
+		for _, b := range config.Broadband[name] {
+			share := (b[1] - b[0]) / (atmos.CameraHi - atmos.CameraLo)
+			r, a := atmos.BandMean(b[0], b[1])
+			w, ray, aer = w+share, ray+share*r, aer+share*a
+		}
+		fp := passes(&config.Config{FilterNM: 7}, galaxy, name)
+		for _, c := range []struct {
+			what      string
+			got, want float64
+		}{{"w", fp.w, w}, {"ray", fp.ray, ray / w}, {"aer", fp.aer, aer / w}} {
+			if math.Abs(c.got-c.want) > 1e-12*c.want {
+				t.Errorf("%s: %s %v, want %v", name, c.what, c.got, c.want)
+			}
+		}
+	}
+}
+
+// SKY is the mean V sky over the observable minutes, the same sky whatever
+// the filter (the filtered tallies sum SkyParts, the unfiltered one takes
+// SkyBrightnessLit, equal to rounding): with the Moon down all night, so
+// that every choice observes the same minutes, an H II region that takes Hα
+// under a Bortle 8 sky reads the unfiltered SKY, minute by minute, not one
+// minute's sky held over the night.
+func TestSkyMagFiltered(t *testing.T) {
+	cfg := &config.Config{Lat: 45.8, Lon: 16, AltMin: 30, AltMax: 80, SizeMax: 300, NoWeather: true, ExtinctionSet: true, Extinction: 0.2, Bortle: 8, FilterNM: 7}
+	start, end, _ := astro.Window(time.Date(2026, 10, 10, 12, 0, 0, 0, time.UTC), cfg.Lat, cfg.Lon, astro.Astronomical)
+	s := BuildSky(cfg, NoForecast(), start, end)
+	for i, a := range s.MoonAlt {
+		if a > 0 {
+			t.Fatalf("the Moon is up at %v: pick a night it is down throughout", s.Grid[i])
+		}
+	}
+	tg := []catalog.Target{{Name: "H", Type: "HII Region", RADeg: 330, DecDeg: 50, Size: 60}}
+	score := func(filter string) Result {
+		cfg.Filter = filter
+		r := Score(cfg, &s, tg, false)
+		if len(r) != 1 {
+			t.Fatalf("not observable through %q", filter)
+		}
+
+		return r[0]
+	}
+	filtered, plain := score("ha"), score("")
+	if filtered.Filter != "ha" || filtered.Foto != plain.Foto {
+		t.Fatalf("filter %q, UP %v against %v: want Hα over the same minutes", filtered.Filter, filtered.Foto, plain.Foto)
+	}
+	if math.Abs(filtered.SkyMag-plain.SkyMag) > 1e-9 {
+		t.Errorf("SKY through Hα %v, unfiltered %v: want the same sky", filtered.SkyMag, plain.SkyMag)
 	}
 }

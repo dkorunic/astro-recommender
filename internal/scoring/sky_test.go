@@ -207,7 +207,7 @@ func TestFetchForecastNoWeather(t *testing.T) {
 	start := time.Date(2026, 10, 5, 20, 0, 0, 0, time.UTC)
 	old := os.Stderr
 	os.Stderr = f
-	got := FetchForecast(ctx, &config.Config{Lat: 45.8, Lon: 16, NoWeather: true}, start, start.Add(time.Hour))
+	got := FetchForecast(ctx, &config.Config{Lat: 45.8, Lon: 16, NoWeather: true}, start, start.Add(time.Hour), Site{})
 	os.Stderr = old
 	out, err := os.ReadFile(f.Name())
 	if err != nil {
