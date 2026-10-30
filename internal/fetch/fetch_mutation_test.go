@@ -11,11 +11,24 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"sync/atomic"
 	"testing"
 	"time"
 )
+
+// identified reports whether r carries the User-Agent its platform sends:
+// ours, except in the browser, where identify sends none (a custom one forces
+// a CORS preflight), so Go's default goes out (Node's fake network) or the
+// browser's own.
+func identified(r *http.Request) bool {
+	if runtime.GOOS == "js" {
+		return r.Header.Get("User-Agent") != userAgent
+	}
+
+	return r.Header.Get("User-Agent") == userAgent
+}
 
 func mutNoDelay(t *testing.T) {
 	t.Helper()
@@ -65,7 +78,7 @@ func TestMutGetJSONRetry(t *testing.T) {
 			if n.Add(1) > 1 {
 				code = http.StatusOK
 			}
-			if r.Header.Get("X-Api-Key") != "k" || r.Header.Get("User-Agent") != userAgent {
+			if r.Header.Get("X-Api-Key") != "k" || !identified(r) {
 				code = http.StatusUnauthorized
 			}
 			w.WriteHeader(code)

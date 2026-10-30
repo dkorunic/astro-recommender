@@ -133,6 +133,14 @@ tasks:
     cmds:
       - go test ./...
 
+  test-wasm:
+    desc: Run the browser build's tests (GOOS=js) under Node; internal/tui is left out, as the browser build is
+    env:
+      GOOS: js
+      GOARCH: wasm
+    cmds:
+      - go test -exec="$(go env GOROOT)/lib/wasm/go_js_wasm_exec" . $(go list ./internal/... | grep -v /internal/tui)
+
   # Gosentry (LibAFL) fuzzing, one task per fuzz target; extra flags go after
   # --, e.g. task fuzz-coordinates -- -fuzztime 10m.
   fuzz:

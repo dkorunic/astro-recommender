@@ -5,8 +5,8 @@ package main
 
 import (
 	"encoding/json"
-	"io"
 	"os"
+	"path/filepath"
 	"runtime/debug"
 	"strings"
 	"testing"
@@ -93,31 +93,40 @@ func TestPlanned(t *testing.T) {
 	}
 }
 
-// capture returns what f writes to stdout and stderr.
+// capture returns what f writes to stdout and stderr, through files, not
+// os.Pipe, which js (the browser build's tests, under Node) does not
+// implement.
 func capture(t *testing.T, f func()) (stdout, stderr string) {
 	t.Helper()
-	read := func(p **os.File) (func() string, func()) {
-		r, w, err := os.Pipe()
+	dir := t.TempDir()
+	swap := func(p **os.File, name string) (*os.File, func()) {
+		tmp, err := os.Create(filepath.Join(dir, name))
 		if err != nil {
 			t.Fatal(err)
 		}
 		old := *p
-		*p = w
-		done := make(chan string)
-		go func() {
-			b, _ := io.ReadAll(r)
-			done <- string(b)
-		}()
+		*p = tmp
 
-		return func() string { return <-done }, func() { *p = old; _ = w.Close() }
+		return tmp, func() { *p = old }
 	}
-	out, restoreOut := read(&os.Stdout)
-	errs, restoreErr := read(&os.Stderr)
+	read := func(f *os.File) string {
+		_ = f.Close()
+		b, err := os.ReadFile(f.Name())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return string(b)
+	}
+	out, restoreOut := swap(&os.Stdout, "stdout")
+	defer restoreOut()
+	errs, restoreErr := swap(&os.Stderr, "stderr")
+	defer restoreErr()
 	f()
 	restoreOut()
 	restoreErr()
 
-	return out(), errs()
+	return read(out), read(errs)
 }
 
 // nothing keeps -csv and -json parseable: the CSV's header alone with the

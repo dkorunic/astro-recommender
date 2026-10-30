@@ -7,6 +7,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"runtime"
 	"testing"
 
 	"github.com/dkorunic/astro-recommender/internal/fetch"
@@ -17,7 +18,7 @@ func mutServe(t *testing.T, code int, body string) *string {
 	var query string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		query = r.URL.RawQuery
-		if r.Header.Get("X-Api-Key") != "secret" {
+		if !keyed(r, "secret") {
 			w.WriteHeader(http.StatusUnauthorized)
 			_, _ = w.Write([]byte(`{"error":"no key"}`))
 
@@ -27,9 +28,10 @@ func mutServe(t *testing.T, code int, body string) *string {
 		_, _ = w.Write([]byte(body))
 	}))
 	t.Cleanup(srv.Close)
-	old, oldDelay := baseURL, fetch.RetryDelay
-	baseURL, fetch.RetryDelay = srv.URL, 0
-	t.Cleanup(func() { baseURL, fetch.RetryDelay = old, oldDelay })
+	serveAt(t, srv.URL)
+	oldDelay := fetch.RetryDelay
+	fetch.RetryDelay = 0
+	t.Cleanup(func() { fetch.RetryDelay = oldDelay })
 
 	return &query
 }
@@ -68,7 +70,8 @@ func TestMutLookup(t *testing.T) {
 			t.Errorf("%d %s: %v, want error", c.code, c.body, v)
 		}
 	}
-	if _, _, err := Lookup(ctx, "wrong", 1, 2); err == nil {
+	// The browser sends no key, so only off it can one be wrong.
+	if _, _, err := Lookup(ctx, "wrong", 1, 2); err == nil && runtime.GOOS != "js" {
 		t.Error("wrong key accepted")
 	}
 }

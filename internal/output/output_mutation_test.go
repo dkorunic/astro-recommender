@@ -5,7 +5,6 @@ package output
 
 import (
 	"encoding/json"
-	"io"
 	"math"
 	"os"
 	"reflect"
@@ -29,23 +28,24 @@ import (
 // mutCapture returns what f prints to stdout.
 func mutCapture(t *testing.T, f func()) string {
 	t.Helper()
-	r, w, err := os.Pipe()
+	// A file, not os.Pipe, which js (the browser build's tests, under Node)
+	// does not implement.
+	tmp, err := os.CreateTemp(t.TempDir(), "stdout")
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer tmp.Close()
 	old := os.Stdout
-	os.Stdout = w
-	done := make(chan string)
-	go func() {
-		b, _ := io.ReadAll(r)
-		done <- string(b)
-	}()
+	os.Stdout = tmp
 	defer func() { os.Stdout = old }()
 	f()
-	w.Close()
 	os.Stdout = old
+	b, err := os.ReadFile(tmp.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	return <-done
+	return string(b)
 }
 
 func mutColor(t *testing.T, on bool) {

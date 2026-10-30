@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -93,8 +94,10 @@ func TestDecodePackedLengths(t *testing.T) {
 	if _, err := decodePacked("x", strings.NewReader("<html>")); err == nil || !strings.Contains(err.Error(), "embedded list x") {
 		t.Errorf("non-gob bytes: %v", err)
 	}
-	if _, err := embedded("nope"); !errors.Is(err, fs.ErrNotExist) {
-		t.Errorf("embedded(nope) = %v, want ErrNotExist", err)
+	// A list that is not there: off the browser not embedded; in it not on
+	// the server, a download error naming it.
+	if _, err := embedded("nope"); runtime.GOOS != "js" && !errors.Is(err, fs.ErrNotExist) || err == nil || !strings.Contains(err.Error(), "nope") {
+		t.Errorf("embedded(nope) = %v, want an error naming it (ErrNotExist off the browser)", err)
 	}
 	for _, n := range []uint32{1, 3} { // short lengths misalign, long ones would panic the slice
 		p.Targets[0].Dec = n

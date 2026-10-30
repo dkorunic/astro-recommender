@@ -29,8 +29,9 @@ var errDarkSky = errors.New("darkskysites")
 var baseURL = "https://www.darkskysites.com/api/sqm"
 
 // proxyURL is the Cloudflare Worker the browser build goes through:
-// DarkSkySites sends no CORS headers, and the Worker holds the API key.
-const proxyURL = "https://proxy.astrorecommender.org/sqm"
+// DarkSkySites sends no CORS headers, and the Worker holds the API key. A
+// variable, as baseURL, so that tests can point it at a local server.
+var proxyURL = "https://proxy.astrorecommender.org/sqm"
 
 // Key returns the API key from KeyEnv; empty means no lookup, except in the
 // browser, where Lookup sends none and the proxy adds its own.

@@ -10,6 +10,7 @@ import (
 	"math"
 	"net/http"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strconv"
 	"strings"
@@ -332,6 +333,15 @@ func TestMutObservedPages(t *testing.T) {
 	ct := &cobsTransport{pages: 3}
 	http.DefaultTransport = ct
 	seen, err := FetchObserved(context.Background(), day)
+	// COBS sends no CORS headers, so the browser asks it nothing: comets keep
+	// MPC's magnitudes.
+	if runtime.GOOS == "js" {
+		if err != nil || len(seen) != 0 || len(ct.reqs) != 0 {
+			t.Errorf("in the browser: %v %v, requests %v; want none asked", seen, err, ct.reqs)
+		}
+
+		return
+	}
 	if err != nil || len(seen["9Z"]) != 3 || len(ct.reqs) != 3 || !strings.HasSuffix(ct.reqs[2], "&page=3") {
 		t.Fatalf("three pages: %v %v, requests %v", seen, err, ct.reqs)
 	}

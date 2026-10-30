@@ -7,6 +7,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -15,17 +16,16 @@ import (
 )
 
 func TestLookup(t *testing.T) {
-	var gotKey, gotQuery string
+	var keyOK bool
+	var gotQuery string
 	reply, status := "", http.StatusOK
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotKey, gotQuery = r.Header.Get("x-api-key"), r.URL.RawQuery
+		keyOK, gotQuery = keyed(r, "sqm_test"), r.URL.RawQuery
 		w.WriteHeader(status)
 		_, _ = w.Write([]byte(reply))
 	}))
 	defer srv.Close()
-	old := baseURL
-	baseURL = srv.URL
-	t.Cleanup(func() { baseURL = old })
+	serveAt(t, srv.URL)
 	fetch.RetryDelay = 0 // the 502 case is retried once
 	t.Cleanup(func() { fetch.RetryDelay = time.Second })
 	ctx := context.Background()
@@ -35,8 +35,8 @@ func TestLookup(t *testing.T) {
 	if err != nil || mag != 17.81 || src != "darkskysites.com 08_2026" {
 		t.Errorf("Lookup = %v, %q, %v", mag, src, err)
 	}
-	if gotKey != "sqm_test" || gotQuery != "lat=45.81&lng=15.99" {
-		t.Errorf("sent key %q, query %q", gotKey, gotQuery)
+	if !keyOK || gotQuery != "lat=45.81&lng=15.99" {
+		t.Errorf("key as %s wants it: %v, query %q", runtime.GOOS, keyOK, gotQuery)
 	}
 	// An attribution that sanitizes to nothing still yields a source, since
 	// main reads an empty one as no result.
@@ -62,9 +62,18 @@ func TestLookup(t *testing.T) {
 	}
 }
 
-// Off the browser the key is the environment's, and unset means no lookup.
-// (The js branch, a placeholder for the proxy, runs only under GOOS=js.)
+// Off the browser the key is the environment's, and unset means no lookup;
+// in it a placeholder, whatever the environment, since the proxy holds the
+// key.
 func TestKey(t *testing.T) {
+	if runtime.GOOS == "js" {
+		t.Setenv(KeyEnv, "")
+		if got := Key(); got == "" {
+			t.Error("Key() in the browser is empty: no lookup")
+		}
+
+		return
+	}
 	t.Setenv(KeyEnv, "sqm_test")
 	if got := Key(); got != "sqm_test" {
 		t.Errorf("Key() = %q, want sqm_test", got)

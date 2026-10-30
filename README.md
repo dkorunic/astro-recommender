@@ -94,6 +94,7 @@ Or from a checkout, using [Task](https://taskfile.dev/):
 task build   # formats, then builds a static, PGO-optimised binary (profile: default.pgo)
 task pgo     # regenerates default.pgo from the offline scoring benchmarks
 task test
+task test-wasm   # the browser build's tests, under Node
 task lint    # golangci-lint
 ```
 

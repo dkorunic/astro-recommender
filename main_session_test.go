@@ -26,11 +26,13 @@ type countingTransport struct {
 
 func (c *countingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	var service, body string
+	// The browser build reaches 7Timer and DarkSkySites through the proxy.
+	const proxy = "proxy.astrorecommender.org"
 	switch u := req.URL; {
-	case u.Host == "www.7timer.info":
+	case u.Host == "www.7timer.info" || u.Host == proxy && u.Path == "/api":
 		service = "7timer"
 		body = `{"init":"2026101112","dataseries":[{"timepoint":6,"seeing":3,"transparency":2},{"timepoint":9,"seeing":3,"transparency":2},{"timepoint":12,"seeing":4,"transparency":3},{"timepoint":15,"seeing":4,"transparency":3}]}`
-	case u.Host == "www.darkskysites.com":
+	case u.Host == "www.darkskysites.com" || u.Host == proxy && u.Path == "/sqm":
 		service = "sqm"
 		body = `{"sqm":20.5,"attribution":"test","dataset":{"id":"2026-09"}}`
 	case u.Host == "api.open-meteo.com" && strings.Contains(u.RawQuery, "elevation=nan"):
