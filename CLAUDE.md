@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-See README.md for user-facing behaviour and flags. MODELS.md explains every formula and model per topic with its sources (the README's Formulas and references section points there); update it with any change to a formula, constant or heuristic.
+See README.md for user-facing behaviour and flags. MODELS.md explains every formula and model per topic with its sources (the README's Formulas and references section points there); update it with any change to a formula, constant or heuristic. CHANGELOG.md has one section per `v*` tag (Added, Changed, Fixed, Performance, Removed, Dependencies; newest first, with a compare link at the bottom): record every user-visible change, model change, bug fix or notable speed-up under `## [Unreleased]` at the top, creating it when absent, and rename that section to the version and date when the tag is cut. Regenerated `default.pgo`/`demo.jpg` and README-only edits need no entry.
 
 
 Single-binary Go CLI that ranks deep sky objects for a location for tonight's window: astronomical dusk to astronomical dawn (Sun < −18°, or −12° with `-twilight nautical`; searched noon to noon). A port of the deep sky part of [uptonight](https://github.com/mawinkler/uptonight), extended with framing and sub-exposure estimates for 21 smart telescopes (`-scope`) and any telescope with 45 camera sensor presets (`-camera`), plus moon/filter weighting and cloud forecast.
