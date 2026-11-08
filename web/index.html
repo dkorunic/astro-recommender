@@ -47,7 +47,9 @@
 :root[data-theme="night"] :is(.shot, .shot .t1, .shot .times) { color: var(--strong); }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-html { background: var(--bg); }
+/* Clears the sticky topbar wherever the browser scrolls to something: the
+   results, and a required field it focuses, label included. */
+html { background: var(--bg); scroll-padding-top: 90px; }
 body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--fg); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
 .topbar {
   position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 16px;
@@ -201,7 +203,6 @@ details#report summary { cursor: pointer; padding: 9px 12px; background: var(--h
 details#report[open] summary { border-bottom: 1px solid var(--line); }
 pre#out { margin: 0; padding: 14px 16px; overflow-x: auto; font: 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; tab-size: 4; }
 #report:has(pre#out:empty) { display: none; }
-#out, #warn, #results { scroll-margin-top: 70px; }
 pre#out a { color: inherit; text-decoration: underline dotted; text-underline-offset: 2px; }
 /* The theme's own ring, not the system's near-white one, which would be
    the brightest mark on the night theme's screen. */

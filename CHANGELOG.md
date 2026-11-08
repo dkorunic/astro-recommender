@@ -5,6 +5,13 @@ commits since the previous tag. Version numbers skip where no tag was cut
 (v0.6–v0.7, v0.10–v0.12, v0.15–v0.17). See [MODELS.md](MODELS.md) for the
 formulas behind the model changes.
 
+## [Unreleased]
+
+### Fixed
+- Browser page: a required field left empty at Run is no longer scrolled
+  under the sticky top bar, where it hid on phones behind the browser's
+  "Please fill out this field" bubble.
+
 ## [v0.24.3] — 2026-10-30
 
 ### Performance
@@ -626,6 +633,7 @@ LDN, OpenNGC, OpenIC) for tonight's astronomical night. Features:
 - a greedy night plan (`-plan`)
 - an offline time-zone lookup and reverse geocoding
 
+[Unreleased]: https://github.com/dkorunic/astro-recommender/compare/v0.24.3...HEAD
 [v0.24.3]: https://github.com/dkorunic/astro-recommender/compare/v0.24.2...v0.24.3
 [v0.24.2]: https://github.com/dkorunic/astro-recommender/compare/v0.24.1...v0.24.2
 [v0.24.1]: https://github.com/dkorunic/astro-recommender/compare/v0.24.0...v0.24.1
