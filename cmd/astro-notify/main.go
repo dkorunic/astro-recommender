@@ -3,7 +3,7 @@
 
 // Command astro-notify runs astro-recommender with -json and, when the night
 // has a long enough stretch without cloud and with good seeing, sends its
-// forecast and targets to Telegram chats, Discord users and a webhook. It
+// forecast and targets to Telegram chats, Discord users, Slack chats and a webhook. It
 // runs once: schedule it.
 package main
 
@@ -30,6 +30,8 @@ const (
 	telegramChatsEnv = "TELEGRAM_CHAT_IDS"
 	discordTokenEnv  = "DISCORD_BOT_TOKEN" //nolint:gosec // the variable's name
 	discordUsersEnv  = "DISCORD_USER_IDS"
+	slackTokenEnv    = "SLACK_BOT_TOKEN" //nolint:gosec // the variable's name
+	slackChatsEnv    = "SLACK_CHAT_IDS"
 	webhookURLEnv    = "WEBHOOK_URL"
 	webhookHeaderEnv = "WEBHOOK_HEADERS" // one "Name: value" per line
 
@@ -38,10 +40,14 @@ const (
 	deliverGrace   = 2 * time.Second
 )
 
+// secretEnvs is what the child process has no use for.
+var secretEnvs = []string{telegramTokenEnv, telegramChatsEnv, discordTokenEnv, discordUsersEnv, slackTokenEnv, slackChatsEnv, webhookURLEnv, webhookHeaderEnv}
+
 var (
-	errNoDestination = errors.New("nowhere to send: set a Telegram, Discord or webhook destination, or use -dry-run")
+	errNoDestination = errors.New("nowhere to send: set a Telegram, Discord, Slack or webhook destination, or use -dry-run")
 	errTelegram      = errors.New("telegram needs both $" + telegramTokenEnv + " and -chat (or $" + telegramChatsEnv + ")")
 	errDiscord       = errors.New("discord needs both $" + discordTokenEnv + " and -discord-user (or $" + discordUsersEnv + ")")
+	errSlack         = errors.New("slack needs both $" + slackTokenEnv + " and -slack-chat (or $" + slackChatsEnv + ")")
 	errUnfinished    = errors.New("gave up waiting for destinations")
 	errNoForecast    = errors.New("the report has no cloud or seeing forecast for the night (a failed fetch, -no-weather, or an astro-recommender too old to report conditions)")
 )
@@ -52,7 +58,7 @@ func childEnv(env []string) []string {
 	return slices.DeleteFunc(env, func(kv string) bool {
 		name, _, _ := strings.Cut(kv, "=")
 
-		return slices.Contains([]string{telegramTokenEnv, telegramChatsEnv, discordTokenEnv, discordUsersEnv, webhookURLEnv, webhookHeaderEnv}, name)
+		return slices.Contains(secretEnvs, name)
 	})
 }
 
@@ -109,7 +115,9 @@ type options struct {
 	bin           string
 	telegramToken string
 	discordToken  string
+	slackToken    string
 	chats, users  []string
+	slackChats    []string
 	args          []string
 	limits        notify.Limits
 	dryRun        bool
@@ -118,15 +126,15 @@ type options struct {
 func usage() {
 	fmt.Fprintf(flag.CommandLine.Output(), `Usage: %s [flags] -- <astro-recommender flags>
 
-Bot tokens come from $%s and $%s. $%s and $%s (one header per line)
+Bot tokens come from $%s, $%s and $%s. $%s and $%s (one header per line)
 keep a key in the webhook's URL or headers out of ps.
 
-`, os.Args[0], telegramTokenEnv, discordTokenEnv, webhookURLEnv, webhookHeaderEnv)
+`, os.Args[0], telegramTokenEnv, discordTokenEnv, slackTokenEnv, webhookURLEnv, webhookHeaderEnv)
 	flag.PrintDefaults()
 }
 
 func parseOptions() (*options, error) {
-	o := options{telegramToken: strings.TrimSpace(os.Getenv(telegramTokenEnv)), discordToken: strings.TrimSpace(os.Getenv(discordTokenEnv))}
+	o := options{telegramToken: strings.TrimSpace(os.Getenv(telegramTokenEnv)), discordToken: strings.TrimSpace(os.Getenv(discordTokenEnv)), slackToken: strings.TrimSpace(os.Getenv(slackTokenEnv))}
 
 	headers := headerLines(os.Getenv(webhookHeaderEnv))
 	flag.Func("webhook-header", `a webhook header, "Name: value"; repeat for more (adds to $`+webhookHeaderEnv+`)`, func(s string) error {
@@ -139,6 +147,7 @@ func parseOptions() (*options, error) {
 	// them, a key in the webhook's URL included.
 	chats := flag.String("chat", "", "comma-separated Telegram chat IDs or @channels (else $"+telegramChatsEnv+")")
 	users := flag.String("discord-user", "", "comma-separated Discord user IDs to message (else $"+discordUsersEnv+")")
+	slackChats := flag.String("slack-chat", "", "comma-separated Slack channel or user IDs (else $"+slackChatsEnv+")")
 	hook := flag.String("webhook", "", "URL to POST the report to (else $"+webhookURLEnv+")")
 	format := flag.String("webhook-format", notify.FormatText, `the webhook's body: text, or json {"title","message"}`)
 	flag.BoolVar(&o.dryRun, "dry-run", false, "print the message in every style, whatever the forecast, and send nothing")
@@ -155,6 +164,7 @@ func parseOptions() (*options, error) {
 		return nil, err
 	}
 	o.chats, o.users, o.args = splitList(cmp.Or(*chats, os.Getenv(telegramChatsEnv))), splitList(cmp.Or(*users, os.Getenv(discordUsersEnv))), flag.Args()
+	o.slackChats = splitList(cmp.Or(*slackChats, os.Getenv(slackChatsEnv)))
 	hookURL := cmp.Or(*hook, os.Getenv(webhookURLEnv))
 	switch {
 	case hookURL != "":
@@ -172,15 +182,18 @@ func parseOptions() (*options, error) {
 	return &o, o.destinations()
 }
 
-// destinations rejects a half-set destination, which would otherwise pass
-// for a night that sent nothing.
+// destinations rejects recipients without their token, which would otherwise
+// pass for a night that sent nothing. A token without recipients is only a
+// destination that is off: SLACK_BOT_TOKEN may well be another bot's.
 func (o *options) destinations() error {
 	switch {
-	case (o.telegramToken == "") != (len(o.chats) == 0):
+	case o.telegramToken == "" && len(o.chats) > 0:
 		return errTelegram
-	case (o.discordToken == "") != (len(o.users) == 0):
+	case o.discordToken == "" && len(o.users) > 0:
 		return errDiscord
-	case o.telegramToken == "" && o.discordToken == "" && o.hook == nil:
+	case o.slackToken == "" && len(o.slackChats) > 0:
+		return errSlack
+	case len(o.chats) == 0 && len(o.users) == 0 && len(o.slackChats) == 0 && o.hook == nil:
 		return errNoDestination
 	}
 
@@ -194,14 +207,19 @@ func (o *options) deliver(ctx context.Context, r *notify.Report, runs []notify.C
 	defer cancel()
 
 	var sends []func() error
-	if o.telegramToken != "" {
+	if len(o.chats) > 0 {
 		sends = append(sends, func() error {
 			return notify.SendTelegram(ctx, o.telegramToken, o.chats, notify.Message(r, o.limits, runs, &notify.Telegram))
 		})
 	}
-	if o.discordToken != "" {
+	if len(o.users) > 0 {
 		sends = append(sends, func() error {
 			return notify.SendDiscord(ctx, o.discordToken, o.users, notify.Message(r, o.limits, runs, &notify.Discord))
+		})
+	}
+	if len(o.slackChats) > 0 {
+		sends = append(sends, func() error {
+			return notify.SendSlack(ctx, o.slackToken, o.slackChats, notify.Message(r, o.limits, runs, &notify.Slack))
 		})
 	}
 	if o.hook != nil {
@@ -255,7 +273,7 @@ func run(ctx context.Context) error {
 
 	runs := r.ClearRuns(o.limits)
 	if o.dryRun {
-		for _, st := range []*notify.Style{&notify.Telegram, &notify.Discord, &notify.Plain} {
+		for _, st := range []*notify.Style{&notify.Telegram, &notify.Discord, &notify.Slack, &notify.Plain} {
 			fmt.Printf("--- %s\n%s\n", st.Name, notify.Message(r, o.limits, runs, st))
 		}
 	}

@@ -3,7 +3,7 @@
 
 // Package notify decides from astro-recommender's -json report whether a
 // night is worth an alert, renders the report for each destination and sends
-// it to Telegram chats, Discord users and a webhook.
+// it to Telegram chats, Discord users, Slack chats and a webhook.
 package notify
 
 import (

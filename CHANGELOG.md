@@ -13,6 +13,7 @@ formulas behind the model changes.
   seeing, sends its forecast and targets to Telegram chats, Discord users'
   direct messages and a generic webhook (plain text or JSON, custom headers:
   ntfy, Gotify, Home Assistant), one message each.
+- `astro-notify` sends to Slack too (`-slack-chat`, `$SLACK_BOT_TOKEN`).
 - `-json`: `conditions`, the forecast as the night's minutes read it
   (what the score used), and each target's `observable.spans`, every
   observable run.

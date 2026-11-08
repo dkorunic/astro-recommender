@@ -705,18 +705,20 @@ To measure it, stand where the telescope sits and use a compass and an inclinome
 
 ### Clear night alerts
 
-`astro-notify` runs `astro-recommender -json` once and, if the night is good enough, sends the forecast and targets to Telegram chats, Discord users and a webhook, any or all of them. Build it with `go build ./cmd/astro-notify` and run it from cron or a systemd timer, once each afternoon, from the same version as `astro-recommender`. Everything after `--` goes to `astro-recommender`:
+`astro-notify` runs `astro-recommender -json` once and, if the night is good enough, sends the forecast and targets to Telegram chats, Discord users, Slack chats and a webhook, any or all of them. Build it with `go build ./cmd/astro-notify` and run it from cron or a systemd timer, once each afternoon, from the same version as `astro-recommender`. Everything after `--` goes to `astro-recommender`:
 
 ```sh
 export TELEGRAM_BOT_TOKEN=123456:ABC...   # from @BotFather
 export DISCORD_BOT_TOKEN=MTIz...          # from the Discord developer portal
-astro-notify -chat 12345678,@mychannel -discord-user 80351110224678912 -- -lat 45.8 -lon 16.0 -scope origin -n 15
+export SLACK_BOT_TOKEN=xoxb-...           # a Slack app's bot token, with chat:write
+astro-notify -chat 12345678,@mychannel -discord-user 80351110224678912 -slack-chat C0123456789 -- -lat 45.8 -lon 16.0 -scope origin -n 15
 ```
 
 | Flag | Default | Meaning |
 |---|---|---|
 | `-chat` | `$TELEGRAM_CHAT_IDS` | comma-separated Telegram chat IDs or @channels |
 | `-discord-user` | `$DISCORD_USER_IDS` | comma-separated Discord user IDs to message |
+| `-slack-chat` | `$SLACK_CHAT_IDS` | comma-separated Slack channel or user IDs |
 | `-webhook` | `$WEBHOOK_URL` | URL to POST the report to |
 | `-webhook-format` | `text` | the body: `text`, or `json` as `{"title": ..., "message": ...}` |
 | `-webhook-header` | `$WEBHOOK_HEADERS` | a `Name: value` header; repeat for more (the variable holds one per line) |
@@ -739,7 +741,7 @@ WEBHOOK_HEADERS='X-Gotify-Key: AbCd' astro-notify -webhook https://gotify.exampl
 WEBHOOK_HEADERS='Authorization: Bearer eyJ...' astro-notify -webhook https://ha.example/api/services/notify/mobile_app_phone -webhook-format json -- ...
 ```
 
-A minute with unknown cloud or seeing, or in an hour of rain, is not clear, judged on the report's `conditions`, the forecast the score read. A night on which no target is observable for that long in a clear stretch sends nothing, as does a night with no darkness at all. A report with no cloud or no seeing forecast for the night is an error (exit 1), so a failed fetch does not pass for a cloudy night. Each destination gets one message with as many targets as fit, best first, then how many were left out: Telegram 4096 characters and 100 formatted entities, Discord an embed of 4096 characters, a webhook 4096 bytes, past which ntfy turns a message into an attachment. A webhook's text has no links. A Discord bot can only message a user who shares a server with it and allows direct messages from its members. Targets that qualified the night are listed first, each keeping its rank, with their time in clear air (`☁️ up` marks one with none). Destinations and their recipients are sent to at once, under a 5-minute limit. A network error, 429 or 5xx is retried once, a `Retry-After` of up to a minute waited out. A failing destination does not stop the others, but the exit status is 1. The notification variables are not passed on to `astro-recommender`. A Telegram group upgraded to a supergroup gets the message at its new ID, with a warning to update `-chat`. On a night over a daylight saving change every time carries its zone. A webhook that redirects is an error, since following a 301 or 302 would lose the POST: give the final URL.
+A minute with unknown cloud or seeing, or in an hour of rain, is not clear, judged on the report's `conditions`, the forecast the score read. A night on which no target is observable for that long in a clear stretch sends nothing, as does a night with no darkness at all. A report with no cloud or no seeing forecast for the night is an error (exit 1), so a failed fetch does not pass for a cloudy night. Each destination gets one message with as many targets as fit, best first, then how many were left out: Telegram 4096 characters and 100 formatted entities, Discord an embed of 4096 characters, Slack 4000 characters, a webhook 4096 bytes, past which ntfy turns a message into an attachment. A webhook's text has no links. A Discord bot can only message a user who shares a server with it and allows direct messages from its members. Targets that qualified the night are listed first, each keeping its rank, with their time in clear air (`☁️ up` marks one with none). Destinations and their recipients are sent to at once, under a 5-minute limit. A network error, 429 or 5xx is retried once, a `Retry-After` of up to a minute waited out. The Slack bot must be a member of a private channel, and of a public one unless it has `chat:write.public`. A failing destination does not stop the others, but the exit status is 1. The notification variables are not passed on to `astro-recommender`. A Telegram group upgraded to a supergroup gets the message at its new ID, with a warning to update `-chat`. On a night over a daylight saving change every time carries its zone. A webhook that redirects is an error, since following a 301 or 302 would lose the POST: give the final URL.
 
 ## How objects are ranked
 

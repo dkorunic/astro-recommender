@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -22,6 +23,7 @@ import (
 	"github.com/dkorunic/astro-recommender/internal/fetch"
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
+	"github.com/slack-go/slack"
 )
 
 // The webhook's body formats.
@@ -44,6 +46,7 @@ var (
 	errWebhookFormat  = errors.New("-webhook-format must be text or json")
 	errWebhookHeader  = errors.New(`a webhook header must be "Name: value"`)
 	errGatewayTimeout = errors.New("no answer from the gateway")
+	errSlackNotPosted = errors.New("the answer names no posted message")
 )
 
 // concurrently sends to every recipient at once, so slow ones do not use up
@@ -98,15 +101,21 @@ func telegramWait(err error) (time.Duration, bool) {
 	return fetch.RetryDelay, true
 }
 
+// capped is the pause for a rate limit that asks for after: none past
+// maxRetryWait, or negative, as a huge Retry-After overflows in the libraries.
+func capped(after time.Duration) (time.Duration, bool) {
+	if after < 0 || after > maxRetryWait {
+		return 0, false
+	}
+
+	return max(after, fetch.RetryDelay), true
+}
+
 // discordWait retries a rate limit as long as it asks, a network error and a
 // 5xx.
 func discordWait(err error) (time.Duration, bool) {
 	if e, ok := errors.AsType[*discordgo.RateLimitError](err); ok {
-		if e.RetryAfter > maxRetryWait {
-			return 0, false
-		}
-
-		return max(e.RetryAfter, fetch.RetryDelay), true
+		return capped(e.RetryAfter)
 	}
 	if e, ok := errors.AsType[*discordgo.RESTError](err); ok && e.Response.StatusCode < http.StatusInternalServerError {
 		return 0, false
@@ -222,9 +231,51 @@ func SendDiscord(ctx context.Context, token string, users []string, text string,
 	return err
 }
 
-// webhookClient reports a redirect instead of following it: a 301 or 302
-// would turn the POST into a GET and lose the message.
-var webhookClient = &http.Client{
+// slackTransient is the errors Slack answers with a 200 that may pass.
+var slackTransient = []string{"internal_error", "fatal_error", "service_unavailable", "request_timeout", "ratelimited", "rate_limited"}
+
+// slackWait retries a rate limit as long as it asks, a network error, a 429,
+// a 5xx and slackTransient, not Slack's refusals (a bad token or channel).
+func slackWait(err error) (time.Duration, bool) {
+	if e, ok := errors.AsType[*slack.RateLimitedError](err); ok {
+		return capped(e.RetryAfter)
+	}
+	if e, ok := errors.AsType[slack.SlackErrorResponse](err); ok && !slices.Contains(slackTransient, e.Err) {
+		return 0, false
+	}
+	if e, ok := errors.AsType[slack.StatusCodeError](err); ok && !e.Retryable() {
+		return 0, false
+	}
+
+	return fetch.RetryDelay, true
+}
+
+// SendSlack posts text to every channel, or user by ID, the bot can reach.
+func SendSlack(ctx context.Context, token string, chats []string, text string, opts ...slack.Option) error {
+	client := slack.New(token, append([]slack.Option{slack.OptionHTTPClient(postClient)}, opts...)...)
+
+	return concurrently(chats, func(chat string) error {
+		err := retried(ctx, slackWait, func() error {
+			_, posted, err := client.PostMessageContext(ctx, chat,
+				slack.MsgOptionText(text, false), // Style.esc has escaped it
+				slack.MsgOptionDisableLinkUnfurl(), slack.MsgOptionDisableMediaUnfurl())
+			if err == nil && posted == "" { // a proxy's bare 200: the library sees no error
+				return errSlackNotPosted
+			}
+
+			return err
+		})
+		if err != nil {
+			return fmt.Errorf("slack chat %s: %w", chat, err)
+		}
+
+		return nil
+	})
+}
+
+// postClient reports a redirect instead of following it: a 301 or 302 would
+// turn the POST into a GET and lose the message.
+var postClient = &http.Client{
 	Timeout:       webhookTimeout,
 	CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 }
@@ -317,7 +368,7 @@ func (w *Webhook) post(ctx context.Context, body []byte, contentType string) err
 	if req.Header.Get("Content-Type") == "" {
 		req.Header.Set("Content-Type", contentType)
 	}
-	resp, err := webhookClient.Do(req)
+	resp, err := postClient.Do(req)
 	if err != nil {
 		if ue, ok := errors.AsType[*url.Error](err); ok {
 			err = ue.Err

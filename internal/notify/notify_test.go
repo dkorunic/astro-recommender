@@ -26,6 +26,7 @@ import (
 	"github.com/dkorunic/astro-recommender/internal/scoring"
 	"github.com/dkorunic/astro-recommender/internal/weather"
 	"github.com/go-telegram/bot"
+	"github.com/slack-go/slack"
 )
 
 const testToken = "123:secret"
@@ -330,7 +331,7 @@ func TestReportDecodes(t *testing.T) {
 func TestMessageFits(t *testing.T) {
 	t.Parallel()
 
-	for _, st := range []*Style{&Telegram, &Discord, &Plain} {
+	for _, st := range []*Style{&Telegram, &Discord, &Slack, &Plain} {
 		t.Run(st.Name, func(t *testing.T) {
 			t.Parallel()
 
@@ -376,6 +377,7 @@ func TestMessageEscapes(t *testing.T) {
 	}{
 		{&Telegram, []string{"A&lt;b&gt;_", "M_&lt;1&gt;&amp;*", `<a href="https://aladin`, "fov=0.50&amp;survey"}, []string{"<1>", "A<b>"}},
 		{&Discord, []string{`A\<b\>\_`, `[M\_\<1\>&\*](https://aladin`, `\[d\](x)`, "```\nh "}, []string{"M_<1>", "<pre>"}},
+		{&Slack, []string{"A&lt;b&gt;ˍ", "Mˍ&lt;1&gt;&amp;∗", "|Mˍ&lt;1&gt;&amp;∗>*", "&amp;fov=0.50&amp;survey", "```\nh "}, []string{"<1>", "A<b>", "<pre>", "**", "M_"}},
 		{&Plain, []string{"A<b>_", "M_<1>&*", "[d](x)"}, []string{"https://aladin", "**", "<pre>"}},
 	} {
 		msg := Message(r, testLimits, r.ClearRuns(testLimits), tc.st)
@@ -962,5 +964,109 @@ func TestLastTargetFitsExactly(t *testing.T) {
 	msg := Message(r, testLimits, runs, &Plain)
 	if strings.Contains(msg, "more") {
 		t.Errorf("last target dropped with room for it: %d bytes", len(msg))
+	}
+}
+
+func TestSendSlack(t *testing.T) {
+	t.Parallel()
+
+	var (
+		mu   sync.Mutex
+		sent = map[string]string{}
+	)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		chat := req.FormValue("channel")
+		if req.FormValue("text") != "hi" || req.FormValue("unfurl_links") != "false" || req.FormValue("unfurl_media") != "false" {
+			t.Errorf("sent %v", req.Form)
+		}
+		if got := req.FormValue("token") + req.Header.Get("Authorization"); !strings.Contains(got, testToken) {
+			t.Errorf("no token in %q", got)
+		}
+		mu.Lock()
+		sent[chat] = req.FormValue("text")
+		mu.Unlock()
+		if chat == "gone" {
+			_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "error": "channel_not_found"})
+
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "channel": chat, "ts": "1"})
+	}))
+	defer srv.Close()
+
+	err := SendSlack(context.Background(), testToken, []string{"gone", "C42"}, "hi", slack.OptionAPIURL(srv.URL+"/"))
+	if err == nil || !strings.Contains(err.Error(), "slack chat gone") || !strings.Contains(err.Error(), "channel_not_found") {
+		t.Errorf("error %v, want the failing chat named", err)
+	}
+	if sent["C42"] != "hi" || len(sent) != 2 {
+		t.Errorf("reached %v, want both", sent)
+	}
+}
+
+func TestSlackRetries(t *testing.T) {
+	t.Parallel()
+
+	for _, tc := range []struct {
+		first    func(http.ResponseWriter)
+		name     string
+		attempts int32
+		ok       bool
+	}{
+		{name: "a 500 passes", first: func(w http.ResponseWriter) { w.WriteHeader(500) }, attempts: 2, ok: true},
+		{name: "a short limit passes", first: func(w http.ResponseWriter) {
+			w.Header().Set("Retry-After", "0")
+			w.WriteHeader(429)
+		}, attempts: 2, ok: true},
+		{name: "a long limit is final", first: func(w http.ResponseWriter) {
+			w.Header().Set("Retry-After", "3600")
+			w.WriteHeader(429)
+		}, attempts: 1},
+		{name: "a refusal is final", first: func(w http.ResponseWriter) {
+			_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "error": "invalid_auth"})
+		}, attempts: 1},
+		{name: "a 404 is final", first: func(w http.ResponseWriter) { w.WriteHeader(404) }, attempts: 1},
+		{name: "a transient answer passes", first: func(w http.ResponseWriter) {
+			_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "error": "internal_error"})
+		}, attempts: 2, ok: true},
+		{name: "a bare 200 is not delivered", first: func(w http.ResponseWriter) { _, _ = w.Write([]byte(`{}`)) }, attempts: 2, ok: true},
+		{name: "an overflowing Retry-After is final", first: func(w http.ResponseWriter) {
+			w.Header().Set("Retry-After", "9300000000")
+			w.WriteHeader(429)
+		}, attempts: 1},
+		{name: "a redirect is not followed", first: func(w http.ResponseWriter) {
+			w.Header().Set("Location", "/elsewhere")
+			w.WriteHeader(302)
+		}, attempts: 1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			var attempts atomic.Int32
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				if attempts.Add(1) == 1 {
+					tc.first(w)
+
+					return
+				}
+				_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "channel": "C", "ts": "1"})
+			}))
+			defer srv.Close()
+
+			err := SendSlack(context.Background(), testToken, []string{"C"}, "hi", slack.OptionAPIURL(srv.URL+"/"))
+			if (err == nil) != tc.ok || attempts.Load() != tc.attempts {
+				t.Errorf("error %v after %d attempts, want %d", err, attempts.Load(), tc.attempts)
+			}
+		})
+	}
+}
+
+func TestSlackNeverPosted(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte(`{}`)) }))
+	defer srv.Close()
+
+	if err := SendSlack(context.Background(), testToken, []string{"C"}, "hi", slack.OptionAPIURL(srv.URL+"/")); !errors.Is(err, errSlackNotPosted) {
+		t.Errorf("error %v", err)
 	}
 }

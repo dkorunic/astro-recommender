@@ -23,13 +23,19 @@ func TestDestinations(t *testing.T) {
 		o    options
 	}{
 		{o: options{}, want: errNoDestination},
-		{o: options{telegramToken: "t"}, want: errTelegram},
+		{o: options{telegramToken: "t"}, want: errNoDestination}, // a token alone is off
+		{o: options{telegramToken: "t", hook: hook}},
 		{o: options{chats: []string{"1"}, hook: hook}, want: errTelegram},
-		{o: options{discordToken: "t"}, want: errDiscord},
+		{o: options{discordToken: "t"}, want: errNoDestination},
+		{o: options{chats: []string{"1"}, telegramToken: "t", discordToken: "t"}},
 		{o: options{users: []string{"1"}, hook: hook}, want: errDiscord},
 		{o: options{hook: hook}},
 		{o: options{telegramToken: "t", chats: []string{"1"}}},
 		{o: options{discordToken: "t", users: []string{"1"}}},
+		{o: options{slackToken: "t"}, want: errNoDestination},
+		{o: options{chats: []string{"1"}, telegramToken: "t", slackToken: "t"}},
+		{o: options{slackChats: []string{"C1"}, hook: hook}, want: errSlack},
+		{o: options{slackToken: "t", slackChats: []string{"C1"}}},
 	} {
 		if err := tc.o.destinations(); !errors.Is(err, tc.want) {
 			t.Errorf("%+v: error %v, want %v", tc.o, err, tc.want)
@@ -48,7 +54,7 @@ func TestSplitList(t *testing.T) {
 func TestChildEnv(t *testing.T) {
 	t.Parallel()
 
-	got := childEnv([]string{"PATH=/bin", telegramTokenEnv + "=a", discordTokenEnv + "=b", webhookURLEnv + "=c", webhookHeaderEnv + "=d", "DARKSKYSITES_API_KEY=e"})
+	got := childEnv([]string{"PATH=/bin", telegramTokenEnv + "=a", discordTokenEnv + "=b", slackTokenEnv + "=s", slackChatsEnv + "=C", webhookURLEnv + "=c", webhookHeaderEnv + "=d", "DARKSKYSITES_API_KEY=e"})
 	if len(got) != 2 || got[0] != "PATH=/bin" || got[1] != "DARKSKYSITES_API_KEY=e" {
 		t.Errorf("got %q", got)
 	}

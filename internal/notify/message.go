@@ -25,6 +25,7 @@ const (
 	maxEntities = 100
 	maxDiscord  = 4096
 	maxWebhook  = 4096
+	maxSlack    = 4000 // Slack's advice for a message's text; past 40000 it cuts
 
 	maxPlace = 60 // runes; Nominatim's names run to a hundred
 	maxDesc  = 80
@@ -45,7 +46,12 @@ type Style struct {
 
 var (
 	telegramTags = regexp.MustCompile(`<[^>]*>`)
-	discordEsc   = strings.NewReplacer(`\`, `\\`, `*`, `\*`, `_`, `\_`, `~`, `\~`, "`", "\\`", `|`, `\|`, `[`, `\[`, `]`, `\]`, `<`, `\<`, `>`, `\>`)
+	// Slack's only escapes are these three entities. Its formatting marks
+	// cannot be escaped, and the lists hold some (Pickering`s Triangle, "369-*N-8"),
+	// so in catalogue text they become their lookalikes.
+	slackEntities = strings.NewReplacer("&", "&amp;", "<", "&lt;", ">", "&gt;")
+	slackText     = strings.NewReplacer("&", "&amp;", "<", "&lt;", ">", "&gt;", "*", "∗", "_", "ˍ", "~", "∼", "`", "ʼ")
+	discordEsc    = strings.NewReplacer(`\`, `\\`, `*`, `\*`, `_`, `\_`, `~`, `\~`, "`", "\\`", `|`, `\|`, `[`, `\[`, `]`, `\]`, `<`, `\<`, `>`, `\>`)
 
 	// Telegram is HTML, with target names linked.
 	Telegram = Style{
@@ -65,6 +71,12 @@ var (
 		Name: "discord", bold: "**%s**", italic: "*%s*", pre: "```\n%s\n```", esc: discordEsc.Replace,
 		link: func(text, target string) string { return "[" + text + "](" + target + ")" },
 		fits: func(msg string) bool { return utf16Len(msg) <= maxDiscord },
+	}
+	// Slack is mrkdwn.
+	Slack = Style{
+		Name: "slack", bold: "*%s*", italic: "_%s_", pre: "```\n%s\n```", esc: slackText.Replace,
+		link: func(text, target string) string { return "<" + slackEntities.Replace(target) + "|" + text + ">" },
+		fits: func(msg string) bool { return utf16Len(msg) <= maxSlack },
 	}
 	// Plain is unmarked text for a webhook.
 	Plain = Style{
