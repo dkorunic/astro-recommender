@@ -18,6 +18,7 @@ import (
 	"github.com/NimbleMarkets/ntcharts/v2/linechart/timeserieslinechart"
 	"github.com/NimbleMarkets/ntcharts/v2/picture"
 	"github.com/charmbracelet/x/ansi"
+	"github.com/dkorunic/astro-recommender/internal/dss"
 	"github.com/dkorunic/astro-recommender/internal/output"
 	"github.com/dkorunic/astro-recommender/internal/scoring"
 	"github.com/dkorunic/astro-recommender/internal/view"
@@ -521,19 +522,7 @@ func nonEmpty(s ...string) []string {
 // a cell (a high-DPI terminal's: Kitty graphics show them, scaled to the
 // real cell; half-blocks take two a cell), the short side half again the
 // object, within 0.1-5°, 0.5° for an unknown size: the page's skyURLs.
-const survey = "CDS%2FP%2FDSS2%2Fcolor"
-
-func fov(size float64) float64 {
-	if size == 0 {
-		return 0.5
-	}
-
-	return min(5, max(0.1, size*1.5/60))
-}
-
-func aladin(pos [3]float64) string {
-	return fmt.Sprintf("https://aladin.cds.unistra.fr/AladinLite/?target=%.4f%%20%.4f&fov=%.2f&survey=%s", pos[0], pos[1], fov(pos[2]), survey)
-}
+func aladin(pos [3]float64) string { return dss.Aladin(pos[0], pos[1], pos[2]) }
 
 const cellW, cellH = 16, 32
 
@@ -544,17 +533,17 @@ const (
 
 func thumb(pos [3]float64, cols, rows int) string {
 	w, h := cols*cellW, rows*cellH
-	f := fov(pos[2]) * float64(max(w, h)) / float64(min(w, h))
+	f := dss.FOV(pos[2]) * float64(max(w, h)) / float64(min(w, h))
 
 	return fmt.Sprintf(cdsURL+"hips-image-services/hips2fits?hips=%s&width=%d&height=%d&projection=TAN&fov=%.2f&ra=%.4f&dec=%.4f&format=jpg",
-		survey, w, h, f, pos[0], pos[1])
+		dss.Survey, w, h, f, pos[0], pos[1])
 }
 
 // skyview is thumb's field from NASA SkyView's DSS2 Red, for when CDS fails:
 // another operator, resampled to the pixels asked like hips2fits, but grey.
 func skyview(pos [3]float64, cols, rows int) string {
 	w, h := cols*cellW, rows*cellH
-	px := fov(pos[2]) / float64(min(w, h)) // degrees a pixel
+	px := dss.FOV(pos[2]) / float64(min(w, h)) // degrees a pixel
 
 	return fmt.Sprintf("https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=DSS2+Red&Position=%.4f,%.4f&Size=%.3f,%.3f&Pixels=%d,%d&Projection=Tan&Scaling=Linear&Return=JPEG",
 		pos[0], pos[1], px*float64(w), px*float64(h), w, h)

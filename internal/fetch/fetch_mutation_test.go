@@ -54,9 +54,9 @@ func TestMutRetryWait(t *testing.T) {
 		{time.Now().Add(-time.Hour).UTC().Format(http.TimeFormat), 2 * time.Second, true},
 		{time.Now().Add(time.Hour).UTC().Format(http.TimeFormat), 0, false},
 	} {
-		got, ok := retryWait(c.after)
+		got, ok := RetryWait(c.after, maxRetryWait)
 		if ok != c.ok || ok && got != c.want {
-			t.Errorf("retryWait(%q) = %v %v, want %v %v", c.after, got, ok, c.want, c.ok)
+			t.Errorf("RetryWait(%q) = %v %v, want %v %v", c.after, got, ok, c.want, c.ok)
 		}
 	}
 }

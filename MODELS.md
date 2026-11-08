@@ -911,6 +911,7 @@ The models above come from the literature. The following are this project's own 
 | Frame fill | full credit at 25–80% of the short side | small objects lack detail, tight ones lack margin |
 | Mosaic | 10% overlap, score ÷ panels | panels need overlap to register; the time is shared |
 | Forecast gaps | mean of the covered hours | neither optimistic nor pessimistic |
+| Clear night alert (`astro-notify`) | a minute is clear at cloud ≤ 10%, seeing ≤ 2″ and under 0.05 mm of rain in its hour; a stretch, and a listed target within it, of 2 h, or the window when shorter, but not under 30 min of a longer limit | "no clouds, good seeing" made numbers: 10% is about one okta, 2″ the report's own colour boundary; the limits are flags, and the 30 min keeps a window of minutes from passing for a clear night |
 
 Treat SCORE as a way to order tonight's options, not as an absolute measure of quality.
 

@@ -287,15 +287,19 @@ func fatal(msg string) {
 // exposures attaches the sub-exposure estimate to each listed result. It
 // needs a camera, which framing describes, and -csv never shows it.
 func exposures(cfg *config.Config, s *scoring.Sky, slots []plan.Slot, results []scoring.Result) {
-	if !cfg.Framing || cfg.CSV {
+	if cfg.CSV || (!cfg.Framing && !cfg.JSON) {
 		return
 	}
 	for i := range results[:min(cfg.Top, len(results))] {
-		// Rescored once here, so Subs and the browser's altitudes share it.
+		// Rescored once here, so Subs, -json's runs and the browser's
+		// altitudes share it.
 		if results[i].Obs == nil {
 			if rs := scoring.Score(cfg, s, []catalog.Target{results[i].Target}, true); len(rs) == 1 {
 				results[i].Obs = rs[0].Obs
 			}
+		}
+		if !cfg.Framing {
+			continue
 		}
 		if e := scoring.Subs(cfg, s, results[i], planned(slots, s.Grid, &results[i])); e.Good > 0 {
 			results[i].Exposure = &e

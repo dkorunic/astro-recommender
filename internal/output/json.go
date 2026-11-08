@@ -28,8 +28,11 @@ type report struct { // betteralign:ignore
 	Sky      sky              `json:"sky"`
 	Frame    *frame           `json:"frame,omitempty"` // with framing only
 	Forecast []map[string]any `json:"forecast,omitempty"`
-	Plan     []slot           `json:"plan,omitempty"`
-	Targets  []target         `json:"targets"`
+	// Conditions is the forecast as the night's minutes read it, joined where
+	// nothing changes: what the score used, unlike Forecast's hours.
+	Conditions []conditions `json:"conditions,omitempty"`
+	Plan       []slot       `json:"plan,omitempty"`
+	Targets    []target     `json:"targets"`
 }
 
 type location struct { // betteralign:ignore
@@ -148,9 +151,20 @@ type mosaic struct { // betteralign:ignore
 }
 
 type run struct { // betteralign:ignore
+	span // the longest
+
+	Runs  int    `json:"runs"`
+	Spans []span `json:"spans"` // every run, in time order
+}
+
+// conditions is scoring.Conditions over a stretch of the window. Unknown
+// values are left out.
+type conditions struct { // betteralign:ignore
 	span
 
-	Runs int `json:"runs"`
+	Cloud  *float64 `json:"cloud,omitempty"`
+	Seeing *float64 `json:"seeingArcsec,omitempty"`
+	Precip *float64 `json:"precipitation,omitempty"`
 }
 
 // JSON prints the whole report as one JSON document instead of the tables.
@@ -220,6 +234,7 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 		}
 		r.Forecast = append(r.Forecast, hour)
 	}
+	r.Conditions = conditionsJSON(s)
 	for _, p := range slots {
 		sl := slot{span: span{p.Start, p.End}}
 		if p.Result != nil {
@@ -235,7 +250,7 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 			Rank: i + 1, Name: res.Name, Description: res.Description, Type: res.Type, Constellation: res.Constellation,
 			RA: ra, Dec: dec, Foto: res.Foto, Score: res.Score, Frame: res.Frame, MaxAlt: res.MaxAlt, MaxAt: res.MaxAt,
 			SkyMag: res.SkyMag, Comet: res.Track != nil, Filter: res.Filter,
-			Observable: run{Runs: res.Runs, span: span{res.RunFrom, res.RunTo}},
+			Observable: run{Runs: res.Runs, span: span{res.RunFrom, res.RunTo}, Spans: obsSpans(s, res.Obs)},
 		}
 		if res.HasSize() {
 			// What the frame holds: the object, or its core.
@@ -269,6 +284,69 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 	enc.SetIndent("", "  ")
 
 	return enc.Encode(r)
+}
+
+// conditionsJSON joins the window's minutes where their forecast is the same;
+// nil when no forecast was fetched.
+func conditionsJSON(s *scoring.Sky) []conditions {
+	if !forecastFetched(s) {
+		return nil
+	}
+	var out []conditions
+	var last scoring.Conditions
+	for i, t := range s.Grid {
+		to := s.End
+		if i+1 < len(s.Grid) {
+			to = s.Grid[i+1]
+		}
+		c := s.ConditionsAt(t)
+		if i > 0 && sameValue(c.Cloud, last.Cloud) && c.Seeing == last.Seeing && sameValue(c.Precip, last.Precip) {
+			out[len(out)-1].To = to
+
+			continue
+		}
+		last = c
+		out = append(out, conditions{span: span{t, to}, Cloud: known(c.Cloud), Precip: known(c.Precip)})
+		if c.Seeing > 0 {
+			seeing := math.Round(c.Seeing*100) / 100
+			out[len(out)-1].Seeing = &seeing
+		}
+	}
+
+	return out
+}
+
+func sameValue(a, b float64) bool { return a == b || (math.IsNaN(a) && math.IsNaN(b)) }
+
+// known is a pointer to x, nil for NaN.
+func known(x float64) *float64 {
+	if math.IsNaN(x) {
+		return nil
+	}
+
+	return &x
+}
+
+// obsSpans is every observable run of a result, in time order, from its
+// per-minute observability (main's exposures keeps it for -json).
+func obsSpans(s *scoring.Sky, obs []bool) []span {
+	out := []span{}
+	for i, ok := range obs {
+		if !ok {
+			continue
+		}
+		to := s.End
+		if i+1 < len(s.Grid) {
+			to = s.Grid[i+1]
+		}
+		if i > 0 && obs[i-1] {
+			out[len(out)-1].To = to
+		} else {
+			out = append(out, span{s.Grid[i], to})
+		}
+	}
+
+	return out
 }
 
 // eclipseJSON is the window's lunar eclipse, nil without one.

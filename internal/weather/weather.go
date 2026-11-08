@@ -42,6 +42,10 @@ type HourWeather struct {
 // is 0; scoring ramps down to it and the table shows rain from half of it.
 const RainGate = 0.1
 
+// RainShown is the hour's rain, mm, that the tables count as rain and an
+// alert as not clear: half the amount that stops imaging.
+const RainShown = RainGate / 2
+
 // Level is an upper-air point: pressure (hPa), geopotential height (m),
 // temperature (°C), wind speed (km/h) and direction (°). The surface is one
 // too: 2 m above the site elevation, where its temperature is read, with

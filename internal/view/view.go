@@ -122,7 +122,7 @@ func Build(cfg *config.Config, s *scoring.Sky, place string, results []scoring.R
 	doc.Start = s.Grid[0].Unix()
 	for t := s.Start.Truncate(time.Hour); t.Before(s.End); t = t.Add(time.Hour) {
 		if h, ok := s.Weather[t.Unix()]; ok {
-			doc.Wx = append(doc.Wx, WxHour{T: t.Unix(), Cloud: math.Round(h.Cloud), Rain: h.Precip >= weather.RainGate/2})
+			doc.Wx = append(doc.Wx, WxHour{T: t.Unix(), Cloud: math.Round(h.Cloud), Rain: h.Precip >= weather.RainShown})
 		}
 	}
 	doc.Night = Night{

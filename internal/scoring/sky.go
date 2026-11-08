@@ -303,12 +303,7 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 		// hour before); gusts and rain are over the hour that starts at the
 		// key (hourly.weather shifts them), so the minute's own hour, its
 		// gust capped against that hour's wind as the forecast table shows it.
-		hour := t.Truncate(time.Hour).Unix()
-		if h, ok := s.Weather[hour]; ok {
-			at := h
-			if n, ok := s.Weather[t.Round(time.Hour).Unix()]; ok {
-				at = n
-			}
+		if h, at, ok := s.hoursAt(t); ok {
 			// ponytail: guessed ramps; dew (spread 4 -> 1 °C) and gusts (20 -> 40 km/h)
 			// cost up to 30% and 50% of usable frames; rain (0 -> RainGate mm
 			// in the hour) all of them, whatever the cloud layers say. Like cloud it
@@ -333,14 +328,7 @@ func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 		}
 		// Seeing: the upper-air estimate, calibrated against DIMMs, else
 		// 7Timer's class, else typicalSeeing.
-		s.Seeing[i] = s.Weather[hour].Seeing
-		if n, ok := s.Weather[t.Round(time.Hour).Unix()]; ok && n.Seeing > 0 {
-			s.Seeing[i] = n.Seeing
-		}
-		if astroOK && s.Seeing[i] == 0 {
-			s.Seeing[i] = weather.SeeingArcsec(a.Seeing)
-		}
-		s.Seeing[i] = cmp.Or(s.Seeing[i], typicalSeeing)
+		s.Seeing[i] = cmp.Or(s.forecastSeeing(t), typicalSeeing)
 	}
 	fillGaps("weather", sky, skyOK, len(s.Weather) > 0, end.Sub(start))
 	s.Covered = skyOK
@@ -500,6 +488,23 @@ func (s *Sky) LastHour() time.Time {
 	return last.Truncate(time.Hour)
 }
 
+// Conditions is the forecast as one minute reads it: Cloud in %, Seeing in
+// arcseconds (0 unknown), Precip in mm over the minute's hour. Cloud and
+// Precip are NaN when unknown.
+type Conditions struct {
+	Cloud, Seeing, Precip float64
+}
+
+// ConditionsAt is what BuildSky reads for minute t, before any gap filling.
+func (s *Sky) ConditionsAt(t time.Time) Conditions {
+	c := Conditions{Cloud: math.NaN(), Seeing: s.forecastSeeing(t), Precip: math.NaN()}
+	if own, at, ok := s.hoursAt(t); ok {
+		c.Cloud, c.Precip = at.Cloud, own.Precip
+	}
+
+	return c
+}
+
 // ExtinctionAt returns the extinction for time t: from that hour's aerosol
 // optical depth when known, typicalAOD when only the elevation is known,
 // and fallback otherwise (or when -extinction was given, as elevation is NaN then).
@@ -509,6 +514,36 @@ func (s *Sky) ExtinctionAt(t time.Time, fallback float64) float64 {
 	}
 
 	return atmos.ExtinctionCoeff(s.Elevation, s.aodAt(t))
+}
+
+// hoursAt is the forecast a minute reads: the hour that contains it, for
+// what is summed over an hour (gusts, rain), and the nearest, for what is
+// the value at the hour (cloud, temperature, dew point, wind), the hour that
+// contains it where the forecast lacks the nearest. False without the former.
+func (s *Sky) hoursAt(t time.Time) (weather.HourWeather, weather.HourWeather, bool) {
+	own, ok := s.Weather[t.Truncate(time.Hour).Unix()]
+	if !ok {
+		return own, own, false
+	}
+	if n, ok := s.Weather[t.Round(time.Hour).Unix()]; ok {
+		return own, n, true
+	}
+
+	return own, own, true
+}
+
+// forecastSeeing is a minute's seeing: the nearest hour's upper-air estimate,
+// else its own hour's, else 7Timer's class; 0 when none is known.
+func (s *Sky) forecastSeeing(t time.Time) float64 {
+	seeing := s.Weather[t.Truncate(time.Hour).Unix()].Seeing
+	if n, ok := s.Weather[t.Round(time.Hour).Unix()]; ok && n.Seeing > 0 {
+		seeing = n.Seeing
+	}
+	if a, ok := s.Astro[weather.AstroKey(t)]; ok && seeing == 0 {
+		seeing = weather.SeeingArcsec(a.Seeing)
+	}
+
+	return seeing
 }
 
 // extinctionParts returns the Rayleigh and aerosol parts of ExtinctionAt,

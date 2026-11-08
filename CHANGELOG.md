@@ -7,6 +7,16 @@ formulas behind the model changes.
 
 ## [Unreleased]
 
+### Added
+- `cmd/astro-notify`: a sidecar that runs `astro-recommender -json` and,
+  when the night has a long enough stretch without cloud and with good
+  seeing, sends its forecast and targets to Telegram chats, Discord users'
+  direct messages and a generic webhook (plain text or JSON, custom headers:
+  ntfy, Gotify, Home Assistant), one message each.
+- `-json`: `conditions`, the forecast as the night's minutes read it
+  (what the score used), and each target's `observable.spans`, every
+  observable run.
+
 ### Fixed
 - Browser page: a required field left empty at Run is no longer scrolled
   under the sticky top bar, where it hid on phones behind the browser's

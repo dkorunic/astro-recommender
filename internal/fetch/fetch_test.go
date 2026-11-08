@@ -121,8 +121,8 @@ func TestRetryWait(t *testing.T) {
 		{"9223372036854775807", 0, false},  // would overflow time.Duration
 		{"99999999999999999999", 0, false}, // past int: Atoi's range error, still a long wait
 	} {
-		if got, ok := retryWait(tc.after); got != tc.want || ok != tc.ok {
-			t.Errorf("retryWait(%q) = %v, %v; want %v, %v", tc.after, got, ok, tc.want, tc.ok)
+		if got, ok := RetryWait(tc.after, maxRetryWait); got != tc.want || ok != tc.ok {
+			t.Errorf("RetryWait(%q) = %v, %v; want %v, %v", tc.after, got, ok, tc.want, tc.ok)
 		}
 	}
 }

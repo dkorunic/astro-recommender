@@ -177,20 +177,20 @@ var RetryDelay = time.Second
 // so a run is not held up, and its error is returned at once.
 const maxRetryWait = 5 * time.Second
 
-// retryWait is the pause before the retry: RetryDelay, or longer when
-// Retry-After (seconds or an HTTP date) asks for it; false past maxRetryWait.
-func retryWait(after string) (time.Duration, bool) {
+// RetryWait is the pause before the retry: RetryDelay, or longer when
+// Retry-After (seconds or an HTTP date) asks for it; false past limit.
+func RetryWait(after string, limit time.Duration) (time.Duration, bool) {
 	var wait time.Duration
 	// Seconds past int's range are a request for longer, not junk.
 	if s, err := strconv.Atoi(after); err == nil || errors.Is(err, strconv.ErrRange) {
-		if err != nil || time.Duration(s) > maxRetryWait/time.Second { // before multiplying, which could overflow
+		if err != nil || time.Duration(s) > limit/time.Second { // before multiplying, which could overflow
 			return 0, false
 		}
 		wait = time.Duration(s) * time.Second
 	} else if t, err := http.ParseTime(after); err == nil {
 		wait = time.Until(t)
 	}
-	if wait > maxRetryWait {
+	if wait > limit {
 		return 0, false
 	}
 
@@ -198,14 +198,14 @@ func retryWait(after string) (time.Duration, bool) {
 }
 
 // send identifies and sends req, and retries it once after a 429 or 5xx
-// (retryWait), for GetText and GetJSONHeader alike: a download falls back
+// (RetryWait), for GetText and GetJSONHeader alike: a download falls back
 // to a stale cached copy, but a first run and the browser, which has no
 // cache, have none.
 func send(ctx context.Context, req *http.Request) (*http.Response, error) {
 	identify(req)
 	resp, err := httpClient.Do(req)
 	if err == nil && (resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= http.StatusInternalServerError) {
-		if wait, ok := retryWait(resp.Header.Get("Retry-After")); ok {
+		if wait, ok := RetryWait(resp.Header.Get("Retry-After"), maxRetryWait); ok {
 			resp.Body.Close()
 			select {
 			case <-ctx.Done():

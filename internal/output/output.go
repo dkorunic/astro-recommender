@@ -287,7 +287,7 @@ func Weather(cfg *config.Config, s *scoring.Sky) {
 		}
 		if h, ok := s.Weather[t.Unix()]; ok {
 			cloud = paint(scale(h.Cloud, 30, 70), fmt.Sprintf("%.0f%%", h.Cloud))
-			if h.Precip >= weather.RainGate/2 && own { // the cell is painted once either way
+			if h.Precip >= weather.RainShown && own { // the cell is painted once either way
 				cloud = paint("31", fmt.Sprintf("%.0f%% %.1fmm", h.Cloud, h.Precip))
 			}
 			layers = paint("39", fmt.Sprintf("%.0f/%.0f/%.0f%%", h.Low, h.Mid, h.High))

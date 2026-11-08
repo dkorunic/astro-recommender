@@ -37,6 +37,7 @@ It started as a port of the deep sky part of [uptonight](https://github.com/mawi
   - [Comets](#comets)
   - [Night plan](#night-plan)
   - [Local horizon](#local-horizon)
+  - [Clear night alerts](#clear-night-alerts)
 - [How objects are ranked](#how-objects-are-ranked)
   - [Accuracy](#accuracy)
   - [Formulas and references](#formulas-and-references)
@@ -206,7 +207,7 @@ Each table has a title (Forecast, Night plan, Targets). The output ends with a s
 
 On a colour-capable terminal the output is colour-coded green/yellow/red. Colours are turned off when output is piped, when `NO_COLOR` is set or when `TERM=dumb`. `CLICOLOR_FORCE=1` turns them on regardless.
 
-`-json` replaces the tables with one JSON document holding the same report: `location`, `window` (RFC 3339 times in `-tz`), `moon` (illumination 0–1, when it is up and, during a lunar eclipse, its `eclipse` stretches: `penumbral`, `umbral` (partly or wholly in the umbra) and `total`), `sky`, `frame` (with framing), `forecast` per hour (its `seeing` is 7Timer's range and `seeingArcsec` the upper-air estimate, which replaced the `seeingClass` of versions up to 0.9; `gust` is the gust as scored, capped at 3× the mean wind but not below 20 km/h, with the forecast's own as `gustForecast` where the cap applied), `plan` (with `-plan`) and `targets` (RA/Dec in J2000 degrees, size and `minor` axis in arcminutes, `mag` and `bmag` (V and B magnitudes), `surfaceBrightness` in mag/arcsec² with `surfaceBrightnessEstimated` for the `~` values, `brightStar` as STAR's `name`, `mag` and `separation` in arcminutes, `frame` as the framing factor, `observable` as the longest run and the number of runs, `mosaic` as `cols` and `rows` when more than one panel scored best, `subs` with framing as `modest`, `good`, `best` (subs per panel), `max` (subs that fit tonight), `sub` (seconds), `snrPerSub`, `panels` and `assumedSurfaceBrightness` when the surface brightness is a typical one; `frame` adds `mount` (`altaz`, `derotated` or `eq`), and `maxPanels` and `rotate` when set). Unknown values are left out rather than written as null. A night with nothing to plan (no night at that twilight, or a window already past) gives `{"message": "…", "targets": []}`. Warnings still go to stderr.
+`-json` replaces the tables with one JSON document holding the same report: `location`, `window` (RFC 3339 times in `-tz`), `moon` (illumination 0–1, when it is up and, during a lunar eclipse, its `eclipse` stretches: `penumbral`, `umbral` (partly or wholly in the umbra) and `total`), `sky`, `frame` (with framing), `forecast` per hour (its `seeing` is 7Timer's range and `seeingArcsec` the upper-air estimate, which replaced the `seeingClass` of versions up to 0.9; `gust` is the gust as scored, capped at 3× the mean wind but not below 20 km/h, with the forecast's own as `gustForecast` where the cap applied), `conditions` (the forecast as the night's minutes read it, joined where nothing changes: `from`, `to`, `cloud`, `seeingArcsec`, `precipitation`; cloud and seeing are the nearest hour's, rain the minute's own hour's, what the score used), `plan` (with `-plan`) and `targets` (`observable` is the longest run, with `runs` counting them and `spans` listing every one; RA/Dec in J2000 degrees, size and `minor` axis in arcminutes, `mag` and `bmag` (V and B magnitudes), `surfaceBrightness` in mag/arcsec² with `surfaceBrightnessEstimated` for the `~` values, `brightStar` as STAR's `name`, `mag` and `separation` in arcminutes, `frame` as the framing factor, `observable` as the longest run and the number of runs, `mosaic` as `cols` and `rows` when more than one panel scored best, `subs` with framing as `modest`, `good`, `best` (subs per panel), `max` (subs that fit tonight), `sub` (seconds), `snrPerSub`, `panels` and `assumedSurfaceBrightness` when the surface brightness is a typical one; `frame` adds `mount` (`altaz`, `derotated` or `eq`), and `maxPanels` and `rotate` when set). Unknown values are left out rather than written as null. A night with nothing to plan (no night at that twilight, or a window already past) gives `{"message": "…", "targets": []}`. Warnings still go to stderr.
 
 `-csv` replaces the tables with the targets as CSV in Telescopius's observing-list format, which [N.I.N.A.](https://nighttime-imaging.eu/)'s simple sequencer imports (Sequencer → Import targets): `Catalogue Entry` (the name), an empty `Familiar Name` and the J2000 position to the second; a comet's is its mid-window position, moved back from the equinox of date the RA/DEC columns use to J2000, since N.I.N.A. slews to it. It lists the top `-n`, or with `-plan` the planned targets in plan order, each once. A night with nothing to plan prints the header alone, the message on stderr. N.I.N.A. sets each target's position angle to 0, and a mosaic is laid out in its Framing Assistant.
 
@@ -701,6 +702,44 @@ First, each block in time order gets the unused target with the best score withi
 To measure it, stand where the telescope sits and use a compass and an inclinometer app to note the top of each obstruction every 15–30°.
 
 `scripts/terrain2horizon.py LAT LON > horizon.txt` (Python 3, standard library) writes the horizon from the free [AWS Terrain Tiles](https://registry.opendata.aws/terrain-tiles/), every 2° out to 20 km (`--step`, `--radius`; `--elevation` if the model's ground height at the site is off, as on a narrow valley floor), plus the buildings [OpenStreetMap](https://www.openstreetmap.org/) maps within 300 m (`--osm-radius`) and the trees of the [Meta/WRI 1 m canopy height map](https://registry.opendata.aws/dataforgood-fb-forests/) within 300 m (`--canopy-radius`; about 7 MB downloaded once per site). Buildings stand at their tagged height or else 8 m (`--building-height`), and the script reports on stderr how many had one. The canopy map measures every tree, garden ones too, but from 2009–2020 imagery, so newer felling or growth is not in it. `--no-canopy` takes the trees and woods from OSM instead, at 12 m and 20 m unless tagged (`--tree-height`, `--wood-height`; OSM seldom tags them and rarely maps garden trees), and `--no-osm --no-canopy` gives the bare terrain, about 30 m per pixel. Check the result and edit the file by hand: stderr ends with a text panorama of the horizon against azimuth, the 30° floor dotted, and under each column what sets it (terrain, building or tree). Hills rarely reach the default 30° floor, so the bare terrain matters mostly with a lower `-alt-min` in the mountains; a house or a tree a few tens of metres away can block more than that.
+
+### Clear night alerts
+
+`astro-notify` runs `astro-recommender -json` once and, if the night is good enough, sends the forecast and targets to Telegram chats, Discord users and a webhook, any or all of them. Build it with `go build ./cmd/astro-notify` and run it from cron or a systemd timer, once each afternoon, from the same version as `astro-recommender`. Everything after `--` goes to `astro-recommender`:
+
+```sh
+export TELEGRAM_BOT_TOKEN=123456:ABC...   # from @BotFather
+export DISCORD_BOT_TOKEN=MTIz...          # from the Discord developer portal
+astro-notify -chat 12345678,@mychannel -discord-user 80351110224678912 -- -lat 45.8 -lon 16.0 -scope origin -n 15
+```
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `-chat` | `$TELEGRAM_CHAT_IDS` | comma-separated Telegram chat IDs or @channels |
+| `-discord-user` | `$DISCORD_USER_IDS` | comma-separated Discord user IDs to message |
+| `-webhook` | `$WEBHOOK_URL` | URL to POST the report to |
+| `-webhook-format` | `text` | the body: `text`, or `json` as `{"title": ..., "message": ...}` |
+| `-webhook-header` | `$WEBHOOK_HEADERS` | a `Name: value` header; repeat for more (the variable holds one per line) |
+| `-bin` | `astro-recommender` | the binary to run |
+| `-max-cloud` | `10` | the most effective cloud cover in a clear minute, 0-100 % |
+| `-max-seeing` | `2` | the worst seeing in a clear minute, arcseconds |
+| `-min-clear` | `2h` | the shortest unbroken clear stretch worth a message, in which a listed target must also be observable, or the whole window when that is shorter, but not under 30 minutes of a longer limit |
+| `-dry-run` | | print the message in every style, whatever the forecast, and send nothing; needs no token (with no night at all there is nothing to print; a missing forecast still exits 1 after printing) |
+
+The webhook works with anything that takes a POST. Keep a key out of `ps` by putting it in `$WEBHOOK_URL` or `$WEBHOOK_HEADERS`:
+
+```sh
+# ntfy: plain text, its options as headers
+astro-notify -webhook https://ntfy.sh/mytopic -webhook-header 'Title: Clear night' -webhook-header 'Priority: high' -webhook-header 'Tags: telescope' -- ...
+
+# Gotify
+WEBHOOK_HEADERS='X-Gotify-Key: AbCd' astro-notify -webhook https://gotify.example/message -webhook-format json -- ...
+
+# Home Assistant: a notify service, with a long-lived access token
+WEBHOOK_HEADERS='Authorization: Bearer eyJ...' astro-notify -webhook https://ha.example/api/services/notify/mobile_app_phone -webhook-format json -- ...
+```
+
+A minute with unknown cloud or seeing, or in an hour of rain, is not clear, judged on the report's `conditions`, the forecast the score read. A night on which no target is observable for that long in a clear stretch sends nothing, as does a night with no darkness at all. A report with no cloud or no seeing forecast for the night is an error (exit 1), so a failed fetch does not pass for a cloudy night. Each destination gets one message with as many targets as fit, best first, then how many were left out: Telegram 4096 characters and 100 formatted entities, Discord an embed of 4096 characters, a webhook 4096 bytes, past which ntfy turns a message into an attachment. A webhook's text has no links. A Discord bot can only message a user who shares a server with it and allows direct messages from its members. Targets that qualified the night are listed first, each keeping its rank, with their time in clear air (`☁️ up` marks one with none). Destinations and their recipients are sent to at once, under a 5-minute limit. A network error, 429 or 5xx is retried once, a `Retry-After` of up to a minute waited out. A failing destination does not stop the others, but the exit status is 1. The notification variables are not passed on to `astro-recommender`. A Telegram group upgraded to a supergroup gets the message at its new ID, with a warning to update `-chat`. On a night over a daylight saving change every time carries its zone. A webhook that redirects is an error, since following a 301 or 302 would lose the POST: give the final URL.
 
 ## How objects are ranked
 
