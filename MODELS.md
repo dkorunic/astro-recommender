@@ -1,8 +1,6 @@
 # Models and formulas
 
-This document explains how astro-recommender turns a location and a date into a ranked list of deep sky objects. For each step it gives the formula, where it comes from, and the simplifications it makes. The [README](README.md) covers how to use the program. Its [How objects are ranked](README.md#how-objects-are-ranked) section is the short version of this document, and its [Accuracy](README.md#accuracy) section has the measured error of each astronomical formula against SOFA.
-
-Everything here is implemented directly in Go from the cited sources; no astronomy library is used at run time. Package names in parentheses (`internal/astro`, …) point to the code.
+Formulas, sources and simplifications behind the ranking. Usage is in the [README](README.md), which also has the measured errors against SOFA ([Accuracy](README.md#accuracy)). All of it is implemented in Go from the cited sources; no astronomy library is used at run time.
 
 ## Contents
 
@@ -26,14 +24,7 @@ Everything here is implemented directly in Go from the cited sources; no astrono
 
 ## How the pieces fit together
 
-The program samples the night on a **1-minute grid**, from dusk to dawn. It computes everything about the night that does not depend on the target once per grid minute (`scoring.Sky`):
-
-- the local sidereal time,
-- the Moon's position, altitude and the light it scatters,
-- the extinction coefficient,
-- a weather quality factor.
-
-It then walks every target through the same grid (`scoring.scoreTarget`). Each minute it decides whether the target is *observable*, and if so how much that minute is worth:
+The night is sampled on a **1-minute grid**. Target-independent values (sidereal time, Moon position and light, extinction, weather quality) are computed once per minute (`scoring.Sky`); each target then walks the grid (`scoring.scoreTarget`):
 
 ```math
 w_i \;=\; \underbrace{Q_i}_{\text{weather}} \;\times\; \underbrace{T(h_i,\kappa_i)}_{\text{extinction}} \;\times\; \underbrace{W_{\text{sky}}(S, B_i)}_{\text{sky glow vs. object}}
@@ -45,7 +36,7 @@ w_i \;=\; \underbrace{Q_i}_{\text{weather}} \;\times\; \underbrace{T(h_i,\kappa_
 \text{UP} \;=\; \frac{\#\,\text{observable minutes}}{N}
 ```
 
-N is the number of minutes in the window. Each factor lies between 0 and 1, so a perfect target (up all night, clear, moonless, at the zenith, well framed) scores 1. The sections below derive each factor:
+N is the window length in minutes. Each factor lies in 0–1.
 
 | Symbol | Meaning | Section |
 |---|---|---|
@@ -62,21 +53,21 @@ N is the number of minutes in the window. Each factor lies between 0 and 1, so a
 
 `internal/astro`
 
-**Time base.** Every formula takes the number of days since J2000.0:
+**Time base**, days since J2000.0:
 
 ```math
 n = \frac{t_{\text{Unix}}}{86400} - 10957.5 ,\qquad T = \frac{n}{36525}\ \text{(Julian centuries)}
 ```
 
-The difference between UT and TT (ΔT, about 70 s) is ignored. In that time the Moon moves about 0.01°.
+ΔT (about 70 s) is applied only to the Moon series; elsewhere UT stands for TT.
 
-**Sidereal time.** Local mean sidereal time uses the linear terms of IAU 1982 GMST ([Aoki et al. 1982][aoki], [Meeus][meeus] eq. 12.4), plus the east longitude λ:
+**Sidereal time.** Linear terms of IAU 1982 GMST ([Aoki et al. 1982][aoki], [Meeus][meeus] eq. 12.4), plus east longitude λ:
 
 ```math
 \text{LST} = 280.46061837^\circ + 360.98564736629^\circ \cdot n + \lambda
 ```
 
-**Sun.** The Sun's position comes from the *Astronomical Almanac* low-precision formulas ([section C][aa-sun]). With mean longitude L and mean anomaly g:
+**Sun.** *Astronomical Almanac* low-precision formulas ([section C][aa-sun]), mean longitude L, mean anomaly g:
 
 ```math
 L = 280.460^\circ + 0.9856474^\circ n ,\quad
@@ -84,14 +75,14 @@ g = 357.528^\circ + 0.9856003^\circ n ,\quad
 \lambda_\odot = L + 1.915^\circ \sin g + 0.020^\circ \sin 2g
 ```
 
-The latitude is 0, and the ecliptic is rotated to the equator by the obliquity `ε = 23.439° − 0.0000004° n` (the same rotation, inverted, gives a target's ecliptic coordinates for the zodiacal light, `astro.Ecliptic`; against SOFA's IAU 2006 ecliptic of date they are within 3.9″, the low-precision obliquity's drift by 2050, and the Sun's longitude within 0.0123°):
+Latitude 0, obliquity `ε = 23.439° − 0.0000004° n`. The inverse rotation gives a target's ecliptic coordinates (`astro.Ecliptic`).
 
 ```math
 \tan\alpha = \frac{\cos\varepsilon \cos\beta \sin\lambda - \sin\varepsilon \sin\beta}{\cos\beta\cos\lambda},\qquad
 \sin\delta = \sin\varepsilon\cos\beta\sin\lambda + \cos\varepsilon\sin\beta
 ```
 
-**Precession.** Catalogue positions are J2000. The sidereal time is of date, so the catalogue positions are moved to the mean equator and equinox of date with the IAU 1976 angles ([Lieske et al. 1977][lieske], [Meeus][meeus] eqs. 21.2–21.4):
+**Precession** of J2000 positions to the mean equinox of date, IAU 1976 ([Lieske et al. 1977][lieske], [Meeus][meeus] eqs. 21.2–21.4), once per target at mid-window:
 
 ```math
 \begin{aligned}
@@ -110,77 +101,73 @@ C &= \sin\theta\cos\delta_0\cos(\alpha_0+\zeta) + \cos\theta\sin\delta_0 \\
 \end{aligned}
 ```
 
-Without precession, altitudes in 2026 would be up to 41′ off. C is clamped to ±1 because rounding near the pole can push it just past 1. Each target is precessed once, at the middle of the night. Nutation (< 20″) and refraction (about 2′ at 30°) are ignored. Both are far below the 30° altitude limit's needs.
+C is clamped to ±1 against rounding near the pole. Nutation (< 20″) and refraction (about 2′ at 30°) are ignored.
 
-**Altitude and azimuth** follow from the spherical triangle of hour angle `H = LST − α`, declination δ and latitude φ ([Meeus][meeus] eqs. 13.5–13.6):
+**Altitude and azimuth** ([Meeus][meeus] eqs. 13.5–13.6), `H = LST − α`, azimuth from north through east:
 
 ```math
 \sin h = \sin\varphi\sin\delta + \cos\varphi\cos\delta\cos H ,\qquad
 A = \mathrm{atan2}\!\big(-\sin H\cos\delta,\ \sin\delta\cos\varphi - \cos\delta\sin\varphi\cos H\big)
 ```
 
-The azimuth is measured from north through east. Thousands of targets are evaluated at hundreds of minutes, so the scoring loop computes this in a cheaper but equivalent form. `sin φ`, `cos φ`, `sin δ` and `cos δ` are computed once per target (`astro.Horizontal`). `cos H` comes from the difference formula `cos(LST − α) = cos LST cos α + sin LST sin α`, with the LST sines stored per grid minute. The altitude limits are compared as sines (`sin h` rises with h), so `arcsin` runs only for the minutes that pass. The azimuth is computed only when a horizon profile needs it.
+In the scoring loop `sin φ`, `cos φ`, `sin δ`, `cos δ` are per target (`astro.Horizontal`), `cos H` uses the difference formula with per-minute LST sines, altitude limits compare as sines, and azimuth is computed only with a horizon.
 
-**Angular separation.** Separations use the spherical law of cosines ([Meeus][meeus] eq. 17.1). In the scoring loop they are dot products of unit vectors, `u = (cos δ cos α, cos δ sin α, sin δ)`. The cosine is compared against the limit before any `arccos` runs.
+**Separation.** Spherical law of cosines ([Meeus][meeus] eq. 17.1); in the loop, dot products of unit vectors, compared before any `arccos`.
 
-**Galactic coordinates**, for the Milky Way's light, rotate the J2000 position into the IAU 1958 galactic frame ([Blaauw et al. 1960][blaauw]): the north galactic pole at α_P = 192.85948°, δ_P = 27.12825°, and the north celestial pole at galactic longitude l_NCP = 122.93192° (`astro.Galactic`):
+**Galactic coordinates** (`astro.Galactic`): IAU 1958 frame ([Blaauw et al. 1960][blaauw]), α_P = 192.85948°, δ_P = 27.12825°, l_NCP = 122.93192°:
 
 ```math
 \sin b = \sin\delta\sin\delta_P + \cos\delta\cos\delta_P\cos(\alpha-\alpha_P) ,\qquad
 l = l_{\text{NCP}} - \mathrm{atan2}\big(\cos\delta\sin(\alpha-\alpha_P),\ \sin\delta\cos\delta_P - \cos\delta\sin\delta_P\cos(\alpha-\alpha_P)\big)
 ```
 
-The frame is FK5's; SOFA's ICRS-based `Icrs2g` agrees within 0.005″ (`TestSOFAGalactic`).
-
 ## The night window
 
-`astro.Window`, `astro.Tonight`, `astro.ClipWindow`
+`astro.Window`, `astro.Tonight`, `astro.ClipWindow`, `astro.ContinuePolar`
 
-The night is the time while the Sun's geometric centre is below −18° (astronomical twilight), or −12° with `-twilight nautical` ([USNO definitions][usno-twilight]). The program does not solve for the crossing times. It steps minute by minute for 24 hours from the site's **solar noon**, `12:00 UTC − λ/15 h`, taking the solar noon closest to local noon. Starting from solar noon rather than local midnight has three benefits:
+Night is the Sun's centre below −18°, or −12° with `-twilight nautical` ([USNO][usno-twilight]). The altitude is stepped each minute for 24 h from the site's **solar noon** nearest local noon (`12:00 UTC − λ/15 h`), so zones cannot cut a night, date-line zones get their own, and polar night is capped at 24 h.
 
-- A time zone that does not match the site cannot cut the night in two.
-- Zones across the date line (Samoa, Kiritimati) get their own night rather than the next one.
-- Polar night is capped at 24 hours.
-
-If the Sun is already below the limit at noon and rises above it soon after, that darkness is the end of the previous night and is skipped. If that darkness lasts past midnight (more than 12 hours), it is tonight's night: at the end of polar night the Sun can clear the limit only minutes before the next noon (85° N on 31 December). If the Sun never gets below the limit, there is no night (high-latitude summer). Without `-date`, a run during the night plans only what remains of it; a polar night in progress, which would end at the next noon however near, carries on into the next day's night when that one is dark from the same noon, up to 24 hours from now (`astro.ContinuePolar`). `-from`/`-to` can only narrow the window; a clock before noon is the next morning's, and on a noon-to-noon polar night a `-to` at or before its start (`-to 12:00`) the next day's, which the window still holds.
+- Dark at noon with light soon after: the previous night's tail, skipped.
+- Dark at noon lasting past midnight (> 12 h): tonight's (85° N on 31 December).
+- Never dark: no night.
+- Without `-date`, a run during the night plans the remainder; a polar night in progress continues into the next one, up to 24 h from now.
+- `-from`/`-to` only narrow the window. A clock before noon is next morning's.
 
 ## The Moon
 
 `internal/astro`
 
-**Position and distance.** The Moon's geocentric ecliptic longitude, latitude (of date) and distance come from [Astronomy Engine][astronomy-engine]'s series (`moon.go`, ported from its `CalcMoon` and checked against its Python to 1e-13), itself Montenbruck & Pfleger's ([*Astronomy on the Personal Computer*][montenbruck]) version of the Improved Lunar Ephemeris (1954, from Brown's theory): the mean longitudes of the Moon L₀, its anomaly l, the Sun's anomaly l′, the argument of latitude F and the elongation D, with their long-period perturbations, then 104 periodic terms in multiples of (l, l′, F, D) for the longitude, the latitude's argument, its factor and the sine of the parallax, plus ten for the latitude's N and eleven planetary terms in the longitude. They are summed with complex exponentials, e^{i(p·l + q·l′ + r·F + s·D)}, from powers of each argument's e^{i·arg}. The distance is the parallax's: r = 1/(0.999953253 sin π) Earth equatorial radii, 55.9–63.8 with a mean of 60.27. The series runs on Terrestrial Time, UT + ΔT, with ΔT from Espenak & Meeus' polynomials ([NASA][deltat]; 69 s in 2026, the Moon moving 35″ in that time), and the result is rotated to RA/Dec of date as for the Sun.
+**Position and distance.** [Astronomy Engine][astronomy-engine]'s `CalcMoon` (`moon.go`), [Montenbruck & Pfleger][montenbruck]'s version of the Improved Lunar Ephemeris: 104 periodic terms for longitude, latitude argument, its factor and parallax, ten for the latitude's N, eleven planetary terms. Distance r = 1/(0.999953253 sin π) Earth radii. Run on TT with [Espenak & Meeus' ΔT][deltat]. Against SOFA's Moon98 (`TestSOFA`): position within 18″, distance within 0.0034 Earth radii.
 
-Against SOFA's Moon98 (`TestSOFA`, 3000 dates in 2000–2050) the position is within 18″ and the distance within 0.0034 Earth radii; it replaced the *Astronomical Almanac*'s six-term low-precision series ([section D][aa]), 0.4° and 0.19 Earth radii off, too coarse for the Earth's shadow (below), whose umbra is 0.7° across at the Moon.
-
-**Topocentric shift.** The Moon is close enough that the observer's position moves it by up to 1°. The observer is treated as a unit vector on a spherical Earth, rotated by the local sidereal time, and subtracted from the Moon's geocentric vector of length r ([Meeus][meeus] ch. 40):
+**Topocentric shift** ([Meeus][meeus] ch. 40), spherical Earth. Used for the Moon's altitude and all separations:
 
 ```math
 \vec{m}_{\text{topo}} = r\,\hat{u}(\alpha,\delta) - \big(\cos\varphi\cos\text{LST},\ \cos\varphi\sin\text{LST},\ \sin\varphi\big)
 ```
 
-The Moon's altitude and its separation from each target both use this topocentric position, as astroplan does.
-
-**Illumination and phase** come from the Sun–Moon elongation ψ ([Meeus][meeus] ch. 48):
+**Illumination and phase** from elongation ψ ([Meeus][meeus] ch. 48):
 
 ```math
 \text{illuminated fraction} = \frac{1-\cos\psi}{2} ,\qquad \text{phase angle } \alpha_\text{phase} \approx 180^\circ - \psi \quad (0 = \text{full})
 ```
 
-The illumination is taken once, at the middle of the window, for the Moon-distance rule (uptonight's); the moonlight model below takes each minute's phase angle and distance, since the phase moves 0.5°/h, which near full fades the opposition surge (35% at 0°, none at 7°) within a night, and the distance changes up to 3% (6% in flux). The header and JSON show the mid-window values. Against SOFA (`TestSOFA`) the phase angle is within 0.17° of the true angle at the Moon (the Sun's parallax seen from the Moon, which 180° − ψ leaves out) and the illumination within 0.14 percentage points of the true illuminated fraction (1 + cos i)/2.
+Illumination for the Moon-distance rule is taken at mid-window; moonlight uses each minute's phase angle and distance. `TestSOFA`: phase angle within 0.17°, illumination within 0.14 points.
 
-**Rise and set.** The header's "rises" and "sets" (and the JSON `moon.up` spans) are the minutes the Moon's topocentric centre crosses −50′: the upper limb on the refracted horizon, 34′ of refraction plus 16′ of semi-diameter, as the almanacs define moonrise and moonset ([USNO][usno-twilight]). The moonlight model and the Moon-distance rule keep the geometric horizon (centre above 0°); the few minutes between change nothing there.
+**Rise and set** (header, JSON `moon.up`): topocentric centre crossing −50′ (34′ refraction + 16′ semi-diameter). The moonlight and distance rule use the geometric horizon.
 
-**Lunar eclipses** (`eclipse.go`, `astro.LunarEclipse`). Each minute the Earth's shadow is laid across the Moon as [Astronomy Engine][astronomy-engine]'s `_CalcShadow` does: its axis runs from the Sun through the Earth's centre, and in the plane across it at the Moon, u of the Sun's distance beyond the Earth, the umbra's radius is k = R☉ − (1 + u)(R☉ − R⊕) and the penumbra's p = −R☉ + (1 + u)(R☉ + R⊕), with R⊕ = 6371 + 88 km (the atmosphere's enlargement of the shadow) and R☉ = 695 700 km. The Moon's centre is r from the axis; the phase is penumbral while r < p + R☾ (1737.4 km), partial while r < k + R☾, total while r + R☾ < k, as its `SearchLunarEclipse` tells them apart; `TestLunarEclipse` holds the phases of seven eclipses of 2025–2028 to its contact times within 2 minutes, our Almanac Sun against its VSOP87 one. Seen from a point c from the axis in that plane, the Sun's and the Earth's discs scale to radii (p − k)/2 and (p + k)/2 with centres c apart (they touch at the penumbra's edge, the Earth's covers the Sun's within the umbra), so the share of the Sun the point sees is one less their overlap. The Moon's light is that share averaged over its disc, taken as uniformly bright (near full it is), on 8 rings of equal area (256 points), with the Sun's limb darkening left out; in the umbra, where a point sees no Sun, the sunlight the Earth's atmosphere refracts in stands in, a flat 10⁻⁴ (10 magnitudes down: a bright totality, Danjon L = 4; the umbra's gradient and the Danjon scale are left out, which changes nothing the score sees, as moonlight 10 magnitudes down is far under any sky).
+**Lunar eclipses** (`eclipse.go`, `astro.LunarEclipse`). Geometry of Astronomy Engine's `_CalcShadow`: in the plane across the shadow axis at the Moon, u of the Sun's distance beyond Earth, the umbra's radius is k = R☉ − (1 + u)(R☉ − R⊕), the penumbra's p = −R☉ + (1 + u)(R☉ + R⊕), with R⊕ = 6371 + 88 km and R☉ = 695 700 km. With r the Moon's distance from the axis and R☾ = 1737.4 km: penumbral while r < p + R☾, partial while r < k + R☾, total while r + R☾ < k. `TestLunarEclipse`: seven eclipses of 2025–2028 within 2 minutes of its contacts.
 
-`scoring.BuildSky` keeps the minute's eclipse in `Sky.Eclipse` (nil on every other night: the shadow reaches at most 1.59° from the antisolar point, so a night whose Moon at mid-window is farther than 1.7° plus 0.6°/h over half the window is never looked at) and multiplies the moonlight (`Sky.MoonLight`'s flux) by the light. The Moon-distance rule shrinks with it, the limit becoming light × illumination in degrees ([Is this minute observable?](#is-this-minute-observable)), so a totally eclipsed Moon keeps targets no farther than the Moon below the horizon does. The header's Moon line and the empty-list message give the limit's floor, the least light in the window × the limit ("down to 0° in the eclipse" in totality), and with `-filter` × the filters' loosest scaling too, since both apply at once (shown only below the filter's own floor, which a grazing eclipse would repeat). The header's Moon line and JSON's `moon.eclipse` list the penumbral, umbral (partly or wholly in the umbra) and total stretches within the window.
+From a point c off the axis, the Sun's and Earth's discs have radii (p − k)/2 and (p + k)/2, c apart; the point sees one less their overlap. `astro.LunarEclipse`'s `Light` averages that over 256 equal-area points of a uniformly bright Moon disc; a point seeing no Sun gets `umbraLight` = 10⁻⁴ (Danjon L = 4; moonlight that faint is far under any sky). Sun limb darkening is left out.
+
+`scoring.BuildSky` fills `Sky.Eclipse` only when the mid-window Moon is within 1.7° + 0.6°/h × half the window of the antisolar point. The light multiplies the moonlight and the Moon-distance limit.
 
 ## Comets
 
 `internal/comets`
 
-Orbital elements come from the Minor Planet Center's daily `CometEls.txt` ([format][mpc-format]): perihelion time T, perihelion distance q, eccentricity e, argument of perihelion ω, node Ω, inclination i (J2000 ecliptic), and the magnitude parameters H and K. Each comet is propagated as an unperturbed two-body orbit. The Gaussian gravitational constant is k = 0.01720209895 rad/day, and Δt is the time from perihelion in days.
+MPC `CometEls.txt` ([format][mpc-format]): T, q, e, ω, Ω, i (J2000 ecliptic), H, K. Unperturbed two-body orbits, k = 0.01720209895 rad/day, Δt from perihelion in days; light-time ignored, T taken as UT.
 
-**True anomaly ν and heliocentric distance r**, by orbit type:
+**True anomaly ν and heliocentric distance r:**
 
 - **Parabolic** (|e − 1| < 10⁻⁹): Barker's equation solved in closed form ([Meeus][meeus] ch. 34):
 
@@ -201,7 +188,7 @@ Orbital elements come from the Minor Planet Center's daily `CometEls.txt` ([form
   a = \frac{q}{e-1} ,\quad \nu = 2\arctan\!\Big(\sqrt{\tfrac{e+1}{e-1}}\tanh\tfrac{H}{2}\Big) ,\quad r = a(e\cosh H - 1)
   ```
 
-**Heliocentric ecliptic position**, with argument of latitude `u = ω + ν` ([Meeus][meeus] ch. 33):
+**Heliocentric ecliptic position**, `u = ω + ν` ([Meeus][meeus] ch. 33):
 
 ```math
 x = r(\cos\Omega\cos u - \sin\Omega\sin u\cos i) ,\quad
@@ -209,25 +196,23 @@ y = r(\sin\Omega\cos u + \cos\Omega\sin u\cos i) ,\quad
 z = r\sin u\sin i
 ```
 
-**Earth's position** is the Sun formula reversed:
+**Earth** is the Sun formula reversed, with the general precession 1.3969713°/century subtracted from λ☉ since MPC's elements are J2000:
 
 ```math
 R = 1.00014 - 0.01671\cos g - 0.00014\cos 2g ,\qquad (X_\oplus, Y_\oplus) = -R\,(\cos\lambda_\odot, \sin\lambda_\odot)
 ```
 
-λ☉ is a longitude *of date*, while MPC elements are J2000. The general precession, 1.3969713° per century, is therefore subtracted from it. Without that correction a comet 0.5 AU away lands about 0.7° off.
+The Earth–comet vector is rotated by the J2000 obliquity 23.4392911° to J2000 RA/Dec and Δ, then precessed to date.
 
-**Geocentric direction.** The vector from Earth to the comet is rotated from the ecliptic to the equator by the J2000 obliquity, 23.4392911°. That gives the J2000 RA/Dec and the geocentric distance Δ, which is then precessed to date like a catalogue position. Light-time is ignored, and the perihelion time (TT) is treated as UT. Positions were checked against JPL Horizons.
-
-**Brightness** follows the MPC total-magnitude law, evaluated at the middle of the window. Comets fainter than `-comet-mag` are dropped:
+**Brightness** at mid-window; fainter than `-comet-mag` is dropped:
 
 ```math
 m = H + 5\log_{10}\Delta + 2.5\,K\log_{10} r
 ```
 
-MPC fits H and K once over an apparition, and weeks later they run 1–4 magnitudes off what observers see (October 2026: 10P/Tempel 14.7 against an observed 10.2–11.8, 161P 9.7 against 10.6–11.3, 220P 14.9 against 12.4–13.5). So the [COBS][cobs] observations of the 30 days before the night move the law by their median offset from it at each observation (`comets.FetchObserved`, `comet.offset`), when a comet has at least three; the description then says `(COBS)`, and the three read 10.5, 11.4 and 12.9. COBS keys them by the MPC designation, `10P` or the packed provisional `K22E020`, which the elements' first twelve columns carry; a numbered fragment keeps its letters (`73Pbt`, COBS's `component`), so it does not take its parent's observations. COBS answers 2500 records a page, newest first, and every page is read (a busy month, autumn 2025, held 3236); a page that fails leaves the elements' magnitudes rather than a part of the month. COBS sends no CORS headers, so the browser keeps the elements' magnitudes.
+MPC's H and K drift 1–4 mag from observation over an apparition, so the law is shifted by the median offset of [COBS][cobs] observations in the 30 days before the night, when a comet has at least three (`comets.FetchObserved`; description `(COBS)`). Keys are `10P`, a packed provisional designation, or a fragment's own (`73Pbt`). All pages of COBS's answer are read; one failing keeps the elements' magnitudes. Not in the browser (no CORS).
 
-A comet has a separate position for every grid minute (`Target.Track`). It has no catalogue size or surface brightness, so the size limits and framing do not apply to it, and it is scored as sky-limited.
+A comet has one position per minute (`Target.Track`), no size limits or framing, and is scored sky-limited.
 
 ## Atmosphere and sky
 
@@ -235,98 +220,77 @@ A comet has a separate position for every grid minute (`Target.Track`). It has n
 
 ### Airmass and extinction
 
-**Airmass** uses [Pickering (2002)][pickering], which stays accurate down to the horizon (h in degrees):
+**Airmass**: [Pickering (2002)][pickering], h in degrees:
 
 ```math
 X(h) = \frac{1}{\sin\!\big(h + 244/(165 + 47\,h^{1.1})\big)}
 ```
 
-**Transmission**, relative to the same object at the zenith, for an extinction coefficient κ in magnitudes per airmass:
+**Transmission** relative to the zenith:
 
 ```math
 T(h,\kappa) = 10^{-0.4\,\kappa\,(X(h)-1)}
 ```
 
-With κ = 0.2, T is about 0.83 at 30° altitude.
-
-**The extinction coefficient** at 550 nm (about V, and the wavelength of the CAMS aerosol optical depth) is the sum of three terms:
+**Extinction coefficient** at 550 nm:
 
 ```math
 \kappa = \underbrace{0.1066\,e^{-z/7996\,\text{m}}}_{\text{Rayleigh}} + \underbrace{0.029}_{\text{ozone}} + \underbrace{1.086\cdot\text{AOD}_{550}}_{\text{aerosols}}
 ```
 
-- **Rayleigh scattering by air molecules**: an optical depth of 0.098 at 0.55 µm ([Hayes & Latham 1975][hayes]; consistent with [Bucholtz 1995][bucholtz]), decreasing with site elevation z over an 8 km scale height.
-- **Ozone**: the Chappuis band for a 300 DU column.
-- **Aerosols**: the hourly AOD from the [CAMS][cams] forecast via Open-Meteo, thinned for the height the site stands above the ground CAMS's column rests on (`atmos.AerosolAbove`): AOD × e^(−Δz/1.5 km), Hayes & Latham (1975)'s aerosol scale height (CALIOP's profiles give 1.5–2 km over polluted land, more over dust; Yu et al. 2010). CAMS's 0.4° cell averages the terrain, which the air-quality API does not report, so the ECMWF IFS 0.25° cell's (Open-Meteo with `elevation=nan`, `weather.GridElevation`) stands in: La Palma's 2334 m observatory sits in a sea-level cell, and its 0.24 becomes 0.05, κ 0.37 → 0.16 against the observatory's measured 0.13–0.15 (Mauna Kea 0.11, Paranal 0.13, as measured). A site below its cell keeps the AOD (a valley's haze is not less, and nothing says how much more), as does one whose cell is unknown. The factor 1.086 = 2.5 log₁₀ e converts optical depth to magnitudes.
+- **Rayleigh**: 0.098 optical depth at 0.55 µm ([Hayes & Latham 1975][hayes]; [Bucholtz 1995][bucholtz]), 8 km scale height.
+- **Ozone**: Chappuis band, 300 DU.
+- **Aerosols**: hourly [CAMS][cams] AOD via Open-Meteo, thinned by `e^(−Δz/1.5 km)` for the site's height above its cell's ground (`atmos.AerosolAbove`), taken from the ECMWF IFS 0.25° cell (`weather.GridElevation`). A site below its cell, or with the cell unknown, keeps the AOD. La Palma: κ 0.37 → 0.16, measured 0.13–0.15. 1.086 = 2.5 log₁₀ e.
 
-The three parts are kept apart (`atmos.RayleighExtinction`, `OzoneExtinction`, `AerosolExtinction`) because they scale differently with wavelength, which the [filter bands](#nebula-filters) use. A fixed `-extinction` is split the same way: ozone first, Rayleigh up to its sea-level 0.1066, the rest aerosol (`atmos.SplitExtinction`); below ozone's 0.029 (`-extinction 0`) it is all ozone, which a band then keeps at the total (`Sky.ozone`), so no filter band is dimmed more than the unfiltered light.
-
-Past the CAMS range (about 5 days), a typical AOD of 0.1 at sea level is used, thinned the same way for the site's elevation. The elevation comes from the CAMS response, else from the weather forecast's, whose range is longer. When neither has it, or when `-extinction` is given, that fixed value (default 0.2) is used instead. A smoky or dusty night therefore penalises low targets and spreads moonlight more widely.
+The three parts are kept apart for the [filter bands](#nebula-filters). A fixed `-extinction` is split by `atmos.SplitExtinction`: ozone first, Rayleigh up to 0.1066, the rest aerosol. Past CAMS's range (about 5 days) AOD is 0.1 at sea level, thinned likewise. With no elevation from either forecast, `-extinction`'s value (default 0.2) is used.
 
 ### Sky brightness: Krisciunas & Schaefer (1991), moonlight after Winkler (2022)
 
-The sky brightness B at the target is computed in nanoLamberts, a linear unit that can be added, with the [K&S][ks] conversion:
+B is in nanoLamberts ([K&S][ks]):
 
 ```math
 B_{\text{nL}} = 34.08\, e^{\,20.7233 - 0.92104\,V} \qquad (V \text{ in mag/arcsec}^2)
 ```
 
-**The site's dark-sky brightness at the zenith** comes from the first of these that is available:
-
-1. `-sqm` (a meter reading),
-2. the typical SQM value for `-bortle`,
-3. a DarkSkySites lookup, run only when neither is given and an API key is available,
-4. a pristine 22.0 mag/arcsec².
+**Zenith dark sky**: `-sqm`, else `-bortle`, else DarkSkySites (with a key), else 22.0.
 
 | Bortle | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
 |---|---|---|---|---|---|---|---|---|---|
 | band (mag/arcsec²) | ≥ 21.96 | 21.7–21.96 | 21.3–21.7 | 20.8–21.3 | 20.3–20.8 | 19.6–20.3 | 18.9–19.6 | 18.0–18.9 | < 18.0 |
 | `-bortle` value | 21.98 | 21.83 | 21.5 | 21.05 | 20.55 | 19.95 | 19.25 | 18.45 | 17.5 |
 
-The bands are DarkSkySites' map's (its classifier, October 2026), the service the lookup asks, so `-bortle N` and the header's `≈ Bortle N` mean the sky its map shows as class N; the values are the bands' middles (class 9 half a class under 18.0). [Bortle (2001)][bortle] defined his classes by eye, and SQM bands are later conventions that disagree by up to a class: Wikipedia's and lightpollutionmap.info's put class 6 at 18.94–19.50, DarkSkySites' own imaging calculator at 18.9 (a class brighter than its map's band throughout), and this table at 18.8 until October 2026. A measured `-sqm` beats any of them.
+Bands are DarkSkySites' map's (its classifier, October 2026), values the bands' middles (class 9 half a class under 18.0). Other SQM–Bortle tables differ by up to a class ([Bortle 2001][bortle] defined the classes by eye).
 
-<a id="airglow"></a>**The solar cycle** (`atmos.AirglowExcess`, `internal/solar`). Airglow, the upper atmosphere's own light driven by the Sun's ultraviolet, is about two-thirds of a dark V zenith at solar minimum (145 of 220 S10 at the ecliptic and galactic poles, [Benn & Ellison 1998][benn]), and follows the 11-year cycle: V brightened 0.3 mag from solar minimum to maximum at Paranal ([Patat 2008][patat]), 0.4–0.5 at La Palma, 0.6 at Mauna Kea and 0.5 at CTIO. The ESO sky model ([Noll et al. 2012][noll]) scales each airglow component as 1 + m(S − 129), S the monthly mean 10.7 cm solar flux in sfu, m 0.0061 for the continuum and 0.0087 for [O I] 557.7 (about a fifth of V); with m = 0.006 the zenith gains
+<a id="airglow"></a>**Solar cycle** (`atmos.AirglowExcess`, `internal/solar`). Airglow scales with the 10.7 cm flux S as 1 + m(S − 129) ([Noll et al. 2012][noll]), and is 0.6 of the natural 22.0 ([Benn & Ellison 1998][benn]) whose flux is 90 sfu, solar minimum ([Falchi et al. 2016][falchi]). With m = 0.006:
 
 ```math
 \Delta B = 0.6\,B_{22.0}\left(\frac{1 + 0.006\,(S - 129)}{1 + 0.006\,(90 - 129)} - 1\right)
 ```
 
-over the configured brightness: 0.6 is the airglow's share of the natural 22.0 at the reference direction (135°, 45°), where the zodiacal light is above the poles', and 90 sfu is the flux of that 22.0, solar minimum, as [Falchi et al. (2016)][falchi] take it (their atlas, from which light pollution maps derive, subtracts a natural sky scaled to each SQM reading's solar activity, so it holds artificial light only) and as Noll's model gives it. ΔB is added whatever the light pollution, whose natural part is that 22.0, and is clamped to 65–250 sfu (Noll's fit spans 95–228). At 180 sfu the zenith is 0.38 mag brighter, as Noll's model (22.0 to 21.6); at 107 sfu (October 2026) 0.08; at solar minimum (65) 0.14 darker. Under Bortle 6 and brighter the change is a few hundredths. S is NOAA SWPC's observed monthly mean for the night's UTC month, else (for a night within 30 days of NOAA's last daily value) the mean of the last 30 days, which Patat found the airglow follows best and which NOAA's monthly prediction overstated by 20 sfu in October 2026, else that prediction (to 2030); without one (`-no-solar`, a failed lookup, a date past 2030) the configured sky stands. An explicit `-sqm` is a measurement of a night's sky, airglow included, so it is not scaled. Time-of-night and seasonal airglow changes (up to a few tenths, by site) are not modelled.
+S is clamped to 65–250 sfu. 0.38 mag brighter at 180 sfu, 0.14 darker at 65. S is NOAA SWPC's monthly mean for the night's UTC month, else within 30 days after the last daily value the 30-day mean ([Patat 2008][patat]), else NOAA's prediction (to 2030). Unknown flux, `-no-solar` or a measured `-sqm`: no change. Hour-of-night and seasonal airglow changes are not modelled.
 
-**Towards the horizon** the sky brightens because the line of sight passes through more glowing air, and dims through extinction. K&S model this with a scattering airmass X_s at zenith distance Z = 90° − h:
+**Towards the horizon**, K&S's scattering airmass X_s at Z = 90° − h:
 
 ```math
 X_s(h) = \big(1 - 0.96\sin^2 Z\big)^{-1/2} ,\qquad
 B_{\text{dark}}(h) = B_{\text{zen}}\cdot 10^{-0.4\,\kappa\,(X_s-1)}\cdot X_s
 ```
 
-(The zodiacal and galactic light of the target's direction then add a term of their own, below.)
+**Zodiacal light** (`atmos.ZodiacalExcess`). [Leinert et al. (1998)][leinert] Table 17 by ecliptic longitude from the Sun Δλ and latitude β, bilinear, the pole value past β = 75°, blanks near the Sun filled from the row's first tabulated latitude. The configured zenith is taken to include the value at (135°, 45°), a mid-latitude zenith. Heliocentric and seasonal factors are left out. Pristine sky: ecliptic 90° from the Sun +0.5 mag/arcsec², pole −0.06.
 
-**Zodiacal light.** The natural sky is not the same in every direction: sunlight scattered by interplanetary dust brightens it along the ecliptic, most towards the Sun, and least at the ecliptic poles. [Leinert et al. (1998)][leinert] Table 17 gives its brightness Z(Δλ, β) at 500 nm by the ecliptic longitude from the Sun Δλ and the ecliptic latitude β, from 77 (in 10⁻⁸ W m⁻² sr⁻¹ µm⁻¹) at the pole to 259 on the ecliptic 90° from the Sun; 1 S10 unit is 1.28 of those and 27.78 mag/arcsec² in V, so the pole reads 23.3 mag/arcsec², the ecliptic at 90° 22.0, and the gegenschein opposite the Sun 22.1. The zenith brightness above already includes the zodiacal light of a typical zenith: a mid-latitude site's zenith runs over β = 45° ± 23.4° and Δλ from 90° at dusk to 180° at midnight, so the value is taken to include Z at the reference direction (Δλ, β) = (135°, 45°), which reads 90, and is corrected per target by the difference (`atmos.ZodiacalExcess`; the heliocentric ±7% and seasonal ±10% factors are left out):
-
-```math
-B_{\text{zen}}(\text{target}) = \max\big(B_{\text{zen}} + Z(\Delta\lambda,\beta) - Z(135^\circ, 45^\circ),\ Z_{\text{pole}}\big)
-```
-
-in nanoLamberts, bilinearly interpolated in the table, with the pole value past β = 75° and the blank cells near the Sun (which no night-time direction reaches) filled from the row's first tabulated latitude. The target's ecliptic coordinates come from its mid-window position of date (a comet's too) and the Sun's longitude at mid-window. On a pristine sky this makes the ecliptic 90° from the Sun 0.5 mag/arcsec² brighter than the reference and the pole 0.06 darker: a faint galaxy in Virgo or Leo in the evening sees a brighter sky than one in Ursa Major, and its sky-limited weight is 15–25% lower. Under light pollution the same nanoLamberts hardly show. The floor is the pole's own light: no configured sky gets darker than that (with the galactic light below, than the pole's light plus the darkest galactic light).
-
-**Galactic light.** The Milky Way's unresolved stars, and the starlight its dust scatters (the diffuse galactic light, 20–30% of it), are the natural sky's other large variation. Pioneer 10 mapped them from beyond 2.8 AU, where the zodiacal light has gone: [Leinert et al. (1998)][leinert] Tables 35 and 36 (from Toller 1981) give that background starlight G(l, b) in blue (440 nm) and red (640 nm), every 10° of galactic longitude l by galactic latitude b (±80° in steps of 4° near the plane, 10° beyond), in S10⊙ units with the stars brighter than V 6.5 removed, as an imaging camera resolves them. A source of solar colour reads the same in both, so V (550 nm) is taken between them by wavelength in log brightness, G_V = G_blue^0.45 · G_red^0.55 (red reads 1.3 times blue at high latitude, the galactic light being redder than the Sun). Pioneer's spin axis kept it off 28 cells around the Sun (l 180–240°, b 16–50°); they are filled along each row's latitude, log-linearly between the nearest measured cells, where the light falls off smoothly towards the anticentre. G_V runs from 29 S10 at the galactic poles (24.1 mag/arcsec²) to 900 in the Sagittarius star clouds (20.4), against 205 for a whole 22.0 mag/arcsec² sky. The zenith brightness is taken to include the table's median over the sky by solid angle, 81 S10, what a zenith sees over a year's nights, and is corrected per target by the difference (`atmos.GalacticExcess`), the zodiacal light's beside it:
+**Galactic light** (`atmos.GalacticExcess`). Pioneer 10's background starlight, [Leinert et al. (1998)][leinert] Tables 35 (440 nm) and 36 (640 nm), stars brighter than V 6.5 removed; G_V = blue^0.45 · red^0.55. The 28 cells of Pioneer's Sun gap are filled log-linearly along latitude; the ±80° rows' mean at the poles. The zenith is taken to include the table's solid-angle median, 81 S10. Pristine sky: galactic poles 0.3 mag/arcsec² darker, plane 0.5–1.1 brighter, Sagittarius 1.7. Positions are mid-window, comets too.
 
 ```math
 B_{\text{zen}}(\text{target}) = \max\big(B_{\text{zen}} + Z(\Delta\lambda,\beta) - Z(135^\circ, 45^\circ) + G_V(l,b) - G_{\text{ref}},\ Z_{\text{pole}} + G_{\min}\big)
 ```
 
-bilinearly interpolated, the ±80° rows going to their mean at the poles. The galactic coordinates come from the target's mid-window position (`astro.Galactic`, the IAU 1958 frame in J2000, within 0.005″ of SOFA's). On a pristine sky the galactic poles are 0.3 mag/arcsec² darker than the reference, the plane 0.5–1.1 brighter, the Sagittarius clouds 1.7 and the LMC 0.4: a faint galaxy at high galactic latitude sees the darkest natural sky, and a nebula in the Cassiopeia Milky Way about a magnitude brighter one. Under light pollution, again, it hardly shows. Pioneer's ~2° beam smooths the star clouds, and its red band carries some Hα, so the brightest H II regions' cells read high. The floor adds the darkest galactic light to the zodiacal pole's.
-
-**Off the zenith** the two are not brightened as the rest of the dark sky is. K&S's X_s stands for the longer path through glowing air (the airglow, and the light pollution scattered in it), while the zodiacal and galactic light come from beyond the atmosphere, which only dims them. So their excess over what the configured zenith includes, E = B_zen(target) − B_zen, is added outside the dark-sky term and dimmed by extinction alone, the whole column at the Pickering airmass X of the target's own light (E is tabulated above the atmosphere, while B_zen is measured on the ground):
+**Off the zenith** the excess E = B_zen(target) − B_zen comes from beyond the atmosphere, so it takes no X_s brightening and is dimmed by the whole column at the Pickering airmass:
 
 ```math
 B_{\text{dark}}(h) = B_{\text{zen}}\cdot 10^{-0.4\,\kappa\,(X_s-1)}\cdot X_s + E\cdot 10^{-0.4\,\kappa\,X}
 ```
 
-The share the configured zenith already includes stays in K&S's term, as their fit had it. At 30° altitude, where X_s is 1.9, scaling E like the glow would roughly double it: the Cassiopeia Milky Way's sky there would read 0.25 mag/arcsec² brighter on a pristine sky (0.07 at 60°), the galactic and ecliptic poles' deficit likewise. At the zenith the two agree, and the floor holds there.
-
-**Scattered moonlight** is added while the Moon is above the horizon, after [Winkler (2022)][winkler]'s revised simplified scattering model. The Moon's V flux outside the atmosphere comes from its magnitude, which depends on its phase angle α (degrees, 0 = full):
+**Moonlight**, while the Moon is up, after [Winkler (2022)][winkler]. V flux outside the atmosphere from phase angle α (degrees, 0 = full), with K&S's magnitude law, mean distance scaling, and [thorsky][thorsky]'s opposition surge:
 
 ```math
 m_{\text{moon}} = -12.73 + 0.026\,\alpha + 4\cdot10^{-9}\alpha^4 ,\qquad
@@ -334,16 +298,13 @@ F^* = 10^{-0.4\,m_{\text{moon}}}\cdot \Big(\frac{60.27}{r}\Big)^2 \cdot
 \begin{cases} 1.35 - 0.05\,\alpha & \alpha < 7^\circ \\ 1 & \text{otherwise}\end{cases}
 ```
 
-- The magnitude law is the one K&S use (from Allen), at the Moon's mean distance; `(60.27/r)²` scales it to the actual distance, which varies by ±13%.
-- The last factor is the *opposition surge*, the extra brightening near full Moon that the magnitude law leaves out. It is modelled as in Thorstensen's skycalc ([thorsky][thorsky]).
-
-That beam is scattered once in a uniform layer of optical depth τ = 0.4 ln 10 · κ = 0.921 κ. Each height is reached through only the air above it, and the scattered light is dimmed again on its way down. K&S instead dimmed the beam by the whole column before it scatters, which makes the moonlit sky too dark, most of all under a low Moon. Integrated down the line of sight, this gives Winkler's gradation function, with X_s(h) the scattering airmass above for the target and the Moon:
+Single scattering in a layer of τ = 0.921 κ, the beam reaching each height through only the air above it, gives the gradation function:
 
 ```math
 \Gamma = X\,\frac{e^{-\tau X} - e^{-\tau X_{\text{moon}}}}{X_{\text{moon}} - X} \qquad \big(\to \tau X e^{-\tau X}\ \text{as}\ X_{\text{moon}} \to X\big)
 ```
 
-The light is scattered towards the target by a normalised phase function (sr⁻¹). It mixes molecules (Rayleigh, [Bucholtz 1995][bucholtz], χ = 0.0148, K&S's 1.06 + cos²ρ shape) and aerosols (Henyey–Greenstein, asymmetry g = 0.8), weighted by their shares of the scattering optical depth. Those shares are the minute's own Rayleigh and aerosol extinction (κ_R, κ_A), so hazier air weighs the forward-peaked aerosol term more:
+The normalised phase function mixes Rayleigh ([Bucholtz 1995][bucholtz], χ = 0.0148) and Henyey–Greenstein (g = 0.8) by the minute's κ_R and κ_A:
 
 ```math
 p(\rho) = \frac{\kappa_R}{\kappa_R+\kappa_A}\,\frac{3(1-\chi)}{16\pi(1+2\chi)}\Big(\frac{1+3\chi}{1-\chi} + \cos^2\rho\Big) + \frac{\kappa_A}{\kappa_R+\kappa_A}\,\frac{1}{4\pi}\,\frac{1-g^2}{(1 + g^2 - 2g\cos\rho)^{3/2}}
@@ -353,23 +314,23 @@ p(\rho) = \frac{\kappa_R}{\kappa_R+\kappa_A}\,\frac{3(1-\chi)}{16\pi(1+2\chi)}\B
 B_{\text{moon}} = 10^{\delta}\, F^*\, p(\rho)\, \Gamma \,/\, 4.2545\cdot10^{10}
 ```
 
-ρ is the Moon–target angle. The last factor turns per-steradian into per-arcsec². δ = 0.078 is Winkler's V-band offset: it carries the particles' albedo and the light scattered more than once. g and δ are his fit at Sutherland (SAAO), where the model reproduces the moonlit sky mostly within 0.05 mag. His albedo there, scattering over all extinction, is τ_s/τ = (0.082 + 0.020)/0.138 = 0.74 (his Table 4), which δ holds; the minute's own is (κ_R + κ_A)/κ, ozone absorbing the rest, so B_moon is scaled by it over 0.74 (0.86 at κ = 0.2, 0.1–0.26 mag brighter than δ alone at the coefficients the model makes). Against K&S, the full Moon 60° up puts 18.48 mag/arcsec² at a target 60° up and 90° away (K&S: 18.45). The sky is 0.8–1.1 mag brighter within about 10° of the Moon (the aerosol forward peak), a little brighter under a Moon below about 12°, and about as bright as K&S's at moderate separations. Aerosols range over 0.5 < g < 0.8 ([Andrews et al. 2006][andrews]), so under heavy haze (κ ≳ 0.3) a narrower-than-real forward peak likely makes the sky far from the Moon somewhat too dark; there it also gets darker with more haze, where K&S's grew brighter. The total is
+ρ is the Moon–target angle; the divisor converts sr⁻¹ to arcsec⁻². δ = 0.078 is Winkler's V offset, fitted at Sutherland, whose albedo 0.74 it holds; B_moon is rescaled to the minute's (κ_R + κ_A)/κ (`moonAlbedo`). Full Moon 60° up, target 90° away at 60°: 18.48 mag/arcsec². Within about 10° of the Moon, up to a magnitude brighter than K&S. Clean-site g likely makes the sky too dark far from the Moon at κ ≳ 0.3 ([Andrews et al. 2006][andrews]).
 
 ```math
 B = B_{\text{dark}} + B_{\text{moon}}
 ```
 
-The table's SKY column is this B (with the zodiacal and galactic light) converted back to mag/arcsec² and averaged over the observable minutes. The part of B_moon that does not depend on the target (F*, the Moon's airmass and beam transmission, and the Rayleigh share) is computed once per grid minute (`atmos.MoonLight`).
+SKY is B in mag/arcsec² averaged over observable minutes. The target-independent part is `atmos.MoonLight`.
 
 ## Object surface brightness
 
 `catalog.Target.SurfaceBrightness`
 
-What sky glow does to an extended object depends on how bright the object is **per square arcsecond**, not on its total magnitude ([SkEye's explanation][skeye]). Each target's V surface brightness S is taken from the first rule that applies:
+V surface brightness S, by the first rule that applies:
 
-0. **Measured line flux.** A planetary nebula with an integrated Hα flux (`haflux`: Frew, Bojičić & Parker 2013, J/MNRAS/431/2, 1258 planetaries measured on SHASSA and VTSS plus 49 from the literature; observed, [N II] removed, not dereddened; `scripts/haflux.py` matches them by position, within max(1′, a quarter of the size), else by name within 5′, since uptonight's lists give positions to the minute, to 1522 entries over 14 lists; the CDS tables leave the sign byte blank for every declination of 00°, which takes the sign whose galactic latitude is the PN G designation's: NGC 2346 at −00° 48′ read as +00° 48′ was 97′ from every list's) gets the V surface brightness of its lines (`catalog.Target.FluxSB`): the Hα flux over its Hα share gives every line's flux by the type's ratios, each line's photons through V (Bessell's curve at the line, `LineV`) over the ellipse of the axes, against a V = 0 source's photons. Exact but for the ratios. An emission nebula of 30′ or more with no surface brightness of its own (`TestHaMapSample`: 675 entries over 17 lists, of 1018; LBN's 261, the Sharpless, RCW and SNR regions, and in GaryImm the Heart, Soul, California, Rosette and Veil, whose catalogued magnitude is a cluster's or star's) gets one the same way from [Finkbeiner (2003)][finkbeiner]'s map: `scripts/hamap.py` reads LAMBDA's full-sky HEALPix file (Nside 512, 6′ beam), takes the mean over the disc of the major axis less the median of a ring from 1.25 to 2 radii, the geometry `vContinuum` is fitted with below, so a map flux and a catalogued surface brightness rank on one footing, and writes the mean intensity over the ellipse of the axes as `haflux` (FluxSB divides by that ellipse again, giving back the disc's mean). 343 whose ring's median is 80% of their disc's mean or more (`RING_MAX`; also in `calibrate_lines.py`, which shares `measure`) stay unknown: the ring then lies on the same complex, and the difference is mostly its noise. IC 1795 on W3 and the Heart read 14 R, 89 of a 103 R disc, a sixth of NGC 281's beside a disc as bright; the Pelican beside the North America; IC 417 and Ced 137b, whose ring outshines the disc. The flux ranks the nebula, but the sub-exposure estimate takes its class's typical value (`ExposureSB`, [below](#sub-exposure-estimate)). The map's small scales are the narrowband surveys': WHAM, which resolves [N II], sets only the zero point on 1° scales (Finkbeiner 2003, §3.2), and SHASSA's 32 Å filter passes both [N II] lines, VTSS's 17 Å one part of 654.8 nm, so south of Dec +15° a map flux can be up to 0.33 mag bright with an H II region's [N II]. `TestTypicalSB` leaves these out of the classes' medians, since the lines' V surface brightness of an H II region reads some 2.6 mag fainter than a catalogued V. A faint planetary's catalogued magnitude is often its central star's: Abell 7 derived 30.2 from its 16.0, the flux gives 26.0; EGB 6 30.0 against 27.3. For the well-measured ones the two agree within about 0.6 mag (NGC 7293 21.9 against 21.3, M 57 19.2 against 18.3). Frew's tables miss many northern ones (M 27, M 97, NGC 7662, Jones-Emberson 1), which keep the rules below.
-1. **Measured V.** The Compendium's V mean surface brightness (`surfbr`). Exact.
-2. **Measured B, moved to V.** [OpenNGC][openngc]'s B mean surface brightness within the 25 mag/arcsec² isophote (`bsurfbr`), minus a colour. The colour is the object's own `B − V` when it lies in −0.3…1.5 (OpenNGC pairs inconsistent magnitudes for about 100 objects). Otherwise it is a typical colour for the kind of object, and the value is marked `~`:
+0. **Measured line flux** (`haflux`, `FluxSB`). 1522 planetaries over 14 lists from [Frew, Bojičić & Parker (2013)](https://cdsarc.cds.unistra.fr/viz-bin/cat/J/MNRAS/431/2) (`scripts/haflux.py`), and 675 emission nebulae of ≥ 30′ with no surface brightness, over 17 lists, from [Finkbeiner (2003)][finkbeiner] (`scripts/hamap.py`): mean over the major-axis disc less the median of a 1.25–2 radii ring. Another 343 stay unknown because the ring's median is ≥ 80% of the disc mean (`RING_MAX`). The Hα flux over its share gives every line by the type's ratios, each line's photons through V (`LineV`) over the ellipse, against V = 0. SUBS sets map fluxes aside for its class's typical value (`ExposureSB`, [below](#sub-exposure-estimate)). SHASSA's 32 Å filter passes both [N II] lines, so south of Dec +15° a map flux can read up to 0.33 mag bright.
+1. **Measured V** (`surfbr`, the Compendium).
+2. **Measured B** (`bsurfbr`, [OpenNGC][openngc], within the 25 mag isophote) less a colour: the object's own B − V within −0.3…1.5, else (`~`) typical by kind (`TestTypicalBV`):
 
    | Kind | typical B − V |
    |---|---|
@@ -378,44 +339,36 @@ What sky glow does to an extended object depends on how bright the object is **p
    | other emission-line objects | 0 |
    | everything else | 0.5 |
 
-   `TestTypicalBV` recomputes them as the median B − V of the lists' objects with both magnitudes (galaxies 0.77, planetaries 0.80 within the bounds above, the other emission-line objects 0.07, the rest 0.43); a planetary's [O III] sits in V, out of B, so the 0 it once had made a B-only planetary up to 0.9 mag too bright.
-
-3. **Derived from magnitude and size.** For single galaxies and nebulae only. Marked `~`. The integrated V magnitude m (or B minus the typical colour) is spread over a uniform ellipse of the major and minor axes (in arcminutes; a disc of the major axis when the minor is unknown). A galaxy's V more than 0.3 fainter than its B (−0.3 being the bluest B − V above) is an aperture value around the nucleus, which uptonight's lists and the Compendium took from SIMBAD (M 88 13.2 for a total near 9.6, NGC 4565 12.4): `scripts/galaxyv.py` replaces it with the B, OpenNGC's where the list has none, in 213 entries over 9 lists. A V more than 1.5 brighter than the B (the reddest B − V above) is no galaxy's total either (IC 127's 9.20 against B 14.83, a star's or another object's), and the script replaces it the same way, 68 more entries over 5 lists:
+3. **Derived** (`~`), single galaxies and nebulae only: integrated V (or B less the typical colour) over a uniform ellipse, in arcminutes, a disc of the major axis without a minor. `scripts/galaxyv.py` replaces a galaxy's V more than 0.3 fainter than its B (aperture value) or 1.5 brighter (not a total) with the B.
 
    ```math
    S = m + 2.5\log_{10}\!\Big(\frac{\pi}{4}\,(60\cdot\text{major})(60\cdot\text{minor})\Big)
    ```
 
-   Without a minor axis an elongated galaxy is narrower than the disc, so the result leans faint.
-4. **Unknown** (S = 0) in every other case:
-   - Star clusters, even with a measured value: their light sits in points a surface brightness would spread, an image of one is judged by its faintest members, and MWSC sizes are the core only.
-   - Galaxy groups: their magnitude is one member's, but their size is the whole group's.
-   - Clusters with nebulosity: their magnitude is the stars', not the glow's.
-   - Nebulae whose catalogued magnitude is a star's or a cluster's (`starMag`): reflection, Wolf-Rayet and variable nebulae by type (the star lighting them: NGC 7023 7.1, vdB 150 8.4, WR 134 8.1), and by name in any list's spelling (`starMagNames`) the emission nebulae that carry their cluster's or star's (the Heart and Soul 6.5, which spread over 90–150′ made the Heart unreachable, the Wizard, the Cocoon, IC 1318's γ Cyg 2.2), the Compendium's 18.0 for unknown, and planetaries carrying the central star's (Sh2-174, Sh2-188, Jones-Emberson 1, Abell 35, Sh2-216).
-   - Comets.
-   - Any object without data.
+4. **Unknown** (S = 0), scored sky-limited:
+   - star clusters, whose light is in points and whose faint members are what a night changes;
+   - galaxy groups (one member's magnitude, the group's size);
+   - clusters with nebulosity (the stars' magnitude);
+   - nebulae whose catalogued magnitude is a star's or cluster's (`starMag`: reflection, Wolf-Rayet and variable types; `starMagNames`);
+   - comets and objects without data.
 
-   An unknown S scores the object as sky-limited, the most pessimistic case.
-
-The object's type decides its kind, and `catalog.Target.kind()` is the single place that maps the lists' many type spellings to galaxy, group, cluster, cluster+nebula, nebula or other.
+`catalog.Target.kind()` maps the lists' type spellings to galaxy, group, cluster, cluster+nebula, nebula or other.
 
 ## Weather
 
 `internal/weather`, `scoring.BuildSky`
 
-All the weather inputs combine, minute by minute, into one quality factor Q between 0 and 1. Most terms use a linear **ramp** that is 1 on the good side of `good`, falls to `floor` at `bad`, and stays there beyond it:
+Linear **ramp**, 1 at `good`, `floor` at `bad`:
 
 ```math
 \text{ramp}(v;\ \text{good},\text{bad},\text{floor}) = 1 - \text{clamp}_{[0,1]}\!\Big(\frac{v-\text{good}}{\text{bad}-\text{good}}\Big)(1-\text{floor})
 ```
 
-**Cloud** (Open-Meteo, hourly). The low, mid and high layers are treated as randomly overlapping. Thin high cirrus is counted at half:
+**Effective cloud** (Open-Meteo), layers overlapping randomly, high cirrus at half:
 
 ```math
 C = 1 - (1 - c_\text{low})(1 - c_\text{mid})(1 - c_\text{high}/2)
 ```
-
-The full factor:
 
 ```math
 Q = (1 - C)\cdot
@@ -425,16 +378,13 @@ Q = (1 - C)\cdot
 \underbrace{\text{ramp}(\text{transp};\,1,8,0.5)}_{\text{7Timer}}
 ```
 
-- **Dew risk**: the spread between temperature and dew point falling from 4 °C to 1 °C costs up to 30%.
-- **Gusts**: from 20 to 40 km/h cost up to half, counted at most 3× the hour's mean wind (never capped below 20 km/h, where it would change nothing): Open-Meteo's hourly gust runs a median 2.5× the 10 m wind at lowland and Paranal points but 4.8× at La Palma's and 10.6× at Mauna Kea's, where the grid's gust parameterisation, not the summit's air, makes 30–50 km/h gusts in a 5–10 km/h breeze.
-- **Rain**: the hour's precipitation ramps Q down to 0 at 0.1 mm, whatever the cloud layers say; an unknown amount does nothing. Open-Meteo reports gusts and precipitation over the *preceding* hour, so each hour reads the next entry. Cloud, temperature, dew point, wind and the seeing estimate are the values at the hour, so a minute takes the nearest hour's (a front arriving at 21:00 counts from 20:30, not 21:00), gusts and rain its own hour's.
-- **Transparency**: [7Timer!][7timer]'s ASTRO product (1 best, 8 worst; 3-hourly, about 3 days ahead) scales Q from 1 down to 0.5, only for hours without a CAMS aerosol forecast (a fixed `-extinction`, a failed fetch): its class is mostly the same haze, which the extinction already charges, and counting both cost a clear La Palma night some 40% more subs.
+- **Gust** counts at most 3× the hour's mean wind, a cap never below 20 km/h (`Gust`); mountain grid points forecast 5–10×.
+- **Rain**: unknown does nothing. Open-Meteo's gusts and precipitation are over the preceding hour, so each hour reads the next entry. Cloud, temperature, dew, wind and seeing come from the nearest hour.
+- **Transparency**: [7Timer!][7timer] (3-hourly, about 3 days), only for hours without CAMS AOD, whose haze the extinction already charges.
 
-When a forecast covers only part of the window, the uncovered minutes get the **mean of the covered ones**. A perfect sky would favour targets that are up only then. With no forecast at all, Q = 1. Weather only weighs the score. UP and the observable runs stay purely geometric.
+Uncovered minutes get the mean of the covered ones; no forecast is Q = 1. Weather does not affect UP or the observable runs.
 
-A minute is usable when it reaches Q = 0.2 (`scoring.MinQuality`: four fifths of the sky clouded, or rain, dew and gusts as bad) with the zenith seeing (`Sky.Seeing`, the forecast's or the typical 2.5″) under 4″ (`scoring.MaxSeeing`). When no hour of the window is usable throughout (`scoring.MinUsable`, 60 minutes in a row; a shorter window must be usable from end to end; a minute the weather forecast does not cover counts as usable, since its Q is only the covered minutes' mean, `Sky.Covered`), no target is really observable, whatever its geometry: the text report says so in place of the target table, naming the cloud when Q alone does it, else the seeing, and leaves the night plan out (`-json` and `-csv` still list them, JSON's `sky.washout`/`washoutReason` saying so). The seeing half needs the upper-air estimate: 7Timer's classes read at most 2.75″ (class 8's middle, `weather.SeeingArcsec`) and the fallback is 2.5″, so without the ECMWF profile (past its 15 days, or a failed fetch) only the weather washes a night out. Treating class 8 (> 2.5″) as unusable would be the harsher rule; it was not taken.
-
-The ramps are heuristics: the thresholds are judgment, not measurement (see [Heuristics](#heuristics)).
+**Washout** (`Sky.Washout`). A minute is usable at Q ≥ 0.2 (`MinQuality`) with zenith seeing < 4″ (`MaxSeeing`), or outside the weather forecast (`Sky.Covered`). No 60 usable minutes in a row (`MinUsable`), or a shorter window not usable throughout: the text report replaces the table and plan with the reason. `-json`/`-csv` still list targets, with `sky.washout`. Only the upper-air estimate can reach 4″.
 
 ## Scoring a target
 
@@ -442,70 +392,55 @@ The ramps are heuristics: the thresholds are judgment, not measurement (see [Heu
 
 ### Which targets are scored
 
-Before any minute is evaluated, a target is dropped when its major axis is outside `-size-min`…`-size-max` (an unknown size counts as 0; comets are exempt), when it is outside the `-ra`/`-dec` region, when `-skip` names it, or when it is of no `-type` class (`catalog.Target.Is`: a galaxy group counts as a galaxy, a cluster with nebulosity as both cluster and nebula, `emission` is the emission-line targets below). The region is a box of ±`-tol` degrees on each axis around the J2000 position, with RA counted at 15° per hour and wrapping at 24h, not scaled by cos δ.
+Dropped first: major axis outside `-size-min`…`-size-max` (unknown counts as 0; comets exempt), outside the `-ra`/`-dec` box (±`-tol` per axis, RA at 15°/h, wrapping, no cos δ), named in `-skip`, or of no `-type` class (`catalog.Target.Is`).
 
 ### Is this minute observable?
 
-A minute counts when all of these hold (the rules come from [uptonight][uptonight]):
+Rules from [uptonight][uptonight], all required:
 
-1. `-alt-min ≤ h ≤ -alt-max`, 30°–80° by default, within 0°–90°. Being above 30° also guarantees an airmass ≤ 2.
-2. h is above the local horizon profile at the target's azimuth, when `-horizon` is given.
-3. **Field rotation**, on an alt-az mount (`-mount altaz`, the default with `-scope` for every preset but the DwarfLab Draco and the ORBIS 60EDX, whose field derotators make them `derotated`, like `eq`; without `-scope` it needs `-sub`, since the trail grows with the sub; framing only; not for comets): the field turns about the frame's centre at ω cos φ cos A / cos h (ω = 7.292 × 10⁻⁵ rad/s, the sidereal rate: the parallactic angle's rate, [Meeus][meeus] ch. 14), which with cos h cos A = sin δ cos φ − cos δ sin φ cos H needs no azimuth. Over one sub of t seconds the object's edge, r pixels from the centre (half its major axis, at most the frame's half-diagonal; an object without a size is not checked, since the corner would judge it stricter than any of known size), moves by rate × t × r; the minute counts only while that trail is at most a star's FWHM, the seeing × X^0.6, the diffraction 1.03 λ/D and 0.68 of a pixel in quadrature (the sub-exposure estimate's blur; without `-aperture` or `-scope` the pixels' alone, as the Origin's aperture would say nothing of the telescope's). A star smeared by its own width has an elongation of about 1.4, plainly visible. On the Origin (10 s, 1.23″/px, its frame's corner 45′ out) at latitude 45° on the meridian a frame-filling object loses the minutes above about 60°, a 30′ one above 80°; small objects never do.
-4. **The Moon-distance rule**: while the Moon is above the horizon, the target is at least `illumination in %` degrees from it. For example, a 60%-lit Moon keeps a broadband target 60° away; through a filter, an emission-line target's limit shrinks by how much moonlight the filter's bands pass against its own light in them ([Nebula filters](#nebula-filters)): 18° for an H II region through a 7 nm dual-band filter or Hα alone, the floor (0.3 of the limit) that the Moon's halo sets. Unlike uptonight, the rule is skipped while the Moon is down, and during a lunar eclipse the limit is multiplied by the share of the Moon's light the Earth's shadow leaves ([Lunar eclipses](#the-moon)): a 100° limit is 3° at the peak of a deep partial eclipse, 0.01° in totality.
+1. `-alt-min ≤ h ≤ -alt-max` (30°–80° by default).
+2. Above the horizon profile at the target's azimuth.
+3. **Field rotation** (`-mount altaz`, framing, not comets). The field turns at ω cos φ cos A / cos h (ω the sidereal rate, [Meeus][meeus] ch. 14), with cos h cos A = sin δ cos φ − cos δ sin φ cos H. In one sub of t seconds, the edge r pixels out (half the major axis, at most the frame's half-diagonal; sizeless objects unchecked) moves rate × t × r, which must not exceed a star's FWHM: seeing × X^0.6, diffraction 1.03 λ/D and 0.68 of a pixel in quadrature (the pixels' alone without `-aperture` or `-scope`).
+4. **Moon distance**, while the Moon is up: at least `illumination %` degrees, × a filter's `moonK` ([below](#nebula-filters)), × the eclipse light.
 
-The longest unbroken stretch of observable minutes is reported as OBSERVABLE. A target whose longest stretch is shorter than `-min-run` is dropped.
-
-### Star clusters
-
-Every target takes the whole sky against it. Clusters once took half (k = 0.5, bright point sources standing out of the glow), which put the Double Cluster, NGC 457 and NGC 7789 at #1–3 under any sky, ahead of M 33 and the Heart at Bortle 5. Their bright stars do show on any sky, and so decide nothing between nights; what a cluster image shows tonight is its faint members and background, at the limiting magnitude, sky-limited like any faint light. So a cluster scores as a target of unknown surface brightness, and the Moon-distance rule holds it as far as any other. A `-filter` replaces the sky with the bands' share of each part: a line filter for emission-line targets ([Nebula filters](#nebula-filters)), a broadband one for any target ([Broadband filters](#broadband-filters)).
+The longest unbroken run is OBSERVABLE; shorter than `-min-run`, the target is dropped.
 
 ### The sky-glow weight
 
-In a fixed exposure, the signal-to-noise ratio of a surface of brightness S over a sky B goes as
+Every target, clusters included, takes the whole sky. SNR at fixed exposure:
 
 ```math
 \text{SNR} \propto \frac{S\,t}{\sqrt{(S + B)\,t}}
 ```
 
-The weight compares tonight's SNR with the SNR the same object would have under a pristine 22.0 mag/arcsec² sky, B_ref. All quantities are in nanoLamberts:
+Against the same object under a pristine 22.0 sky B_ref, in nanoLamberts:
 
 ```math
 W_{\text{sky}} = \min\!\Bigg(1,\ \sqrt{\frac{S + B_{\text{ref}}}{S + B}}\Bigg)
 ```
 
-- **An object much brighter than the sky** (S ≫ B) gets W ≈ 1. It loses nothing to moonlight.
-- **A faint object** (S ≪ B) is *sky-limited*: `W ≈ √(B_ref / B)`. Every target with unknown surface brightness (S = 0), and every star cluster, falls in this case.
-
-A faint galaxy 30° from a bright Moon therefore scores much lower than one 120° away, while a filtered emission nebula keeps most of its score.
+S ≫ B gives W ≈ 1; S ≪ B or unknown S gives `√(B_ref / B)`.
 
 ### Nebula filters
 
-`-filter dual|tri|quad|ha|oiii|sii` (`scoring.passes`, `atmos.SkyParts`, `atmos.BroadSky`, `catalog.Target.Lines`) scores the emission-line targets through a filter: emission, planetary and Wolf-Rayet nebulae, supernova remnants, and a few named objects whose catalogue type hides their Hα, such as IC 1396. A dual-band filter passes Hα and [O III] onto one frame, a tri-band one Hβ too, a quad-band one Hβ and [S II] too; the others pass one line. Every band is the same width, so a commercial multi-band filter with one wide band (the L-eNhance's 24 nm over Hβ and [O III]) is only approximated. Each band is `-filter-nm` wide (7 nm by default), except a `-scope`'s built-in filter's, which is `-filter`'s default and keeps its maker's width per line (`config.Config.BandNM`) unless `-filter-nm` is given or `-filter` lists another line filter: the Seestars' 20 nm Hα and 30 nm [O III], whose band also reaches Hβ at 486.1 nm and passes it. Bands wide enough to overlap — past 14.6 nm Hβ's meets [O III]'s, past 16.1 Hα's meets [S II]'s, and the flag allows 30 — are clipped at the midpoint of the two lines (`scoring.lineBands`; kept within the overlap, so a narrow band beside a wide built-in one leaves no gap), each side keeping its own line's response, so the shared wavelengths are charged their sky once, as a physical filter's merged bands pass them once; the lines' light is counted once per line regardless.
+`-filter dual|tri|quad|ha|oiii|sii` (`scoring.passes`, `atmos.SkyParts`, `atmos.BroadSky`, `catalog.Target.Lines`) applies to emission-line targets: emission, planetary and Wolf-Rayet nebulae, remnants, and named exceptions such as IC 1396. Bands are `-filter-nm` wide (7 nm by default), or a `-scope` built-in's width per line (`config.Config.BandNM`). Overlapping bands are clipped at the lines' midpoint (`scoring.lineBands`), so shared sky is charged once.
 
-<a id="filters-in-a-fast-beam"></a>**Filters in a fast beam** (`-filter-std`, `scoring.beam`). An interference filter tilted by θ passes its band at λ·√(1 − sin²θ/n²), bluer, n being its effective index. Behind a telescope of focal ratio N each ray meets the filter at tan θ = r/2N, r from the central obstruction's edge to 1 across the pupil, so a standard filter (centred for collimated light) passes a line only from the rays whose shifted band still holds it. Taking the band as a top-hat [lo, hi] of the nominal width, a line at λ is in while n²(1 − (λ/lo)²) ≤ sin²θ ≤ n²(1 − (λ/hi)²), and its share is the pupil area, uniform in r², between the two:
+<a id="filters-in-a-fast-beam"></a>**Filters in a fast beam** (`-filter-std`, `scoring.beam`). A filter tilted by θ passes λ·√(1 − sin²θ/n²). For focal ratio N, tan θ = r/2N across the pupil, r from the obstruction ε to 1. A line in a top-hat band [lo, hi] passes while n²(1 − (λ/lo)²) ≤ sin²θ ≤ n²(1 − (λ/hi)²), and its share is the pupil area between:
 
 ```math
 t = \frac{\min(1, r^2_{\text{hi}}) - \max(\varepsilon^2, r^2_{\text{lo}})}{1-\varepsilon^2},\qquad r^2 = \frac{\sin^2\theta}{1-\sin^2\theta}\,(2N)^2
 ```
 
-with ε the obstruction over the aperture. n = 2.05 (`filterN`) fits [Chroma's measured curves][chroma] of its 3, 5 and 8 nm Hα, Hβ, [O III] and [S II] filters at f/2 to f/5 (55 curves, rms 0.06 in the line's transmission, no bias; `scripts/filter_shift.py`). Each line's share w then counts t of it; the sky stays the band's, since the shift moves the band without narrowing it (Chroma's integrated passbands hold within a few per cent to f/2). The beam is the Origin Mark II's f/2.2 with its 77 mm obstruction, which leaves only the steeper rays (or `-scope`'s, or `-focal`/`-aperture`/`-obstruction`); without the flag t is 1 inside the band and 0 outside, the filters taken as made for the beam. At f/2.2:
+n = 2.05 (`filterN`) is fitted to [Chroma's curves][chroma] of 3, 5, 8 nm filters at f/2–f/5 (`scripts/filter_shift.py`, 55 curves, rms 0.06). The sky stays the band's. Line transmission at f/2.2, 77 mm obstruction:
 
 | Band | Hα 656.3 | [N II] 654.8 | [N II] 658.3 | [O III] 500.7 |
 |---|---|---|---|---|
 | 3 nm | 0.16 | 0.69 | 0 | 0.33 |
 | 7 nm | 0.87 | 1 | 0.16 | 1 |
 
-(behind the original Origin's 63 mm: 0.25, 0.73, 0, 0.40 and 0.88, 1, 0.25, 1)
+IC 1795 at Bortle 6, 14 October 2026, Origin, Hα 7 nm: 348 subs unfiltered, 136 if made for the beam, 214 standard. Broadband edges are left alone.
 
-so a standard 7 nm Hα filter costs the Origin enough to lose to no filter on an H II region (IC 1795 at Bortle 6 on 14 October 2026: 351 subs unfiltered, where a filter made for the beam needs 237), and a 3 nm one loses further. Broadband filters' edges shift too, but by a few nm against passbands tens of nm wide, and are left alone.
-
-**The sky in a band.** The sky splits into three parts with different spectra:
-
-- the **glow** (airglow and light pollution, with the zodiacal and galactic light: the dark-sky term B_dark),
-- moonlight scattered by **molecules** (Rayleigh, the χ term of p(ρ)), going as λ⁻⁴,
-- moonlight scattered by **aerosols** (Mie, the Henyey–Greenstein term), going as λ^−1.3 ([Ångström][angstrom]).
-
-The model gives them in the V band ([Bessell 1990][bessell]), and the unfiltered weight's V sky stands for the whole camera band, 400–700 nm (`atmos.CameraLo`–`CameraHi`, UV/IR cut). A band Δλ wide at λ passes its share of that band, as a [broadband filter's](#broadband-filters) passbands do (`atmos.BroadSky` over λ ± Δλ/2):
+**The sky in a band.** Glow (`B_dark`: airglow, light pollution, zodiacal, galactic), Rayleigh moonlight (λ⁻⁴) and aerosol moonlight (λ^−1.3, [Ångström][angstrom]). The V sky ([Bessell 1990][bessell]) stands for the 400–700 nm camera band (`atmos.CameraLo`–`CameraHi`). A band Δλ at λ passes:
 
 ```math
 f_{\text{glow}} = \frac{\Delta\lambda}{300},\qquad
@@ -513,9 +448,9 @@ f_{\text{R}} = \frac{\Delta\lambda}{300}\,\frac{(\lambda/551)^{-4}}{\langle(\lam
 f_{\text{M}} = \frac{\Delta\lambda}{300}\,\frac{(\lambda/551)^{-1.3}}{\langle(\lambda/551)^{-1.3}\rangle_{400-700}}
 ```
 
-so per nm the [O III] band (500.7 nm) gets 2.9 times the Rayleigh moonlight of the Hα one (656.3 nm). Moonlight is taken as flat per nm before scattering: the Moon is 0.25 mag redder than the Sun in B−V ([Thejll et al. 2014][moon-colour]), which roughly offsets the Sun's own fall from 500 to 670 nm. The glow is taken as flat too: its spectrum depends on the site's lamps (sodium, white LEDs), which nothing here knows; flat is white LEDs, the case [broadband filters](#broadband-filters) gain least in. A multi-band filter's fractions are the sums over its bands. (The bands were once shares of V's 88 nm, which charged a line filter 3.4 times the sky per nm a broadband one is charged against the same unfiltered sky.)
+Per nm, [O III] gets 2.9× the Rayleigh moonlight of Hα. Moonlight is flat per nm before scattering ([Thejll et al. 2014][moon-colour] for the Moon's colour). Glow is flat (white LEDs, the conservative case).
 
-**The target's light in the bands.** No catalogue gives line fluxes, so each type gets typical ratios to Hα (`catalog.Target.Lines`), with Hβ (486.1 nm) at Hα/2.86 for every type, the case-B recombination ratio at 10⁴ K ([Osterbrock & Ferland 2006][agn2]; dust only raises it), [N II] split 1:3 over 654.8 and 658.3 nm and [O III] 495.9 nm a third of 500.7 (each doublet's fixed ratio), all normalised to shares that sum to 1, the whole of what an unfiltered camera collects. The ratios and the table's shares are of the energy; the scoring counts photons (`catalog.Target.Photons`: each share × λ, renormalised), and an Hα photon carries 0.76 of an [O III] one's energy, so Hα's share of the photons is 0.50 for an H II region, 0.19 for a planetary, 0.31 for a remnant and 0.32 for a Wolf-Rayet nebula, [O III]'s 0.09, 0.55, 0.16 and 0.33:
+**The target's light.** Typical line ratios to Hα per type (`catalog.Target.Lines`): Hβ = Hα/2.86 (case B, [Osterbrock & Ferland 2006][agn2]), [N II] 1:3 over 654.8/658.3, [O III] 495.9 a third of 500.7, normalised. The table's shares are energy; scoring counts photons (`catalog.Target.Photons`, each share × λ, renormalised).
 
 | Type | Hα | [O III] 500.7 | [S II] 671.6+673.1 | [N II] 654.8+658.3 | Basis | shares Hα, [O III] (both lines), [S II], Hβ, [N II] |
 |---|---|---|---|---|---|---|
@@ -524,9 +459,7 @@ so per nm the [O III] band (500.7 nm) gets 2.9 times the Rayleigh moonlight of t
 | supernova remnant | 1 | 0.5 | 0.6 | 0.8 | [S II]/Hα > 0.4 ([Mathewson & Clarke 1973][mathewson]) and [N II] 658.3/Hα > 0.5 ([Fesen, Blair & Kirshner 1985][fbk]) define them; [O III] varies | 0.29, 0.20, 0.18, 0.10, 0.23 |
 | Wolf-Rayet nebula | 1 | 1 | 0.2 | 0.6 | NGC 6888's dereddened slits ([Mesa-Delgado et al. 2014][mesa]): [O III] about Hα, the N-enriched ejecta's [N II] 0.4–0.9 of it | 0.29, 0.38, 0.06, 0.10, 0.17 |
 
-The share in the filter's bands is w: every line a band reaches, the filter's own and the others in it, so a 7 nm Hα band (652.8–659.8 nm) passes both [N II] lines, a 3 nm one only 654.8 at its edge, and a 30 nm [O III] band Hβ (of the photons, an H II region: 0.68 through Hα, 0.75 through dual-band, 0.88 tri-band, 0.98 quad-band, all but [O III] 495.9; a planetary: 0.41 through [O III], 0.39 through Hα, 0.80 through dual-band). [N II] is why a remnant gains most from Hα and a planetary from dual-band.
-
-Each extra band also passes its share of the sky, so the multi-band filters score close to `dual`. Sky-limited under the glow alone (w²/f_glow, against 1 unfiltered) through 7 nm bands:
+w is the photon share in the filter's bands, every line a band reaches: a 7 nm Hα band (652.8–659.8) passes both [N II] lines; a 30 nm [O III] band reaches Hβ. Sky-limited gain under glow alone, w²/f_glow, 7 nm bands:
 
 | Target | `ha` | `oiii` | `sii` | `dual` | `tri` | `quad` |
 |---|---|---|---|---|---|---|
@@ -535,59 +468,55 @@ Each extra band also passes its share of the sky, so the multi-band filters scor
 | supernova remnant | 13.7 | 0.6 | 1.6 | 10.1 | 8.4 | 9.9 |
 | Wolf-Rayet nebula | 11.6 | 2.6 | 0.2 | 12.6 | 10.4 | 9.0 |
 
-The multi-band filters' use beyond that is colour on a one-shot-colour camera, which no score here measures.
+**Against the camera band.** A line is collected once while the camera holds `atmos.CameraBand` = 300/88 V bands of sky, so an emission-line target's S is divided by that in the score; a continuum's is unchanged. S itself is its lines ([below](#emission-line-light)).
 
-**The target's light against the camera band.** An emission line is collected once whatever the band, while the camera band holds `atmos.CameraBand` = 300/88 V bands of sky, so against the V sky that stands for the camera's an emission-line target is 3.4 times fainter; a continuum is held by the band as the sky is, and its S is unchanged. Its light S itself is its lines, which its V surface brightness measures only in part ([below](#emission-line-light)).
-
-**The weight.** The target's signal through the filter is w·S, the sky the bands' share of each part. Against the same pristine-sky reference as broadband:
+**The weight:**
 
 ```math
 W_{\text{filter}} = \min\!\Bigg(1,\ \sqrt{\frac{w^2\,(S + B_{\text{ref}})}{w\,S + f_{\text{glow}}B_{\text{glow}} + f_{\text{R}}B_{\text{R}} + f_{\text{M}}B_{\text{M}}}}\Bigg)
 ```
 
-With w = 1 and every f equal to 1 this is the broadband weight.
+With w = 1 and f = 1 this is the broadband weight.
 
-**Extinction in the bands.** The extinction coefficient κ above is at 550 nm. Rayleigh scattering goes as λ⁻⁴ and aerosol extinction as λ^−1.3 like the moonlight they scatter, while the ozone term barely changes across the nebula lines (the Chappuis band peaks at 600 nm; within 0.02 mag/airmass), so a band at λ sees
+**Extinction in the bands:**
 
 ```math
 \kappa_\lambda = \kappa_{\text{R}}\Big(\frac{\lambda}{551}\Big)^{-4} + \kappa_{\text{O}_3} + \kappa_{\text{aer}}\Big(\frac{\lambda}{551}\Big)^{-1.3}
 ```
 
-and a multi-band filter the mean over its lines weighted by the share of light each passes. At κ = 0.2 the Hα band's coefficient is 0.13 and the [O III] band's 0.26, so at airmass 2 an Hα target through its filter keeps 6% more light than the V coefficient says and an [O III] target 5% less. Without a filter an emission-line target is dimmed at its lines' own coefficient too (the mean over all its lines, weighted by their shares: Hα and [N II] dominate an H II region's), so a filter cannot win on extinction alone, as it could when the unfiltered target was dimmed at V's.
+Ozone is held at 550 nm. A multi-band filter takes the mean weighted by light passed. κ = 0.2 gives 0.13 at Hα and 0.26 at [O III]. Unfiltered, an emission-line target is dimmed at its lines' own coefficient, so no filter wins on extinction alone.
 
-**A list of filters** (`-filter dual,ha,oiii`, the ones you own) scores each target without a filter and through each filter that passes some of its light (a line filter: emission-line targets; a [broadband](#broadband-filters) one: all), each **worn all night**, as it is shot: changing filters mid-target means a second set of flats and a split stack, and a filter that costs a bright nebula under a dark sky (object-limited, it loses 1 − w of the light) costs it every minute. The choice that gains most wins, no filter on a tie (then the first in the list); that filter is the target's FILTER (`Result.Filter`), `none` when no filter beats going without, whose weights are then exactly the unfiltered ones (the filtered sky, the sum of its parts, matches the unfiltered one only to rounding). Gains most is not the highest SCORE: under a dark sky every helpful line filter's weight reaches the cap of 1, which would leave the band's extinction to choose (Hα's, the lowest, even for a planetary, whose light is half [O III]). Without a camera it is the most uncapped weight, Σ Q·T·√(SNR² ratio); with framing, which describes one, and a surface brightness to estimate subs from (`ExposureSB`), the fewest subs the [sub-exposure model](#sub-exposure-estimate) needs for the good level over the choice's own observable minutes, read noise, the colour channels, the stacking (`-stack`) and the residual ceiling (`-residual`) included: the per-sub SNR² m and the ceiling C give L²/N = m(1 − L²/C), so FILTER is exactly the choice SUBS needs fewest subs through (a level past every ceiling ranks the highest ceiling first). The total Σ Q·SNR²_sub would let a choice win on minutes alone — a narrowband filter's Moon limit (below) admits moonlit minutes no filter keeps, and near the Moon a bright nebula then showed Hα in FILTER with more subs in SUBS than no filter needs over its few Moon-down minutes. The Origin's 10 s colour subs thus pick `cls` under a dark sky, where a 7 nm band's sky and dark current only match the read noise, dual-band over Hα (two channels see it) under a suburban one, and Hα under a city sky. All the choices are scored in one pass over the grid, which shares the geometry (altitude, horizon, the Moon's separation) and the sky's parts.
+**A list of filters.** Each choice that passes some of the target's light is scored as worn all night, in one pass over the grid. FILTER (`Result.Filter`) is the one that gains most, no filter on a tie:
 
-**The Moon limit.** Away from the Moon its light is mostly Rayleigh-scattered, so the filter's sky-limited gain against moonlight is `f_R / w²`. That, at most 1 and at least 0.3, scales the Moon-distance rule. The floor holds every narrowband filter that would beat the Moon to within a few degrees at some 30° from a full Moon: near it the halo and the gradients across the frame, which no λ⁻⁴ scattering model holds, limit narrowband imagers too. At full Moon (100°) through 7 nm bands:
+- without a camera model: the largest uncapped weight, Σ Q·T·√(SNR² ratio);
+- with framing and an `ExposureSB`: the fewest subs for the good level, over the choice's own observable minutes (`subsGain` = m(1 − L²/C), [below](#sub-exposure-estimate)).
+
+The capped weight would saturate at 1 for every helpful filter under a dark sky, and the total Σ Q·SNR²_sub would reward a filter for the extra moonlit minutes its Moon limit admits.
+
+**The Moon limit** scales by `moonK` = f_R / w², between 0.3 (`minMoonK`: halo and gradients near the Moon) and 1. At full Moon (100°), 7 nm bands:
 
 | Target | `ha` | `oiii` | `sii` | `dual` | `tri` | `quad` |
 |---|---|---|---|---|---|---|
-| H II region | 30° | 100° (no gain) | 100° (no gain) | 30° | 30° | 30° |
+| H II region | 30° | 100° (no gain) | 85° | 30° | 30° | 30° |
 | planetary nebula | 30° | 30° | 100° | 30° | 30° | 30° |
 | supernova remnant | 30° | 100° (no gain) | 30° | 30° | 30° | 30° |
-| Wolf-Rayet nebula | 30° | 32° | 100° | 30° | 30° | 30° |
-
-The filtered limits run below [Telescopius][telescopius]' Lorentzian Moon avoidance (60° for Hα and [S II], 90° for [O III], 120° for broadband, at full Moon), which is a scheduling rule of thumb rather than a model; here the sky weight already prices the moonlight near the limit.
+| Wolf-Rayet nebula | 30° | 43° | 100° | 30° | 30° | 30° |
 
 ### Broadband filters
 
-`-filter cls|lpro` (`config.Broadband`, `scoring.broadPasses`, `atmos.BroadSky`) are the light-pollution filters that pass wide passbands rather than single lines:
+`-filter cls|lpro` (`config.Broadband`, `scoring.broadPasses`):
 
 | Choice | Passbands (nm) | Stands for | f_glow | f_R | f_M |
 |---|---|---|---|---|---|
 | `cls` | 450–520, 640–690 | Astronomik CLS (published edges); Optolong CLS and IDAS LPS-D2 are close | 0.40 | 0.36 | 0.39 |
 | `lpro` | 400–430, 440–540, 555–575, 625–700 | Optolong L-Pro; IDAS LPS-D1/P2/D3 and Baader's Moon & Skyglow are alike | 0.75 | 0.80 | 0.77 |
 
-Optolong publishes only the lines the L-Pro blocks (Hg 435.8, 546.1, 577–578 nm; Na 589, 598, 616 nm), not its band edges, so `lpro`'s are read off its reference curve and are good to about ±5 nm. Brands within a class would score alike, so there is one entry per class.
+`lpro`'s edges are read off Optolong's reference curve (±5 nm). f_glow is the passbands' share of 300 nm; f_R and f_M weight it by `∫(λ/551)⁻⁴ dλ` and λ⁻¹·³. Under flat (LED) glow, gain against sodium or mercury is not modelled.
 
-The fractions are taken against the same unfiltered camera band as the line filters' bands: the glow's is the passbands' share of the 300 nm; the moonlight's is weighted by its scattering, `∫ (λ/551)⁻⁴ dλ` over the passbands against the camera band (and λ⁻¹·³ for Mie), so cutting the blue cuts more Rayleigh moonlight than glow.
+- Emission-line target: w = 1 (all lines pass); sky-limited gain 1/f_glow, 2.5 for `cls`, 1.33 for `lpro` (`dual`: 12.1 for an H II region).
+- Continuum (galaxies, clusters, reflection nebulae, comets): w = f_glow, gain f_glow < 1, never chosen.
 
-The glow is still flat per nm: the lamps are taken to be white LEDs, a continuum, the conservative case. A broadband filter's gain against sodium or mercury lamps, which it was designed for, is not modelled; under LEDs it mostly cuts sky as a share of the band.
-
-w is the target's share of light through the passbands, against the same unfiltered camera:
-- an emission-line target: its lines that fall in a passband. Both filters pass Hβ, [O III], Hα and [S II], so w = 1 and the sky-limited gain under glow is 1/f_glow: 2.5 through `cls`, 1.33 through `lpro`, against an H II region's 11.6 through a 7 nm `dual`;
-- anything else (galaxies, clusters, reflection nebulae, comets): its continuum, flat per nm, so w = f_glow, and w²/f_glow = f_glow < 1. The filter cuts the target as much as the sky and never wins, as imagers report of galaxies under LED skies.
-
-The band's extinction is the mean of `(λ/551)⁻⁴` and `(λ/551)^-1.3` over the passbands for continuum, and the passed lines' as for line filters. The Moon limit is f_R/w², between 0.3 and 1: 36° at full Moon through `cls` for any emission-line target, 80° through `lpro`, and no change for continuum.
+Extinction is the band mean (continuum) or the passed lines' (`moonK` as above: 36° and 80° at full Moon for emission-line targets, unchanged for continuum).
 
 ### Putting it together
 
@@ -596,42 +525,38 @@ w_i = Q_i \cdot T(h_i,\kappa_{\lambda,i})\, W_i ,\qquad
 \text{SCORE} = F_{\text{frame}}\cdot\frac{1}{N}\sum_i w_i\ \ \text{for the choice that gains most}
 ```
 
-each choice (no filter, `W_sky`, and each passing filter, `W_filter`) summed over its own observable minutes, with κ_λ the band's coefficient, or without a filter V's for a continuum and the lines' for an emission-line target. Results are sorted by SCORE, and the mean altitude over the observable minutes breaks ties. Extinction does not also dim S. It enters once, as the separate factor T.
+Each choice is summed over its own observable minutes, with κ_λ the band's, or unfiltered V's (continuum) or the lines' (emission-line). Sorted by SCORE; mean altitude breaks ties. Extinction does not also dim S.
 
-<a id="emission-line-light"></a>**Emission-line light from V** (`scoring.lightNL`). A catalogued V surface brightness, measured or derived from an integrated magnitude, measures an emission nebula's lines only as far as the V passband reaches them, and also counts the stars and continuum in it. The lines' light is
+<a id="emission-line-light"></a>**Emission-line light from V** (`scoring.lightNL`). V measures the lines only in part and includes stars and continuum:
 
 ```math
 S_{\text{lines}} = \frac{S_V}{f_V}\,10^{-0.4\,c},\qquad f_V = \sum_\ell p_\ell\,T_V(\lambda_\ell)
 ```
 
-with p_ℓ the lines' photon shares above (S counts photons, as the camera does) and T_V Bessell's V curve at each line (`catalog.LineV`: Hα 0.032, [O III] 0.481 and 0.337 at 495.9 nm, [S II] 0.016, Hβ 0.111, [N II] 0.035 and 0.028): V straddles [O III] and misses Hα. c = 1.16 mag (`vContinuum`) is fitted by `scripts/calibrate_lines.py`: the median, over the 13 emission nebulae of at least 30′ (not a planetary with a flux, which needs none) in GaryImm, Messier, OpenNGC, OpenIC, Sharpless and Caldwell (exact duplicates once; the Hα map's beam is 6′), of S_lines' Hα share against [Finkbeiner (2003)][finkbeiner]'s full-sky Hα map (LAMBDA's HEALPix file, in Rayleighs, which NASA SkyView's "H-Alpha Comp" cutouts it was first fitted with resample within 3%), averaged over each disc less the median of a ring from 1.25 to 2 radii (the Milky Way's diffuse Hα), leaving out the two whose ring is 80% of the disc or more (IC 405, IC 5070). With energy shares in f_V and in the bands c was 0.94; the photons put 0.22 mag more of the derived light into the continuum, so a nebula's Hα, which the map pins, is where it was. Nebulae whose catalogued magnitude is a star's or cluster's ([above](#object-surface-brightness)) derive none, so they are not in it. Its interquartile range is 0.19–2.45 mag: one nebula's lines are good to a factor of about three to five. The map is meant to be Hα alone (WHAM, which resolves [N II], sets its zero point), so the fit holds each nebula's Hα where it was before [N II] was counted (c was 0.93 then) and the [N II] comes on top; its small scales are the narrowband surveys' own, though, and SHASSA's 32 Å filter passes both [N II] lines ([above](#object-surface-brightness)), so south of Dec +15° the map's Hα can hold up to 0.33 mag of [N II], which the fit then partly counts twice. The lines are then 1.61 mag brighter than V for an H II region (taking V as all of the light, as before, ran 1.1–1.5 mag faint on every subset of the sample), 1.33 for a remnant, 0.74 for a Wolf-Rayet nebula and 0.29 for a planetary, whose [O III] V holds. A surface brightness from a measured flux holds no stars, so `lightNL` undoes it exactly (in photons) without c. The SB column still shows the V surface brightness.
+p_ℓ are the photon shares, T_V Bessell's V at each line (`catalog.LineV`: Hα 0.032, [O III] 0.481 and 0.337, [S II] 0.016, Hβ 0.111, [N II] 0.035 and 0.028). c = 1.16 mag (`vContinuum`) is the median over 13 emission nebulae ≥ 30′ against [Finkbeiner (2003)][finkbeiner]'s Hα map (`scripts/calibrate_lines.py`), interquartile 0.19–2.45 mag, so one nebula is good to a factor of three to five. Lines are brighter than V by 1.61 mag (H II), 1.33 (remnant), 0.74 (Wolf-Rayet) and 0.29 (planetary). A `FluxSB` has no stars and is undone exactly, without c. SB shows V.
 
 ## Framing and mosaics
 
 `scoring.frame`, `internal/config`
 
-Framing is turned on by `-scope` ([smart telescopes](#smart-telescopes)), `-fov`, `-scale`, or `-focal` with `-sensor`/`-pixel` (or `-camera`'s, [presets](#camera-presets)); unset frame values are the scope's, else the Origin Mark II's.
-
-**Field of view and pixel scale** from the focal length f (mm), a sensor side d (mm) and the pixel size p (µm):
+Enabled by `-scope`, `-fov`, `-scale`, or `-focal` with `-sensor`/`-pixel`/`-camera`; unset values are the scope's, else the Origin Mark II's.
 
 ```math
 \text{FOV}_{\text{side}} = 2\arctan\frac{d}{2f}\ \ \text{(in arcmin)} ,\qquad
 \text{scale} = 206.265\,\frac{p}{f}\ \ \text{arcsec/px}
 ```
 
-The Celestron Origin's IMX678 sensor has 3856 × 2180 pixels of 2 µm, at 335 mm. That gives 1.32° × 0.75° at 1.23″/px.
+**Size limits.** Minimum `-min-px × scale / 60` arcminutes; maximum the frame's short side (the position angle is unknown), the largest grid's short side with `-mosaic`, its long side with `-rotate`. Explicit `-size-min`/`-size-max` win.
 
-**Size limits.** The smallest object worth framing is `-min-px` pixels across (200 by default): `size_min = min-px × scale / 60` arcminutes. The largest is the frame's short side. The catalogue size is the major axis, and the object's position angle in the frame is unknown, so the major axis has to fit even in the worst orientation. With `-mosaic` the limit is the largest grid's short side, and with `-rotate` its long side. Explicit `-size-min`/`-size-max` win over these defaults.
+**Cores** (`catalog.Target.AtCore`, `scoring.framable`). When a whole object fails but its usual core passes, it is framed at the core (hand table of eleven, centred on SIMBAD's parts or plate-solved frames). Position and framing axes change; size, magnitude and surface brightness remain the whole's.
 
-**Cores.** An object that no grid holds whole, or that fails the size limits, is framed at its usual core when it has one that passes both (`catalog.Target.AtCore`, `scoring.framable`): a hand table of eleven, the regions and sizes NightAstro shows as "core" framings, centred on SIMBAD's position of the part (Melotte 15, IC 1396A, NGC 2244, NGC 2264) or the object's, and on plate-solved frames for the Cygnus Wall and Pickering's Triangle, which SIMBAD does not place. The core moves the target's position (and so its altitudes, RA/DEC and the CSV's slew) and the axes the frame and the size limits judge (`FrameAxes`); the size, magnitude and surface brightness stay the whole object's, so the core is scored at the whole's mean brightness, which a bright core exceeds: conservative. `TestCores` holds every key to a list entry larger than its core and every core within its object.
-
-**Fill and frame score.** For a grid of c × r panels overlapping by 10% per side, the frame covers
+**Fill and score.** A c × r grid at 10% overlap:
 
 ```math
 W = \text{FOV}_\text{long}\,\big(c - 0.1(c-1)\big) ,\qquad H = \text{FOV}_\text{short}\,\big(r - 0.1(r-1)\big)
 ```
 
-The fill is `major / min(W, H)`. With `-rotate` the camera can be turned to put the major axis along whichever side fits better, and a known minor axis then counts:
+Fill is `major / min(W, H)`; with `-rotate`:
 
 ```math
 \text{fill} = \min\big(\max(\tfrac{\text{major}}{W}, \tfrac{\text{minor}}{H}),\ \max(\tfrac{\text{major}}{H}, \tfrac{\text{minor}}{W})\big)
@@ -648,40 +573,46 @@ f / 0.25 & f < 0.25 \\
 F_{\text{frame}} = \max_{\text{grids}}\ \frac{F_{\text{fill}}}{\text{panels}}
 ```
 
-- Full credit goes to objects filling 25–80% of the frame, 11–36′ on the Origin.
-- An object as large as the frame (fill ≥ 1) scores 0 and is dropped.
-- The night's time is shared among a mosaic's panels, so the score is divided by the panel count.
-- `-mosaic N` tries every grid of at most N panels, and the fewest panels win a tie.
-- Objects of unknown size get F = 1.
+Fill ≥ 1 is dropped. The fewest panels win a tie. Unknown size gets F = 1.
 
-**Bright stars and planets (STAR).** A star or planet to V 4.0 that can fall in the frame is named in the STAR column, the brightest of the Yale Bright Star Catalogue's 517 to that magnitude and the planets that reach it (`internal/stars`, generated by `scripts/bsc2go.py` from CDS V/50; T CrB, listed at its 1946 outburst's V 2.0, left out) within the half-diagonal of the frame (of a mosaic's whole grid) from the target's centre, since the camera's angle is unknown; without framing the frame is the Origin Mark II's. Positions are J2000 at the J2000 epoch, proper motion left out (under 1′ by 2026). In a small telescope such a star's halo, spikes and internal reflections spread across the object; how far depends on the optics, so it is a warning and enters no score. The planets (`stars.Planets`: Mercury, Venus, Mars, Jupiter, Saturn; Uranus never reaches V 4) are placed at mid-window from Standish's Keplerian elements and their rates ([JPL][jpl-approx], Table 1, 1800–2050, the mean ecliptic and equinox of J2000): the mean anomaly M = L − ϖ, Kepler's equation by Newton, the orbit's plane rotated by ω = ϖ − Ω, Ω and I, then to the J2000 equator by ε = 23.43928°, less the Earth-Moon barycentre's position, light time left out. Against SOFA's Plan94 (`TestPlanetsSOFA`, 2000 dates in 2000–2050) they are within 0.7′ (Mercury), 1.4′ (Venus), 2.7′ (Mars), 10.5′ (Jupiter) and 11.1′ (Saturn): JPL's stated heliocentric errors (Mars 40″, Jupiter 400″) seen from the Earth at their closest, small against frames of 30′–80′. Their V magnitudes are Meeus' (ch. 41): Mercury −0.42, Venus −4.40, Mars −1.52, Jupiter −9.40, Saturn −8.88, + 5 log₁₀(rΔ) and a phase term in the phase angle i (Mercury 0.0380i − 0.000273i² + 0.000002i³, Venus 0.0009i + 0.000239i² − 0.00000065i³, Mars 0.016i, Jupiter 0.005i), Saturn's rings −2.60 sin|B| + 1.25 sin²B for their tilt B to the line of sight (the pole at J2000 40.589°, 83.537°), its ΔU term left out (under 0.3 mag).
+**STAR** (`internal/stars`). The brightest of 517 Yale BSC stars (V ≤ 4.0, CDS V/50, T CrB left out; J2000, no proper motion) and the planets reaching V 4, within the frame's or grid's half-diagonal, without framing the Origin Mark II's. A warning only.
+
+Planets (`stars.Planets`) at mid-window from [Standish][jpl-approx] Table 1, less the Earth-Moon barycentre, no light time. `TestPlanetsSOFA` against Plan94: 0.7′ Mercury, 1.4′ Venus, 2.7′ Mars, 10.5′ Jupiter, 11.1′ Saturn. Magnitudes: [Meeus][meeus] ch. 41, Saturn's rings −2.60 sin|B| + 1.25 sin²B, its ΔU term left out.
 
 ## Sub-exposure estimate
 
 `scoring.Subs`, `catalog.Target.ExposureSB`, `internal/config`
 
-With framing, each listed target gets the number of sub-exposures needed tonight for a modest, good and best image: a stacked SNR of 5, 10 and 20 per arcsec² at the object's mean surface brightness for an object at least as bright as a pristine 22.0 sky (in the score's terms: an emission-line target's lines against the camera band), and √(S/B_ref) of them for a fainter one, through its FILTER: with framing the `-filter` choice is made by this model, the one needing fewest subs tonight ([Nebula filters](#nebula-filters)). It shows in the SUBS column (the good level), in `-json` (`subs`) and in the web page's hover box.
+With framing, each listed target gets the subs for stacked SNR **5, 10, 20** per arcsec² at its mean surface brightness (× √`levelScale` for an object fainter than a pristine sky), through its FILTER. SUBS shows the good level.
 
-**Camera.** The Origin Mark II's defaults (`-scope`'s, [below](#smart-telescopes)), each overridden by its flag: aperture D = 152 mm with a d = 77 mm central obstruction (Celestron, 50.7% of the aperture; the original Origin's is 63 mm); the IMX678's 0.83 peak QE and 0.97 e⁻ read noise at its ISO 1000, an upper bound measured from the 9-frame bias masters the Origin saves: a σ between neighbouring pixels of 27.6–29.0 ADU over two sessions (28.3–29.4 over nine with another estimator), at 0.2793/25 e⁻/ADU (it stores each ADC count as 25 ADU, its EGAIN being per count), bounds one frame's at 3·29.0·0.0112 = 0.97 e⁻ (measured with astro-analyzer, October 2026; one master's 1.1 e⁻ and a vendor sheet's 2.15 e⁻ at 8.5 dB gain before). The original Origin's IMX178 the same way at its ISO 200: σ 30.4 ADU in every session, at the photon-transfer gain of 0.0165 e⁻/ADU (its EGAIN header reads 4.5 times that), 3·30.4·0.0165 = 1.5 e⁻, against the IMX178 preset's 1.7 (ZWO at gain 100), which Stellina keeps; Celestron's 10 s subs; a colour (RGGB) sensor unless `-mono`. `-aperture` alone describes another telescope, so its obstruction is then 0 and its throughput 0.85. Framing without `-scope` (`-camera`, `-focal`, `-fov`, `-scale`) describes another telescope too, whose optics the Origin's would only guess, and whose sensor the Origin's IMX678 would only guess, so without `-aperture` and `-camera` it has no estimate (the Frame line names what is missing, `SUBS needs -aperture and -camera`); `-qe` and `-read-noise` then only override the preset's. A mono camera (`-mono`) has no colour response to guess, so `-qe` and `-read-noise` stand in for `-camera` there, its dark current then the typical 0.16 e⁻/s.
+**Camera.** Defaults are the Origin Mark II's or `-scope`'s, each overridden by its flag: D = 152 mm, d = 77 mm, IMX678 QE 0.83, read noise 0.97 e⁻, 10 s, RGGB unless `-mono`. The Origin's read noises are upper bounds from its saved bias masters (Mark II 3·29.0·0.0112 = 0.97 e⁻; original 3·30.4·0.0165 = 1.5 e⁻). Framing without `-scope` has no estimate without `-aperture` and `-camera` (or `-mono`, `-qe`, `-read-noise`); the Frame line names what is missing.
 
-**Throughput** (`-throughput`). The QE is the bare sensor's; the optics in front of it pass less than all the light. A refractor (every smart telescope but the Origins and Unistellar's) passes 0.88: an apochromat and its flattener, about ten coated surfaces at 0.5% each, and the sensor's IR-cut window, 93% in ZWO's ASI676MC chart. A mirror at prime focus (the Origin's RASA, Unistellar's Newtonians) passes 0.81: aluminium at about 0.92, its corrector and the window. Another telescope (`-aperture`) takes 0.85, between them. These are by design, not measured per scope.
+**Throughput** (`-throughput`), by design: refractor 0.88 (about ten coated surfaces and the IR-cut window), prime-focus mirror 0.81 (the Origins, Unistellar), other 0.85.
 
-**Dark current** (`-dark`, `-sensor-temp`). Smart telescopes are not cooled, so their sensors make dark current at the night's temperature. Each preset carries its chip's at a sensor temperature of 25 °C, read off ZWO's dark-current charts: IMX571 0.065, IMX533 0.063, IMX676 0.060, IMX585 0.25, IMX294 (and the IMX492, its die) 0.37, IMX178 0.95 e⁻/s per pixel. Chips without a chart, the IMX678 among them (ZWO's CN manual labels its −20 °C point 0.0078 e⁻/s against an axis reading 0.12), take the median of those, 0.16 (`typicalDark`, which `TestTypicalDark` recomputes); the MN34230's chart (0.40 at 25 °C) is left out, as it would move that median to 0.25. The CCDs run ten times higher and stay out of the median: the KAF-16803's 3 e⁻/s is onsemi's table at 25 °C, the KAF-16200's 1.7 Moravian's 0.08 at 0 °C doubling every 5.7 °C, extrapolated; the Sony CCDs, uncharted, take 0.16, which a cooled camera's `-sensor-temp` makes small either way. The smart telescopes' own chips are the gap: neither ZWO's manuals (the IMX678's, IMX462's and IMX662's, English and Chinese, October 2026) nor Player One's listings nor a third party publish a dark current for them, and ZWO says only in words that the IMX462 (Seestar S50, Vespera) has amplifier glow, which is not modelled; dark frames from those telescopes would settle both. The current doubles every 5 °C, as the IMX585's and IMX676's charts do between 15 and 30 °C (it flattens below 0 °C, where it no longer matters). An uncooled sensor runs 10 °C above the air: no smart telescope publishes its sensor's temperature, and Seestar says its battery, in the same housing, runs about 10 °C above the air. The air is the forecast's per hour (the covered hours' mean where it has none, 10 °C without a forecast); `-sensor-temp` holds a cooled camera's sensor at its setpoint instead. At the Origin's 10 s under a 10 °C night (the sensor at 20 °C, 0.08 e⁻/s) that is 0.8 e⁻ a sub, against RN² ≈ 1.2 and, through a 7 nm Hα band under a dark sky, a third of an e⁻ of sky on the red pixels.
+**Dark current** (`-dark`, `-sensor-temp`). Per chip at a 25 °C sensor from ZWO's charts: IMX571 0.065, IMX533 0.063, IMX676 0.060, IMX585 0.25, IMX294/IMX492 0.37, IMX178 0.95 e⁻/s; KAF-16803 3 (onsemi), KAF-16200 1.7 (Moravian's 0.08 at 0 °C, extrapolated). Others take the CMOS median 0.16 (`typicalDark`, `TestTypicalDark`). Doubling every 5 °C. Uncooled sensor: air + 10 °C (forecast; 10 °C air without one). Not modelled: amplifier glow, hot pixels, master dark noise.
 
-<a id="smart-telescopes"></a>**Smart telescopes** (`-scope`, `config.Scopes`). Twenty-one, from Celestron, ZWO, DwarfLab, Vaonis, Unistellar and Sky-Watcher (October 2026; the ORBIS 60EDX from its trade-show specifications, not yet on sale), each with its aperture, focal length and central obstruction, the frames its camera saves (pixel size after any binning) and its usual sub length (the Draco's an assumed 60 s: its sensor turns against the field rotation, and DwarfLab states only the 300 s maximum); its sensor, when one of the camera presets below, gives the QE, read noise and colour response. `-scope origin` is the Mark II with the IMX678 behind a 77 mm obstruction; `-scope origin-mk1` the original with the IMX178 behind 63 mm. A scope whose sensor has no preset (OmniVision's, the IMX347, the IMX415) or whose central obstruction is unpublished (Unistellar's Newtonians, the Draco) frames and scores as any other, but has no camera model, so SUBS is left out unless `-qe` and `-read-noise` (and `-obstruction`) are given. `TestScopes` checks each scope's frame, from its pixels and focal length, against the maker's stated field: within 3%, except the eVscope's (rounded to the minute) and the Vespera 3 and Pro 2, whose stated 245 mm Vaonis contradicts with the Vespera II's 250 mm field and 2.39″/px.
+<a id="smart-telescopes"></a>**Smart telescopes** (`config.Scopes`). 21 presets with aperture, focal length, obstruction, saved frame, sub length, mount and built-in filter. A scope without a sensor preset (OmniVision's, IMX347, IMX415) or a published obstruction (Unistellar, Draco) needs `-qe`, `-read-noise` (and `-obstruction`) for SUBS. `TestScopes` checks frames against the makers' stated fields within 3%, except the eVscope and Vespera 3 / Pro 2.
 
-<a id="camera-presets"></a>**Camera presets** (`-camera`, `config.Cameras`). Forty-five sensor chips, the ones in the current ZWO, Player One and ToupTek deep-sky, planetary and guide cameras, QHY's IMX568, IMX530, IMX250 and GSENSE4040 (front- and back-illuminated, two presets) cameras, the MN34230 (ZWO's ASI1600 manual), Moravian's IMX252 and the KAF-16200 and KAF-16803 CCDs (onsemi's absolute charts), Omegon's IMX287 and Starlight Xpress's Sony CCDs, the original Origin's IMX178 and the Seestar S50 Pro's OmniVision OS08B10 (the one not from a camera maker: its response and 80% peak from OmniVision's absolute QE chart for Nyxel 2, which a ZWO user group slide attributes to the chip, digitized from the slide's 971 px copy with its pale gridlines darkened, a second copy agreeing to 0.03; its read noise Cuiv's 0.84 e⁻ measured at gain 150), each with its pixel size and output resolution (giving `-sensor` and `-pixel` with `-focal`), the maker's peak QE for its colour and mono versions, and the read noise at the maker's deep-sky gain, where the high conversion gain mode switches on (read off ZWO's and ToupTek's charts to about ±0.2 e⁻, ToupTek's at gain 100 of its separately switched HCG mode; the IMX174, IMX183, IMX249 and AR0130 have no such mode and are quoted at the gain given, QHY's IMX568, IMX530 and IMX250 too, where the read noise levels off on QHY's own 0–350 gain scale, the MN34230 at its unity gain 139 and the IMX252 at Moravian's 24 dB, a CCD, without a gain setting, at its maker's typical read noise). A version is left out where no astro camera ships it or its peak QE is unpublished (the IMX183's and IMX174's colour); the IMX462's colour peak (81%, the green at 510 nm) and its `Response` are ZWO's ASI462MC/ASI662MC comparison's absolute chart, whose ASI662MC curve reproduces the manual's STARVIS 2 one to 0.007 (the ASI462 manual's relative chart peaks at 810 nm, and scaled to the same 81% it put the visible 10–35% low), the IMX178's (70%) Sony's datasheet as rk.edu.pl quotes it, ZWO's manual saying TBD, and the IMX568's (mono 67%, colour 53%) FLIR's EMVA 1288 report for its Dragonfly S DR-U3-50S4M/C at 523 nm, the colour version's green, since QHY charts it only relative to its peak (FLIR's red and blue, 63% and 86% of its green, against the chart's 88% and 78%: the chart, Sony's, is kept for the shape), and likewise the IMX252's (mono 64%, colour 60%, FLIR's Blackfly S), Moravian quoting none; the IMX287's 71% is Altair's (FLIR measures 62%), its read noise Altair's 1.41 e⁻ at no stated gain. The KAF-16200's colour peak is onsemi's 40% (its green). The IMX185 has no preset: ZWO's ASI185 manual and QHY's listing say TBD. A mono version carries its own `MonoResponse`, from ZWO's manual where ZWO sells it (one curve in its ASI2600MM, ASI533MM and ASI461MM manuals, Hα 0.64 of the peak; the IMX183's 0.62, the IMX432's 0.83, the IMX585's 0.88, the IMX662's 0.88, the IMX676's 0.87, the IMX178's 0.62), else its maker's (`qe_digitize.py --mono`, a single black or coloured curve; `--xpx` for a chart with tick marks instead of vertical gridlines, `--light-grid` for Sony's white gridlines on a tint): the IMX174's front-illuminated pixels at Hα 0.63 of the peak, the IMX249's 0.63 (Sony's curve for both chips, per watt, reads ZWO's IMX174 QE chart to 0.007), the ICX694's 0.84 (Starlight Xpress's curve, its "65% at Hα" against the 77% peak; Sony's relative chart reads 0.91), the IMX492's 0.66 (ZWO's and ToupTek's charts agree), the MN34230's 0.76 (ZWO's ASI1600 manual), the KAF-16200's 0.80 and KAF-16803's 0.77 (onsemi), the ICX825's 0.96 (Atik's coarse comparison chart; Starlight Xpress publishes none), the ICX829's 0.93 (Sony's overview, `--grid-max 0.5`), the GSENSE4040's 0.94 front- and back-illuminated (QHY's absolute charts), the IMX287's 0.85 (Sony's chart via The Imaging Source); the ICX695 takes the ICX694's curve (none published, the same EXview II family) and the IMX252 the IMX250's (Sony charts them as one), QHY's IMX568 0.68 (Sony's chart, per watt, within 0.01 of QHY's absolute IMX530 chart), IMX530 0.69 and IMX250's front-illuminated pixels 0.84 (QHY's absolute charts, a pale pink curve on a pale grid: `--sat-min 0.1 --grid-max 0.9` with `--box` and `--xpx` at the frame, the peaks giving the IMX530's 88% and IMX250's 70%); the uncharted (the ASI6200 manual has no QE chart, the ASI678 and ASI462 manuals and ToupTek's ATR428 page only the colour one) take a relative's: the IMX455 the IMX571's 3.76 µm curve, the IMX462 its STARVIS predecessor IMX290's (0.79), the IMX428 the IMX250's (front-illuminated Pregius, as the IMX432, 0.83), and the IMX678 `sonyMono`, the IMX585's STARVIS 2 curve (Hα 0.88, the continuum 0.95), which the IMX662's and IMX676's charts match within 0.03; `-mono` without `-camera` takes it too. **Sony's charts are per watt.** Sony's "relative response" charts, which ZWO, ToupTek, QHY, Player One and The Imaging Source reproduce, plot the signal per unit of radiant power, not per photon: Allied Vision's "Sony IMXnnn absolute QE" curves (IMX174, IMX264, IMX273, IMX287, IMX304) equal Sony's curve ÷ λ, renormalised, to about 1%, as do ZWO's own QE charts where its manuals print both (the IMX585, ±1.5%; its 3.76 µm mono chips, ±3%), and FLIR's EMVA 1288 colour measurements of twelve Sony chips match the ÷ λ ratios (blue/green, untouched by its IR-cut filter, at or above them; as charted red/green came out 1.3–1.45× too high). Read as charted, a Sony chart overstates Hα against [O III] by 656/501 = 1.31×, so `qe_digitize.py --per-watt` divides every curve by λ before the peak and the line values are taken; its peak moves to the green (511–534 nm). It applies to the Sony charts only (the per-watt comments in `config/cameras.go`); the maker's QE charts (the IMX585's, IMX462's, the 3.76 µm mono curve, the IMX174's, QHY's IMX530, IMX250 and GSENSE4040 ones) and onsemi's, OmniVision's and the CCDs' absolute charts are per photon already. The IMX678's, IMX485's and SmartSens SC2210's charts are labelled QE with no Sony chart to check them against, and Panasonic's MN34230 one does not say; they are read as charted. Every colour version carries its own `Response`, digitized by `scripts/qe_digitize.py` from the maker's QE chart: the gridlines found as the grey rows and columns spanning the plot (an evenly spaced grid fitted to them, so one hidden under the curves does not skew the scale), each curve's pixels told apart by hue within the plot (not the legend's swatches), every value relative to the chart's highest point over its whole range, which for a chip peaking in the near infrared (the IMX464, the IMX715) lies past 700 nm. It reproduces the IMX678 values read by hand to within 0.007. Makers reuse charts, and borrow them: the IMX290's is ZWO's ASI290 manual's (ToupTek's G3M290C page has none), with ToupTek's 81% peak, ZWO's saying TBD; the IMX662's and IMX664's are one (STARVIS 2, also in the ASI585MC's CN manual), the IMX482's is the IMX485's; where two of a chip's charts disagree (the ASI585MC Pro manual's against that CN one, green at Hα 0.16 against 0.37), the newer is taken. At equal QE, read noise and pixels, with no dark current and lossless optics, the response alone moves an emission nebula's SUBS by up to 2× across the presets (IC 1795 on 14 October 2026 from 45.8° N 16° E at Bortle 4, behind an 80 mm f/5 with an 11.1 × 6.3 mm sensor of 2.9 µm pixels, QE 0.8, 1 e⁻: 24 subs of 120 s for the good level unfiltered on the IMX662, 26 on the IMX676, 46 on the IMX410; 13–26 through dual-band). The Origin keeps its own read noise; `-camera imx678` is ZWO's ASI678MC (with `-mono` its ASI678MM, the same 83% peak QE) at gain 182, 0.9 e⁻. The values were checked in October 2026 against ZWO's product pages, manuals and gain charts and Testar's listings; ZWO's current ASI6200 chart gives the IMX455 1.35 e⁻ at gain 100 (its v1.4 manual 1.5).
+<a id="camera-presets"></a>**Camera presets** (`config.Cameras`). 45 chips: pixel size, resolution, maker's peak QE and read noise at its deep-sky gain, for colour and mono versions. Per-chip sources and exceptions are commented in `internal/config/cameras.go`.
 
-**Photon rate.** A V = 0 source gives 1005 photons s⁻¹ cm⁻² Å⁻¹ at 550 nm (Bessell 1998), 884 400 s⁻¹ cm⁻² over the V band's 88 nm. The sky model works in V-band nanoLamberts, so a brightness of x nL is 884 400 · x / NL(0) photons s⁻¹ cm⁻² arcsec⁻², and per pixel
+- **Colour** `Response`: red, green, blue relative response per line and over 400–700 nm (`Broad`), digitized from the maker's QE chart by `scripts/qe_digitize.py`, relative to the chart's peak over its whole range.
+- **Mono** `MonoResponse`: the maker's chart, else a relative's; `sonyMono` (the IMX585's STARVIS 2 curve: Hα 0.88, continuum 0.95) is the default and for `-mono` without `-camera`.
+- **Sony "relative response" charts are per watt**, as reproduced by most makers: read as charted they overstate Hα against [O III] by 656/501 = 1.31×. `qe_digitize.py --per-watt` divides by λ. Verified against Allied Vision's absolute curves, ZWO's QE charts and FLIR's EMVA 1288 ratios. Other charts are per photon, or read as charted where unlabelled (IMX678, IMX485, SC2210, MN34230).
+- `os08b10` is the least certain: OmniVision's Nyxel 2 chart, attributed to the chip by a ZWO user group slide, and Cuiv's 0.84 e⁻ at gain 150.
+- A version is left out where no astro camera ships it or its peak QE is unpublished. IMX185 has no preset.
+
+At equal QE, read noise and pixels, the response alone moves an emission nebula's SUBS by up to 2× across the presets.
+
+**Photon rate.** V = 0 gives 1005 photons s⁻¹ cm⁻² Å⁻¹ at 550 nm (Bessell 1998), `atmos.PhotonsV0` over 88 nm. Per pixel:
 
 ```math
 R = \frac{884\,400\;x}{\mathrm{NL}(0)}\;\frac{\pi}{4}\left(D^2 - d^2\right)\;\tau\;QE_\mathrm{peak}\;q\;\Omega ,\qquad \Omega = \mathrm{scale}^2
 ```
 
-with τ the throughput. The relative response q depends on what the light is:
+with τ the throughput and q by source:
 
-- **The sky and continuum objects**, unfiltered or through `cls`/`lpro`, are spread over the camera's 400–700 nm (× 300/88 against V) at q = 0.8 for a mono sensor, or for a colour one each channel's own mean over the band from its chart (`Response.Broad`; the IMX678's red 0.40, green 0.57, blue 0.39 of peak, an RGGB mean of 0.48: the dyes overlap, so each passes more than a third of the band). The moonlight's colour is weighted as over the whole band for every channel, not by each dye's curve. The glow and a continuum are flat per nm; the moonlight scatters as it does in the score, so the camera band's Rayleigh part per nm is the λ⁻⁴ mean over 400–700 nm, 1.30 of V's (its Mie part 1.04). The sky's share through a broadband filter is `BroadSky`'s, as in the score.
-- **Through a line filter** each band passes its own share of the sky (`BandSky`, against V, so absolute) to every channel at that dye's response to the band's line, and the object's lines likewise, weighted by its light in each. A mono sensor takes its chip's `MonoResponse`, by default `sonyMono` (the IMX585's: Hα 0.88, [O III] and Hβ 0.99, [S II] 0.86 of peak); a colour one its chip's `Response` ([presets](#camera-presets)), by default the IMX678's from ZWO's ASI678MC curve (manual V1.0, §3.3), where every dye passes some of every line:
+- **Sky and continuum**, unfiltered or broadband: spread over 400–700 nm (× 300/88 against V) at each channel's `Response.Broad`, or the mono's `Broad` (`sonyMono` 0.95). Moonlight per nm by `BandMean`: Rayleigh 1.30, Mie 1.04 of V's.
+- **Through a line filter**: each band's sky (`BandSky`, against V) and the object's lines on every channel at that dye's response. IMX678, from ZWO's ASI678MC manual:
 
 | Line | red | green | blue |
 |---|---|---|---|
@@ -690,69 +621,75 @@ with τ the throughput. The relative response q depends on what the light is:
 | Hα 656.3, [N II] | 0.77 | 0.34 | 0.11 |
 | [S II] 671.6/673.1 | 0.72 | 0.39 | 0.12 |
 
-so through Hα the green pixels, half the array, collect almost as much as the red quarter, and through [O III] the blue quarter adds half of green's response.
-- **An emission-line object's** light is its lines ([from its V](#emission-line-light)), which any band that passes them collects once: it uses the line response unfiltered and through broadband filters too, rather than the sky's flat spread, which would count it 3.4 times. Unfiltered it is dimmed at its lines' extinction, as in the score.
+- **An emission-line object** uses the line response always, also unfiltered and broadband, since a band collects each line once.
 
-The object and sky per minute are the score's own (the sky with moonlight, zodiacal and galactic light, through a filter its bands' shares; the object dimmed by its band's extinction), with the surface brightness from `ExposureSB`, as absolute photons: the object's lines are not moved against the camera band, which the sky's gain already spans. In absolute photons the object loses the zenith's extinction too, 10^(−0.4kX) rather than the score's 10^(−0.4k(X−1)): its surface brightness is catalogued above the atmosphere, while the sky's is measured on the ground (about 20% of the light at κ = 0.24, some 1.3–1.4× the subs). A filter is the score's choice, worn all night, so its observable minutes are the score's too.
+Object and sky per minute are the score's, in absolute photons: the object is not moved against the camera band, and is dimmed by the zenith's extinction too (`atmos.Absolute`), as it is catalogued above the atmosphere and the sky measured on the ground.
 
-**Per sub and stacked.** A colour sensor's red, green and blue pixels (`channels`: ¼, ½ and ¼ of the RGGB array) see different light, and an optimally weighted stack adds them by SNR², each over its own pixels; a mono sensor is one channel of every pixel. With rates S_c and B_c per pixel of channel c, its share f_c, the minute's dark current D per pixel, a sub of t seconds and read noise RN,
+**Per sub.** Channels c (¼, ½, ¼ for RGGB; one for mono) with share f_c, rates S_c, B_c, dark D, read noise RN:
 
 ```math
 \mathrm{SNR}^2_\mathrm{sub} = \sum_c f_c\,\frac{(S_c t)^2}{S_c t + B_c t + D t + RN^2}\;\frac{1}{\Omega}\quad\text{per arcsec}^2
 ```
 
-Each channel adds by its own response, so one that sees little of the object adds little, its read noise included: through Hα the colour IMX678 needs 0.88²/Σ f_c q_c² = 3.7 times a mono sensor's subs read-noise limited, and 0.88/Σ f_c q_c = 2.3 times sky limited (`TestSubsBayerChannels`). An average pixel, (¼S)²/(¼S + ¼B + RN²), would charge every pixel's read noise against the line, and putting each line on one dye's channel only, as this model once did, missed the green pixels' Hα (0.34 of peak against red's 0.77) and the blue ones' [O III] (0.53): it counted about half the Hα signal and three-quarters of the [O III].
+`TestSubsBayerChannels`: through Hα colour IMX678 needs 3.7× mono's subs read-noise limited, 2.3× sky limited.
 
-The master dark's own noise is left out. Subs lost to the weather (each minute's quality $q_i$ of the score: cloud, transparency, rain, dew, gusts) must be shot again, so the weather weighs each minute, and cloud during the target's best minutes costs more than the same cloud during its worst.
-
-**How the subs are stacked** (`-stack`). An optimally weighted stack (`weighted`, the default without `-scope`: PixInsight's or Siril's weighting) adds each sub's SNR², so a night half dark and half moonlit is the mean of its minutes' SNR². A smart telescope's live stack averages the subs it keeps with equal weights (`mean`, the default with `-scope`; no maker documents a weighting): the stack's SNR² is then (ΣS)²/Σσ², and a noisy moonlit sub dilutes it rather than adding a little. Per sub the night allows, with σ²_{c,i} the denominator above,
+**Stacking** (`-stack`). Each minute is weighted by its quality q_i. Per sub, over n observable minutes, with σ² the denominator above:
 
 ```math
 m = \frac{1}{n\,\Omega}\sum_i q_i \sum_c f_c \frac{S_{c,i}^2}{\sigma_{c,i}^2}\quad(\text{weighted}),\qquad m = \frac{1}{n\,\Omega}\sum_c f_c \frac{\left(\sum_i q_i S_{c,i}\right)^2}{\sum_i q_i\,\sigma_{c,i}^2}\quad(\text{mean})
 ```
 
-over the n observable minutes. Equal weights cost little where the Moon limit has already dropped the worst minutes: M 51 from Bortle 4 on 6 May 2026, the Moon rising in the night, needs 347 subs averaged against 305 weighted.
-
-**The stack's ceiling** (`-residual`). Flats never match the sky exactly, and gradient removal leaves some of it: a residual ε of the sky (0.2% by default) that averaging does not remove and that spans many pixels, so it caps the stacked SNR per arcsec² at S/(εB) however many subs, the channels adding by share:
+**Ceiling** (`-residual`, ε = 0.2%). Flats and gradients leave εB, which averaging does not remove:
 
 ```math
 \mathrm{SNR}^2_\mathrm{max} = \sum_c f_c \left(\frac{\sum_i q_i S_{c,i}}{\varepsilon \sum_i q_i B_{c,i}}\right)^2 ,\qquad \frac{1}{L^2} = \frac{1}{N_L\,m} + \frac{1}{\mathrm{SNR}^2_\mathrm{max}} \;\Rightarrow\; N_L = \left\lceil \frac{L^2/m}{1 - L^2/\mathrm{SNR}^2_\mathrm{max}} \right\rceil ,\qquad L = 5,\ 10,\ 20
 ```
 
-A level at or past the ceiling is never reached: SUBS shows `never`, JSON the ceiling as `snrLimit`. It is what keeps a faint galaxy from a city out of reach rather than a matter of patience, and it favours filters, which cut B: IC 1795 at Bortle 9 reaches SNR 8.6 at most unfiltered, where Hα needs 297 subs. The counts are capped at 10⁹, which a night the forecast loses entirely reaches too (past tonight's limit, rather than no estimate). FILTER is chosen by the same N for the good level, so it stays the fewest-subs choice (`TestScoreFilterCameraModes`).
+A level at or past the ceiling is `never` (JSON `snrLimit`). Counts cap at 10⁹ (`maxSubs`). FILTER uses the same N (`TestScoreFilterCameraModes`).
 
-**Seeing and the optics' blur.** A small object's light is spread over the star image, which dims its surface brightness. Each minute the FWHM is the seeing (the [upper-air estimate](#seeing-estimate), which matches DIMMs better, else 7Timer's class, else 2.5″), grown with the airmass as X^0.6, the optics' diffraction 1.03 λ/D at 550 nm (2.3″ at 50 mm, 0.8″ at 152 mm) and a pixel's own blur, 0.68 of its width (a square pixel's variance p²/12 as a Gaussian FWHM), in quadrature; a uniform ellipse of axes a × b keeps about ab/√((a² + F²)(b² + F²)) of its surface brightness, half for a disc as wide as F. Only objects under about an arcminute move: a 12″ planetary nebula needs more subs under 4″ seeing than under 1″ (`TestSubsResidualSeeing`), and nothing at the default `-min-px` does. For a mosaic the counts are per panel, and the subs that fit tonight are shared among the panels: the observable time, or with `-plan` the observable minutes of the planned blocks (which then also set the mean per-sub SNR², so a block the target sets in or spends low counts as it is), divided by the sub length plus a second between subs (the download and the live stack), less the share `-reject` discards (0.15 by default: tracking, satellites and wind cost the Origin 10–20%). The counts are the subs the stack keeps, so rejection only lowers what tonight allows.
+**Blur** (`camera.blur`). FWHM F: seeing ([upper-air estimate](#seeing-estimate), else 7Timer's class, else 2.5″) × X^0.6, diffraction 1.03 λ/D at 550 nm and 0.68 of a pixel, in quadrature. An ellipse of axes a × b keeps ab/√((a² + F²)(b² + F²)). Only objects under about an arcminute move.
 
-**Surface brightness.** The object's own (`SurfaceBrightness`), else the median of its class over the embedded lists (`TestTypicalSB` recomputes them): galaxies 22.52, planetary nebulae 21.10 (most from their Hα flux), emission nebulae 21.90, other nebulae 20.73 mag/arcsec², marked `~`; reflection nebulae 22.0, a guess, since no list gives a reflection nebula's own magnitude and no photometric survey that a cutout service resamples measures them: Pan-STARRS through CDS's HiPS is not calibrated (its zero point scatters 2.1 mag over 25 galaxies), SkyView's SDSS reaches few of them, and Legacy Survey DR10 is calibrated but sky-subtracted, putting galaxies 1.0 mag faint with 1.3 mag scatter, and covers 10 of them (median 23.3 after the galaxies' offset, too few and too noisy to replace the guess). Clusters (point sources), galaxy groups, comets, and dark nebulae and molecular clouds (unless imaged for the emission behind them, like the Horsehead) get none: the median of the bright nebulae that have a measurement would make the faintest objects quick.
+**Subs that fit** (`Estimate.Max`). Observable time (with `-plan`, within its blocks) ÷ (sub + 1 s) × (1 − `-reject`), shared among mosaic panels.
 
-**Limits.**
+**Surface brightness** (`ExposureSB`). The object's own (a non-planetary's map flux set aside: `levelScale` was fitted to catalogued values), else `typicalSB` by class (`TestTypicalSB`, marked `~`): galaxies 22.52, planetaries 21.10, emission nebulae 21.90, other nebulae 20.73, reflection nebulae 22.0 (a guess). None for clusters, galaxy groups, comets, and dark nebulae unless imaged for the emission behind them.
 
-- An emission nebula's lines come from its V surface brightness through the [fitted conversion](#emission-line-light), good to a factor of about three for one nebula; without a measurement the class median (21.90 for emission nebulae) stands in, which with the lines 1.61 mag brighter puts the typical one at about twenty minutes of subs unfiltered on the Origin under the default pristine sky (IC 1795: 120 subs of 10 s). So it does for a nebula whose only measurement is the Hα map's: that is the mean over the whole catalogued extent, while the levels were fitted to catalogued values, and taken as is it put the whole Veil, a shell around empty sky, at 11 nights on the Origin and NGC 281 at 2. A planetary's flux, Frew's, is used. Galaxies come out a little quicker than Origin users report: M 51 reaches the good level in 123 subs of 10 s (21 minutes of subs, 27 with the gaps and rejected subs) under a 22.0 sky on 15 April 2026 from 45.8° N, against reports of about 35 minutes from dark sites.
-- **Fainter objects' levels.** A fixed SNR makes a sky-limited stack grow as 1/S², two magnitudes fainter forty times longer, but what imagers report stacking grows about as 1/S: they stretch a faint object harder and judge its brighter structure, where the catalogue's mean over the D25 ellipse is dominated by a faint outer disc. So below a pristine sky's brightness (B_ref, 22.0 mag/arcsec², in the score's terms) the levels are √(S/B_ref) of 5, 10 and 20 (`scoring.levelScale`; JSON's `snrPerSub` and `snrLimit` are against these levels). Against reported totals from 45.8° N under 21.3 mag/arcsec², new Moon, 10 s subs, dual-band for the emission nebulae (S50 users' at AstroBin and Cloudy Nights, 2026):
+**Fainter objects' levels** (`scoring.levelScale`). A fixed SNR grows as 1/S², but reported totals grow about as 1/S, so below B_ref (in the score's terms) the levels are √(S/B_ref) of 5, 10, 20; JSON's `snrPerSub` and `snrLimit` are against them.
 
-  | Target | Seestar S50 | Origin | reported |
-  |---|---|---|---|
-  | M 42 (2 panels) | 1.4 h a panel | 0.15 h | 0.5–2 h; Origin 10 min – 2 h |
-  | M 51 | 3.8 h | 0.45 h | 1.5–3 h; Origin about 35 min |
-  | M 81 | 7.4 h | 0.9 h | 3–5 h |
-  | M 101 | 22 h (was 150–290 h at a fixed SNR) | 2.8 h | 1.6–9 h |
-  | M 33 (2 panels) | 15 h a panel (was 104 h) | 1.9 h | 3–6 h |
-  | NGC 7000 (2 panels) | 6.5 h a panel | 0.7 h | 2–5 h |
-  | Veil, NGC 6992 | 5.1 h | 0.6 h | 1–3 h |
-  | Heart, IC 1805 (8 panels) | 2.8 h a panel | 0.3 h | 2–9.5 h |
-  | Bubble, NGC 7635 | 3.2 h | 0.4 h | 2–4 h |
+Check against reported totals, per panel, under 21.3 mag/arcsec² at 45.8° N, new Moon, no weather, 10 s, `-mosaic 8`, dual-band for emission nebulae (Seestar S50 users' at AstroBin and Cloudy Nights, 2026):
 
-  The Origin lands a little under (about 0.8×) what its users report, the S50 at 1–4×, more for the faint galaxies: the good level is a clean image, where many stop at a noisier one, and reports come from every kind of sky. Treat SUBS as a clean image's count, not a minimum.
-- At the Origin's 10 s a colour sensor's pixels through a 7 nm Hα band are only about sky limited under a dark sky (about a third of an e⁻ of sky per sub on the red ones under 21.3 mag/arcsec², with 0.8 e⁻ of dark current, against RN² ≈ 1.2), where a broadband filter, collecting every line over 120 nm, is clearly so. With framing, FILTER is chosen by this model, so it is the choice needing fewest subs: IC 1795 from 45.8° N on 14 October 2026 (`-scope origin -no-weather -no-solar`, one `-filter` at a time, the sensor at 20 °C) under the default 22.0 zenith takes 120 subs unfiltered, as many through Hα (no better), 107 through dual-band and 87 through `cls`, so `cls`; at Bortle 4 176 unfiltered, 126 through Hα, 112 through dual-band and 110 through `cls`, so `cls`; at Bortle 5 to 7 dual-band; at Bortle 8 1480 unfiltered (SNR 20 at most, the residual's ceiling), 182 through Hα, 198 through dual-band and 507 through `cls`, so Hα. The dark current falls on every pixel whatever the filter, so it weighs most where a filter has cut the sky: before it was modelled the same night chose dual-band under the default zenith.
-- No master dark noise, no hot pixels or amplifier glow, one sensor temperature offset for every smart telescope, one residual for every flat and sky, no saturation (the IMX678's 11.27 ke⁻ full well is far off at 10 s for these objects), flat spectra across each band, and one SNR target for every type.
+| Target | Seestar S50 | Origin | reported |
+|---|---|---|---|
+| M 42 | 2.5 h | 0.3 h | 0.5–2 h; Origin 10 min – 2 h |
+| M 51 | 3.7 h | 0.5 h | 1.5–3 h; Origin about 35 min |
+| M 81 | 6.1 h | 0.8 h | 3–5 h |
+| M 101 | 22 h | 2.7 h | 1.6–9 h |
+| M 33 | 15 h | 2.0 h | 3–6 h |
+| NGC 7000 | 4.6 h | 0.6 h | 2–5 h |
+| Veil, NGC 6992 | 4.0 h | 0.5 h | 1–3 h |
+| Heart, IC 1805 | 2.3 h | 0.3 h | 2–9.5 h |
+| Bubble, NGC 7635 | 2.3 h | 0.3 h | 2–4 h |
+
+SUBS is a clean image's count: the Origin lands a little under its users' reports, the S50 at 1–5×, most for faint galaxies.
+
+**FILTER at the Origin's 10 s colour subs.** IC 1795, 45.8° N, 14 October 2026, `-no-weather -no-solar`, good-level subs:
+
+| Sky | none | `ha` | `dual` | `cls` | chosen |
+|---|---|---|---|---|---|
+| default 22.0 | 120 | 120 | 107 | 87 | `cls` |
+| Bortle 4 | 176 | 126 | 112 | 110 | `cls` |
+| Bortle 8 | 1480 | 182 | 198 | 507 | `ha` |
+
+Bortle 5–7 choose `dual`. At Bortle 9 no filter tops out at SNR 8.5 and Hα needs 265 subs.
+
+**Limits.** One nebula's lines are good to a factor of three to five. Not modelled: master dark noise, hot pixels, amplifier glow, saturation, per-rig residual, per-dye moonlight colour. One sensor temperature offset for all smart telescopes; flat spectra across each band.
 
 ## Seeing estimate
 
-`weather.Seeing`. This is **display only**: it never changes a score.
+`weather.Seeing`. Never changes a score; SUBS' blur and the SEEING column use it.
 
-7Timer's seeing class covers only about three days. For hours beyond that, the SEEING column shows an estimate (`~1.3"`) computed from the ECMWF IFS 0.25° upper-air forecast (Open-Meteo, 15 days ahead). The forecast gives temperature T, wind and height z at the surface and at 925 … 100 hPa.
+FWHM from the ECMWF IFS 0.25° forecast (Open-Meteo, 15 days): T, wind and height at the surface and 925–100 hPa.
 
-**Optical turbulence per layer.** Each pair of adjacent levels at least 300 m apart is a layer. Its refractive index structure constant follows the AFGL radiosonde model of [Dewan et al. (1993)][dewan]:
+**Cn² per layer**, adjacent levels at least 300 m apart ([Dewan et al. 1993][dewan]):
 
 ```math
 C_n^2 = 2.8\,M^2\,L_0^{4/3} ,\qquad
@@ -764,113 +701,90 @@ L_0^{4/3} = 0.1^{4/3}\cdot 10^{Y} ,\qquad
 Y = \begin{cases} 1.64 + 42\,S & \text{troposphere} \\ 0.506 + 50\,S & \text{stratosphere}\end{cases}
 ```
 
-- M is the vertical gradient of the potential refractive index, with P in hPa and T in K. The dry adiabatic lapse rate is added because an adiabatic layer mixes without changing refraction.
-- S is the magnitude of the *vector* wind shear, |Δ**v**| / Δz in 1/s. A change in wind direction counts as well as a change in speed.
+M uses P in hPa and T in K; S is the vector wind shear in 1/s.
 
-**Tropopause.** The tropopause decides which form of Y applies. It uses the WMO lapse-rate rule ([AMS Glossary][ams-tropopause]), searched from 500 hPa upward: the lowest level whose layer cools at 2 K/km or less, and whose next layer does too. The second layer stands in for the rule's 2 km average. Everything from that level upward is stratospheric. If no level qualifies, the whole profile is tropospheric.
+**Tropopause**, WMO lapse-rate rule ([AMS][ams-tropopause]) from 500 hPa up: the lowest level whose layer cools at ≤ 2 K/km and whose next layer does too. Above it, stratospheric Y. None found: all troposphere.
 
-**Sanity checks on the forecast levels.** These use the hypsometric equation ([AMS Glossary][ams-hypsometric]) with R/g = 29.3 m/K:
+**Sanity checks** ([hypsometric equation][ams-hypsometric], R/g = 29.3 m/K):
 
 ```math
 \Delta z = 29.3\ \tfrac{\text{m}}{\text{K}}\cdot\bar T\cdot\ln\frac{p_1}{p_2}\quad(\pm 30\%) ,\qquad
 p_\text{surface} \approx 1013.25\,e^{-z/H},\ H = 29.3\ \tfrac{\text{m}}{\text{K}}\cdot\bar T\quad(\pm 12\%)
 ```
 
-A level that fails these checks, or has implausible values, is dropped. An hour needs the surface plus at least three pressure levels, one of them at or above 300 hPa so the jet stream is included.
+A failing or implausible level is dropped. An hour needs the surface, at least three pressure levels and one at ≤ 300 hPa.
 
-**From Cn² to seeing.** The turbulence is integrated over height, with the calibration factors described below. That gives the Fried parameter r0 and the FWHM of a star image at λ = 500 nm at the zenith ([Fried 1966][fried]; [Roddier 1981][roddier]):
+**Cn² to FWHM**, λ = 500 nm, zenith ([Fried 1966][fried]; [Roddier 1981][roddier]); outside 0.1–30″ or non-finite is unknown:
 
 ```math
 r_0 = \Big(0.423\,k^2\!\int C_n^2\,dz\Big)^{-3/5},\quad k = \frac{2\pi}{\lambda} ,\qquad
 \text{FWHM} = 0.98\,\frac{\lambda}{r_0}
 ```
 
-An estimate outside 0.1–30″, or not a finite number, counts as unknown.
-
-**Calibration.** Two biases push the raw estimate in opposite directions:
-
-- Dewan's model was fitted to free-atmosphere radiosonde layers, and extended to the surface it overestimates the boundary layer ([Cuevas et al. 2024][cuevas]).
-- The forecast levels are 0.7–2 km apart, which smooths the shear higher up and so underestimates the free atmosphere.
-
-The integral therefore weights the lowest layer by 0.2 and every layer above it by 1.45:
+**Calibration.** Dewan extended to the surface overestimates the boundary layer ([Cuevas et al. 2024][cuevas]) and coarse levels smooth the free-atmosphere shear:
 
 ```math
 \int C_n^2\,dz \;\approx\; 0.2\,C_{n,\text{ground}}^2\,\Delta z_\text{ground} + 1.45\sum_\text{above} C_n^2\,\Delta z
 ```
 
-The two factors are a least-squares fit (`scripts/calibrate_seeing.py`) against 12,222 hours of ESO DIMM seeing at Paranal and La Silla, compared with Open-Meteo's archived IFS runs (May 2024 to September 2026):
+Least-squares fit (`scripts/calibrate_seeing.py`) over 12,222 hours of ESO DIMM at Paranal and La Silla against Open-Meteo's archived IFS runs (May 2024 to September 2026):
 
 | | bias | RMSE | r |
 |---|---|---|---|
 | uncalibrated | +0.21″ | 0.49″ | 0.32 |
 | calibrated | +0.03″ | 0.33″ | 0.41 |
 
-The calibrated figures are in the same range as published model forecasts for Paranal ([Cuevas et al. 2024][cuevas]: 0.30″, r 0.41; [Osborn & Sarazin 2018][osborn]: 0.31″, r 0.30). The factors describe the model, not the weather, so they are refit only after a change to the model.
+Published forecasts for Paranal: [Cuevas et al. 2024][cuevas] 0.30″, r 0.41; [Osborn & Sarazin 2018][osborn] 0.31″, r 0.30. Refit only after a model change.
 
 ## Night plan
 
 `internal/plan`, with `-plan`
 
-The plan splits the window into blocks of `-plan` length and assigns at most one target to each block, using each target at most once. A block's value for a target is the sum of that target's per-minute weights w_i inside the block, times its frame score, so the per-minute scoring is not repeated. The assignment runs in two steps:
+Blocks of `-plan` length, at most one target each, each target at most once. A block's value is the sum of the target's weights in it × frame score.
 
-1. **Greedy**: go through the blocks in time order, and give each one the best target not yet used. Mean altitude in the block breaks ties.
-2. **Local search** over the target × block score matrix, repeated until nothing improves:
-   - swap the targets of two blocks,
-   - move a target into another block and refill the block it left with the best unused target,
-   - replace a block's target with a better unused one.
+1. **Greedy**: blocks in time order, best unused target; mean altitude breaks ties.
+2. **Local search** on the target × block matrix until nothing improves: swap two blocks, move a target to another block and refill, replace with a better unused target.
 
-The result is a local optimum, not necessarily the best possible plan. The reported block score is the sum divided by the block's length in minutes.
+The reported block score is that sum divided by the block's length in minutes.
 
 ## Constellations
 
 `internal/constellation`
 
-The lists' constellation labels contain errors and spelling variants, so the constellation is always recomputed from the position. The method follows [Roman (1987)][roman]:
-
-- The IAU boundaries (Delporte 1930) are defined at the B1875.0 equinox ([VI/49][vi49], Davenhall & Leggett 1989). Each J2000 position is therefore precessed to B1875.0 with the IAU 1976 formula above, at `T = (2405889.258550475 − 2451545)/36525`.
-- The boundary edges are arcs of constant right ascension or constant declination. A ray cast due north from the point counts how many constant-declination edges it crosses. An odd count means the point is inside.
-- Ursa Minor winds around the pole, so its count is inverted.
-
-The boundary table and the test come from [astrogo](https://github.com/TuSKan/astrogo).
+Always recomputed, following [Roman (1987)][roman]. J2000 positions are precessed to B1875.0 (`T = (2405889.258550475 − 2451545)/36525`), the IAU boundaries' equinox ([VI/49][vi49]). A ray due north counts constant-declination edge crossings; odd is inside. Ursa Minor winds around the pole, so its count is inverted. Boundary table from [astrogo](https://github.com/TuSKan/astrogo).
 
 ## Local horizon
 
 `internal/horizon`
 
-A `-horizon` file lists (azimuth, altitude) points. The horizon altitude between two points is interpolated linearly in azimuth, wrapping across north:
+(azimuth, altitude) points, linear in azimuth, wrapping at north; two points at one azimuth make a vertical step.
 
 ```math
 h_\text{hor}(A) = h_\text{lo} + (h_\text{hi} - h_\text{lo})\,\frac{(A - A_\text{lo}) \bmod 360}{\text{span}}
 ```
 
-Two points at the same azimuth make a vertical step. A minute counts only when the target is above both `-alt-min` and the horizon.
-
-`scripts/terrain2horizon.py` writes such a file from a digital elevation model (AWS Terrain Tiles, Terrarium encoding, bilinear between pixels). Along each azimuth it steps one pixel at a time from `--near` (100 m) to `--radius` (20 km) and keeps the steepest angle to the ground at distance d. The ground there is lowered by Earth's curvature, less the standard terrestrial refraction (k = 0.13):
+**`scripts/terrain2horizon.py`**. AWS Terrain Tiles, bilinear, stepped from `--near` (100 m) to `--radius` (20 km), curvature less refraction (k = 0.13); z₀ the site's model elevation (or `--elevation`) + 2 m eye height:
 
 ```math
 h_\text{hor}(A) = \max_d \arctan\frac{z(d) - z_0 - d^2 (1 - k) / 2R}{d}
 ```
 
-z₀ is the site's model elevation (or `--elevation`) plus a 2 m eye height. A ridge must rise about 580 m per km to reach the default 30° floor, so the terrain matters mostly with a lower `-alt-min` in the mountains. Trees and buildings are not in the elevation model.
-
-By default (`--no-osm` turns it off) the script adds OpenStreetMap's buildings (outlines), and with `--no-canopy` its single trees (3 m crowns, tree rows as trees every 6 m) and woods (outlines), within `--osm-radius` (300 m), fetched from the Overpass API. Each has its `height` tag, else `building:levels` × 3 m + 2 m of roof, else a default: 8 m for a building, 12 m for a tree, 20 m for a wood. Along each azimuth every crossing of an outline or crown at distance d gives
+OpenStreetMap buildings (and with `--no-canopy` trees and woods) within `--osm-radius` (300 m) via Overpass; `height` tag, else `building:levels` × 3 + 2 m, else 8 m building, 12 m tree, 20 m wood. Each crossing at distance d, flat roofs, an outline holding the site left out:
 
 ```math
 h_\text{obs}(A) = \max \arctan\frac{z(d) - z_\text{site} + h - 2\ \text{m}}{d}
 ```
 
-with the obstacle standing on the terrain model's ground z(d), measured from the model's ground at the site, so an `--elevation` override moves the eye only. The horizon is the higher of the terrain's and the obstacles'. An outline holding the site (the house you stand by, a wood you stand in) is left out, and so are inner rings, since a ray's steepest crossing is the outer edge it meets first. The roof is flat at h, so a pitched roof's ridge seen end-on is overstated. An obstacle blocks the default 30° floor when its top is more than 0.58 d above the eye: an 8 m house within 10 m, a 20 m wood edge within 30 m.
-
-By default (`--no-canopy` turns it off) the trees come from the Meta/WRI canopy height map instead of OSM ([Tolan et al. 2024][chm]): 1.19 m Web Mercator pixels (0.84 m at 45°), heights in whole metres, estimated from 2009–2020 Maxar imagery with a mean absolute error of about 2.8 m against airborne lidar. The script reads only the rows around the site from the Cloud-Optimized GeoTIFF tiles (zoom-9 quadkeys, 65536 px square, BigTIFF, Deflate with the horizontal predictor, one row a strip) by HTTP range requests, and marches each azimuth every half pixel from `--canopy-near` (3 m, past a tree you stand under) to `--canopy-radius` (300 m), with the same angle as above for any pixel at least 1 m tall (lower is the map's noise over open ground). OSM then gives the buildings only. Near Zagreb's Maksimir wood, 91% of the pixels inside OSM's wood outlines are at least 5 m tall against 17% outside, and a mirrored or 60 m shifted grid agrees far worse, which checks its registration.
+Trees by default from the Meta/WRI canopy height map ([Tolan et al. 2024][chm]): 1.19 m pixels, about 2.8 m MAE, 2009–2020 imagery, read by HTTP range from BigTIFF strips, marched from `--canopy-near` (3 m) to `--canopy-radius` (300 m), pixels of at least 1 m.
 
 ## Heuristics
 
-The models above come from the literature. The following are this project's own judgment, chosen to rank nights sensibly rather than to measure anything:
+The project's own judgment, not measurements:
 
 | Heuristic | Value | Reasoning |
 |---|---|---|
 | Moon-distance rule | ≥ illumination % in degrees (filtered: × f_R/w², 0.3–1) | uptonight's rule; skipped with the Moon down; the floor is the halo and gradients near the Moon, which no scattering model here holds |
-| A filter for the whole night | each choice scored as worn every minute, the one that gains most kept (the most uncapped weight; with a camera, the best mean per-sub SNR² of the sub-exposure model over its own observable minutes, the fewest-subs choice) | a filter changed mid-target means a second set of flats and a split stack |
+| A filter for the whole night | each choice scored as worn every minute, the one that gains most kept (the largest uncapped weight; with a camera, the fewest subs by the sub-exposure model over its own observable minutes) | a filter changed mid-target means a second set of flats and a split stack |
 | Moon in the umbra | 10⁻⁴ of its light, flat; the Moon's disc uniformly bright, the Sun's limb darkening left out | a bright totality (Danjon L = 4); darker ones change nothing the score sees, moonlight 10 mag down being far under any sky; the Moon-distance limit scaled linearly with the light, as the rule is with the illumination |
 | Bright-star reach (STAR) | V ≤ 4.0, stars and planets, within the frame's half-diagonal (without framing the Origin Mark II's); planets at mid-window | a warning, not a score: how far a halo or reflection spreads depends on the optics; Mars moves 0.3° in a night at most |
 | Field rotation limit | the trail at the object's edge in one sub at most a star's FWHM | stars elongated past 1.4 read as trailed; smart telescopes' live stacks derotate between subs, not within one; a mount type per preset (`config.Scope.Mount`): all alt-az, the Draco and the ORBIS 60EDX with a field derotator, from the makers' and distributors' specifications |
@@ -887,7 +801,7 @@ The models above come from the literature. The following are this project's own 
 | Stack ceiling | a residual of 0.2% of the sky (`-residual`) | flats and gradient removal match the sky to 0.1–0.5%; one value for every rig |
 | Blur | seeing (else 2.5″) × X^0.6, diffraction and 0.68 of a pixel in quadrature; a uniform ellipse | amateur sites see 2–3″; tracking and focus left out |
 | Rejected subs and gaps | 15% of subs, 1 s between subs | the Origin loses 10–20% to tracking, satellites and wind; the download and live stack take about a second; `-reject` sets the share |
-| Camera presets | 22 chips and 21 smart telescopes, the maker's peak QE (often an estimate) and read noise at its deep-sky gain (the OS08B10's from OmniVision's Nyxel 2 chart and one community measurement) | another gain changes the read noise (`-read-noise` sets it); a version without a published peak QE is left out |
+| Camera presets | 45 chips and 21 smart telescopes, the maker's peak QE (often an estimate) and read noise at its deep-sky gain (the OS08B10's from OmniVision's Nyxel 2 chart and one community measurement) | another gain changes the read noise (`-read-noise` sets it); a version without a published peak QE is left out |
 | Filter band shift | `-filter-std`: top-hat bands of the nominal width, one effective index (2.05) for every filter | real filters' edges slope and their indices differ by coating (Chroma's 5 nm Hα measures 0.39 at f/2 where the model gives 0.53); filters sold for fast optics are assumed to pass their lines whole |
 | Filter band width | every band `-filter-nm` wide, a `-scope`'s built-in filter's per line | real tri- and quad-band filters mix widths (the L-eNhance's 24 nm over Hβ and [O III]); one width keeps the flag simple |
 | OSM obstacle heights | building 8 m (else 3 m a level + 2 m), tree 12 m, wood 20 m | typical two-storey house, mature broadleaf, temperate forest canopy; OSM tags few heights |
@@ -912,8 +826,6 @@ The models above come from the literature. The following are this project's own 
 | Mosaic | 10% overlap, score ÷ panels | panels need overlap to register; the time is shared |
 | Forecast gaps | mean of the covered hours | neither optimistic nor pessimistic |
 | Clear night alert (`astro-notify`) | a minute is clear at cloud ≤ 10%, seeing ≤ 2″ and under 0.05 mm of rain in its hour (cloud and seeing known, unknown rain counting as none, as in the score); a stretch, and a listed target within it, of 2 h, or the window when shorter, but not under 30 min of a longer limit | "no clouds, good seeing" made numbers: 10% is about one okta, 2″ the report's own colour boundary; the limits are flags, and the 30 min keeps a window of minutes from passing for a clear night |
-
-Treat SCORE as a way to order tonight's options, not as an absolute measure of quality.
 
 ## References
 
@@ -951,7 +863,6 @@ Treat SCORE as a way to order tonight's options, not as an absolute measure of q
 | Constellation boundaries | [Roman (1987)][roman], PASP 99, 695; CDS [VI/49][vi49]; [astrogo](https://github.com/TuSKan/astrogo) |
 | Observability rules, target lists | [uptonight][uptonight] |
 
-[aa]: https://aa.usno.navy.mil/publications/asa
 [astronomy-engine]: https://github.com/cosinekitty/astronomy
 [jpl-approx]: https://ssd.jpl.nasa.gov/planets/approx_pos.html
 [montenbruck]: https://link.springer.com/book/10.1007/978-3-540-67221-0
