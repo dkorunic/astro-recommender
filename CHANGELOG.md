@@ -9,8 +9,8 @@ formulas behind the model changes.
 
 ### Added
 - `cmd/astro-notify`: a sidecar that runs `astro-recommender -json` and,
-  when the night has a long enough stretch without cloud and with good
-  seeing, sends its forecast and targets to Telegram chats, Discord users'
+  when the night has a long enough stretch without cloud or rain and with
+  good seeing, sends its forecast and targets to Telegram chats, Discord users'
   direct messages and a generic webhook (plain text or JSON, custom headers:
   ntfy, Gotify, Home Assistant), one message each.
 - `astro-notify` sends to Slack too (`-slack-chat`, `$SLACK_BOT_TOKEN`).
@@ -22,6 +22,13 @@ formulas behind the model changes.
 - Browser page: a required field left empty at Run is no longer scrolled
   under the sticky top bar, where it hid on phones behind the browser's
   "Please fill out this field" bubble.
+- Terminal view: a failed SQM, 7Timer or grid-elevation lookup is asked again
+  after 5 minutes. It used to stand for the session (7Timer's for an hour), so
+  starting offline scored every night as a dark sky.
+- Terminal view: a failed reverse geocoding's warning is written by a night,
+  so it can no longer race the view's exit.
+- `astro-notify`: a data race on the Discord embed when sending to several
+  users.
 
 ## [v0.24.3] — 2026-10-30
 

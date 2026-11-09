@@ -10,6 +10,39 @@ import (
 	"time"
 )
 
+// A failure stands for errTTL at most, whatever the ttl; an answer for the ttl.
+func TestMemoErrorExpires(t *testing.T) {
+	ctx := context.Background()
+	for _, ttl := range []time.Duration{0, time.Hour} {
+		calls := 0
+		m := NewMemo[int]()
+		get := func(context.Context) (int, error) {
+			calls++
+			if calls == 1 {
+				return 0, errors.New("down")
+			}
+
+			return calls, nil
+		}
+		if _, err := m.Get(ctx, ttl, get); err == nil {
+			t.Fatal("first lookup gave no error")
+		}
+		if _, err := m.Get(ctx, ttl, get); err == nil || calls != 1 {
+			t.Errorf("ttl %v: within errTTL err %v after %d calls; want the failure remembered", ttl, err, calls)
+		}
+		m.at = m.at.Add(-errTTL)
+		if v, err := m.Get(ctx, ttl, get); err != nil || v != 2 {
+			t.Errorf("ttl %v: past errTTL Get = %d, %v; want asked again, 2", ttl, v, err)
+		}
+		m.at = m.at.Add(-errTTL)
+		if ttl == 0 {
+			if v, _ := m.Get(ctx, ttl, get); v != 2 {
+				t.Errorf("an answer past errTTL Get = %d; want it kept, 2", v)
+			}
+		}
+	}
+}
+
 // A Memo asks once, its error too, until the ttl; a cancelled lookup is not
 // remembered; a nil Memo asks every time.
 func TestMemo(t *testing.T) {

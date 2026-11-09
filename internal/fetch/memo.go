@@ -8,13 +8,18 @@ import (
 	"time"
 )
 
-// Memo remembers a lookup's answer, its error too, for a session that asks
-// it again: the terminal view's ← and → recompute every night, while some
-// sources depend on the site alone (7Timer, which has no date, the
-// DarkSkySites map, a grid cell's elevation). An answer older than the ttl
-// given to Get (0: never) is asked again, and so is one a cancelled context
-// cut short. A nil Memo asks every time. Callers share the value, so they
-// must not modify it.
+// errTTL is the longest a failed lookup is remembered, whatever the ttl:
+// long enough not to spend a quota on every ← and →, short enough that a
+// network back up is noticed within the session.
+const errTTL = 5 * time.Minute
+
+// Memo remembers a lookup's answer, its error for at most errTTL, for a
+// session that asks it again: the terminal view's ← and → recompute every
+// night, while some sources depend on the site alone (7Timer, which has no
+// date, the DarkSkySites map, a grid cell's elevation). An answer older than
+// the ttl given to Get (0: never) is asked again, and so is one a cancelled
+// context cut short. A nil Memo asks every time. Callers share the value, so
+// they must not modify it.
 type Memo[T any] struct {
 	at   time.Time
 	v    T
@@ -41,6 +46,9 @@ func (m *Memo[T]) Get(ctx context.Context, ttl time.Duration, get func(context.C
 		return zero, ctx.Err()
 	}
 	defer func() { <-m.lock }()
+	if m.err != nil && (ttl == 0 || ttl > errTTL) {
+		ttl = errTTL
+	}
 	if m.ok && (ttl == 0 || time.Since(m.at) < ttl) {
 		return m.v, m.err
 	}

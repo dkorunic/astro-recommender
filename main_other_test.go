@@ -7,6 +7,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"sync/atomic"
 	"testing"
 )
@@ -18,32 +19,46 @@ func TestPlaceCache(t *testing.T) {
 	var p placeCache
 	var asked atomic.Int32
 	release := make(chan struct{})
-	lookup := func() string {
+	errDown := errors.New("down")
+	lookup := func() (string, error) {
 		asked.Add(1)
 		<-release
 
-		return "Zagreb"
+		return "Zagreb", errDown
 	}
 
 	// The first night, cancelled while its lookup runs: no place, the
 	// lookup carries on.
 	ctx, cancel := context.WithCancel(context.Background())
-	got := make(chan string)
-	go func() { got <- p.get(ctx, lookup) }()
+	type answer struct {
+		err   error
+		place string
+	}
+	got := make(chan answer)
+	ask := func(ctx context.Context) {
+		place, err := p.get(ctx, lookup)
+		got <- answer{err, place}
+	}
+	go ask(ctx)
 	for asked.Load() == 0 {
 	}
 	cancel()
-	if place := <-got; place != "" {
-		t.Errorf("cancelled night place %q", place)
+	if a := <-got; a.place != "" || a.err != nil {
+		t.Errorf("cancelled night got %q, %v", a.place, a.err)
 	}
 
-	// The night after waits for the same lookup's answer.
-	go func() { got <- p.get(context.Background(), lookup) }()
+	// The night after waits for the same lookup's answer, and warns of its
+	// failure; the nights after that have nothing to add.
+	go ask(context.Background())
 	close(release)
-	if place := <-got; place != "Zagreb" {
-		t.Errorf("next night place %q", place)
+	if a := <-got; a.place != "Zagreb" || !errors.Is(a.err, errDown) {
+		t.Errorf("next night got %q, %v", a.place, a.err)
 	}
-	if p.get(context.Background(), lookup); asked.Load() != 1 {
+	place, err := p.get(context.Background(), lookup)
+	if place != "Zagreb" || err != nil {
+		t.Errorf("third night got %q, %v; want the place and no second warning", place, err)
+	}
+	if asked.Load() != 1 {
 		t.Errorf("looked up %d times, want once", asked.Load())
 	}
 }

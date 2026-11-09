@@ -284,8 +284,9 @@ func fatal(msg string) {
 	os.Exit(1)
 }
 
-// exposures attaches the sub-exposure estimate to each listed result. It
-// needs a camera, which framing describes, and -csv never shows it.
+// exposures attaches the sub-exposure estimate to each listed result, which
+// needs a camera, which framing describes, and with -json keeps its Obs, for
+// the observable spans, with or without one. -csv shows neither.
 func exposures(cfg *config.Config, s *scoring.Sky, slots []plan.Slot, results []scoring.Result) {
 	if cfg.CSV || (!cfg.Framing && !cfg.JSON) {
 		return

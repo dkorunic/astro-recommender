@@ -190,6 +190,13 @@ func RetryWait(after string, limit time.Duration) (time.Duration, bool) {
 	} else if t, err := http.ParseTime(after); err == nil {
 		wait = time.Until(t)
 	}
+
+	return CapWait(wait, limit)
+}
+
+// CapWait is the pause for a server that asks for wait: at least RetryDelay,
+// false past limit.
+func CapWait(wait, limit time.Duration) (time.Duration, bool) {
 	if wait > limit {
 		return 0, false
 	}

@@ -104,11 +104,11 @@ func telegramWait(err error) (time.Duration, bool) {
 // capped is the pause for a rate limit that asks for after: none past
 // maxRetryWait, or negative, as a huge Retry-After overflows in the libraries.
 func capped(after time.Duration) (time.Duration, bool) {
-	if after < 0 || after > maxRetryWait {
+	if after < 0 {
 		return 0, false
 	}
 
-	return max(after, fetch.RetryDelay), true
+	return fetch.CapWait(after, maxRetryWait)
 }
 
 // discordWait retries a rate limit as long as it asks, a network error and a
@@ -207,7 +207,8 @@ func SendDiscord(ctx context.Context, token string, users []string, text string,
 		opt(s)
 	}
 	gateway := identify(ctx, s)
-	embed := &discordgo.MessageEmbed{Description: text, Color: embedGreen}
+	// The type set, or discordgo writes it while the sends share the embed.
+	embed := &discordgo.MessageEmbed{Type: discordgo.EmbedTypeRich, Description: text, Color: embedGreen}
 	err = concurrently(users, func(user string) error {
 		err := retried(ctx, discordWait, func() error {
 			ch, err := s.UserChannelCreate(user, discordgo.WithContext(ctx))

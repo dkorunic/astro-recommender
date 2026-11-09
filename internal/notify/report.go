@@ -139,7 +139,8 @@ func (s Span) overlap(o Span) Span {
 }
 
 // clear is whether the stretch meets the limits. An unknown cloud or seeing
-// does not, since nothing then says the sky is clear.
+// does not, since nothing then says the sky is clear; unknown rain counts as
+// none, as in the score (scoring.BuildSky).
 func (c *Condition) clear(l Limits) bool {
 	return c.Cloud != nil && *c.Cloud <= l.Cloud && c.Seeing != nil && *c.Seeing <= l.Seeing &&
 		(c.Precip == nil || *c.Precip < weather.RainShown)

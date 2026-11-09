@@ -63,16 +63,12 @@ func runTUI(ctx context.Context, cfg config.Config, targets []catalog.Target) er
 
 	var pc placeCache
 	ses := newSession()
-	geo := func() string {
+	geo := func() (string, error) {
 		if cfg.NoGeocode {
-			return ""
-		}
-		place, err := geocode.Reverse(ctx, cfg.Lat, cfg.Lon)
-		if err != nil {
-			warn(ctx, "warning: no reverse geocoding:", err)
+			return "", nil
 		}
 
-		return place
+		return geocode.Reverse(ctx, cfg.Lat, cfg.Lon)
 	}
 
 	return tui.Run(ctx, opt, func(nctx context.Context, day time.Time, dateSet bool) tui.Night {
@@ -81,7 +77,11 @@ func runTUI(ctx context.Context, cfg config.Config, targets []catalog.Target) er
 		n, err := compute(nctx, c, targets, ses)
 		out := tui.Night{Day: n.day, Msg: n.msg, Err: err}
 		if err == nil && n.msg == "" {
-			out.Doc = view.Build(&n.cfg, &n.sky, pc.get(nctx, geo), n.results, n.slots)
+			place, err := pc.get(nctx, geo)
+			if err != nil {
+				warn(nctx, "warning: no reverse geocoding:", err)
+			}
+			out.Doc = view.Build(&n.cfg, &n.sky, place, n.results, n.slots)
 		}
 
 		return out
@@ -93,29 +93,36 @@ func runTUI(ctx context.Context, cfg config.Config, targets []catalog.Target) er
 // The lookup runs on the program's context, not a night's, since ← and →
 // cancel the night computing, and every night waits for its one answer
 // (named or not: at sea, offline or a 429 is not asked again). The first
-// night past its early exits starts it, once the view holds stderr for its
-// warning.
+// night past its early exits starts it. The lookup itself writes nothing:
+// Run waits for the nights, not for it, before os.Stderr is swapped back, so
+// a night warns of its failure.
 type placeCache struct {
 	done  chan struct{}
+	err   error
 	place string
 	once  sync.Once
+	told  sync.Once
 }
 
 // get starts lookup on its first call and returns its place once known, or
-// "" when ctx (the night's) ends first.
-func (p *placeCache) get(ctx context.Context, lookup func() string) string {
+// "" when ctx (the night's) ends first, and its error to the first night
+// only.
+func (p *placeCache) get(ctx context.Context, lookup func() (string, error)) (string, error) {
 	p.once.Do(func() {
 		p.done = make(chan struct{})
 		go func() {
 			defer close(p.done)
-			p.place = lookup()
+			p.place, p.err = lookup()
 		}()
 	})
 	select {
 	case <-p.done:
-		return p.place
+		var err error
+		p.told.Do(func() { err = p.err })
+
+		return p.place, err
 	case <-ctx.Done():
-		return ""
+		return "", nil
 	}
 }
 

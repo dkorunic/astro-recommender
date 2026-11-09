@@ -66,6 +66,7 @@ func TestClearRuns(t *testing.T) {
 		{name: "bad seeing splits it", edit: func(r *Report) { r.Conditions[1].Seeing = new(2.5) }, want: 3 * time.Hour, runs: 2},
 		{name: "unknown cloud is not clear", edit: func(r *Report) { r.Conditions[1].Cloud = nil }, want: 3 * time.Hour, runs: 2},
 		{name: "unknown seeing is not clear", edit: func(r *Report) { r.Conditions[1].Seeing = nil }, want: 3 * time.Hour, runs: 2},
+		{name: "unknown rain counts as none, as in the score", edit: func(r *Report) { r.Conditions[1].Precip = nil }, want: 5 * time.Hour, runs: 1},
 		{name: "rain is not clear", edit: func(r *Report) { r.Conditions[1].Precip = new(0.2) }, want: 3 * time.Hour, runs: 2},
 		{name: "a trace of rain is", edit: func(r *Report) { r.Conditions[1].Precip = new(0.01) }, want: 5 * time.Hour, runs: 1},
 	} {
@@ -488,14 +489,17 @@ func TestSendDiscord(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	err := SendDiscord(context.Background(), testToken, []string{"closed", "42"}, "hi", func(s *discordgo.Session) {
+	err := SendDiscord(context.Background(), testToken, []string{"closed", "42", "43", "44"}, "hi", func(s *discordgo.Session) {
 		s.Client = &http.Client{Transport: toServer{strings.TrimPrefix(srv.URL, "http://")}}
 	})
 	if err == nil || !strings.Contains(err.Error(), "user closed") {
 		t.Errorf("error %v, want the failing user named", err)
 	}
-	if sent["dm-42"] != "hi" {
-		t.Errorf("sent %v, want the embed in the second user's channel", sent)
+	// More than one send gets through, so -race sees them share the embed.
+	for _, ch := range []string{"dm-42", "dm-43", "dm-44"} {
+		if sent[ch] != "hi" {
+			t.Errorf("sent %v, want the embed in %s", sent, ch)
+		}
 	}
 }
 

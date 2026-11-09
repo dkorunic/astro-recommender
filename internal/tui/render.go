@@ -517,11 +517,7 @@ func nonEmpty(s ...string) []string {
 	return out
 }
 
-// aladin is the Aladin Lite link at a result's view.Doc position; thumb a
-// hips2fits DSS2 picture of it for cols x rows cells at cellW x cellH pixels
-// a cell (a high-DPI terminal's: Kitty graphics show them, scaled to the
-// real cell; half-blocks take two a cell), the short side half again the
-// object, within 0.1-5°, 0.5° for an unknown size: the page's skyURLs.
+// aladin is the Aladin Lite link at a result's view.Doc position.
 func aladin(pos [3]float64) string { return dss.Aladin(pos[0], pos[1], pos[2]) }
 
 const cellW, cellH = 16, 32
@@ -531,6 +527,10 @@ const (
 	userAgent = "astro-recommender (+https://github.com/dkorunic/astro-recommender)"
 )
 
+// thumb is a hips2fits DSS2 picture of a view.Doc position for cols x rows
+// cells at cellW x cellH pixels a cell (a high-DPI terminal's: Kitty graphics
+// show them, scaled to the real cell; half-blocks take two a cell), the short
+// side dss.FOV: the page's skyURLs.
 func thumb(pos [3]float64, cols, rows int) string {
 	w, h := cols*cellW, rows*cellH
 	f := dss.FOV(pos[2]) * float64(max(w, h)) / float64(min(w, h))
