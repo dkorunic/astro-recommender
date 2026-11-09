@@ -855,6 +855,24 @@ func TestChartMoon(t *testing.T) {
 	if got := draw(make([]float64, n)); got != without {
 		t.Error("a Moon below the horizon changed the chart")
 	}
+	// A Moon that sets leaves the axis as one never up does.
+	axis := func(chart string) string {
+		for l := range strings.Lines(chart) {
+			if strings.Contains(ansi.Strip(l), "└") {
+				return l
+			}
+		}
+		t.Fatal("no axis row")
+
+		return ""
+	}
+	set := make([]float64, n)
+	for k := range set[:n/2] {
+		set[k] = 30
+	}
+	if got, want := axis(draw(set)), axis(without); got != want {
+		t.Errorf("a set Moon's axis row\n%q, want\n%q", got, want)
+	}
 	one := make([]float64, n)
 	one[n/2] = 40
 	draw(one)

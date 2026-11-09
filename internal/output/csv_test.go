@@ -123,6 +123,25 @@ func TestMosaicWarning(t *testing.T) {
 	}
 }
 
+func TestRotateWarning(t *testing.T) {
+	frame := config.Mosaic{Cols: 1, Rows: 1, W: 60, H: 30}
+	fits := scoring.Result{
+		Name: "A", Mosaic: frame,
+		Size: 29,
+	}
+	long := scoring.Result{Name: "B", Mosaic: frame}
+	long.Size, long.Minor = 45, 10
+	unknown := scoring.Result{Name: "C"} // a comet, or no size in the list
+	list := []*scoring.Result{&fits, &long, &unknown}
+	if got := rotateWarning(&config.Config{}, list); got != "" {
+		t.Errorf("without -rotate: %q", got)
+	}
+	got := rotateWarning(&config.Config{Rotate: true}, list)
+	if !strings.HasSuffix(got, ": B") {
+		t.Errorf("warning %q", got)
+	}
+}
+
 func TestASIAIRRow(t *testing.T) {
 	for in, want := range map[string]string{"NGC 1, a|b": "NGC 1 a b", " ,|": "Target", "C/2025 A6 (Lemmon)": "C/2025 A6 (Lemmon)"} {
 		if got := asiairName(in); got != want {

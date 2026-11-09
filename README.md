@@ -174,9 +174,9 @@ Narrow terminals drop columns in this order: STAR, RA+DEC, CON, UP, MAG, SB, SKY
 
 **`-json`** prints one document: `location`, `window`, `moon`, `sky`, `frame`, `forecast`, `conditions` (the forecast as the scored minutes read it), `plan`, `targets`. Unknown values are omitted. A night with nothing to plan gives `{"message": "…", "targets": []}`. A target's `subs` holds `modest`, `good` and `best` (SNR 5, 10, 20), `max`, `sub`, `snrPerSub` and `panels`.
 
-**`-csv`** prints Telescopius's observing-list format, which [N.I.N.A.](https://nighttime-imaging.eu/)'s simple sequencer imports: the top `-n` targets, or with `-plan` the planned ones in order, at J2000.
+**`-csv`** prints Telescopius's observing-list format, which [N.I.N.A.](https://nighttime-imaging.eu/)'s simple sequencer imports: the top `-n` targets, or with `-plan` the planned ones in order, at J2000. A mosaic is its centre only, and no camera angle is set; stderr names the mosaics and the targets that fit only with `-rotate`.
 
-**`-asiair`** prints the same targets as text to paste into the ZWO ASIAIR's Plan mode Import. ZWO does not document the format, and it has not been tested on a device. A mosaic is its centre only, at angle 0, with a warning on stderr.
+**`-asiair`** prints the same targets as text to paste into the ZWO ASIAIR's Plan mode Import. ZWO does not document the format, and it has not been tested on a device. Mosaics and rotation are as for `-csv`; the angle is always 0.
 
 With framing, the header's `Frame:` line and JSON `frame` judge the pixel scale against the night's mean zenith seeing and, for a known aperture, diffraction: 2–3 pixels across a star is well sampled.
 

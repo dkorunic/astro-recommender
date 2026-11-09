@@ -30,9 +30,11 @@ var csvHeader = []string{"Catalogue Entry", "Familiar Name", "Right Ascension (J
 // back to J2000 (PrecessT at minus the epoch, within an arcsecond) since
 // N.I.N.A. slews to it. With no results it prints the header.
 func CSV(cfg *config.Config, s *scoring.Sky, slots []plan.Slot, results []scoring.Result) error {
+	list := exported(cfg, slots, results)
+	warnExport(cfg, list)
 	w := csv.NewWriter(os.Stdout)
 	_ = w.Write(csvHeader)
-	for _, res := range exported(cfg, slots, results) {
+	for _, res := range list {
 		raS, decS := sexagesimal(J2000(s, res.Target))
 		_ = w.Write([]string{cell(res.Name), "", raS, decS})
 	}
@@ -69,13 +71,11 @@ const asiairHeader = "Plan, RA, DEC, Angle"
 
 // ASIAIR prints the targets CSV would list as an ASIAIR plan: J2000 positions
 // to the second, one row each.
-// ponytail: a mosaic is its centre only (warned on stderr) and the angle
-// always 0, as the CSV; list the panels if ASIAIR users want them.
+// ponytail: a mosaic is its centre only and the angle always 0 (both warned
+// on stderr), as the CSV; list the panels if ASIAIR users want them.
 func ASIAIR(cfg *config.Config, s *scoring.Sky, slots []plan.Slot, results []scoring.Result) error {
 	list := exported(cfg, slots, results)
-	if w := mosaicWarning(list); w != "" {
-		fmt.Fprintln(os.Stderr, w)
-	}
+	warnExport(cfg, list)
 	var b strings.Builder
 	b.WriteString(asiairHeader + "\n")
 	for _, res := range list {
@@ -88,6 +88,35 @@ func ASIAIR(cfg *config.Config, s *scoring.Sky, slots []plan.Slot, results []sco
 	_, err := os.Stdout.WriteString(b.String())
 
 	return err
+}
+
+// warnExport says on stderr what a target export's one row each cannot hold.
+func warnExport(cfg *config.Config, list []*scoring.Result) {
+	for _, w := range []string{mosaicWarning(list), rotateWarning(cfg, list)} {
+		if w != "" {
+			fmt.Fprintln(os.Stderr, w)
+		}
+	}
+}
+
+// rotateWarning names the listed targets that -rotate alone lets the frame
+// hold, longer than its short side, which a row without a camera angle cannot
+// set up; "" without any. The catalogues give no position angle to export.
+func rotateWarning(cfg *config.Config, list []*scoring.Result) string {
+	if !cfg.Rotate {
+		return ""
+	}
+	var names []string
+	for _, res := range list {
+		if major, _ := res.FrameAxes(); res.HasSize() && major >= min(res.Mosaic.W, res.Mosaic.H) {
+			names = append(names, res.Name)
+		}
+	}
+	if names == nil {
+		return ""
+	}
+
+	return "warning: the export sets no camera angle; these fit only with the camera rotated to their major axis: " + strings.Join(names, ", ")
 }
 
 // mosaicWarning names the listed targets that need more frames than the one
@@ -103,7 +132,7 @@ func mosaicWarning(list []*scoring.Result) string {
 		return ""
 	}
 
-	return "warning: -asiair lists only the centre of a mosaic, not its panels: " + strings.Join(names, ", ")
+	return "warning: the export lists only the centre of a mosaic, not its panels: " + strings.Join(names, ", ")
 }
 
 // asiairName takes the row's separators out of a name.

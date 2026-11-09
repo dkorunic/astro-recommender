@@ -16,6 +16,8 @@ formulas behind the model changes.
 ### Changed
 - The browser keeps the form in the URL fragment, so the site's server never
   receives it; links with a query string still work.
+- `-csv` and `-asiair` warn on stderr about the mosaics they list by their
+  centre and the targets that fit only with the camera rotated (`-rotate`).
 
 ## [v0.24.6] — 2026-11-09
 

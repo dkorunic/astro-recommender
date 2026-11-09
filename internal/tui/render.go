@@ -505,6 +505,9 @@ func (m *model) drawChart(i, w, h int) string {
 		order = slices.Insert(order, 0, "moon")
 	}
 	ch.DrawDataSets(order)
+	// Over the curves, which the chart puts on the axis row at 0°: a Moon
+	// that has set is no line along the axis.
+	ch.DrawXYAxisAndLabel()
 	shade := lipgloss.NewStyle().Background(t.soft)
 	// A column spans (last-first)/plot width; the plot is narrower than w, so
 	// stepping by the w-th part reaches every column, where d.Step skipped

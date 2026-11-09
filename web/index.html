@@ -337,7 +337,7 @@ footer a:hover { text-decoration: underline; }
   <div id="subs" hidden></div>
 </div>
 <footer>
-  <p class="privacy">Runs entirely in your browser. The only network requests go to the forecast, sky brightness, geocoding and comet services, to NOAA for the solar flux (no location sent), to CDS for the DSS2 pictures of the results, and to Cloudflare Web Analytics, a cookieless visit counter. Your form stays in the address after the #, which browsers do not send to the site, and the counter's script (checked November 2026) reports the address without it.</p>
+  <p class="privacy">Runs entirely in your browser. The only network requests go to the forecast, sky brightness, geocoding and comet services, to NOAA for the solar flux (no location sent), to CDS and NASA SkyView for the DSS2 pictures of the results, and to Cloudflare Web Analytics, a cookieless visit counter. Your form stays in the address after the #, which browsers do not send to the site, and the counter's script (checked November 2026) reports the address without it.</p>
   <span>© 2026 Dinko Korunic</span>
   <span>Code: <a rel="license" href="https://github.com/dkorunic/astro-recommender/blob/main/LICENSE">MIT</a> · <a href="https://github.com/dkorunic/astro-recommender/blob/main/README.md">README</a> · <a href="https://github.com/dkorunic/astro-recommender/">GitHub</a><span id="version"></span></span>
 </footer>
@@ -741,7 +741,7 @@ function drawAlt(c, alt, obs, card, key) {
   if (wx.length) keys.push(
     ["cloud", (k) => { g.fillStyle = v("--fg"); g.globalAlpha = 0.5; g.fillRect(k, H + 2, 10, 8); g.globalAlpha = 1; }],
     ["rain", (k) => { g.fillStyle = v("--c34"); g.fillRect(k, H + 2, 10, 8); }]);
-  if (moon.some((d) => d > 0)) keys.push(["Moon", (k) => { g.strokeStyle = v("--c33"); g.lineWidth = 1.2; g.beginPath(); g.moveTo(k, H + 6); g.lineTo(k + 10, H + 6); g.stroke(); }]);
+  if (moon.some((d, i) => i && d > 0 && moon[i - 1] > 0)) keys.push(["Moon", (k) => { g.strokeStyle = v("--c33"); g.lineWidth = 1.2; g.beginPath(); g.moveTo(k, H + 6); g.lineTo(k + 10, H + 6); g.stroke(); }]);
   g.font = "9px system-ui, sans-serif"; g.textAlign = "left";
   let k = P;
   for (const [name, mark] of keys) {
@@ -1021,12 +1021,17 @@ function query() {
 }
 function share() { history.replaceState(null, "", query()); }
 function fromURL() {
-  // A former link's form is in its query string.
-  const q = new URLSearchParams(location.hash.slice(1) || location.search);
-  if (q.has("origin") && !q.get("scope")) q.set("scope", "origin"); // -origin was -scope origin
+  const read = (s) => {
+    const q = new URLSearchParams(s);
+    if (q.has("origin") && !q.get("scope")) q.set("scope", "origin"); // -origin was -scope origin
+    return q;
+  };
   // Only a link query() made (it always names a field) fills and runs the
   // form; a foreign parameter such as a tracking tag must not start a run.
-  if (![...$("form").elements].some((el) => el.name && el.type !== "file" && q.has(el.name))) return false;
+  const names = (q) => [...$("form").elements].some((el) => el.name && el.type !== "file" && q.has(el.name));
+  // The fragment, else a former link's query string.
+  const q = [location.hash.slice(1), location.search].map(read).find(names);
+  if (!q) return false;
   for (const el of $("form").elements) {
     if (!el.name || el.type === "file") continue;
     if (el.type === "checkbox") el.checked = q.has(el.name); else el.value = q.get(el.name) ?? "";
