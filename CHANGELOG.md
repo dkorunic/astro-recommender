@@ -19,9 +19,6 @@ formulas behind the model changes.
   observable run.
 
 ### Fixed
-- Browser page: a required field left empty at Run is no longer scrolled
-  under the sticky top bar, where it hid on phones behind the browser's
-  "Please fill out this field" bubble.
 - Terminal view: a failed SQM, 7Timer or grid-elevation lookup is asked again
   after 5 minutes. It used to stand for the session (7Timer's for an hour), so
   starting offline scored every night as a dark sky.
@@ -33,6 +30,13 @@ formulas behind the model changes.
   instead of leaving every night without it for up to 5 minutes.
 - Terminal view: a failed reverse geocoding's warning can no longer be lost
   to a night cancelled by `←` or `→`.
+
+## [v0.24.4] — 2026-11-08
+
+### Fixed
+- Browser page: a required field left empty at Run is no longer scrolled
+  under the sticky top bar, where it hid on phones behind the browser's
+  "Please fill out this field" bubble.
 
 ## [v0.24.3] — 2026-10-30
 
@@ -655,7 +659,8 @@ LDN, OpenNGC, OpenIC) for tonight's astronomical night. Features:
 - a greedy night plan (`-plan`)
 - an offline time-zone lookup and reverse geocoding
 
-[Unreleased]: https://github.com/dkorunic/astro-recommender/compare/v0.24.3...HEAD
+[Unreleased]: https://github.com/dkorunic/astro-recommender/compare/v0.24.4...HEAD
+[v0.24.4]: https://github.com/dkorunic/astro-recommender/compare/v0.24.3...v0.24.4
 [v0.24.3]: https://github.com/dkorunic/astro-recommender/compare/v0.24.2...v0.24.3
 [v0.24.2]: https://github.com/dkorunic/astro-recommender/compare/v0.24.1...v0.24.2
 [v0.24.1]: https://github.com/dkorunic/astro-recommender/compare/v0.24.0...v0.24.1
