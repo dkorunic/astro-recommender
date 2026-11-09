@@ -5,7 +5,7 @@ commits since the previous tag. Version numbers skip where no tag was cut
 (v0.6–v0.7, v0.10–v0.12, v0.15–v0.17). See [MODELS.md](MODELS.md) for the
 formulas behind the model changes.
 
-## [Unreleased]
+## [v0.24.5] — 2026-11-09
 
 ### Added
 - `cmd/astro-notify`: a sidecar that runs `astro-recommender -json` and,
@@ -659,7 +659,8 @@ LDN, OpenNGC, OpenIC) for tonight's astronomical night. Features:
 - a greedy night plan (`-plan`)
 - an offline time-zone lookup and reverse geocoding
 
-[Unreleased]: https://github.com/dkorunic/astro-recommender/compare/v0.24.4...HEAD
+[Unreleased]: https://github.com/dkorunic/astro-recommender/compare/v0.24.5...HEAD
+[v0.24.5]: https://github.com/dkorunic/astro-recommender/compare/v0.24.4...v0.24.5
 [v0.24.4]: https://github.com/dkorunic/astro-recommender/compare/v0.24.3...v0.24.4
 [v0.24.3]: https://github.com/dkorunic/astro-recommender/compare/v0.24.2...v0.24.3
 [v0.24.2]: https://github.com/dkorunic/astro-recommender/compare/v0.24.1...v0.24.2
