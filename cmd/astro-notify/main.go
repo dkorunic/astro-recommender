@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: MIT
 
 // Command astro-notify runs astro-recommender with -json and, when the night
-// has a long enough stretch without cloud and with good seeing, sends its
-// forecast and targets to Telegram chats, Discord users, Slack chats and a webhook. It
-// runs once: schedule it.
+// has a long enough stretch without cloud or rain and with good seeing, sends
+// its forecast and targets to Telegram chats, Discord users, Slack chats and a
+// webhook. It runs once: schedule it.
 package main
 
 import (

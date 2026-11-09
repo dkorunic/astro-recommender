@@ -10,6 +10,35 @@ import (
 	"time"
 )
 
+// A failed refresh keeps the last answer beside its error, also while the
+// failure is remembered, and the next success replaces it.
+func TestMemoRefreshFailureKeepsAnswer(t *testing.T) {
+	ctx := context.Background()
+	errDown := errors.New("down")
+	m := NewMemo[int]()
+	answer := func(v int, err error) func(context.Context) (int, error) {
+		return func(context.Context) (int, error) { return v, err }
+	}
+	if v, err := m.Get(ctx, time.Hour, answer(1, nil)); v != 1 || err != nil {
+		t.Fatalf("first Get = %d, %v", v, err)
+	}
+	m.at = m.at.Add(-time.Hour)
+	if v, err := m.Get(ctx, time.Hour, answer(0, errDown)); v != 1 || !errors.Is(err, errDown) {
+		t.Errorf("failed refresh Get = %d, %v; want the last answer, 1, down", v, err)
+	}
+	if v, err := m.Get(ctx, time.Hour, answer(9, nil)); v != 1 || !errors.Is(err, errDown) {
+		t.Errorf("within errTTL Get = %d, %v; want the remembered 1, down", v, err)
+	}
+	m.at = m.at.Add(-errTTL)
+	if v, err := m.Get(ctx, time.Hour, answer(0, errDown)); v != 1 || !errors.Is(err, errDown) {
+		t.Errorf("second failed refresh Get = %d, %v; want the last answer, 1, down", v, err)
+	}
+	m.at = m.at.Add(-errTTL)
+	if v, err := m.Get(ctx, time.Hour, answer(2, nil)); v != 2 || err != nil {
+		t.Errorf("after the failures Get = %d, %v; want 2, nil", v, err)
+	}
+}
+
 // A failure stands for errTTL at most, whatever the ttl; an answer for the ttl.
 func TestMemoErrorExpires(t *testing.T) {
 	ctx := context.Background()

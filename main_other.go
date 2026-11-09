@@ -106,7 +106,7 @@ type placeCache struct {
 
 // get starts lookup on its first call and returns its place once known, or
 // "" when ctx (the night's) ends first, and its error to the first night
-// only.
+// not cancelled only.
 func (p *placeCache) get(ctx context.Context, lookup func() (string, error)) (string, error) {
 	p.once.Do(func() {
 		p.done = make(chan struct{})
@@ -118,7 +118,9 @@ func (p *placeCache) get(ctx context.Context, lookup func() (string, error)) (st
 	select {
 	case <-p.done:
 		var err error
-		p.told.Do(func() { err = p.err })
+		if ctx.Err() == nil { // select may pick this case for a cancelled night, which could not warn
+			p.told.Do(func() { err = p.err })
+		}
 
 		return p.place, err
 	case <-ctx.Done():

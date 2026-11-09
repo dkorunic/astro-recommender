@@ -18,14 +18,16 @@ const errTTL = 5 * time.Minute
 // night, while some sources depend on the site alone (7Timer, which has no
 // date, the DarkSkySites map, a grid cell's elevation). An answer older than
 // the ttl given to Get (0: never) is asked again, and so is one a cancelled
-// context cut short. A nil Memo asks every time. Callers share the value, so
-// they must not modify it.
+// context cut short; a refresh that fails returns the last answer beside its
+// error. A nil Memo asks every time. Callers share the value, so they must
+// not modify it.
 type Memo[T any] struct {
 	at   time.Time
 	v    T
 	err  error
 	lock chan struct{} // one lookup at a time; a channel, so waiting heeds ctx
 	ok   bool
+	good bool // v is a lookup's that succeeded
 }
 
 // NewMemo returns an empty Memo.
@@ -54,7 +56,10 @@ func (m *Memo[T]) Get(ctx context.Context, ttl time.Duration, get func(context.C
 	}
 	v, err := get(ctx)
 	if ctx.Err() == nil {
-		m.v, m.err, m.at, m.ok = v, err, time.Now(), true
+		if err != nil && m.good {
+			v = m.v // the last answer outlives a failed refresh, as fetch.Cached's copy does
+		}
+		m.v, m.err, m.at, m.ok, m.good = v, err, time.Now(), true, m.good || err == nil
 	}
 
 	return v, err

@@ -207,9 +207,9 @@ func SendDiscord(ctx context.Context, token string, users []string, text string,
 		opt(s)
 	}
 	gateway := identify(ctx, s)
-	// The type set, or discordgo writes it while the sends share the embed.
-	embed := &discordgo.MessageEmbed{Type: discordgo.EmbedTypeRich, Description: text, Color: embedGreen}
 	err = concurrently(users, func(user string) error {
+		// One each: discordgo writes defaults into the embed it is given.
+		embed := &discordgo.MessageEmbed{Description: text, Color: embedGreen}
 		err := retried(ctx, discordWait, func() error {
 			ch, err := s.UserChannelCreate(user, discordgo.WithContext(ctx))
 			if err != nil {

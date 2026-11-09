@@ -29,6 +29,10 @@ formulas behind the model changes.
   so it can no longer race the view's exit.
 - `astro-notify`: a data race on the Discord embed when sending to several
   users.
+- Terminal view: a failed 7Timer refresh keeps the forecast already fetched,
+  instead of leaving every night without it for up to 5 minutes.
+- Terminal view: a failed reverse geocoding's warning can no longer be lost
+  to a night cancelled by `←` or `→`.
 
 ## [v0.24.3] — 2026-10-30
 
