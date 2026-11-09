@@ -92,7 +92,7 @@ brew install --cask dkorunic/tap/astro-recommender
 Or from a checkout, using [Task](https://taskfile.dev/):
 
 ```sh
-task build   # formats, then builds a static, PGO-optimised binary (profile: default.pgo)
+task build   # formats, then builds a static, PGO-optimised binary (profile: default.pgo) and astro-notify
 task pgo     # regenerates default.pgo from the offline scoring benchmarks
 task test
 task test-wasm   # the browser build's tests, under Node
@@ -705,7 +705,7 @@ To measure it, stand where the telescope sits and use a compass and an inclinome
 
 ### Clear night alerts
 
-`astro-notify` runs `astro-recommender -json` once and, if the night is good enough, sends the forecast and targets to Telegram chats, Discord users, Slack chats and a webhook, any or all of them. Build it with `go build ./cmd/astro-notify` and run it from cron or a systemd timer, once each afternoon, from the same version as `astro-recommender`. Everything after `--` goes to `astro-recommender`:
+`astro-notify` runs `astro-recommender -json` once and, if the night is good enough, sends the forecast and targets to Telegram chats, Discord users, Slack chats and a webhook, any or all of them. It comes with the release archives and Homebrew; from source, build it with `task build` or `go build ./cmd/astro-notify`. Run it from cron or a systemd timer, once each afternoon, from the same version as `astro-recommender`. Everything after `--` goes to `astro-recommender`:
 
 ```sh
 export TELEGRAM_BOT_TOKEN=123456:ABC...   # from @BotFather

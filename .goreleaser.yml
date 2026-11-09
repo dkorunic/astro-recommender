@@ -13,24 +13,40 @@ builds:
       - CGO_ENABLED=0
     ldflags: |
       -s -w -extldflags '-static' -X "main.GitTag={{.Tag}}" -X "main.GitCommit={{.ShortCommit}}" -X "main.GitDirty= " -X "main.BuildTime={{.Date}}"
-    goos:
+    goos: &goos
       - linux
       - darwin
       - windows
-    goarch:
+    goarch: &goarch
       - amd64
       - arm
       - arm64
-    goarm:
+    goarm: &goarm
       - 6
       - 7
-    ignore:
+    ignore: &ignore
       - goos: windows
         goarch: arm64
       - goos: windows
         goarch: arm
+  - id: astro-notify
+    main: ./cmd/astro-notify
+    binary: astro-notify
+    flags:
+      - -trimpath
+    env:
+      - CGO_ENABLED=0
+    ldflags: |
+      -s -w -extldflags '-static'
+    goos: *goos
+    goarch: *goarch
+    goarm: *goarm
+    ignore: *ignore
 universal_binaries:
   - replace: true
+  - id: astro-notify
+    name_template: astro-notify
+    replace: true
 changelog:
   sort: asc
 archives:
@@ -65,9 +81,10 @@ brews:
       system "#{bin}/astro-recommender", "-version"
     install: |
       bin.install "astro-recommender"
+      bin.install "astro-notify"
 homebrew_casks:
   - name: astro-recommender
-    binaries: [astro-recommender]
+    binaries: [astro-recommender, astro-notify]
     repository:
       owner: dkorunic
       name: homebrew-tap
@@ -80,4 +97,5 @@ homebrew_casks:
         install: |
           if system_command("/usr/bin/xattr", args: ["-h"]).exit_status == 0
             system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/astro-recommender"]
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/astro-notify"]
           end

@@ -92,6 +92,7 @@ tasks:
       - task: fmt
       - task: lists
       - go build -trimpath -pgo=auto -ldflags="-s -w -extldflags '-static' -X main.GitTag={{.GIT_LAST_TAG}} -X main.GitCommit={{.GIT_HEAD_COMMIT}} -X main.GitDirty={{.GIT_MODIFIED}} -X main.BuildTime={{.BUILD_DATE}}" -o {{.TARGET}}
+      - go build -trimpath -ldflags="-s -w -extldflags '-static'" -o astro-notify ./cmd/astro-notify
 
   web:
     desc: Build the browser version into web/ (app.wasm + wasm_exec.js + lists/); serve the directory, e.g. python3 -m http.server -d web
