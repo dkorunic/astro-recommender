@@ -5,6 +5,18 @@ commits since the previous tag. Version numbers skip where no tag was cut
 (v0.6–v0.7, v0.10–v0.12, v0.15–v0.17). See [MODELS.md](MODELS.md) for the
 formulas behind the model changes.
 
+## [Unreleased]
+
+### Added
+- `-asiair` prints the targets as a plan for the ZWO ASIAIR's Plan mode Import.
+- The header's Frame line and JSON `frame` judge the pixel scale against the
+  night's seeing (`fwhm`, `pxPerFwhm`, `sampling`).
+- The browser's and terminal view's altitude charts draw the Moon's altitude.
+
+### Changed
+- The browser keeps the form in the URL fragment, so the site's server never
+  receives it; links with a query string still work.
+
 ## [v0.24.6] — 2026-11-09
 
 ### Added

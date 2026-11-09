@@ -57,7 +57,7 @@ How astro-recommender compares with other target-selection tools. Other tools' d
 - Conditions: darkness by hand, SQM or Falchi zone; no forecast.
 - Catalogues: 1.6 million objects. Exports to N.I.N.A., SGP, APT, ACP.
 - Positions: abridged VSOP87, ELP 2000-82B Moon (< 11″).
-- astro-recommender lacks: about 50× the objects, export beyond N.I.N.A., logging, arcsecond ephemerides.
+- astro-recommender lacks: about 50× the objects, export to SGP, APT and ACP, logging, arcsecond ephemerides.
 
 **[AstroPlanner](https://astroplanner.net/)** (shareware, macOS, Windows)
 - Selects: Plan Creation Wizard by telescope, site, skill level; user-contributed plans; scripting.

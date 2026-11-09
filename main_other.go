@@ -33,13 +33,13 @@ const snapshotEnv = "ASTRO_RECOMMENDER_SNAPSHOT"
 
 // useTUI reports whether to show the interactive view rather than print the
 // report: on a terminal, both ways (stdin for the keys), unless -no-tui,
-// -json or -csv, or TERM=dumb asks for text.
+// -json, -csv or -asiair, or TERM=dumb asks for text.
 func useTUI(cfg *config.Config) bool {
 	if os.Getenv(snapshotEnv) != "" {
 		return true
 	}
 
-	return !cfg.NoTUI && !cfg.JSON && !cfg.CSV && os.Getenv("TERM") != "dumb" &&
+	return !cfg.NoTUI && !cfg.JSON && !cfg.CSV && !cfg.ASIAIR && os.Getenv("TERM") != "dumb" &&
 		term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd()))
 }
 

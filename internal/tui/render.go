@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -453,6 +454,9 @@ type chartKey struct {
 	red  bool
 }
 
+// The altitude limits' datasets.
+const limitMin, limitMax = "min", "max"
+
 // drawChart is chart's drawing.
 func (m *model) drawChart(i, w, h int) string {
 	d := &m.night.Doc
@@ -476,9 +480,9 @@ func (m *model) drawChart(i, w, h int) string {
 		// rescale its axis to fit.
 		ch.Push(timeserieslinechart.TimePoint{Time: at(k), Value: min(90, max(0, a))})
 	}
-	for _, lim := range []string{"min", "max"} {
+	for _, lim := range []string{limitMin, limitMax} {
 		v := d.Min
-		if lim == "max" {
+		if lim == limitMax {
 			v = d.Max
 		}
 		ch.PushDataSet(lim, timeserieslinechart.TimePoint{Time: first, Value: v})
@@ -486,7 +490,21 @@ func (m *model) drawChart(i, w, h int) string {
 		ch.SetDataSetStyle(lim, t.style(t.good).Faint(true))
 		ch.SetDataSetLineStyle(lim, runes.ThinLineStyle)
 	}
-	ch.DrawAll()
+	// The target's curve, then the limits, as DrawAll's name order has them.
+	order := []string{timeserieslinechart.DefaultDataSetName, limitMax, limitMin}
+	if slices.ContainsFunc(d.Moon, func(a float64) bool { return a > 0 }) {
+		// Every sample, clamped as the target's: the chart reads a column
+		// without data as 0, so a dataset of the up minutes alone would run
+		// along the axis and drop straight down at moonset. Drawn first, under
+		// the target's curve, as on the page.
+		for k, a := range d.Moon {
+			ch.PushDataSet("moon", timeserieslinechart.TimePoint{Time: at(k), Value: min(90, max(0, a))})
+		}
+		ch.SetDataSetStyle("moon", t.style(t.fair))
+		ch.SetDataSetLineStyle("moon", runes.ThinLineStyle)
+		order = slices.Insert(order, 0, "moon")
+	}
+	ch.DrawDataSets(order)
 	shade := lipgloss.NewStyle().Background(t.soft)
 	// A column spans (last-first)/plot width; the plot is narrower than w, so
 	// stepping by the w-th part reaches every column, where d.Step skipped

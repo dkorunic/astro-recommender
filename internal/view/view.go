@@ -34,6 +34,7 @@ type Doc struct { // betteralign:ignore
 	Subs  []*scoring.Estimate `json:"subs"` // null without one
 	Star  []*output.StarInfo  `json:"star"` // STAR's, null without one
 	Wx    []WxHour            `json:"wx"`
+	Moon  []float64           `json:"moon,omitempty"` // its altitude to 0.1° every Step minutes from Start; 0 when down
 	Cards []Card              `json:"cards"`
 	Plan  []Slot              `json:"plan,omitempty"`
 	Night Night               `json:"night"`
@@ -120,6 +121,9 @@ func Build(cfg *config.Config, s *scoring.Sky, place string, results []scoring.R
 		return doc
 	}
 	doc.Start = s.Grid[0].Unix()
+	for i := 0; i < len(s.MoonAlt); i += Step {
+		doc.Moon = append(doc.Moon, moonAltitude(s.MoonAlt[i]))
+	}
 	for t := s.Start.Truncate(time.Hour); t.Before(s.End); t = t.Add(time.Hour) {
 		if h, ok := s.Weather[t.Unix()]; ok {
 			doc.Wx = append(doc.Wx, WxHour{T: t.Unix(), Cloud: math.Round(h.Cloud), Rain: h.Precip >= weather.RainShown})
@@ -173,6 +177,17 @@ func Build(cfg *config.Config, s *scoring.Sky, place string, results []scoring.R
 	}
 
 	return doc
+}
+
+// moonAltitude is the curve's value for the Moon at alt: positive exactly
+// while it is up by astro.MoonHorizon, the Tonight bar's rule, even when its
+// centre is still at or below 0°.
+func moonAltitude(alt float64) float64 {
+	if alt <= astro.MoonHorizon {
+		return 0
+	}
+
+	return max(0.1, math.Round(alt*10)/10)
 }
 
 // zone names loc for Intl, which rejects Go's "Local" and "Factory": the

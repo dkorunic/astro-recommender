@@ -103,6 +103,7 @@ type Config struct {
 	Version        bool    // -version: print the version and exit; nothing else is set
 	JSON           bool    // -json: one JSON document instead of the tables
 	CSV            bool    // -csv: the targets as CSV that N.I.N.A. imports, instead of the tables
+	ASIAIR         bool    // -asiair: the targets as a plan the ZWO ASIAIR imports, instead of the tables
 	ExtinctionSet  bool    // -extinction given: skip the aerosol-based estimate
 	SkySet         bool    // -sqm or -bortle given, even as 0: skip the DarkSkySites lookup
 	RASet, DecSet  bool    // -ra/-dec given: keep only targets within Tol of them
@@ -154,6 +155,7 @@ func Parse() (Config, error) {
 	flag.Float64Var(&cfg.Tol, "tol", 10, "with -ra/-dec, how near in degrees, above 0 and at most 180; RA counts 15° per hour")
 	flag.IntVar(&cfg.Top, "n", 20, "number of objects to list")
 	flag.BoolVar(&cfg.JSON, "json", false, "print the report as JSON instead of tables")
+	flag.BoolVar(&cfg.ASIAIR, "asiair", false, "print the targets (with -plan, the planned ones in order) as a plan to paste into the ZWO ASIAIR's Plan mode Import, instead of tables")
 	flag.BoolVar(&cfg.CSV, "csv", false, "print the targets (with -plan, the planned ones in order) as CSV in Telescopius's format, which N.I.N.A. imports, instead of tables")
 	// web/index.html builds its select from the ": name, name" part of this help.
 	flag.StringVar(&cfg.ListName, "list", "GaryImm", "built-in target list: "+strings.Join(catalog.Lists, ", "))
@@ -1100,8 +1102,8 @@ func (cfg *Config) validate() error {
 		return fmt.Errorf("%w: -min-run must be 0 or more", errInvalidFlag)
 	case cfg.Top < 1:
 		return fmt.Errorf("%w: -n must be at least 1", errInvalidFlag)
-	case cfg.JSON && cfg.CSV:
-		return fmt.Errorf("%w: -json and -csv cannot be combined", errInvalidFlag)
+	case cfg.JSON && cfg.CSV, cfg.ASIAIR && (cfg.JSON || cfg.CSV):
+		return fmt.Errorf("%w: only one of -json, -csv and -asiair", errInvalidFlag)
 	// Scoring compares the limits as sines, which only orders altitudes up
 	// to 90°; below the horizon nothing is observable (atmos.Airmass clamps
 	// there, so a negative -alt-min would score it at airmass 38).

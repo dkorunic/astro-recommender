@@ -838,3 +838,35 @@ func TestChartCacheFrames(t *testing.T) {
 		}
 	}
 }
+
+// The Moon's curve is drawn only where it is up: none, one sample and a Moon
+// past the chart's top must neither panic nor rescale it.
+func TestChartMoon(t *testing.T) {
+	var asked []time.Time
+	m := started(t, 180, 50, &asked)
+	m.render()
+	d := &m.night.Doc
+	n := len(d.Alt[0])
+	draw := func(moon []float64) string {
+		d.Moon = moon
+		return m.drawChart(0, 60, 12)
+	}
+	without := draw(nil)
+	if got := draw(make([]float64, n)); got != without {
+		t.Error("a Moon below the horizon changed the chart")
+	}
+	one := make([]float64, n)
+	one[n/2] = 40
+	draw(one)
+	up := make([]float64, n)
+	for k := range up {
+		up[k] = 95
+	}
+	draw(up)
+	for k := range up {
+		up[k] = 45
+	}
+	if got := draw(up); got == without {
+		t.Error("a Moon up all night is not drawn")
+	}
+}

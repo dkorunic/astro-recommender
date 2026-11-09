@@ -117,7 +117,7 @@ func filterLines(cfg *config.Config) []catalog.Line {
 
 // frameDesc is the header's Frame line: the instrument first, as it is
 // what the numbers describe, then the field, the scale and the options.
-func frameDesc(cfg *config.Config) string {
+func frameDesc(cfg *config.Config, s *scoring.Sky) string {
 	pxLong, pxShort := cfg.FramePx()
 	lead, extra := "", ""
 	if label := cmp.Or(cfg.ScopeLabel(), cfg.CameraLabel()); label != "" {
@@ -139,8 +139,10 @@ func frameDesc(cfg *config.Config) string {
 		extra += ", SUBS needs " + cfg.SubsNeeds
 	}
 
-	return fmt.Sprintf("%s%.2f° x %.2f°, %.2f\"/px (%.0f x %.0f px)%s", lead, cfg.FOVLong/60, cfg.FOVShort/60,
-		cfg.Scale, pxLong, pxShort, extra)
+	sampling := s.Sampling(cfg)
+
+	return fmt.Sprintf("%s%.2f° x %.2f°, %.2f\"/px (%.0f x %.0f px), %.1f px per %.1f\" star (%s)%s", lead, cfg.FOVLong/60, cfg.FOVShort/60,
+		cfg.Scale, pxLong, pxShort, sampling.Pixels, sampling.FWHM, sampling.Verdict, extra)
 }
 
 // Header prints the site, window, Moon and sky; place is the reverse
@@ -201,7 +203,7 @@ func Header(cfg *config.Config, s *scoring.Sky, place string) {
 	}
 	headerLine("Targets: ", targetsDesc)
 	if cfg.Framing {
-		headerLine("Frame:   ", frameDesc(cfg))
+		headerLine("Frame:   ", frameDesc(cfg, s))
 	}
 	if len(cfg.Horizon) > 0 {
 		headerLine("Horizon: ", fmt.Sprintf("%d points, %.0f° - %.0f°", len(cfg.Horizon),

@@ -93,8 +93,54 @@ func (r *rotation) trail(i int, a, sinAlt, cosHA float64) bool {
 // diffraction FWHM, 1.03 λ/D at 550 nm, and a pixel's (pixelFWHM) in
 // quadrature, to which the seeing's is added.
 func opticsFWHM2(cfg *config.Config) float64 {
-	diff := 1.03 * 550e-9 / (cfg.Aperture / 1000) * 206265
+	diff := diffraction(cfg)
 	px := pixelFWHM * cfg.Scale
 
 	return diff*diff + px*px
+}
+
+// diffraction is the optics' FWHM in arcsec at 550 nm, 1.03 λ/D.
+func diffraction(cfg *config.Config) float64 {
+	return 1.03 * 550e-9 / (cfg.Aperture / 1000) * 206265
+}
+
+// Sampling is how a frame's pixels meet the night's stars.
+type Sampling struct {
+	Verdict string  // "well sampled" at 2-3 pixels across a star
+	FWHM    float64 // the star's, arcsec
+	Pixels  float64 // pixels across it, to the 0.1 shown, which the verdict judges
+}
+
+// Sampling judges cfg's pixel scale against the night's mean zenith seeing
+// (typicalSeeing without one) and the diffraction of a known aperture. The
+// verdict is the usual 2-3 pixels per FWHM.
+func (s *Sky) Sampling(cfg *config.Config) Sampling {
+	see := typicalSeeing
+	if len(s.Seeing) > 0 {
+		sum := 0.0
+		for _, v := range s.Seeing {
+			sum += v
+		}
+		see = sum / float64(len(s.Seeing))
+	}
+	fwhm := see
+	if cfg.ApertureSet && cfg.Aperture > 0 {
+		fwhm = math.Hypot(see, diffraction(cfg))
+	}
+	// Rounded before the verdict, so 1.96 does not print as an undersampled 2.0.
+	r := Sampling{FWHM: fwhm, Pixels: math.Round(fwhm/cfg.Scale*10) / 10}
+	switch {
+	case r.Pixels < 1:
+		r.Verdict = "severely undersampled"
+	case r.Pixels < 2:
+		r.Verdict = "undersampled"
+	case r.Pixels <= 3:
+		r.Verdict = "well sampled"
+	case r.Pixels <= 5:
+		r.Verdict = "oversampled"
+	default:
+		r.Verdict = "severely oversampled"
+	}
+
+	return r
 }

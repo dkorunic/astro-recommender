@@ -337,7 +337,7 @@ footer a:hover { text-decoration: underline; }
   <div id="subs" hidden></div>
 </div>
 <footer>
-  <p class="privacy">Runs entirely in your browser. The only network requests go to the forecast, sky brightness, geocoding and comet services, to NOAA for the solar flux (no location sent), to CDS for the DSS2 pictures of the results, and to Cloudflare Web Analytics, a cookieless visit counter that sees the page address (your form, after a run).</p>
+  <p class="privacy">Runs entirely in your browser. The only network requests go to the forecast, sky brightness, geocoding and comet services, to NOAA for the solar flux (no location sent), to CDS for the DSS2 pictures of the results, and to Cloudflare Web Analytics, a cookieless visit counter. Your form stays in the address after the #, which browsers do not send to the site, and the counter's script (checked November 2026) reports the address without it.</p>
   <span>© 2026 Dinko Korunic</span>
   <span>Code: <a rel="license" href="https://github.com/dkorunic/astro-recommender/blob/main/LICENSE">MIT</a> · <a href="https://github.com/dkorunic/astro-recommender/blob/main/README.md">README</a> · <a href="https://github.com/dkorunic/astro-recommender/">GitHub</a><span id="version"></span></span>
 </footer>
@@ -692,6 +692,12 @@ function drawAlt(c, alt, obs, card, key) {
   for (const d of [curves.min, curves.max]) { g.moveTo(P, y(d)); g.lineTo(W - P, y(d)); }
   g.stroke();
   g.setLineDash([]); g.globalAlpha = 1;
+  // The Moon while it is up, under the target's curve.
+  const moon = curves.moon ?? [];
+  g.strokeStyle = v("--c33"); g.lineWidth = 1.2; g.globalAlpha = .8;
+  g.beginPath();
+  moon.forEach((d, i) => { if (d > 0) i && moon[i - 1] > 0 ? g.lineTo(x(i), y(d)) : g.moveTo(x(i), y(d)); });
+  g.stroke(); g.globalAlpha = 1;
   for (const h of wx) {
     const a = Math.max(P, xt(h.t)), b = Math.min(W - P, xt(h.t + 3600));
     g.fillStyle = v(h.rain ? "--c34" : "--fg");
@@ -735,9 +741,11 @@ function drawAlt(c, alt, obs, card, key) {
   if (wx.length) keys.push(
     ["cloud", (k) => { g.fillStyle = v("--fg"); g.globalAlpha = 0.5; g.fillRect(k, H + 2, 10, 8); g.globalAlpha = 1; }],
     ["rain", (k) => { g.fillStyle = v("--c34"); g.fillRect(k, H + 2, 10, 8); }]);
+  if (moon.some((d) => d > 0)) keys.push(["Moon", (k) => { g.strokeStyle = v("--c33"); g.lineWidth = 1.2; g.beginPath(); g.moveTo(k, H + 6); g.lineTo(k + 10, H + 6); g.stroke(); }]);
   g.font = "9px system-ui, sans-serif"; g.textAlign = "left";
   let k = P;
   for (const [name, mark] of keys) {
+    if (k + 13 + g.measureText(name).width > W - P) break; // the hover card's narrow canvas
     mark(k);
     g.fillStyle = v("--muted"); g.fillText(name, k + 13, H + 10);
     k += 13 + g.measureText(name).width + 8;
@@ -1007,12 +1015,14 @@ function query() {
     if (el.type === "checkbox") { if (el.checked) q.set(el.name, ""); continue; }
     if (el.value.trim() !== "") q.set(el.name, el.value.trim());
   }
-  // String() rather than size, which Safari 16 and Firefox 111 lack.
-  return String(q) ? "?" + q : location.pathname;
+  // String() rather than size, which Safari 16 and Firefox 111 lack. Behind
+  // the #, so the site's server never receives the coordinates.
+  return location.pathname + (String(q) ? "#" + q : "");
 }
 function share() { history.replaceState(null, "", query()); }
 function fromURL() {
-  const q = new URLSearchParams(location.search);
+  // A former link's form is in its query string.
+  const q = new URLSearchParams(location.hash.slice(1) || location.search);
   if (q.has("origin") && !q.get("scope")) q.set("scope", "origin"); // -origin was -scope origin
   // Only a link query() made (it always names a field) fills and runs the
   // form; a foreign parameter such as a tracking tag must not start a run.
@@ -1117,11 +1127,11 @@ async function init() {
   if (shared) { skipSave = true; $("form").requestSubmit(); }
 }
 
-// saved is the last run's -csv or -json output, which Download saves.
+// saved is the last run's -csv, -asiair or -json output, which Download saves.
 let saved = null;
 $("save").addEventListener("click", () => {
   if (!saved) return;
-  const type = saved.kind === "csv" ? "text/csv" : "application/json";
+  const type = { csv: "text/csv", txt: "text/plain" }[saved.kind] ?? "application/json";
   const url = URL.createObjectURL(new Blob([saved.text], { type }));
   const link = Object.assign(document.createElement("a"), { href: url, download: `astro-recommender.${saved.kind}` });
   link.click();
@@ -1131,6 +1141,10 @@ $("save").addEventListener("click", () => {
 
 // A shared link's first run must not replace the visitor's own saved form.
 let skipSave = false;
+
+// A link pasted over this page changes only the fragment, which reloads
+// nothing by itself; share()'s replaceState fires no hashchange.
+addEventListener("hashchange", () => location.reload());
 
 $("form").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -1148,7 +1162,7 @@ $("form").addEventListener("submit", async (e) => {
     $("out").innerHTML = sky(ansi(out));
     $("intro").hidden = true;
     showNight();
-    // Washed out, empty, -json or -csv: no cards, and the report says why
+    // Washed out, empty, -json, -csv or -asiair: no cards, and the report says why
     // (or is the document), so it opens.
     const n = curves?.night?.washout ? 0 : curves?.cards?.length ?? 0;
     filtered = a.includes("-filter") || (curves?.cards ?? []).some((c) => c.filter);
@@ -1157,9 +1171,9 @@ $("form").addEventListener("submit", async (e) => {
     $("report").open = !n && out.trim() !== "";
     $("sortbox").hidden = n < 2;
     $("count").textContent = !curves ? (code ? "Targets" : "Report") : n ? `${n} of ${curves.night.targets} targets` : "No targets";
-    // -csv and -json are meant for other programs (N.I.N.A. imports the
-    // CSV): offer the output as a file, not only as text to copy.
-    const kind = code ? null : a.includes("-csv") ? "csv" : a.includes("-json") ? "json" : null;
+    // -csv, -asiair and -json are meant for other programs (N.I.N.A. imports
+    // the CSV): offer the output as a file, not only as text to copy.
+    const kind = code ? null : a.includes("-csv") ? "csv" : a.includes("-asiair") ? "txt" : a.includes("-json") ? "json" : null;
     saved = kind && { kind, text: out };
     $("save").hidden = !kind;
     if (kind) $("save").textContent = `Download ${kind.toUpperCase()}`;

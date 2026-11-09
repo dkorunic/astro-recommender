@@ -78,6 +78,13 @@ func main() {
 
 		return
 	}
+	if cfg.ASIAIR {
+		if err := output.ASIAIR(&cfg, &s, n.slots, n.results); err != nil {
+			fatal(err.Error())
+		}
+
+		return
+	}
 	output.UseColor = output.ColorTerminal()
 	output.TermWidth = output.TerminalWidth()
 	output.Header(&cfg, &s, n.place)
@@ -251,13 +258,17 @@ func compute(ctx context.Context, cfg config.Config, targets []catalog.Target, s
 	return n, nil
 }
 
-// nothing reports a night with nothing to plan: as text, or with -json or
-// -csv as a document a consumer can still parse (the CSV's header alone, the
-// message on stderr).
+// nothing reports a night with nothing to plan: as text, or with -json,
+// -csv or -asiair as a document a consumer can still parse (the header alone,
+// the message on stderr).
 func nothing(cfg *config.Config, msg string) {
-	if cfg.CSV {
+	if cfg.CSV || cfg.ASIAIR {
 		fmt.Fprintln(os.Stderr, msg)
-		if err := output.CSV(cfg, nil, nil, nil); err != nil {
+		write := output.CSV
+		if cfg.ASIAIR {
+			write = output.ASIAIR
+		}
+		if err := write(cfg, nil, nil, nil); err != nil {
 			fatal(err.Error())
 		}
 
@@ -286,9 +297,9 @@ func fatal(msg string) {
 
 // exposures attaches the sub-exposure estimate to each listed result, which
 // needs a camera, which framing describes, and with -json keeps its Obs, for
-// the observable spans, with or without one. -csv shows neither.
+// the observable spans, with or without one. -csv and -asiair show neither.
 func exposures(cfg *config.Config, s *scoring.Sky, slots []plan.Slot, results []scoring.Result) {
-	if cfg.CSV || (!cfg.Framing && !cfg.JSON) {
+	if cfg.CSV || cfg.ASIAIR || (!cfg.Framing && !cfg.JSON) {
 		return
 	}
 	for i := range results[:min(cfg.Top, len(results))] {

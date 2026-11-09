@@ -575,6 +575,8 @@ F_{\text{frame}} = \max_{\text{grids}}\ \frac{F_{\text{fill}}}{\text{panels}}
 
 Fill ≥ 1 is dropped. The fewest panels win a tie. Unknown size gets F = 1.
 
+**Sampling** (`Sky.Sampling`, display only). Star FWHM F = the window's mean zenith seeing (else 2.5″), in quadrature with diffraction 1.03 λ/D when the aperture is known (`ApertureSet`). F over the pixel scale, rounded to 0.1 as shown: < 1 severely undersampled, < 2 undersampled, 2–3 well sampled, up to 5 oversampled, above that severely oversampled.
+
 **STAR** (`internal/stars`). The brightest of 517 Yale BSC stars (V ≤ 4.0, CDS V/50, T CrB left out; J2000, no proper motion) and the planets reaching V 4, within the frame's or grid's half-diagonal, without framing the Origin Mark II's. A warning only.
 
 Planets (`stars.Planets`) at mid-window from [Standish][jpl-approx] Table 1, less the Earth-Moon barycentre, no light time. `TestPlanetsSOFA` against Plan94: 0.7′ Mercury, 1.4′ Venus, 2.7′ Mars, 10.5′ Jupiter, 11.1′ Saturn. Magnitudes: [Meeus][meeus] ch. 41, Saturn's rings −2.60 sin|B| + 1.25 sin²B, its ΔU term left out.
@@ -823,6 +825,7 @@ The project's own judgment, not measurements:
 | Aerosol scale height | 1.5 km, from the IFS cell's ground up | Hayes & Latham (1975); CALIOP 1.5–2 km over land |
 | SUBS levels for a faint object | Levels × √(S/B_ref) below a pristine sky's brightness | reported totals grow as 1/S, not a fixed SNR's 1/S² ([Sub-exposure estimate](#sub-exposure-estimate)) |
 | Frame fill | full credit at 25–80% of the short side | small objects lack detail, tight ones lack margin |
+| Sampling verdict | 2–3 pixels per star FWHM is well sampled | the usual rule of thumb; zenith seeing, no airmass; shown only |
 | Mosaic | 10% overlap, score ÷ panels | panels need overlap to register; the time is shared |
 | Forecast gaps | mean of the covered hours | neither optimistic nor pessimistic |
 | Clear night alert (`astro-notify`) | a minute is clear at cloud ≤ 10%, seeing ≤ 2″ and under 0.05 mm of rain in its hour (cloud and seeing known, unknown rain counting as none, as in the score); a stretch, and a listed target within it, of 2 h, or the window when shorter, but not under 30 min of a longer limit | "no clouds, good seeing" made numbers: 10% is about one okta, 2″ the report's own colour boundary; the limits are flags, and the 30 min keeps a window of minutes from passing for a clear night |

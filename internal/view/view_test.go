@@ -5,6 +5,7 @@ package view
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -89,6 +90,25 @@ func TestMoonUp(t *testing.T) {
 			if got, want := moonUp(cfg, dusk, dawn), minutes(cfg, dusk, dawn); fmt.Sprint(got) != fmt.Sprint(want) {
 				t.Errorf("lat %g, %s: %v, want %v", lat, dusk.Format(time.DateOnly), got, want)
 			}
+		}
+	}
+}
+
+func TestMoonCurve(t *testing.T) {
+	start := time.Date(2026, 1, 3, 18, 0, 0, 0, time.UTC)
+	s := &scoring.Sky{Start: start, End: start.Add(11 * time.Minute)}
+	for i := range 11 {
+		s.Grid = append(s.Grid, start.Add(time.Duration(i)*time.Minute))
+		s.MoonAlt = append(s.MoonAlt, float64(i)+0.04)
+	}
+	s.Night = [2]time.Time{start, s.End}
+	doc := Build(&config.Config{Loc: time.UTC, Top: 1}, s, "", nil, nil)
+	if want := []float64{0.1, 5, 10}; !slices.Equal(doc.Moon, want) {
+		t.Errorf("Moon = %v, want %v", doc.Moon, want)
+	}
+	for alt, want := range map[float64]float64{-5: 0, astro.MoonHorizon: 0, -0.5: 0.1, 0: 0.1, 0.04: 0.1, 33.27: 33.3} {
+		if got := moonAltitude(alt); got != want {
+			t.Errorf("moonAltitude(%g) = %g, want %g", alt, got, want)
 		}
 	}
 }

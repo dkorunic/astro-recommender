@@ -51,7 +51,7 @@ Single static binary; catalogues and time-zone data are embedded; no API key req
 - **Framing**: [21 smart telescopes](#smart-telescopes), [45 camera sensors](#cameras) or any custom field/scale; mosaics (`-mosaic`), camera rotation (`-rotate`), core framing of 11 large objects.
 - **SUBS**: sub-exposure count per target from the same per-minute sky, optics, QE, read noise, dark current and per-channel colour response.
 - **Catalogues**: [34 lists](#target-lists), 44,020 entries (about 32,000 distinct objects), or your own YAML; comets from MPC with COBS magnitude correction.
-- **Night plan** (`-plan`), **clear night alerts** ([`astro-notify`](#clear-night-alerts)), **N.I.N.A. export** (`-csv`), **JSON** (`-json`).
+- **Night plan** (`-plan`), **clear night alerts** ([`astro-notify`](#clear-night-alerts)), **N.I.N.A. export** (`-csv`), **ASIAIR plan** (`-asiair`), **JSON** (`-json`).
 - **Offline mode** with the five `-no-*` flags; deterministic output.
 
 ## Install
@@ -81,8 +81,8 @@ task pgo         # regenerate default.pgo from the offline scoring benchmarks
 **https://astrorecommender.org/** runs the same program as WebAssembly. Every flag is a form field, generated from `-h`.
 
 - `-targets`, `-horizon` and `-skip` take uploaded files.
-- The URL carries the form after each run, so links can be shared.
-- Results are cards with a DSS2 picture, Aladin Lite link, altitude curve and SUBS; the text report is under Full report.
+- The URL carries the form after each run, behind the `#`, so links can be shared.
+- Results are cards with a DSS2 picture, Aladin Lite link, altitude curve with the Moon's, and SUBS; the text report is under Full report.
 - The DarkSkySites lookup needs no key of your own (`-no-sqm` skips it).
 - Dark, light and red night-vision themes.
 
@@ -90,7 +90,7 @@ Differences from the CLI: nothing is cached (comet elements are fetched on each 
 
 ## In the terminal
 
-With both stdin and stdout on a terminal, the program opens an interactive view: night summary, weather and plan on the left (from 110 columns), target cards, and the selected target's DSS2 picture (Kitty graphics where supported, else half-blocks) and altitude curve.
+With both stdin and stdout on a terminal, the program opens an interactive view: night summary, weather and plan on the left (from 110 columns), target cards, and the selected target's DSS2 picture (Kitty graphics where supported, else half-blocks) and altitude curve with the Moon's.
 
 | Key | Action |
 |---|---|
@@ -106,7 +106,7 @@ With both stdin and stdout on a terminal, the program opens an interactive view:
 | `?` | all keys |
 | `q` | quit |
 
-Tables are printed instead with `-no-tui`, `-json`, `-csv`, a pipe or redirect, or `TERM=dumb`.
+Tables are printed instead with `-no-tui`, `-json`, `-csv`, `-asiair`, a pipe or redirect, or `TERM=dumb`.
 
 ## Usage
 
@@ -120,24 +120,24 @@ Window:   2026-11-13 18:11 - 2026-11-14 05:11 (11h 00m)
 Moon:     19% illuminated, targets kept at least 19° away (down to 6° through a filter), sets 19:09
 Size:     4.1' - 44.7'
 Targets:  GaryImm, 1 comet brighter than mag 12.0
-Frame:    Celestron Origin Mark II (IMX678), 1.32° x 0.75°, 1.23"/px (3856 x 2180 px), alt-az (field rotation limits large objects high up)
+Frame:    Celestron Origin Mark II (IMX678), 1.32° x 0.75°, 1.23"/px (3856 x 2180 px), 2.3 px per 2.9" star (well sampled), alt-az (field rotation limits large objects high up)
 Sky:      Bortle 6 (zenith 19.95 mag/arcsec²), extinction 0.23 (elevation 126 m, aerosols) mag/airmass, airglow 0.02 mag brighter (solar flux 112 sfu, 30-day mean)
 Filter:   dual (7 nm line bands)
 
 Forecast
 HOUR   CLOUD       LOW/MID/HIGH  TRANSP  EXT   SEEING  DEW SPREAD  WIND/GUST
-18:00  100% 0.3mm  18/99/99%     -       0.23  ~3.7"   4.1°C       4/12 km/h
-19:00  99%         0/98/99%      -       0.23  ~3.8"   3.7°C       5/7 km/h
-20:00  99%         0/99/99%      -       0.23  ~3.8"   3.0°C       5/7 km/h
-21:00  100%        0/99/100%     -       0.23  ~3.7"   2.3°C       3/7 km/h
-22:00  100%        0/100/100%    -       0.23  ~3.7"   1.8°C       2/1 km/h
-23:00  84%         0/67/100%     -       0.23  ~3.6"   1.5°C       1/1 km/h
-00:00  66%         0/33/100%     -       0.23  ~3.6"   1.3°C       1/1 km/h
-01:00  50%         0/0/100%      -       0.23  ~3.5"   1.1°C       1/5 km/h
-02:00  52%         10/0/94%      -       0.23  ~3.3"   0.9°C       2/5 km/h
-03:00  56%         21/0/89%      -       0.23  ~3.0"   0.8°C       2/5 km/h
-04:00  60%         31/0/83%      -       0.23  ~2.7"   0.7°C       3/5 km/h
-05:00  57%         41/0/55%      -       0.23  ~2.4"   0.4°C       3/5 km/h
+18:00  100% 0.3mm  18/99/99%     -       0.23  ~3.1"   4.1°C       4/12 km/h
+19:00  99%         0/98/99%      -       0.23  ~3.7"   3.7°C       5/7 km/h
+20:00  99%         0/99/99%      -       0.23  ~3.6"   3.0°C       5/7 km/h
+21:00  100%        0/99/100%     -       0.23  ~3.1"   2.3°C       3/7 km/h
+22:00  100%        0/100/100%    -       0.23  ~2.7"   1.8°C       2/1 km/h
+23:00  84%         0/67/100%     -       0.23  ~2.6"   1.5°C       1/1 km/h
+00:00  66%         0/33/100%     -       0.23  ~2.6"   1.3°C       1/1 km/h
+01:00  50%         0/0/100%      -       0.23  ~2.7"   1.1°C       1/5 km/h
+02:00  52%         10/0/94%      -       0.23  ~2.6"   0.9°C       2/5 km/h
+03:00  56%         21/0/89%      -       0.23  ~2.4"   0.8°C       2/5 km/h
+04:00  60%         31/0/83%      -       0.23  ~2.2"   0.7°C       3/5 km/h
+05:00  57%         41/0/55%      -       0.23  ~1.9"   0.4°C       3/5 km/h
 
 Targets, ranked by SCORE
 #  NAME     DESCRIPTION              TYPE              CON  RA       DEC     SIZE  UP    SCORE  OBSERVABLE   MAX ALT    SKY   MAG   SB    STAR       FILTER  PX    SUBS
@@ -176,6 +176,10 @@ Narrow terminals drop columns in this order: STAR, RA+DEC, CON, UP, MAG, SB, SKY
 
 **`-csv`** prints Telescopius's observing-list format, which [N.I.N.A.](https://nighttime-imaging.eu/)'s simple sequencer imports: the top `-n` targets, or with `-plan` the planned ones in order, at J2000.
 
+**`-asiair`** prints the same targets as text to paste into the ZWO ASIAIR's Plan mode Import. ZWO does not document the format, and it has not been tested on a device. A mosaic is its centre only, at angle 0, with a warning on stderr.
+
+With framing, the header's `Frame:` line and JSON `frame` judge the pixel scale against the night's mean zenith seeing and, for a known aperture, diffraction: 2–3 pixels across a star is well sampled.
+
 ### Examples
 
 ```sh
@@ -197,6 +201,7 @@ astro-recommender $L -targets my-targets.yaml                       # own list
 astro-recommender $L -horizon horizon.txt -alt-min 20               # measured horizon
 astro-recommender $L -comet-mag 8                                   # only bright comets
 astro-recommender $L -scope origin -plan 2h -csv > tonight.csv      # N.I.N.A. sequence
+astro-recommender $L -scope origin -plan 2h -asiair                 # ASIAIR plan, to paste
 astro-recommender -lat -23.3 -lon 16.3 -date 2026-06-15 -bortle 1 -extinction 0.15    # remote site; zone from coordinates
 astro-recommender $L -no-weather -no-geocode -no-sqm -no-comets -no-solar             # offline, deterministic
 ```
@@ -255,7 +260,7 @@ astro-recommender $L -no-weather -no-geocode -no-sqm -no-comets -no-solar       
 | `-residual` | `0.002` | With framing: sky share left by flats and gradient removal, 0–0.05; caps stacked SNR |
 | `-no-weather`, `-no-geocode`, `-no-sqm`, `-no-comets`, `-no-solar` | off | Skip that network source |
 | `-no-tui` | off | Print tables on a terminal |
-| `-json`, `-csv` | off | [Alternative output](#output); mutually exclusive |
+| `-json`, `-csv`, `-asiair` | off | [Alternative output](#output); mutually exclusive |
 | `-version` | | Print version, commit and build time |
 
 Framing is on with any of `-scope`, `-fov`, `-scale`, `-focal`. Flags marked "with framing" are errors without it. SUBS needs an optical and camera description: without `-scope`, give `-aperture` and `-camera` (or `-mono` with `-qe` and `-read-noise`). The header's `Frame:` line names whatever is missing.
@@ -592,7 +597,7 @@ Limits: no sky chart, telescope control or observing log; no asteroids, variable
 
 The time zone lookup is offline. In the terminal view and browser, DSS2 pictures come from CDS and NASA SkyView, which receive the object's position only.
 
-In the browser, requests go from your browser. 7Timer and DarkSkySites go through the site's Cloudflare Worker, which holds the DarkSkySites key. The hosted page loads Cloudflare Web Analytics (no cookies), which receives the full page address: after a run or from a shared link, its query string holds the form's values, including unrounded coordinates.
+In the browser, requests go from your browser. 7Timer and DarkSkySites go through the site's Cloudflare Worker, which holds the DarkSkySites key. The form's values, including unrounded coordinates, stay in the address after the `#`, which browsers do not send to the site. The hosted page loads Cloudflare Web Analytics (no cookies), whose beacon (2026.10.1, checked November 2026) strips both the query string and the fragment from the addresses it reports; Cloudflare can change that script.
 
 ## Credits
 

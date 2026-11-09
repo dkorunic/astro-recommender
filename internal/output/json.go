@@ -99,9 +99,12 @@ type frame struct {
 	Camera   string  `json:"camera,omitempty"`    // -camera's or -scope's chip preset, e.g. "IMX571 colour"
 	Scope    string  `json:"scope,omitempty"`     // -scope's, e.g. "ZWO Seestar S50 (IMX462)"
 	Mount    string  `json:"mount"`               // altaz, derotated or eq
+	Sampling string  `json:"sampling"`            // "well sampled" at 2-3 pixels
 	FOVLong  float64 `json:"fovLong"`             // arcminutes
 	FOVShort float64 `json:"fovShort"`            // arcminutes
 	Scale    float64 `json:"scale"`               // arcseconds per pixel
+	FWHM     float64 `json:"fwhm"`                // the night's star, arcseconds
+	Pixels   float64 `json:"pxPerFwhm"`           // pixels across it
 	Mosaic   int     `json:"maxPanels,omitempty"` // -mosaic, when above 1
 	Rotate   bool    `json:"rotate,omitempty"`
 }
@@ -206,6 +209,8 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 		if cfg.Mosaic > 1 {
 			r.Frame.Mosaic = cfg.Mosaic
 		}
+		sampling := s.Sampling(cfg)
+		r.Frame.FWHM, r.Frame.Pixels, r.Frame.Sampling = sampling.FWHM, sampling.Pixels, sampling.Verdict
 	}
 	r.Sky.WashoutReason = washoutReason(s)
 	r.Sky.Washout = r.Sky.WashoutReason != ""

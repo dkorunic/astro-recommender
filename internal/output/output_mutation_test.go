@@ -547,7 +547,7 @@ func TestMutHeader(t *testing.T) {
 	for _, want := range []string{
 		"Region:   within 5° of RA 12 30.0, Dec -05 30\n",
 		"Targets:  mine.yaml, comets unavailable, only galaxy, nebula, skipping 2 names from done.txt\n",
-		"Frame:    6.67° x 5.00°, 2.00\"/px (12000 x 9000 px), mosaics of up to 4 panels, rotatable\n",
+		"Frame:    6.67° x 5.00°, 2.00\"/px (12000 x 9000 px), 1.3 px per 2.5\" star (undersampled), mosaics of up to 4 panels, rotatable\n",
 		"Horizon:  3 points, 5° - 25°\n",
 		"Sky:      dark, 22.0 mag/arcsec² (-bortle/-sqm 0)",
 	} {
@@ -557,7 +557,7 @@ func TestMutHeader(t *testing.T) {
 	}
 	// A single frame, fixed: neither suffix.
 	cfg.Mosaic, cfg.Rotate = 1, false
-	if out = mutCapture(t, func() { Header(cfg, s, "") }); !strings.Contains(out, "(12000 x 9000 px)\n") {
+	if out = mutCapture(t, func() { Header(cfg, s, "") }); !strings.Contains(out, "(12000 x 9000 px), 1.3 px per 2.5\" star (undersampled)\n") {
 		t.Errorf("single-frame header:\n%s", out)
 	}
 }

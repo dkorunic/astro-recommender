@@ -51,6 +51,8 @@ func TestValidate(t *testing.T) {
 		"size-min < 0":      func(c *Config) { c.SizeMin = -5 },
 		"size-max < 0":      func(c *Config) { c.SizeMin, c.SizeMax = -5, -1 },
 		"-json -csv":        func(c *Config) { c.JSON, c.CSV = true, true },
+		"-json -asiair":     func(c *Config) { c.JSON, c.ASIAIR = true, true },
+		"-csv -asiair":      func(c *Config) { c.CSV, c.ASIAIR = true, true },
 		"framing, no scale": func(c *Config) { c.Framing, c.FOVLong, c.FOVShort = true, 79.2, 45 },
 		"framing, sides swapped": func(c *Config) {
 			c.Framing, c.FOVLong, c.FOVShort, c.Scale = true, 45, 79.2, 1.23

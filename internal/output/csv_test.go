@@ -9,7 +9,9 @@ import (
 	"testing"
 
 	"github.com/dkorunic/astro-recommender/internal/astro"
+	"github.com/dkorunic/astro-recommender/internal/config"
 	"github.com/dkorunic/astro-recommender/internal/plan"
+	"github.com/dkorunic/astro-recommender/internal/scoring"
 )
 
 func TestCell(t *testing.T) {
@@ -81,5 +83,58 @@ func TestCSV(t *testing.T) {
 
 	if rows = read(mutCapture(t, func() { _ = CSV(cfg, s, nil, nil) })); len(rows) != 0 {
 		t.Errorf("empty plan rows %q", rows)
+	}
+}
+
+func TestASIAIR(t *testing.T) {
+	cfg, s := mutSky(t)
+	res := mutResults(s)
+	cfg.Top = 2
+	lines := strings.Split(strings.TrimRight(mutCapture(t, func() { _ = ASIAIR(cfg, s, nil, res) }), "\n"), "\n")
+	if len(lines) != 3 || lines[0] != "Plan, RA, DEC, Angle" {
+		t.Fatalf("plan %q", lines)
+	}
+	ra, dec := J2000(s, res[0].Target)
+	_, decS := sexagesimal(ra, dec)
+	if !strings.HasPrefix(lines[1], "M 31|M 31, ") || !strings.HasSuffix(lines[1], ", "+decS+", 0.0") {
+		t.Errorf("row %q", lines[1])
+	}
+
+	cfg.Plan = s.End.Sub(s.Start) / 3
+	slots := []plan.Slot{{Result: &res[1]}, {Result: &res[0]}, {Result: &res[1]}}
+	got := mutCapture(t, func() { _ = ASIAIR(cfg, s, slots, res) })
+	if lines = strings.Split(strings.TrimRight(got, "\n"), "\n"); len(lines) != 3 || !strings.HasPrefix(lines[1], res[1].Name) {
+		t.Errorf("planned rows %q", lines)
+	}
+
+	if out := mutCapture(t, func() { _ = ASIAIR(cfg, nil, nil, nil) }); out != "Plan, RA, DEC, Angle\n" {
+		t.Errorf("empty plan %q", out)
+	}
+}
+
+func TestMosaicWarning(t *testing.T) {
+	one, two := scoring.Result{Name: "A", Mosaic: config.Mosaic{Cols: 1, Rows: 1}}, scoring.Result{Name: "B", Mosaic: config.Mosaic{Cols: 2, Rows: 3}}
+	zero := scoring.Result{Name: "C"} // no framing
+	if got := mosaicWarning([]*scoring.Result{&one, &zero}); got != "" {
+		t.Errorf("single frames warned: %q", got)
+	}
+	if got := mosaicWarning([]*scoring.Result{&one, &two}); !strings.Contains(got, "B (2x3)") || strings.Contains(got, "A (") {
+		t.Errorf("warning %q", got)
+	}
+}
+
+func TestASIAIRRow(t *testing.T) {
+	for in, want := range map[string]string{"NGC 1, a|b": "NGC 1 a b", " ,|": "Target", "C/2025 A6 (Lemmon)": "C/2025 A6 (Lemmon)"} {
+		if got := asiairName(in); got != want {
+			t.Errorf("asiairName(%q) = %q, want %q", in, got, want)
+		}
+	}
+	// The last half second of the sky carries into 00h, not 24h.
+	cfg, s := mutSky(t)
+	cfg.Top = 1
+	r := scoring.Result{Name: "A", RADeg: 359.9999, DecDeg: -0.0001}
+	out := mutCapture(t, func() { _ = ASIAIR(cfg, s, nil, []scoring.Result{r}) })
+	if !strings.Contains(out, "A|A, 00h 00m 00s, +00° 00′ 00″, 0.0") {
+		t.Errorf("wrap %q", out)
 	}
 }

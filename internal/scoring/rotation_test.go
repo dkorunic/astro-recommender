@@ -84,3 +84,36 @@ func TestRotationZenith(t *testing.T) {
 		t.Error("the zenith's minute is not trailed")
 	}
 }
+
+func TestSampling(t *testing.T) {
+	for _, c := range []struct {
+		want  string
+		see   float64
+		scale float64
+	}{
+		{"severely undersampled", 2, 2.5},
+		{"undersampled", 2, 1.5},
+		{"well sampled", 2, 1},
+		{"well sampled", 3, 1},
+		{"oversampled", 4, 1},
+		{"oversampled", 5, 1},
+		{"severely oversampled", 5.5, 1},
+		// Judged as shown: 2.0 and 3.0, not an undersampled 1.96 or oversampled 3.04.
+		{"well sampled", 1.96, 1},
+		{"well sampled", 3.04, 1},
+		{"undersampled", 1.94, 1},
+		{"oversampled", 3.06, 1},
+	} {
+		s := &Sky{Seeing: []float64{c.see - 1, c.see + 1}}
+		if got := s.Sampling(&config.Config{Scale: c.scale}); got.Verdict != c.want || math.Abs(got.FWHM-c.see) > 1e-9 {
+			t.Errorf("seeing %g at %g\"/px: %+v, want %s", c.see, c.scale, got, c.want)
+		}
+	}
+	// No seeing: the typical; an aperture only counts when it is the telescope's.
+	if got := (&Sky{}).Sampling(&config.Config{Scale: 1, Aperture: 50}); got.FWHM != typicalSeeing {
+		t.Errorf("no aperture set: %+v", got)
+	}
+	if got := (&Sky{}).Sampling(&config.Config{Scale: 1, Aperture: 50, ApertureSet: true}); math.Abs(got.FWHM-math.Hypot(typicalSeeing, 2.337)) > 0.01 {
+		t.Errorf("50 mm: %+v", got)
+	}
+}

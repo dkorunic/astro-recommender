@@ -30,6 +30,20 @@ var csvHeader = []string{"Catalogue Entry", "Familiar Name", "Right Ascension (J
 // back to J2000 (PrecessT at minus the epoch, within an arcsecond) since
 // N.I.N.A. slews to it. With no results it prints the header.
 func CSV(cfg *config.Config, s *scoring.Sky, slots []plan.Slot, results []scoring.Result) error {
+	w := csv.NewWriter(os.Stdout)
+	_ = w.Write(csvHeader)
+	for _, res := range exported(cfg, slots, results) {
+		raS, decS := sexagesimal(J2000(s, res.Target))
+		_ = w.Write([]string{cell(res.Name), "", raS, decS})
+	}
+	w.Flush()
+
+	return w.Error()
+}
+
+// exported is what a target export lists: the top -n, or with -plan the
+// planned targets in plan order, each once.
+func exported(cfg *config.Config, slots []plan.Slot, results []scoring.Result) []*scoring.Result {
 	var list []*scoring.Result
 	if cfg.Plan > 0 {
 		seen := map[*scoring.Result]bool{}
@@ -39,20 +53,67 @@ func CSV(cfg *config.Config, s *scoring.Sky, slots []plan.Slot, results []scorin
 				list = append(list, sl.Result)
 			}
 		}
-	} else {
-		for i := range results[:min(cfg.Top, len(results))] {
-			list = append(list, &results[i])
+
+		return list
+	}
+	for i := range results[:min(cfg.Top, len(results))] {
+		list = append(list, &results[i])
+	}
+
+	return list
+}
+
+// asiairHeader starts the text ZWO's ASIAIR takes in Plan mode's Import. ZWO
+// does not document it; this is the layout DePlanetarium copies to it.
+const asiairHeader = "Plan, RA, DEC, Angle"
+
+// ASIAIR prints the targets CSV would list as an ASIAIR plan: J2000 positions
+// to the second, one row each.
+// ponytail: a mosaic is its centre only (warned on stderr) and the angle
+// always 0, as the CSV; list the panels if ASIAIR users want them.
+func ASIAIR(cfg *config.Config, s *scoring.Sky, slots []plan.Slot, results []scoring.Result) error {
+	list := exported(cfg, slots, results)
+	if w := mosaicWarning(list); w != "" {
+		fmt.Fprintln(os.Stderr, w)
+	}
+	var b strings.Builder
+	b.WriteString(asiairHeader + "\n")
+	for _, res := range list {
+		ra, dec := J2000(s, res.Target)
+		name := asiairName(res.Name)
+		t := int(math.Round(math.Mod(ra+360, 360)/15*3600)) % (24 * 3600)
+		_, decS := sexagesimal(ra, dec)
+		fmt.Fprintf(&b, "%s|%s, %02dh %02dm %02ds, %s, 0.0\n", name, name, t/3600, t/60%60, t%60, decS)
+	}
+	_, err := os.Stdout.WriteString(b.String())
+
+	return err
+}
+
+// mosaicWarning names the listed targets that need more frames than the one
+// row each gets; "" without any.
+func mosaicWarning(list []*scoring.Result) string {
+	var names []string
+	for _, res := range list {
+		if m := res.Mosaic; m.Panels() > 1 {
+			names = append(names, fmt.Sprintf("%s (%dx%d)", res.Name, m.Cols, m.Rows))
 		}
 	}
-	w := csv.NewWriter(os.Stdout)
-	_ = w.Write(csvHeader)
-	for _, res := range list {
-		raS, decS := sexagesimal(J2000(s, res.Target))
-		_ = w.Write([]string{cell(res.Name), "", raS, decS})
+	if names == nil {
+		return ""
 	}
-	w.Flush()
 
-	return w.Error()
+	return "warning: -asiair lists only the centre of a mosaic, not its panels: " + strings.Join(names, ", ")
+}
+
+// asiairName takes the row's separators out of a name.
+func asiairName(s string) string {
+	s = strings.Join(strings.Fields(strings.NewReplacer(",", " ", "|", " ").Replace(s)), " ")
+	if s == "" {
+		return "Target"
+	}
+
+	return s
 }
 
 // cell keeps a -targets name from running as a spreadsheet formula when the
