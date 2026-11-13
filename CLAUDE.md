@@ -45,6 +45,13 @@ go run . -lat <deg> -lon <deg> [-tz Europe/Zagreb] [-date YYYY-MM-DD] [-scope or
 
 `go run . -h` lists all flags. Use `-no-weather -no-geocode -no-sqm -no-comets -no-solar` for runs that must not hit the network or be deterministic, and `-no-tui` on a terminal, where the interactive view fetches DSS2 pictures from CDS and SkyView. `CLICOLOR_FORCE=1` forces colors when stdout is not a TTY (e.g. to inspect escapes); `NO_COLOR` disables them.
 
+**CDS mirrors** (from cds.unistra.fr's outage page, November 2026), for the scripts and the picture fallbacks when CDS is unreachable:
+- SIMBAD: `https://simbad.cfa.harvard.edu/simbad/` (TAP `…/simbad/sim-tap/`; astroquery `server = simbad.cfa.harvard.edu`), `https://simbad.idia.ac.za/` (TAP `https://simbad.idia.ac.za/simbad/sim-tap/`).
+- VizieR (`/viz-bin/VizieR`; the asu-tsv queries take the same host): `vizier.cfa.harvard.edu` (astroquery `vizier_server`), `vizier.idia.ac.za`, `vizier.nao.ac.jp` and `vizier.china-vo.org` (both http only). Not every mirror holds the large catalogues (Gaia DR3 is ESA's archive).
+- Sesame: `https://vizier.idia.ac.za/viz-bin/Sesame` (API `…/viz-bin/nph-sesame/`), `https://vizier.cfa.harvard.edu/viz-bin/Sesame`.
+- HiPS `CDS/P/DSS2/color`: `https://skies.esac.esa.int/DSSColor` (`dss.HiPS`, already the fallback), `https://stpubdata.s3.us-east-1.amazonaws.com/mast/skybackgrounds/DSSColor`, `https://casda.csiro.au/hips/DSS2/color`, `https://hips.china-vo.org/m/CDS_P_DSS2_color`; other surveys (2MASS, SDSS9, PanSTARRS, AllWISE) on the same hosts. Aladin Lite: `https://aladin.cds.unistra.fr/AladinLite/`.
+- No mirror: hips2fits (hence `dss.Cutout` and SkyView), X-Match (cross-match locally with TOPCAT), VizieR uploads, the CDS portal.
+
 ## Architecture
 
 `main.go` only wires the pipeline; all code lives in packages under `internal/` (one per component):
