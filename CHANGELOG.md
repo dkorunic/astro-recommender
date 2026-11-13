@@ -12,12 +12,19 @@ formulas behind the model changes.
 - The header's Frame line and JSON `frame` judge the pixel scale against the
   night's seeing (`fwhm`, `pxPerFwhm`, `sampling`).
 - The browser's and terminal view's altitude charts draw the Moon's altitude.
+- When CDS's hips2fits does not answer, the browser and terminal view make the
+  DSS2 colour picture themselves from the tiles of ESA's mirror of the survey,
+  before falling back to SkyView's grey DSS2 Red.
 
 ### Changed
 - The browser keeps the form in the URL fragment, so the site's server never
   receives it; links with a query string still work.
 - `-csv` and `-asiair` warn on stderr about the mosaics they list by their
   centre and the targets that fit only with the camera rotated (`-rotate`).
+
+### Fixed
+- The terminal view fetches a target's picture again once its service is back
+  up, rather than leaving the slot blank for the session (since v0.24.2).
 
 ## [v0.24.6] — 2026-11-09
 

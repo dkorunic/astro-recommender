@@ -25,6 +25,7 @@ import (
 	"github.com/NimbleMarkets/ntcharts/v2/picture"
 	"github.com/NimbleMarkets/ntcharts/v2/picture/pictureurl"
 	"github.com/charmbracelet/x/ansi"
+	"github.com/dkorunic/astro-recommender/internal/dss"
 	"github.com/dkorunic/astro-recommender/internal/output"
 	"github.com/dkorunic/astro-recommender/internal/scoring"
 	"github.com/dkorunic/astro-recommender/internal/view"
@@ -620,6 +621,9 @@ func runPicture(m *model, cmd tea.Cmd, depth int) {
 		for _, c := range msg {
 			runPicture(m, c, depth+1)
 		}
+	case pictureDue:
+		_, c := m.Update(msg)
+		runPicture(m, c, depth+1)
 	default:
 		if pictureurl.IsPictureMsg(msg) {
 			runPicture(m, m.pictureMsg(msg), depth+1)
@@ -627,7 +631,7 @@ func runPicture(m *model, cmd tea.Cmd, depth int) {
 	}
 }
 
-const cdsHost, skyHost = "alaskybis.cds.unistra.fr", "skyview.gsfc.nasa.gov"
+const cdsHost, hipsHost, skyHost = "alaskybis.cds.unistra.fr", "skies.esac.esa.int", "skyview.gsfc.nasa.gov"
 
 // withServices gives m a picture fetched through tr and the probe's answer.
 func withServices(m *model, tr *flaky, up servicesMsg) {
@@ -648,21 +652,95 @@ func TestPictureWaitsForProbe(t *testing.T) {
 	}
 }
 
-// CDS failing mid-session: the target's picture comes from SkyView, and so
-// do the next targets', without asking CDS again.
+// CDS failing mid-session: the target's picture comes from the HiPS
+// mirror, and so do the next targets', without asking CDS again; the mirror
+// failing too, from SkyView.
 func TestPictureFallback(t *testing.T) {
-	m := started(t, 160, 48, new([]time.Time))
-	tr := &flaky{down: map[string]bool{cdsHost: true}}
-	withServices(m, tr, servicesMsg{cds: true, sky: true})
-	if m.pic.State() != pictureurl.StateLoaded || !strings.Contains(m.pic.CurrentURL(), skyHost) {
-		t.Fatalf("state %v from %s, want loaded from SkyView", m.pic.State(), m.pic.CurrentURL())
-	}
-	m.list.Select(1)
-	runPicture(m, m.selectPicture(), 0)
-	if tr.asked[cdsHost] != 1 || tr.asked[skyHost] != 2 {
-		t.Errorf("asked %v, want CDS once and SkyView for both targets", tr.asked)
+	for _, c := range []struct {
+		down map[string]bool
+		host string
+	}{
+		{map[string]bool{cdsHost: true}, hipsHost},
+		{map[string]bool{cdsHost: true, hipsHost: true}, skyHost},
+	} {
+		m := started(t, 160, 48, new([]time.Time))
+		tr := &flaky{down: c.down}
+		withServices(m, tr, servicesMsg{cds: true, hips: true, sky: true})
+		if m.pic.State() != pictureurl.StateLoaded || !strings.Contains(m.pic.CurrentURL(), c.host) {
+			t.Fatalf("state %v from %s, want loaded from %s", m.pic.State(), m.pic.CurrentURL(), c.host)
+		}
+		m.list.Select(1)
+		runPicture(m, m.selectPicture(), 0)
+		for h := range c.down {
+			if tr.asked[h] != 1 {
+				t.Errorf("asked %v, want %s once", tr.asked, h)
+			}
+		}
+		if tr.asked[c.host] != 2 {
+			t.Errorf("asked %v, want %s for both targets", tr.asked, c.host)
+		}
 	}
 }
+
+// A target passed over before pictureDelay is never fetched: back on the
+// first, whose picture is cached, nothing is asked for at all.
+func TestPictureDelay(t *testing.T) {
+	m := started(t, 160, 48, new([]time.Time))
+	tr := &flaky{}
+	withServices(m, tr, servicesMsg{cds: true})
+	first, at := m.pic.CurrentURL(), m.list.Index()
+	tr.asked = nil
+	m.list.Select(1 - at)
+	passed := m.selectPicture()
+	m.list.Select(at)
+	runPicture(m, m.selectPicture(), 0)
+	runPicture(m, passed, 0)
+	if len(tr.asked) != 0 || m.pic.CurrentURL() != first || m.pic.State() != pictureurl.StateLoaded {
+		t.Errorf("asked %v, %v from %s: want the first target's cached picture and nothing fetched", tr.asked, m.pic.State(), m.pic.CurrentURL())
+	}
+}
+
+// hipsTransport answers a hipsURL with a picture of the size asked, made
+// from the mirror's tiles, and passes every other request through.
+func TestHiPSTransport(t *testing.T) {
+	var b bytes.Buffer
+	_ = jpeg.Encode(&b, image.NewGray(image.Rect(0, 0, 512, 512)), nil)
+	var (
+		tiles []string
+		mu    sync.Mutex
+	)
+	next := roundTrip(func(req *http.Request) (*http.Response, error) {
+		mu.Lock()
+		tiles = append(tiles, req.URL.String())
+		mu.Unlock()
+
+		return &http.Response{StatusCode: http.StatusOK, Header: http.Header{"Content-Type": {"image/jpeg"}}, Body: io.NopCloser(bytes.NewReader(b.Bytes())), Request: req}, nil
+	})
+	client := &http.Client{Transport: hipsTransport{next}}
+	resp, err := client.Get(hipsURL([3]float64{83.82, -5.39, 60}, 3, 2))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	img, err := jpeg.Decode(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := img.Bounds().Size(); got != (image.Point{3 * cellW, 2 * cellH}) {
+		t.Errorf("picture %v", got)
+	}
+	if len(tiles) == 0 || !strings.HasPrefix(tiles[0], dss.HiPS+"Norder") {
+		t.Errorf("tiles asked %v", tiles)
+	}
+	tiles = nil
+	if _, err := client.Get(skyview([3]float64{}, 1, 1)); err != nil || len(tiles) != 1 || !strings.Contains(tiles[0], skyHost) {
+		t.Errorf("SkyView not passed through: %v %v", tiles, err)
+	}
+}
+
+type roundTrip func(*http.Request) (*http.Response, error)
+
+func (f roundTrip) RoundTrip(req *http.Request) (*http.Response, error) { return f(req) }
 
 // With neither service answering the probe nothing is fetched, and the slot
 // says why.
@@ -683,8 +761,8 @@ func TestPictureNoService(t *testing.T) {
 // The probe tells a service that answers with a picture from one that fails.
 func TestProbe(t *testing.T) {
 	tr := &flaky{down: map[string]bool{cdsHost: true}}
-	if up := probe(context.Background(), &http.Client{Transport: tr})(); up != (servicesMsg{sky: true}) {
-		t.Errorf("probe %+v, want SkyView alone", up)
+	if up := probe(context.Background(), &http.Client{Transport: tr})(); up != (servicesMsg{hips: true, sky: true}) {
+		t.Errorf("probe %+v, want the HiPS mirror and SkyView", up)
 	}
 }
 
@@ -753,7 +831,7 @@ func TestEmptyNamesLimits(t *testing.T) {
 // has passed, not before, and a picture follows once one answers.
 func TestPictureReprobe(t *testing.T) {
 	m := started(t, 160, 48, new([]time.Time))
-	tr := &flaky{down: map[string]bool{cdsHost: true, skyHost: true}}
+	tr := &flaky{down: map[string]bool{cdsHost: true, hipsHost: true, skyHost: true}}
 	m.client = &http.Client{Transport: tr}
 	withServices(m, tr, servicesMsg{})
 	clock := m.probedAt
@@ -775,6 +853,23 @@ func TestPictureReprobe(t *testing.T) {
 	runPicture(m, cmd, 0)
 	if m.pic.State() != pictureurl.StateLoaded || !strings.Contains(m.pic.CurrentURL(), skyHost) {
 		t.Errorf("state %v from %s, want loaded from SkyView", m.pic.State(), m.pic.CurrentURL())
+	}
+}
+
+// A picture that failed is fetched again once a probe finds its service up:
+// pictureurl's SetURL alone keeps the failure and leaves the slot blank.
+func TestPictureRetried(t *testing.T) {
+	m := started(t, 160, 48, new([]time.Time))
+	tr := &flaky{down: map[string]bool{cdsHost: true}}
+	withServices(m, tr, servicesMsg{cds: true})
+	if m.up.cds || m.picURL != "" {
+		t.Fatalf("CDS failing left up %+v, picture %q", m.up, m.picURL)
+	}
+	delete(tr.down, cdsHost)
+	_, cmd := m.Update(servicesMsg{cds: true})
+	runPicture(m, cmd, 0)
+	if m.pic.State() != pictureurl.StateLoaded || !strings.Contains(m.pic.CurrentURL(), cdsHost) {
+		t.Errorf("state %v from %s, want loaded from CDS", m.pic.State(), m.pic.CurrentURL())
 	}
 }
 

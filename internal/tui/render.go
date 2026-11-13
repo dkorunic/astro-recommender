@@ -4,9 +4,13 @@
 package tui
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
+	"image/jpeg"
 	"io"
 	"math"
+	"net/http"
 	"slices"
 	"strconv"
 	"strings"
@@ -334,9 +338,9 @@ func (m *model) detailPane(g geometry) string {
 func (m *model) picture() string {
 	switch {
 	case m.probed && m.picURL == "":
-		return m.theme.style(m.theme.muted).Render("No picture:\nCDS and SkyView\nunreachable")
+		return m.theme.style(m.theme.muted).Render("No picture:\nCDS, ESA and\nSkyView unreachable")
 	case !m.probed:
-		return m.theme.style(m.theme.muted).Render("Checking CDS\nand SkyView…")
+		return m.theme.style(m.theme.muted).Render("Checking CDS,\nESA and SkyView…")
 	case m.red && m.pic.Mode() == picture.PictureKitty:
 		return m.theme.style(m.theme.muted).Render("Picture hidden\nin night vision;\ni: blocks")
 	case m.red:
@@ -560,8 +564,58 @@ func thumb(pos [3]float64, cols, rows int) string {
 		dss.Survey, w, h, f, pos[0], pos[1])
 }
 
-// skyview is thumb's field from NASA SkyView's DSS2 Red, for when CDS fails:
-// another operator, resampled to the pixels asked like hips2fits, but grey.
+// hipsURL is thumb's field from dss.HiPS's tiles, for when CDS fails: the
+// same colour survey from ESA's mirror, which hipsTransport resamples into
+// the picture, as hips2fits does.
+func hipsURL(pos [3]float64, cols, rows int) string {
+	w, h := cols*cellW, rows*cellH
+
+	return fmt.Sprintf(dss.HiPS+"?ra=%.4f&dec=%.4f&scale=%.7f&w=%d&h=%d", pos[0], pos[1], dss.FOV(pos[2])/float64(min(w, h)), w, h)
+}
+
+// hipsTransport answers a hipsURL with dss.Cutout's picture as a JPEG,
+// fetching the tiles through next, and passes every other request to next.
+type hipsTransport struct{ next http.RoundTripper }
+
+func (t hipsTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	if req.URL.RawQuery == "" || !strings.HasPrefix(req.URL.String(), dss.HiPS+"?") {
+		return t.next.RoundTrip(req)
+	}
+	q := req.URL.Query()
+	num := func(k string) float64 {
+		v, _ := strconv.ParseFloat(q.Get(k), 64)
+
+		return v
+	}
+	w, h := int(num("w")), int(num("h"))
+	if w > maxPicture || h > maxPicture {
+		return nil, fmt.Errorf("%w: %dx%d, larger than %d", errPicture, w, h, maxPicture)
+	}
+	img, err := dss.Cutout(req.Context(), &http.Client{Transport: t.next}, dss.HiPS, userAgent, num("ra"), num("dec"), num("scale"), w, h)
+	if err != nil {
+		return nil, err
+	}
+	var b bytes.Buffer
+	if err := jpeg.Encode(&b, img, &jpeg.Options{Quality: 90}); err != nil {
+		return nil, err
+	}
+
+	return &http.Response{
+		StatusCode: http.StatusOK, Status: "200 OK", Proto: "HTTP/1.1", ProtoMajor: 1, ProtoMinor: 1,
+		Header: http.Header{"Content-Type": {"image/jpeg"}}, ContentLength: int64(b.Len()),
+		Body: io.NopCloser(&b), Request: req,
+	}, nil
+}
+
+var errPicture = errors.New("picture too large")
+
+// maxPicture is the widest picture hipsTransport makes, in pixels: a
+// terminal's detail pane at cellW x cellH a cell is well under it.
+const maxPicture = 8192
+
+// skyview is thumb's field from NASA SkyView's DSS2 Red, for when CDS and
+// the HiPS mirror fail: another operator, resampled to the pixels asked like
+// hips2fits, but grey.
 func skyview(pos [3]float64, cols, rows int) string {
 	w, h := cols*cellW, rows*cellH
 	px := dss.FOV(pos[2]) / float64(min(w, h)) // degrees a pixel

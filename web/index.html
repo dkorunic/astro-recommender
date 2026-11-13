@@ -337,7 +337,7 @@ footer a:hover { text-decoration: underline; }
   <div id="subs" hidden></div>
 </div>
 <footer>
-  <p class="privacy">Runs entirely in your browser. The only network requests go to the forecast, sky brightness, geocoding and comet services, to NOAA for the solar flux (no location sent), to CDS and NASA SkyView for the DSS2 pictures of the results, and to Cloudflare Web Analytics, a cookieless visit counter. Your form stays in the address after the #, which browsers do not send to the site, and the counter's script (checked November 2026) reports the address without it.</p>
+  <p class="privacy">Runs entirely in your browser. The only network requests go to the forecast, sky brightness, geocoding and comet services, to NOAA for the solar flux (no location sent), to CDS, ESA's sky survey mirror and NASA SkyView for the DSS2 pictures of the results, and to Cloudflare Web Analytics, a cookieless visit counter. Your form stays in the address after the #, which browsers do not send to the site, and the counter's script (checked November 2026) reports the address without it.</p>
   <span>© 2026 Dinko Korunic</span>
   <span>Code: <a rel="license" href="https://github.com/dkorunic/astro-recommender/blob/main/LICENSE">MIT</a> · <a href="https://github.com/dkorunic/astro-recommender/blob/main/README.md">README</a> · <a href="https://github.com/dkorunic/astro-recommender/">GitHub</a><span id="version"></span></span>
 </footer>
@@ -476,8 +476,9 @@ function ansi(s) {
 // of w x h pixels from main_js.go's pos (J2000 RA and Dec, size in arcmin):
 // the picture's short side half again the object, within 0.1-5°; unknown
 // sizes (comets) 0.5°. The alaskybis mirror answers in 0.4-1.5 s where the
-// primary took 14-17 s to first byte. alt is the same field from NASA
-// SkyView's DSS2 Red, grey, for when CDS fails.
+// primary took 14-17 s to first byte. hips is the same field made here from
+// the tiles of ESA's mirror of the survey (hipsPicture), for when CDS fails,
+// and alt NASA SkyView's DSS2 Red, grey, for when both do.
 const survey = "CDS%2FP%2FDSS2%2Fcolor";
 function skyURLs([ra, dec, size], w = 240, h = 240) {
   const short = size ? Math.min(5, Math.max(0.1, size * 1.5 / 60)) : 0.5;
@@ -486,9 +487,109 @@ function skyURLs([ra, dec, size], w = 240, h = 240) {
     href: `https://aladin.cds.unistra.fr/AladinLite/?target=${ra.toFixed(4)}%20${dec.toFixed(4)}&fov=${short.toFixed(2)}&survey=${survey}`,
     thumb: `https://alaskybis.cds.unistra.fr/hips-image-services/hips2fits?hips=${survey}&width=${w}&height=${h}&projection=TAN` +
       `&fov=${fov.toFixed(2)}&ra=${ra.toFixed(4)}&dec=${dec.toFixed(4)}&format=jpg`,
+    hips: `hips:${ra},${dec},${short / Math.min(w, h)},${w},${h}`,
     alt: `https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=DSS2+Red&Position=${ra.toFixed(4)},${dec.toFixed(4)}` +
       `&Size=${(fov * w / Math.max(w, h)).toFixed(3)},${(fov * h / Math.max(w, h)).toFixed(3)}&Pixels=${w},${h}&Projection=Tan&Scaling=Linear&Return=JPEG`,
   };
+}
+
+// hipsPicture is a blob URL of the picture a hips: src from skyURLs names
+// (ra,dec,scale,w,h: degrees, degrees a pixel and pixels), made once:
+// internal/dss's Cutout, resampled here from the tiles of ESA's mirror of
+// CDS's DSS2 colour HiPS (CORS open), north up, east left, nearest pixel,
+// coarser where its own order takes more than 64 tiles. A tile the mirror
+// lacks (404) stays black, but none at all rejects (a moved survey), as does
+// any other failure.
+const hipsBase = "https://skies.esac.esa.int/DSSColor/", hipsMade = new Map();
+function hipsPicture(src) {
+  if (!hipsMade.has(src)) {
+    const [ra, dec, scale, w, h] = src.slice(5).split(",").map(Number);
+    const made = hipsCutout(ra, dec, scale, w, h)
+      .then((c) => new Promise((ok, no) => c.toBlob((b) => b ? ok(URL.createObjectURL(b)) : no(new Error("no picture")), "image/jpeg", 0.9)));
+    made.catch(() => hipsMade.delete(src));
+    hipsMade.set(src, made);
+  }
+  return hipsMade.get(src);
+}
+// hipsNest is dss.nest: the base face and x, y within it at depth of the
+// direction with z = sin(dec), s = cos(dec) and longitude phi.
+function hipsNest(depth, z, s, phi) {
+  const ns = 2 ** depth, za = Math.abs(z);
+  let tt = phi % (2 * Math.PI);
+  if (tt < 0) tt += 2 * Math.PI;
+  tt *= 2 / Math.PI;
+  if (tt >= 4) tt -= 4;
+  if (za <= 2 / 3) {
+    const t1 = ns * (0.5 + tt), t2 = ns * z * 0.75;
+    const jp = Math.floor(t1 - t2), jm = Math.floor(t1 + t2);
+    const ifp = Math.floor(jp / ns), ifm = Math.floor(jm / ns);
+    const face = ifp === ifm ? ifp | 4 : ifp < ifm ? ifp : ifm + 8;
+    return [face, jm % ns, ns - (jp % ns) - 1];
+  }
+  const ntt = Math.min(3, Math.floor(tt)), tp = tt - ntt, tmp = ns * s * Math.sqrt(3 / (1 + za));
+  const jp = Math.min(Math.floor(tp * tmp), ns - 1), jm = Math.min(Math.floor((1 - tp) * tmp), ns - 1);
+  return z >= 0 ? [ntt, ns - jm - 1, ns - jp - 1] : [ntt + 8, jp, jm];
+}
+const hipsSpread = (v) => { let r = 0; for (let b = 0; v >> b; b++) r += ((v >> b) & 1) * 4 ** b; return r; };
+async function hipsCutout(ra, dec, scale, w, h) {
+  if (!(scale > 0) || !(w > 0) || !(h > 0)) throw new Error("no field");
+  let order = Math.min(9, Math.max(0, Math.round(Math.log2(Math.sqrt(Math.PI / 3) * 180 / Math.PI / scale)) - 9));
+  let lay = hipsLayout(order, ra, dec, scale, w, h);
+  while (lay.tiles.size > 64 && order > 0) lay = hipsLayout(--order, ra, dec, scale, w, h);
+  const { tiles, tileOf, off } = lay;
+  if (tiles.size > 64) throw new Error("too many tiles");
+  const side = 512, ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 20000);
+  try {
+    await Promise.all([...tiles.keys()].map(async (t) => {
+      const r = await fetch(`${hipsBase}Norder${order}/Dir${Math.floor(t / 10000) * 10000}/Npix${t}.jpg`, { signal: ctl.signal });
+      if (r.status === 404) return;
+      if (!r.ok) throw new Error(`tile ${t}: ${r.status}`);
+      const bmp = await createImageBitmap(await r.blob());
+      // dss.fetchTile's check: another size would misplace every pixel.
+      if (bmp.width !== side || bmp.height !== side) {
+        const e = new Error(`tile ${t}: ${bmp.width}x${bmp.height}, want ${side}`); // before close(), which zeroes them
+        bmp.close();
+        throw e;
+      }
+      const c = Object.assign(document.createElement("canvas"), { width: side, height: side }), g = c.getContext("2d");
+      g.drawImage(bmp, 0, 0);
+      bmp.close();
+      tiles.set(t, g.getImageData(0, 0, side, side).data);
+    })).catch((e) => { ctl.abort(); throw e; }); // one failed: the rest are not wanted
+  } finally { clearTimeout(timer); }
+  if (![...tiles.values()].some(Boolean)) throw new Error("no tile");
+  const out = Object.assign(document.createElement("canvas"), { width: w, height: h }), g = out.getContext("2d");
+  const im = g.createImageData(w, h), px = im.data;
+  for (let p = 0; p < w * h; p++) {
+    const d = tiles.get(tileOf[p]), q = 4 * p;
+    px[q + 3] = 255;
+    if (!d) continue;
+    const o = 4 * off[p];
+    px[q] = d[o]; px[q + 1] = d[o + 1]; px[q + 2] = d[o + 2];
+  }
+  g.putImageData(im, 0, 0);
+  return out;
+}
+// hipsLayout is dss.layout: the tiles at order the field needs, and each
+// pixel's tile and offset within it.
+function hipsLayout(order, ra, dec, scale, w, h) {
+  const side = 512, depth = order + 9, rad = Math.PI / 180, step = scale * rad;
+  const sr = Math.sin(ra * rad), cr = Math.cos(ra * rad), sd = Math.sin(dec * rad), cd = Math.cos(dec * rad);
+  const tileOf = new Float64Array(w * h), off = new Int32Array(w * h), tiles = new Map();
+  for (let j = 0; j < h; j++) {
+    const eta = (h / 2 - j - 0.5) * step;
+    for (let i = 0; i < w; i++) {
+      const xi = (w / 2 - i - 0.5) * step; // east left
+      const x = cd * cr - xi * sr - eta * sd * cr, y = cd * sr + xi * cr - eta * sd * sr, z = sd + eta * cd;
+      const l = Math.hypot(x, y, z);
+      const [face, ix, iy] = hipsNest(depth, z / l, Math.hypot(x, y) / l, Math.atan2(y, x));
+      const t = face * 4 ** order + hipsSpread(ix >> 9) + 2 * hipsSpread(iy >> 9);
+      tiles.set(t, null);
+      tileOf[j * w + i] = t;
+      off[j * w + i] = (ix & (side - 1)) * side + (iy & (side - 1)); // dss.tileOffset's orientation
+    }
+  }
+  return { tiles, tileOf, off };
 }
 
 // sky links each result row of the full report to Aladin Lite at its
@@ -501,8 +602,8 @@ function sky(html) {
     const rank = line.replace(/<[^>]+>/g, "").match(/^(\d+) +\S/)?.[1];
     const pos = rank && curves?.pos?.[rank - 1];
     if (!pos) return line;
-    const { href, thumb, alt } = skyURLs(pos);
-    const attrs = `href="${href}" target="_blank" rel="noopener" data-thumb="${thumb}" data-alt="${alt}" data-rank="${rank}" aria-describedby="card"`;
+    const { href, thumb, hips, alt } = skyURLs(pos);
+    const attrs = `href="${href}" target="_blank" rel="noopener" data-thumb="${thumb}" data-hips="${hips}" data-alt="${alt}" data-rank="${rank}" aria-describedby="card"`;
     return line.replace(/<span class="c36">([^<]*)<\/span>/, (_, name) => {
       links.set(name, attrs);
       return `<span class="c36"><a ${attrs}>${name}</a></span>`;
@@ -517,14 +618,14 @@ function sky(html) {
 // The thumbnail shows once its own image has loaded, never the previous
 // name's image or an empty box: a load event the previous image queued before
 // the pointer moved on would otherwise show it under the new name. Until then
-// the slot says it is loading; with neither CDS nor SkyView up it shrinks to
-// a line saying so, and the curve moves up.
+// the slot says it is loading; with none of CDS, ESA and SkyView up it
+// shrinks to a line saying so, and the curve moves up.
 let thumbFor = null, curves = null;
 // up is which picture services answered a one-cell probe at load (ready()
 // waits for it), so a service that is down costs one wait, not one a
-// picture; a picture that fails marks its service down. Once both are down
+// picture; a picture that fails marks its service down. Once all are down
 // they are probed again before the next picture, at most once a minute.
-const up = { cds: true, sky: true };
+const up = { cds: true, hips: true, sky: true };
 let probing = null, probedAt = 0;
 function probe() {
   const ask = (src) => new Promise((ok) => {
@@ -534,24 +635,57 @@ function probe() {
     setTimeout(() => ok(false), 8000);
     i.src = src;
   });
-  const { thumb, alt } = skyURLs([0, 0, 0], 16, 16);
-  return Promise.all([ask(thumb), ask(alt)]).then(([cds, sky]) => {
-    Object.assign(up, { cds, sky });
+  const { thumb, hips, alt } = skyURLs([0, 0, 0], 16, 16);
+  hipsMade.delete(hips); // asked again, not a remembered answer
+  const made = Promise.race([hipsPicture(hips).then(() => true, () => false), new Promise((ok) => setTimeout(() => ok(false), 8000))]);
+  return Promise.all([ask(thumb), made, ask(alt)]).then(([cds, hips, sky]) => {
+    Object.assign(up, { cds, hips, sky });
     probedAt = Date.now();
     probing = null;
   });
 }
 probing = probe();
 function ready() {
-  if (!probing && !up.cds && !up.sky && Date.now() - probedAt >= 60000) probing = probe();
+  if (!probing && !up.cds && !up.hips && !up.sky && Date.now() - probedAt >= 60000) probing = probe();
   return probing ?? Promise.resolve();
 }
-// pick is the picture of urls ({thumb, alt}) from a service up, else "";
-// down marks the service of the failed src down.
-const pick = ({ thumb, alt }) => up.cds ? thumb : up.sky ? alt : "";
-const down = (src, urls) => { if (src === urls.thumb) up.cds = false; else up.sky = false; };
-const own = (e) => thumbFor && [thumbFor.dataset.thumb, thumbFor.dataset.alt].includes(e.target.getAttribute("src"));
-const failed = () => { $("shot").classList.add("failed"); $("shotmsg").textContent = "No picture: CDS and SkyView unreachable"; };
+// pick is the picture of urls ({thumb, hips, alt}) from a service up, else
+// ""; down marks the service of the failed src down.
+const pick = ({ thumb, hips, alt }) => up.cds ? thumb : up.hips ? hips : up.sky ? alt : "";
+const down = (src, urls) => { if (src === urls.thumb) up.cds = false; else if (src === urls.hips) up.hips = false; else up.sky = false; };
+// A hips: src is img's own picture only once made (setSrc): until then img
+// still holds the previous name's, whose queued load must not show it.
+const own = (e) => thumbFor && [thumbFor.dataset.thumb, thumbFor.dataset.hips, thumbFor.dataset.alt].includes(e.target.dataset.src) &&
+  (e.type === "error" || !e.target.dataset.src.startsWith("hips:") || e.target.dataset.made === e.target.dataset.src);
+const failed = () => { $("shot").classList.add("failed"); $("shotmsg").textContent = "No picture: CDS, ESA and SkyView unreachable"; };
+// setSrc shows src on img, kept as img.dataset.src, which the handlers
+// compare: a hips: picture is made first and shown as a blob URL, its
+// failure an error event like a URL's. It returns whether img may already
+// hold src's picture, so no load event follows (a hips: one still being
+// made will send one).
+function setSrc(img, src) {
+  const same = img.dataset.src === src;
+  img.dataset.src = src;
+  if (!src.startsWith("hips:")) { img.src = src; return true; }
+  if (same) return img.dataset.made === src;
+  delete img.dataset.made;
+  // Made only if img still wants it 150 ms on: a pointer swept down the
+  // report asks for one picture, not one a name, each of which would fetch
+  // its tiles, never cancelled, in a burst a mirror may refuse.
+  setTimeout(() => {
+    if (img.dataset.src !== src) return;
+    hipsPicture(src).then((u) => {
+      if (img.dataset.src !== src) return;
+      img.dataset.made = src;
+      img.src = u;
+    }, () => {
+      if (img.dataset.src !== src) return;
+      img.dispatchEvent(new Event("error"));
+      if (img.dataset.src === src) img.dataset.src = ""; // tried again once probed up
+    });
+  }, 150);
+  return false;
+}
 // load puts the hover card's picture for link a from a service up, once
 // ready.
 function load(a) {
@@ -559,9 +693,8 @@ function load(a) {
     if (thumbFor !== a) return;
     const img = $("thumb"), src = pick(a.dataset);
     if (!src) { failed(); return; }
-    img.src = src;
     // Back on the same name the src does not change and no event fires.
-    if (img.complete) {
+    if (setSrc(img, src) && img.complete) {
       if (img.naturalWidth) img.hidden = false;
       else { down(src, a.dataset); load(a); }
     }
@@ -570,7 +703,7 @@ function load(a) {
 $("thumb").addEventListener("load", (e) => { if (own(e)) e.target.hidden = false; });
 $("thumb").addEventListener("error", (e) => {
   if (!own(e)) return;
-  down(e.target.getAttribute("src"), thumbFor.dataset);
+  down(e.target.dataset.src, thumbFor.dataset);
   load(thumbFor);
 });
 // show fills the hover card for the report link a and puts it beside a,
@@ -759,13 +892,19 @@ function drawAlt(c, alt, obs, card, key) {
 function cardOf(c, i) {
   const art = el("article", "tcard");
   art.dataset.rank = i + 1;
-  const { href, thumb, alt } = skyURLs(curves.pos[i], 480, 200);
+  const { href, thumb, hips, alt } = skyURLs(curves.pos[i], 480, 200);
   const shot = Object.assign(el("a", "shot"), { href, target: "_blank", rel: "noopener", title: "Open in Aladin Lite" });
   const img = Object.assign(el("img"), { alt: "", loading: "lazy", decoding: "async" });
   // A service failing, the other; neither, the dark slot stays.
-  const urls = { thumb, alt }, next = () => ready().then(() => { const src = pick(urls); if (src) img.src = src; else img.remove(); });
-  img.addEventListener("error", () => { down(img.getAttribute("src"), urls); next(); });
-  next();
+  const urls = { thumb, hips, alt }, next = () => ready().then(() => { const src = pick(urls); if (src) setSrc(img, src); else img.remove(); });
+  img.addEventListener("error", () => { down(img.dataset.src, urls); next(); });
+  // Asked for only once the card nears the view: loading="lazy" defers a URL,
+  // but a hips: picture is made in the page, and every card's tiles at once
+  // would be a burst the mirror may refuse.
+  const seen = new IntersectionObserver((es) => {
+    if (es.some((e) => e.isIntersecting)) { seen.disconnect(); next(); }
+  }, { rootMargin: "300px" });
+  seen.observe(shot);
   const t1 = el("div", "t1");
   t1.append(el("span", "rank", `#${i + 1}`), [c.name, c.desc, c.type].filter(Boolean).join(" · "));
   const stats = el("div", "stats");

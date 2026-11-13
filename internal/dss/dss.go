@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: MIT
 
 // Package dss holds what links to a target's DSS2 picture share: the survey,
-// the field that frames an object and the Aladin Lite address.
+// the field that frames an object and the Aladin Lite address, and Cutout,
+// the picture resampled from a HiPS mirror's tiles when CDS does not answer.
 package dss
 
 import "fmt"

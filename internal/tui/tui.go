@@ -13,7 +13,7 @@ import (
 	"cmp"
 	"context"
 	"encoding/json"
-	_ "image/jpeg" // hips2fits answers JPEG
+	_ "image/jpeg" // hips2fits, SkyView and hipsTransport answer JPEG
 	"io"
 	"net/http"
 	"os"
@@ -31,6 +31,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/NimbleMarkets/ntcharts/v2/picture"
 	"github.com/NimbleMarkets/ntcharts/v2/picture/pictureurl"
+	"github.com/dkorunic/astro-recommender/internal/dss"
 	"github.com/dkorunic/astro-recommender/internal/view"
 )
 
@@ -213,7 +214,7 @@ type model struct {
 }
 
 func newModel(ctx context.Context, opt Options, compute Compute) *model {
-	m := &model{ctx: ctx, compute: compute, opt: opt, theme: darkTheme, help: help.New(), now: time.Now, client: http.DefaultClient}
+	m := &model{ctx: ctx, compute: compute, opt: opt, theme: darkTheme, help: help.New(), now: time.Now, client: &http.Client{Transport: hipsTransport{http.DefaultTransport}}}
 	m.spin = spinner.New(spinner.WithSpinner(spinner.Dot))
 	m.list = list.New(nil, delegate{m}, 0, 0)
 	m.list.SetShowTitle(false)
@@ -225,7 +226,12 @@ func newModel(ctx context.Context, opt Options, compute Compute) *model {
 	m.list.KeyMap.PrevPage = key.NewBinding(key.WithKeys("pgup"))
 	m.list.KeyMap.Quit = key.NewBinding(key.WithKeys("q"))
 	m.applyTheme()
-	m.pic = pictureurl.NewWithConfig(pictureurl.Config{UserAgent: userAgent, Fit: picture.FitContain})
+	// A HiPS picture takes a few tiles where hips2fits sends one: pictureurl's
+	// default 15 s is too short for a slow mirror.
+	m.pic = pictureurl.NewWithConfig(pictureurl.Config{
+		UserAgent: userAgent, Fit: picture.FitContain,
+		HTTPClient: &http.Client{Timeout: pictureTimeout, Transport: hipsTransport{http.DefaultTransport}},
+	})
 
 	return m
 }
@@ -279,6 +285,15 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) { //nolint:ireturn // t
 		}
 	case servicesMsg:
 		m.up, m.probed, m.probing, m.probedAt = msg, true, false, m.now()
+	case pictureDue:
+		if msg.url == m.picURL {
+			cmds = append(cmds, m.pic.SetURL(msg.url))
+			// SetURL never refetches a picture that failed: its service has
+			// been probed up again since, so it is asked once more.
+			if m.pic.State() == pictureurl.StateError {
+				cmds = append(cmds, m.pic.Reload())
+			}
+		}
 	case warnMsg:
 		m.warnings = append(m.warnings, strings.TrimPrefix(string(msg), "warning: "))
 	case spinner.TickMsg:
@@ -430,7 +445,7 @@ func (m *model) snapshotReady() bool {
 	}
 	st := m.pic.State()
 
-	return m.picURL == "" || st == pictureurl.StateLoaded || st == pictureurl.StateError
+	return m.picURL == "" || m.pic.CurrentURL() == m.picURL && (st == pictureurl.StateLoaded || st == pictureurl.StateError)
 }
 
 // snapshot writes the frame and its picture's rectangle (snapshotRect).
@@ -548,21 +563,23 @@ func (m *model) selected() (int, bool) {
 }
 
 // selectPicture points the picture at the selected target's DSS2 image,
-// from CDS while it answers, else SkyView, else none.
+// from CDS while it answers, else ESA's HiPS tiles, else SkyView, else none.
 func (m *model) selectPicture() tea.Cmd {
 	i, ok := m.selected()
 	if !ok || m.picCols() == 0 || !m.probed {
 		return nil
 	}
-	// Both down: probed again before the next picture, at most once a
+	// All down: probed again before the next picture, at most once a
 	// minute.
-	if !m.up.cds && !m.up.sky && !m.probing && m.now().Sub(m.probedAt) >= reprobeAfter {
+	if m.up == (servicesMsg{}) && !m.probing && m.now().Sub(m.probedAt) >= reprobeAfter {
 		return m.reprobe()
 	}
 	var u string
 	switch pos := m.night.Doc.Pos[i]; {
 	case m.up.cds:
 		u = thumb(pos, m.picCols(), m.picRows())
+	case m.up.hips:
+		u = hipsURL(pos, m.picCols(), m.picRows())
 	case m.up.sky:
 		u = skyview(pos, m.picCols(), m.picRows())
 	}
@@ -570,9 +587,22 @@ func (m *model) selectPicture() tea.Cmd {
 		return nil
 	}
 	m.picURL = u
-
-	return m.pic.SetURL(u)
+	if u == "" {
+		return m.pic.SetURL("")
+	}
+	// The picture of the target still selected after pictureDelay: one key
+	// held down through the list asks for one picture, not one a target,
+	// which a HiPS cutout's tiles, never cancelled, would make a burst of
+	// downloads a mirror may refuse. The slot is blank meanwhile.
+	return tea.Batch(m.pic.SetURL(""), tea.Tick(pictureDelay, func(time.Time) tea.Msg { return pictureDue{u} }))
 }
+
+// pictureDue is selectPicture's url, asked for once pictureDelay has passed.
+type pictureDue struct{ url string }
+
+// pictureDelay is how long a target stays selected before its picture is
+// asked for.
+const pictureDelay = 150 * time.Millisecond
 
 // pictureMsg hands msg to the picture. A failed picture marks its service
 // down for the session, and the selected target is asked of the other.
@@ -581,9 +611,12 @@ func (m *model) pictureMsg(msg tea.Msg) tea.Cmd {
 	if m.picURL == "" || m.pic.CurrentURL() != m.picURL || m.pic.State() != pictureurl.StateError {
 		return cmd
 	}
-	if strings.HasPrefix(m.picURL, cdsURL) {
+	switch {
+	case strings.HasPrefix(m.picURL, cdsURL):
 		m.up.cds = false
-	} else {
+	case strings.HasPrefix(m.picURL, dss.HiPS):
+		m.up.hips = false
+	default:
 		m.up.sky = false
 	}
 	m.picURL = ""
@@ -598,22 +631,28 @@ func (m *model) reprobe() tea.Cmd {
 	return probe(m.ctx, m.client)
 }
 
-// reprobeAfter is how long both services marked down stay so.
+// reprobeAfter is how long the services all marked down stay so.
 const reprobeAfter = time.Minute
 
 // servicesMsg is which picture services answered.
-type servicesMsg struct{ cds, sky bool }
+type servicesMsg struct{ cds, hips, sky bool }
+
+// pictureTimeout is how long a picture may take: hipsTransport's tiles
+// come at once, but a slow mirror sends a few.
+const pictureTimeout = 30 * time.Second
 
 // probeTimeout is how long probe waits for each service.
 const probeTimeout = 8 * time.Second
 
-// probe asks CDS and SkyView for a one-cell picture each, at once: a service
+// probe asks CDS, the HiPS mirror and SkyView for a one-cell picture each,
+// at once (the HiPS one through client's hipsTransport): a service
 // that is down then costs one wait at start, not one a target.
 func probe(ctx context.Context, client *http.Client) tea.Cmd {
 	return func() tea.Msg {
 		var up servicesMsg
 		var wg sync.WaitGroup
 		wg.Go(func() { up.cds = answers(ctx, client, thumb([3]float64{}, 1, 1)) })
+		wg.Go(func() { up.hips = answers(ctx, client, hipsURL([3]float64{}, 1, 1)) })
 		wg.Go(func() { up.sky = answers(ctx, client, skyview([3]float64{}, 1, 1)) })
 		wg.Wait()
 
