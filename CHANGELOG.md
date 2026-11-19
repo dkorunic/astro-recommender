@@ -5,13 +5,18 @@ commits since the previous tag. Version numbers skip where no tag was cut
 (v0.6–v0.7, v0.10–v0.12, v0.15–v0.17). See [MODELS.md](MODELS.md) for the
 formulas behind the model changes.
 
-## [Unreleased]
+## [v0.26.0] — 2026-11-19
 
 ### Added
 - The forecast shows GFS's and ECMWF's cloud cover beside the scored
   `best_match` forecast and flags the hours where either differs by 40 points
   or more (`GFS/ECMWF` column, JSON `models`/`modelsDisagree`, `*` in the
   terminal view's weather list, yellow in the browser's).
+
+## [v0.25.1] — 2026-11-17
+
+### Dependencies
+- lipgloss 2.1.1, tzf 2.3.0 (time zone data 2026f), yaml v4.0.0, x/term 0.48.0.
 
 ## [v0.25.0] — 2026-11-13
 
@@ -694,7 +699,8 @@ LDN, OpenNGC, OpenIC) for tonight's astronomical night. Features:
 - a greedy night plan (`-plan`)
 - an offline time-zone lookup and reverse geocoding
 
-[Unreleased]: https://github.com/dkorunic/astro-recommender/compare/v0.25.0...HEAD
+[v0.26.0]: https://github.com/dkorunic/astro-recommender/compare/v0.25.1...v0.26.0
+[v0.25.1]: https://github.com/dkorunic/astro-recommender/compare/v0.25.0...v0.25.1
 [v0.25.0]: https://github.com/dkorunic/astro-recommender/compare/v0.24.6...v0.25.0
 [v0.24.6]: https://github.com/dkorunic/astro-recommender/compare/v0.24.5...v0.24.6
 [v0.24.5]: https://github.com/dkorunic/astro-recommender/compare/v0.24.4...v0.24.5
