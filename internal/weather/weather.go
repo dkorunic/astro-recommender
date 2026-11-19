@@ -297,8 +297,7 @@ next:
 			dp < -150 || dp > 60 || wind < 0 || wind > 1000 {
 			continue
 		}
-		// ponytail: layers treated as independent; thin cirrus blocks ~half the light.
-		cloud := 100 * (1 - (1-low)*(1-mid)*(1-high/2))
+		cloud := effective(low, mid, high)
 		// Gusts are the maximum over the preceding hour, so the hour starting
 		// at t has its gust in the next entry; the last hour keeps its own,
 		// and with neither (or a sentinel) the mean wind is the floor gusts
@@ -324,6 +323,55 @@ next:
 	}
 
 	return out, nil
+}
+
+// effective is the cloud cover (%) of three layers given as fractions.
+// ponytail: layers treated as independent; thin cirrus blocks ~half the light.
+func effective(low, mid, high float64) float64 { return 100 * (1 - (1-low)*(1-mid)*(1-high/2)) }
+
+// Models are the models whose cloud cover is shown beside Forecast's
+// best_match blend, a regional model where one covers the hour (over
+// central Europe ICON-D2 for its first two days, then ICON-EU, then
+// global ones): models that disagree make a forecast less certain than
+// one number says.
+var Models = [...]struct{ Key, Label string }{{"gfs_seamless", "GFS"}, {"ecmwf_ifs025", "ECMWF"}}
+
+// Disagree is the difference in effective cloud cover, percentage points,
+// at which a model is flagged as disagreeing with Forecast's.
+const Disagree = 40
+
+// ModelCloud fetches one of Models' effective cloud cover per unix hour,
+// for [start, end] as Forecast's cloud is read (the nearest hour).
+func ModelCloud(ctx context.Context, model string, lat, lon float64, start, end time.Time) (map[int64]float64, error) {
+	url := fmt.Sprintf("https://api.open-meteo.com/v1/forecast?latitude=%.2f&longitude=%.2f&models=%s&hourly=cloud_cover_low,cloud_cover_mid,cloud_cover_high&timeformat=unixtime&timezone=UTC",
+		lat, lon, model)
+	h, _, err := fetchHourly(ctx, url, start, end.Add(time.Hour))
+	if err != nil {
+		return nil, err
+	}
+	out := h.cloud()
+	if len(out) == 0 {
+		return nil, fmt.Errorf("%w: %s: no cloud data", errOpenMeteo, model)
+	}
+
+	return out, nil
+}
+
+// cloud is the block's effective cloud cover per unix hour, an hour with a
+// null or out-of-range layer left out: unknown, never clear.
+func (h *hourly) cloud() map[int64]float64 {
+	out := map[int64]float64{}
+	for i, t := range h.Time {
+		low, ok1 := at(h.Low, i)
+		mid, ok2 := at(h.Mid, i)
+		high, ok3 := at(h.High, i)
+		if !ok1 || !ok2 || !ok3 || min(low, mid, high) < 0 || max(low, mid, high) > 100 {
+			continue
+		}
+		out[t] = effective(low/100, mid/100, high/100)
+	}
+
+	return out
 }
 
 // levels turns the profile block into the upper-air levels per unix hour,

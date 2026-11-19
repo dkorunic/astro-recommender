@@ -21,7 +21,7 @@ How astro-recommender compares with other target-selection tools. Other tools' d
 ## What astro-recommender does differently
 
 - **Sky against the object.** Each minute: `√((S + B_ref)/(S + B))`, with B from the zenith sky, solar-cycle airglow, zodiacal and galactic light per direction and Winkler (2022) moonlight, and S a measured surface brightness where a catalogue has one (`TestScoreSurfaceBrightness`).
-- **Forecast weights minutes.** Cloud by layer, rain, dew and gusts scale each minute instead of gating the night. Uncovered hours get the covered hours' mean, with a warning.
+- **Forecast weights minutes.** Cloud by layer, rain, dew and gusts scale each minute instead of gating the night. Uncovered hours get the covered hours' mean, with a warning. GFS's and ECMWF's cloud is shown beside the scored `best_match`, hours 40 points apart flagged.
 - **Extinction from forecast aerosols.** Per hour: Rayleigh by elevation, ozone, CAMS AOD above the site, Pickering airmass.
 - **Filters as a spectral model.** Line ratios by type, sky split into glow, Rayleigh and aerosol moonlight, per-band extinction, band shift in fast beams (`-filter-std`, fitted to Chroma's curves). Each filter you own is scored as worn all night; the best, or with framing the fewest-subs one, is named (`TestScoreFilter`: H II Hα > dual-band > CLS > L-Pro > none; planetaries dual-band > Hα > [O III] > CLS > L-Pro > none; galaxies and clusters never filtered).
 - **SUBS per target.** Subs for SNR 5, 10, 20 from the same per-minute sky, with aperture, obstruction, throughput, QE, read noise, dark current at the night's temperature, seeing and optics blur, stacking mode, flat residual ceiling, and per-channel colour response (21 smart telescopes, 45 sensors).

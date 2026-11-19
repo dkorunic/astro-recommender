@@ -96,6 +96,7 @@ aside :is(label, .chipfield) > span:not(.flag) code { display: none; }
 .wx .cl i { display: block; height: 100%; background: var(--c32); }
 .wx .cl i.mid { background: var(--c33); } .wx .cl i.bad { background: var(--c31); } .wx .cl i.rain { background: var(--c34); }
 .wx .pc { text-align: right; color: var(--muted); }
+.wx .pc.dis { color: var(--c33); text-decoration: underline dotted; }
 /* The options: a tab per -h group beside one scrolling pane of them all. */
 .filters { position: sticky; top: 64px; display: flex; flex-direction: column; max-height: calc(100vh - 80px); }
 .filters .split { display: grid; grid-template-columns: 112px minmax(0, 1fr); min-height: 0; flex: 1; }
@@ -1012,9 +1013,11 @@ function showNight() {
   for (const h of curves.wx ?? []) {
     const bar = el("span", "cl"), fill = el("i", h.rain ? "rain" : h.cloud >= 70 ? "bad" : h.cloud > 30 ? "mid" : "");
     fill.style.width = `${Math.max(4, 100 - h.cloud)}%`;
-    bar.title = `${h.cloud}% cloud${h.rain ? ", rain" : ""}: the bar is the clear share`;
+    bar.title = `${h.cloud}% cloud${h.rain ? ", rain" : ""}${h.disagree ? "; another weather model disagrees" : ""}: the bar is the clear share`;
     bar.append(fill);
-    wx.append(el("span", "h", hm(h.t)), bar, el("span", "pc", h.rain ? "rain" : `${h.cloud}%`));
+    const pc = el("span", "pc", h.rain ? "rain" : `${h.cloud}%`);
+    if (h.disagree) pc.classList.add("dis"), pc.title = "another weather model disagrees";
+    wx.append(el("span", "h", hm(h.t)), bar, pc);
   }
 }
 

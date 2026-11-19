@@ -172,6 +172,8 @@ Marks: `~` estimated, `-` unknown or not applicable. In SUBS, `N nights` means m
 
 Narrow terminals drop columns in this order: STAR, RA+DEC, CON, UP, MAG, SB, SKY, SIZE, PX, TYPE, MAX ALT, FILTER (with framing SIZE goes right after SB). Colours follow `NO_COLOR`, `CLICOLOR_FORCE=1` and `TERM=dumb`. Warnings go to stderr.
 
+The forecast table's `GFS/ECMWF` column is those models' cloud cover beside `best_match`'s CLOUD, yellow where one differs by 40 points or more (JSON `forecast[].models`, `modelsDisagree`; a `*` in the terminal view's weather list (its title then says so), the percentage in yellow in the browser's); the score uses `best_match` alone. A terminal too narrow for it drops the column.
+
 **`-json`** prints one document: `location`, `window`, `moon`, `sky`, `frame`, `forecast`, `conditions` (the forecast as the scored minutes read it), `plan`, `targets`. Unknown values are omitted. A night with nothing to plan gives `{"message": "…", "targets": []}`. A target's `subs` holds `modest`, `good` and `best` (SNR 5, 10, 20), `max`, `sub`, `snrPerSub` and `panels`.
 
 **`-csv`** prints Telescopius's observing-list format, which [N.I.N.A.](https://nighttime-imaging.eu/)'s simple sequencer imports: the top `-n` targets, or with `-plan` the planned ones in order, at J2000. A mosaic is its centre only, and no camera angle is set; stderr names the mosaics and the targets that fit only with `-rotate`.

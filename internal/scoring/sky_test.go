@@ -248,3 +248,24 @@ func TestGustCap(t *testing.T) {
 		}
 	}
 }
+
+// The models' clouds merge by hour, NaN where one has none, and disagree
+// from weather.Disagree points on; an unknown one never does.
+func TestModelsDisagree(t *testing.T) {
+	m := mergeModels([]map[int64]float64{{0: 100, 3600: 50}, {3600: 10}})
+	if len(m) != 2 || !math.IsNaN(m[0][1]) || m[3600] != (ModelCloud{50, 10}) {
+		t.Fatalf("merged %v", m)
+	}
+	if !m[0].disagrees(100-weather.Disagree) || m[0].disagrees(100-weather.Disagree+1) {
+		t.Error("threshold")
+	}
+	if !(ModelCloud{69.5}).disagrees(29.6) { // shown 70 against 30
+		t.Error("compared unrounded")
+	}
+	if mergeModels(make([]map[int64]float64, 2)) != nil {
+		t.Error("none fetched: want nil")
+	}
+	if !(ModelCloud{}).disagrees(100) { // the zero value reads 0%: callers check the hour exists
+		t.Error("zero value")
+	}
+}

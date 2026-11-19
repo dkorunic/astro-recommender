@@ -655,3 +655,17 @@ func TestFetchErrors(t *testing.T) {
 		t.Errorf("array block: err %v", err)
 	}
 }
+
+// A comparison model's cloud is Forecast's formula; a null or out-of-range
+// layer leaves the hour unknown, never clear.
+func TestModelCloud(t *testing.T) {
+	h, err := decodeHourly(json.RawMessage(`{"time":[0,3600,7200,10800],
+		"cloud_cover_low":[50,null,0,-9999],"cloud_cover_mid":[0,0,0,0],"cloud_cover_high":[100,0,0,0]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := h.cloud()
+	if len(got) != 2 || math.Abs(got[0]-75) > 1e-9 || got[7200] != 0 {
+		t.Errorf("cloud = %v, want {0: 75, 7200: 0}", got)
+	}
+}

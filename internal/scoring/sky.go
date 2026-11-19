@@ -26,7 +26,8 @@ type Sky struct {
 	Start, End   time.Time
 	Weather      map[int64]weather.HourWeather
 	Astro        map[int64]weather.AstroBlock
-	AOD          map[int64]float64 // aerosol optical depth at 550 nm per unix hour (CAMS)
+	Models       map[int64]ModelCloud // weather.Models' cloud per unix hour; display only, nil when not fetched
+	AOD          map[int64]float64    // aerosol optical depth at 550 nm per unix hour (CAMS)
 	Grid         []time.Time
 	LST          []float64 // local sidereal time per grid minute, degrees
 	SinLST       []float64 // sin and cos of LST, so a fixed target's cos(hour angle) needs no Cos
@@ -62,11 +63,39 @@ type Sky struct {
 type Forecast struct {
 	Weather   map[int64]weather.HourWeather
 	Astro     map[int64]weather.AstroBlock
+	Models    map[int64]ModelCloud
 	AOD       map[int64]float64
 	Elevation float64 // NaN if unknown
 	// AODElevation is the ground AOD's column stands on (CAMS's cell, by
 	// the IFS grid's orography), NaN if unknown: the site's own then.
 	AODElevation float64
+}
+
+// ModelCloud is each of weather.Models' effective cloud cover (%) for an
+// hour, NaN where that model has none.
+type ModelCloud [len(weather.Models)]float64
+
+// disagrees reports that a model's cloud differs from cloud, the scored
+// forecast's, by weather.Disagree points or more, both rounded to the
+// whole percent the tables show. Unexported: its zero value reads 0% and
+// disagrees with any cloudy hour, so callers go through Sky.Disagrees.
+func (m ModelCloud) disagrees(cloud float64) bool {
+	for _, c := range m {
+		if math.Abs(math.Round(c)-math.Round(cloud)) >= weather.Disagree { // NaN never does
+			return true
+		}
+	}
+
+	return false
+}
+
+// Disagrees reports that one of weather.Models disagrees with the scored
+// cloud at hour t; false without both, since the zero ModelCloud reads 0%.
+func (s *Sky) Disagrees(t time.Time) bool {
+	m, ok := s.Models[t.Unix()]
+	h, okW := s.Weather[t.Unix()]
+
+	return ok && okW && m.disagrees(h.Cloud)
 }
 
 // NoForecast is a Forecast with nothing fetched: perfect sky, fixed extinction.
@@ -109,6 +138,13 @@ func FetchForecast(ctx context.Context, cfg *config.Config, start, end time.Time
 			fmt.Fprintln(os.Stderr, "warning: no weather forecast:", err)
 		}
 	})
+	models := make([]map[int64]float64, len(weather.Models))
+	modelErrs := make([]error, len(weather.Models))
+	for i, m := range weather.Models {
+		wg.Go(func() {
+			models[i], modelErrs[i] = weather.ModelCloud(ctx, m.Key, cfg.Lat, cfg.Lon, start, end)
+		})
+	}
 	wg.Go(func() {
 		profile, profileErr = weather.Profile(ctx, cfg.Lat, cfg.Lon, start, end)
 	})
@@ -140,6 +176,16 @@ func FetchForecast(ctx context.Context, cfg *config.Config, start, end time.Time
 	}
 	wg.Wait()
 	mergeProfile(f.Weather, profile)
+	// Shown only beside the surface forecast: without it, its warning says
+	// all, and the models' own would repeat it.
+	if f.Weather != nil {
+		f.Models = mergeModels(models)
+		for i, err := range modelErrs {
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "warning: no %s cloud forecast to compare: %v\n", weather.Models[i].Label, err)
+			}
+		}
+	}
 	if w := seeingWarning(f, profileErr, start, end); w != "" {
 		fmt.Fprintln(os.Stderr, "warning:", w)
 	}
@@ -154,6 +200,29 @@ func FetchForecast(ctx context.Context, cfg *config.Config, start, end time.Time
 	}
 
 	return f
+}
+
+// mergeModels joins the models' hourly cloud into one map, nil when none
+// was fetched.
+func mergeModels(models []map[int64]float64) map[int64]ModelCloud {
+	var out map[int64]ModelCloud
+	for i, m := range models {
+		for t, c := range m {
+			if out == nil {
+				out = map[int64]ModelCloud{}
+			}
+			mc, ok := out[t]
+			if !ok {
+				for j := range mc {
+					mc[j] = math.NaN()
+				}
+			}
+			mc[i] = c
+			out[t] = mc
+		}
+	}
+
+	return out
 }
 
 // mergeProfile computes the seeing estimate of each hour the surface
@@ -246,7 +315,7 @@ func eclipses(grid []time.Time, illum float64) []astro.Eclipse {
 // f; it does no I/O.
 func BuildSky(cfg *config.Config, f Forecast, start, end time.Time) Sky {
 	s := Sky{
-		Start: start, End: end, Weather: f.Weather, Astro: f.Astro, AOD: f.AOD, Elevation: f.Elevation, AODElevation: f.AODElevation,
+		Start: start, End: end, Weather: f.Weather, Astro: f.Astro, Models: f.Models, AOD: f.AOD, Elevation: f.Elevation, AODElevation: f.AODElevation,
 		Grid: make([]time.Time, 0, end.Sub(start)/time.Minute+1),
 	}
 	for t := start; t.Before(end); t = t.Add(time.Minute) {

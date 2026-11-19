@@ -204,7 +204,11 @@ func (m *model) leftPane(g geometry) string {
 		planH = min(len(d.Plan)+3, rest/2)
 	}
 	if len(d.Wx) > 0 && rest-planH >= 4 {
-		panes = append(panes, t.panel("WEATHER", m.weather(inner, rest-planH-3), leftW, rest-planH))
+		title := "WEATHER"
+		if slices.ContainsFunc(d.Wx, func(h view.WxHour) bool { return h.Disagree }) {
+			title += " (* models differ)" // the weather list's mark
+		}
+		panes = append(panes, t.panel(title, m.weather(inner, rest-planH-3), leftW, rest-planH))
 	} else {
 		planH = rest
 	}
@@ -249,7 +253,13 @@ func (m *model) nightBar(w int) string {
 func (m *model) weather(w, rows int) string {
 	t := m.theme
 	var lines []string
+	// A column for the * that marks an hour where another weather model
+	// disagrees, only when one does.
+	marks := slices.ContainsFunc(m.night.Doc.Wx, func(h view.WxHour) bool { return h.Disagree })
 	bw := w - 11
+	if marks {
+		bw--
+	}
 	for _, h := range m.night.Doc.Wx {
 		if len(lines) == rows {
 			break
@@ -259,8 +269,14 @@ func (m *model) weather(w, rows int) string {
 		if h.Rain {
 			c, label = t.rain, "rain"
 		}
+		mark := ""
+		if h.Disagree {
+			mark = t.style(t.fair).Render("*")
+		} else if marks {
+			mark = " "
+		}
 		lines = append(lines, t.style(t.muted).Render(m.clock(h.T))+" "+t.style(c).Render(strings.Repeat("█", clr))+
-			t.style(t.line).Render(strings.Repeat("░", bw-clr))+" "+t.style(t.muted).Render(label))
+			t.style(t.line).Render(strings.Repeat("░", bw-clr))+" "+mark+t.style(t.muted).Render(label))
 	}
 
 	return strings.Join(lines, "\n")

@@ -276,9 +276,24 @@ func Weather(cfg *config.Config, s *scoring.Sky) {
 	if !forecastFetched(s) {
 		return
 	}
+	// The table never shrinks otherwise: on a terminal too narrow for the
+	// models' column it goes, the rest kept whole.
+	table := weatherTable(cfg, s, s.Models != nil)
+	modelsShown = s.Models != nil
+	if modelsShown && TermWidth > 0 && tableWidth(table) > TermWidth {
+		table, modelsShown = weatherTable(cfg, s, false), false
+	}
 	fmt.Println(paint("01", "Forecast"))
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	row(w, "01", names(weatherColumns)...)
+	fmt.Print(table)
+	fmt.Println()
+}
+
+// weatherTable renders the forecast table, with the models' column when
+// models.
+func weatherTable(cfg *config.Config, s *scoring.Sky, models bool) string {
+	var buf bytes.Buffer
+	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', 0)
+	row(w, "01", names(forecastColumns(models))...)
 	na := paint("39", "-")
 	for t := s.Start.Truncate(time.Hour); !t.After(s.LastHour()); t = t.Add(time.Hour) {
 		cloud, layers, dew, wind, transp, seeing, ext := na, na, na, na, na, na, na
@@ -314,10 +329,52 @@ func Weather(cfg *config.Config, s *scoring.Sky) {
 				seeing = paint(scale(float64(a.Seeing), 6, 8), weather.SeeingLabel(a.Seeing))
 			}
 		}
-		row(w, "", paint("39", clock(s, t.In(cfg.Loc))), cloud, layers, transp, ext, seeing, dew, wind)
+		cells := []string{paint("39", clock(s, t.In(cfg.Loc))), cloud}
+		if models {
+			cells = append(cells, modelsCell(s, t))
+		}
+		row(w, "", append(cells, layers, transp, ext, seeing, dew, wind)...)
 	}
 	w.Flush()
-	fmt.Println()
+
+	return buf.String()
+}
+
+// modelsCell is the GFS/ECMWF cell: each model's cloud cover at hour t, in
+// yellow when one differs from the CLOUD column's by weather.Disagree points.
+func modelsCell(s *scoring.Sky, t time.Time) string {
+	m, ok := s.Models[t.Unix()]
+	if _, okW := s.Weather[t.Unix()]; !ok || !okW { // as CLOUD: nothing beside an unknown hour
+		return paint("39", "-")
+	}
+	parts := make([]string, len(m))
+	for i, c := range m {
+		parts[i] = "-"
+		if !math.IsNaN(c) {
+			parts[i] = fmt.Sprintf("%.0f", c)
+		}
+	}
+	text, clr := strings.Join(parts, "/")+"%", "39"
+	if s.Disagrees(t) {
+		clr = "33"
+	}
+
+	return paint(clr, text)
+}
+
+// forecastColumns is weatherColumns with the models' column after CLOUD
+// when models.
+func forecastColumns(models bool) []column {
+	if !models {
+		return weatherColumns
+	}
+	labels := make([]string, len(weather.Models))
+	for i, m := range weather.Models {
+		labels[i] = m.Label
+	}
+	c := column{strings.Join(labels, "/"), fmt.Sprintf("the same from those models; yellow where one differs from CLOUD by %d points or more", weather.Disagree)}
+
+	return slices.Insert(slices.Clone(weatherColumns), 2, c)
 }
 
 // ownHour reports that the minutes scored from forecast hour t's own values
@@ -840,10 +897,10 @@ const raColumn, decColumn, sizeColumn, typeColumn, peakColumn, starColumn = "RA"
 
 // dropped and planDropped hold the columns Results and Plan left out, and
 // noTargets and emptyPlan that they printed no table, so the legend leaves
-// those out too.
+// those out too; modelsShown that Weather printed the models' column.
 var (
-	dropped, planDropped map[string]bool
-	noTargets, emptyPlan bool
+	dropped, planDropped              map[string]bool
+	noTargets, emptyPlan, modelsShown bool
 )
 
 // shortDesc truncates a description to width runes, the ellipsis included,
@@ -1165,7 +1222,7 @@ func Legend(cfg *config.Config, s *scoring.Sky, tableWidth int) {
 	}
 	var sections []section
 	if forecastFetched(s) {
-		sections = append(sections, section{"Forecast:", weatherColumns})
+		sections = append(sections, section{"Forecast:", forecastColumns(modelsShown)})
 	}
 	if cfg.Plan > 0 && !emptyPlan {
 		sections = append(sections, section{"Night plan:", columns(cfg, planColumns, planDropped)})

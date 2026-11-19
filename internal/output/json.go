@@ -222,6 +222,7 @@ func JSON(cfg *config.Config, s *scoring.Sky, place string, slots []plan.Slot, r
 		}
 		if h, ok := s.Weather[t.Unix()]; ok {
 			hour["cloud"], hour["low"], hour["mid"], hour["high"] = h.Cloud, h.Low, h.Mid, h.High
+			modelClouds(hour, s, t)
 			hour["dewSpread"] = h.Temp - h.DewPoint
 			if own {
 				hour["wind"] = h.Wind
@@ -384,6 +385,22 @@ func moonUp(s *scoring.Sky) []span {
 	}
 
 	return spans
+}
+
+// modelClouds adds hour t's weather.Models cloud, by model key, and whether
+// one disagrees with the scored forecast, when they were fetched.
+func modelClouds(hour map[string]any, s *scoring.Sky, t time.Time) {
+	m, ok := s.Models[t.Unix()]
+	if !ok {
+		return
+	}
+	models := map[string]float64{}
+	for i, c := range m {
+		if !math.IsNaN(c) {
+			models[weather.Models[i].Key] = c // unrounded, as cloud
+		}
+	}
+	hour["models"], hour["modelsDisagree"] = models, s.Disagrees(t)
 }
 
 // gustRain adds the hour's gust as scored, the forecast's too past its cap,

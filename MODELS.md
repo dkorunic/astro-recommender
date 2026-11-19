@@ -381,6 +381,7 @@ Q = (1 - C)\cdot
 - **Gust** counts at most 3× the hour's mean wind, a cap never below 20 km/h (`Gust`); mountain grid points forecast 5–10×.
 - **Rain**: unknown does nothing. Open-Meteo's gusts and precipitation are over the preceding hour, so each hour reads the next entry. Cloud, temperature, dew, wind and seeing come from the nearest hour.
 - **Transparency**: [7Timer!][7timer] (3-hourly, about 3 days), only for hours without CAMS AOD, whose haze the extinction already charges.
+- **Other models** (display only): GFS (`gfs_seamless`) and ECMWF IFS 0.25 (`ecmwf_ifs025`) effective cloud by the same formula, beside `best_match` (a regional model where one covers the hour: over central Europe ICON-D2 for two days, then ICON-EU). An hour where one differs by 40 points or more, both rounded to the percent shown, is flagged; the score keeps `best_match`.
 
 Uncovered minutes get the mean of the covered ones; no forecast is Q = 1. Weather does not affect UP or the observable runs.
 
@@ -817,6 +818,7 @@ The project's own judgment, not measurements:
 | Galactic light in V | blue^0.45 · red^0.55 | 550 nm between Pioneer's 440 and 640 nm bands by wavelength, in log brightness |
 | Ozone in a filter band | the 550 nm value | within 0.02 mag/airmass at every nebula line |
 | High cloud weight | ½ | thin cirrus dims rather than blocks |
+| Model disagreement flag | 40 points of effective cloud | clear against mostly cloudy; smaller gaps are the models' usual scatter |
 | Dew ramp | spread 4 → 1 °C, × 1 → 0.7 | dew on optics ends sessions |
 | Gust ramp | 20 → 40 km/h, × 1 → 0.5, gusts at most 3× the mean wind, not capped below 20 km/h | shaken frames get discarded; mountain grid points' gusts run 5–10× the wind |
 | Rain gate | 0 → 0.1 mm/h, × 1 → 0 | nobody images in rain |

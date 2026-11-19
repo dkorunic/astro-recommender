@@ -70,7 +70,7 @@ func mutZone(t *testing.T) *time.Location {
 func mutSky(t *testing.T) (*config.Config, *scoring.Sky) {
 	t.Helper()
 	// Results and Plan leave what they printed for the legend; start clean.
-	noTargets, emptyPlan = false, false
+	noTargets, emptyPlan, modelsShown = false, false, false
 	loc := mutZone(t)
 	cfg := &config.Config{
 		Lat: 45.81, Lon: 15.98, Loc: loc, Twilight: "astronomical", ListName: "GaryImm", Top: 20,
@@ -433,6 +433,45 @@ func TestMutWeatherTable(t *testing.T) {
 	s.Weather, s.Astro = nil, nil
 	if out := mutCapture(t, func() { Weather(cfg, s) }); out != "" {
 		t.Errorf("no forecast printed %q", out)
+	}
+}
+
+// The models' column sits after CLOUD, painted like every other cell,
+// "-" beside an hour without the scored forecast, flagged in the legend
+// and JSON, and dropped when the terminal is too narrow for it.
+func TestMutWeatherModels(t *testing.T) {
+	cfg, s := mutSky(t)
+	h0 := s.Start.Truncate(time.Hour).Unix()
+	s.Weather = map[int64]weather.HourWeather{h0: {Cloud: 10, Temp: 5, DewPoint: 1, Wind: 8, Gust: 15}}
+	s.Models = map[int64]scoring.ModelCloud{h0: {100, math.NaN()}, h0 + 3600: {0, 0}}
+	mutColor(t, false)
+	out := mutCapture(t, func() { Weather(cfg, s) })
+	lines := mutTable(t, out, "Forecast")
+	if !strings.HasPrefix(lines[0], "HOUR   CLOUD  GFS/ECMWF  LOW/MID/HIGH") || !strings.Contains(lines[1], "10%    100/-%") ||
+		len(lines) < 3 || !strings.Contains(lines[2], "-      -          -") {
+		t.Errorf("models column:\n%s", out)
+	}
+	if !modelsShown {
+		t.Error("legend not told")
+	}
+	mutColor(t, true)
+	colored := mutCapture(t, func() { Weather(cfg, s) })
+	if mutStrip(colored) != out || !strings.Contains(colored, "\x1b[33m100/-%") {
+		t.Errorf("colored models column:\n%q", colored)
+	}
+	js := mutCapture(t, func() {
+		if err := JSON(cfg, s, "", nil, nil); err != nil {
+			t.Error(err)
+		}
+	})
+	if !strings.Contains(js, `"gfs_seamless": 100`) || strings.Contains(js, "ecmwf_ifs025") || !strings.Contains(js, `"modelsDisagree": true`) {
+		t.Errorf("JSON models:\n%s", js)
+	}
+	mutColor(t, false)
+	defer func(w int) { TermWidth = w }(TermWidth)
+	TermWidth = 40
+	if out := mutCapture(t, func() { Weather(cfg, s) }); strings.Contains(out, "GFS") || modelsShown {
+		t.Errorf("narrow terminal kept the models:\n%s", out)
 	}
 }
 

@@ -50,6 +50,8 @@ type WxHour struct {
 	T     int64   `json:"t"`
 	Cloud float64 `json:"cloud"`
 	Rain  bool    `json:"rain"`
+	// Disagree: another of weather.Models differs by weather.Disagree points.
+	Disagree bool `json:"disagree,omitempty"`
 }
 
 // Card is what a result card shows beyond its curve: the target table's
@@ -126,7 +128,9 @@ func Build(cfg *config.Config, s *scoring.Sky, place string, results []scoring.R
 	}
 	for t := s.Start.Truncate(time.Hour); t.Before(s.End); t = t.Add(time.Hour) {
 		if h, ok := s.Weather[t.Unix()]; ok {
-			doc.Wx = append(doc.Wx, WxHour{T: t.Unix(), Cloud: math.Round(h.Cloud), Rain: h.Precip >= weather.RainShown})
+			doc.Wx = append(doc.Wx, WxHour{
+				T: t.Unix(), Cloud: math.Round(h.Cloud), Rain: h.Precip >= weather.RainShown, Disagree: s.Disagrees(t),
+			})
 		}
 	}
 	doc.Night = Night{
