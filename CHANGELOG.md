@@ -5,6 +5,11 @@ commits since the previous tag. Version numbers skip where no tag was cut
 (v0.6–v0.7, v0.10–v0.12, v0.15–v0.17). See [MODELS.md](MODELS.md) for the
 formulas behind the model changes.
 
+## [v0.26.1] — 2026-11-27
+
+### Dependencies
+- bubbles 2.2.2, bubbletea 2.2.0, x/ansi 0.12.0.
+
 ## [v0.26.0] — 2026-11-19
 
 ### Added
@@ -699,6 +704,7 @@ LDN, OpenNGC, OpenIC) for tonight's astronomical night. Features:
 - a greedy night plan (`-plan`)
 - an offline time-zone lookup and reverse geocoding
 
+[v0.26.1]: https://github.com/dkorunic/astro-recommender/compare/v0.26.0...v0.26.1
 [v0.26.0]: https://github.com/dkorunic/astro-recommender/compare/v0.25.1...v0.26.0
 [v0.25.1]: https://github.com/dkorunic/astro-recommender/compare/v0.25.0...v0.25.1
 [v0.25.0]: https://github.com/dkorunic/astro-recommender/compare/v0.24.6...v0.25.0
